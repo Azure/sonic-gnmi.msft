@@ -172,6 +172,8 @@ func (c *Client) Run(stream gnmipb.GNMI_SubscribeServer) (err error) {
 		return grpc.Errorf(codes.Unimplemented, "Empty target data not supported")
 	} else if target == "OTHERS" {
 		dc, err = sdc.NewNonDbClient(paths, prefix)
+	} else if target == "SHOW" {
+		return grpc.Errorf(codes.Unimplemented, "SHOW does not support subscribe operations")
 	} else if ((target == "EVENTS") && (mode == gnmipb.SubscriptionList_STREAM)) {
 		dc, err = sdc.NewEventClient(paths, prefix, c.logLevel)
 	} else if _, ok, _, _ := sdc.IsTargetDb(target); ok {

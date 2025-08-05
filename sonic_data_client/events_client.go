@@ -40,6 +40,7 @@ const PQ_MAX_SIZE = 102400    // Max size for pending events in PQ.
 const HEARTBEAT_MAX = 600     // 10 mins
 
 // STATS counters
+// dummy change
 const MISSED = "COUNTERS_EVENTS:missed_internal"
 const DROPPED = "COUNTERS_EVENTS:missed_by_slow_receiver"
 const LATENCY = "COUNTERS_EVENTS:latency_in_ms"

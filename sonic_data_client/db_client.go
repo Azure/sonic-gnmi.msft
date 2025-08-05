@@ -1,4 +1,5 @@
 // Package client provides a generic access layer for data available in system
+// dummy comment
 package client
 
 import (

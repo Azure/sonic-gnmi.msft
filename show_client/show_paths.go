@@ -97,4 +97,11 @@ func init() {
 		getMacAgingTime,
 		nil,
 	)
+	sdc.RegisterCliPath(
+		[]string{"SHOW", "ipv6", "interfaces"},
+		getIPv6Interfaces,
+		nil,
+		sdc.UnimplementedOption(showCmdOptionNamespace),
+		showCmdOptionDisplay,
+	)
 }

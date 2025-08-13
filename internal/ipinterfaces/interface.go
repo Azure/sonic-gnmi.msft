@@ -5,6 +5,12 @@ import (
 	"net"
 )
 
+// Pluggable log hooks; by default these are no-ops and can be set by callers.
+// Example: LogWarnf = glog.Warningf; LogInfof = glog.Infof; LogDebugf = glog.V(2).Infof
+var LogWarnf = func(format string, args ...any) {}
+var LogInfof = func(format string, args ...any) {}
+var LogDebugf = func(format string, args ...any) {}
+
 const (
 	AddressFamilyIPv4 = "ipv4"
 	AddressFamilyIPv6 = "ipv6"
@@ -57,12 +63,14 @@ func GetIPInterfaces(addressFamily string, namespaceOption *string, displayOptio
 	}
 
 	interfaceMap := make(map[string]*IPInterfaceDetail)
+	LogInfof("Fetching interfaces for namespaces: %v (family=%s, display=%s)", nsList, addressFamily, displayVal)
 	for _, ns := range nsList {
 		interfacesInNs, err := getInterfacesInNamespace(ns, addressFamily)
 		if err != nil {
-			fmt.Printf("Warning: could not get interfaces for namespace '%s': %v\n", ns, err)
+			LogWarnf("could not get interfaces for namespace '%s': %v", ns, err)
 			continue
 		}
+		LogDebugf("Fetched %d interfaces in namespace %s", len(interfacesInNs), ns)
 		for _, iface := range interfacesInNs {
 			if _, ok := interfaceMap[iface.Name]; !ok {
 				// Shallow copy
@@ -84,9 +92,10 @@ func GetIPInterfaces(addressFamily string, namespaceOption *string, displayOptio
 	for _, v := range interfaceMap {
 		all = append(all, *v)
 	}
+	LogInfof("Aggregated %d interfaces across namespaces", len(all))
 
 	if err := enrichWithBGPData(all); err != nil {
-		fmt.Printf("Warning: failed to enrich with BGP data: %v\n", err)
+		LogWarnf("failed to enrich with BGP data: %v", err)
 	}
 	return all, nil
 }
@@ -142,10 +151,15 @@ func resolveNamespaceSelection(namespaceOption *string, displayVal string) ([]st
 }
 
 func enrichWithBGPData(interfaces []IPInterfaceDetail) error {
-	bgpNeighbors, err := getBGPNeighborsFromDB("")
+	bgpNeighbors, err := getBGPNeighborsFromDB(defaultNamespace)
 	if err != nil {
-		fmt.Printf("Warning: failed to get BGP neighbors from default namespace: %v\n", err)
+		LogWarnf("failed to get BGP neighbors from default namespace: %v", err)
 		return nil
+	}
+	LogDebugf("Enriching interfaces with %d BGP neighbors from default namespace", len(bgpNeighbors))
+	// Dump BGP neighbor map keys for debugging correlation issues
+	for k, info := range bgpNeighbors {
+		LogDebugf("Dump BGP_NEIGHBOR map: local_addr=%s -> neighbor_ip=%s name=%s", k, info.NeighborIP, info.Name)
 	}
 	for i := range interfaces {
 		iface := &interfaces[i]
@@ -153,12 +167,14 @@ func enrichWithBGPData(interfaces []IPInterfaceDetail) error {
 			ipDetail := &iface.IPAddresses[j]
 			addr, _, err := net.ParseCIDR(ipDetail.Address)
 			if err != nil {
+				LogDebugf("Skipping unparsable address %q for interface %s", ipDetail.Address, iface.Name)
 				continue
 			}
 			ipStr := addr.String()
 			if neighborInfo, ok := bgpNeighbors[ipStr]; ok {
 				ipDetail.BGPNeighborIP = neighborInfo.NeighborIP
 				ipDetail.BGPNeighborName = neighborInfo.Name
+				LogDebugf("Matched %s -> neighbor %s (%s)", ipStr, neighborInfo.NeighborIP, neighborInfo.Name)
 			}
 		}
 	}

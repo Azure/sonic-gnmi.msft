@@ -23,7 +23,7 @@ func getBGPNeighborsFromDB(namespace string) (map[string]*BGPNeighborInfo, error
 	const bgpNeighborTable = "BGP_NEIGHBOR"
 
 	var dbName string
-	if namespace == "" {
+	if namespace == defaultNamespace {
 		dbName = "CONFIG_DB"
 	} else {
 		dbName = fmt.Sprintf("CONFIG_DB/%s", namespace)

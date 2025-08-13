@@ -10,7 +10,6 @@ import (
 )
 
 const (
-	namespacePathGlob     = "/run/netns/*"
 	asicNamePrefix        = "asic"
 	defaultNamespace      = ""
 	machineConfPath       = "/host/machine.conf"
@@ -156,20 +155,20 @@ func GetAllNamespaces() (*NamespacesByRole, error) {
 		queries := [][]string{{dbTarget, "DEVICE_METADATA", "localhost"}}
 
 		if DBQuery == nil {
-			fmt.Printf("Warning: DBQuery not configured; skipping namespace '%s' role detection\n", ns)
+			LogWarnf("DBQuery not configured; skipping namespace '%s' role detection", ns)
 			continue
 		}
 		msi, err := DBQuery(queries)
 		if err != nil {
 			// Log warning but continue, one failing namespace shouldn't stop the whole process.
-			fmt.Printf("Warning: could not get metadata for namespace '%s': %v\n", ns, err)
+			LogWarnf("could not get metadata for namespace '%s': %v", ns, err)
 			continue
 		}
 
-		key := fmt.Sprintf("DEVICE_METADATA|localhost")
+		key := "DEVICE_METADATA|localhost"
 		entry, ok := msi[key].(map[string]interface{})
 		if !ok {
-			fmt.Printf("Warning: could not parse metadata for namespace '%s'\n", ns)
+			LogWarnf("could not parse metadata for namespace '%s'", ns)
 			continue
 		}
 

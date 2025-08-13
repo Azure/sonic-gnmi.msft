@@ -17,6 +17,10 @@ func getIPv6Interfaces(options sdc.OptionMap) ([]byte, error) {
 
 	// Ensure ipinterfaces can access ConfigDB via our show_client DB helper.
 	ipinterfaces.DBQuery = GetMapFromQueries
+	// Hook up logging so library messages are visible with glog flags.
+	ipinterfaces.LogWarnf = log.Warningf
+	ipinterfaces.LogInfof = log.Infof
+	ipinterfaces.LogDebugf = log.V(2).Infof
 
 	// Extract optional namespace and display options from validated options.
 	var namespacePtr *string

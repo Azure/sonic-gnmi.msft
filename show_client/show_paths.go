@@ -52,13 +52,33 @@ func init() {
 	)
 	sdc.RegisterCliPath(
 		[]string{"SHOW", "interface", "errors"},
-		getIntfErrors,
+		getInterfaceErrors,
 		nil,
 		sdc.RequiredOption(showCmdOptionInterface),
 	)
 	sdc.RegisterCliPath(
+		[]string{"SHOW", "interface", "fec", "status"},
+		getInterfaceFecStatus,
+		nil,
+		showCmdOptionInterface,
+	)
+	sdc.RegisterCliPath(
 		[]string{"SHOW", "watermark", "telemetry", "interval"},
 		getWatermarkTelemetryInterval,
+		nil,
+	)
+	sdc.RegisterCliPath(
+		[]string{"SHOW", "interface", "transceiver", "error-status"},
+		getTransceiverErrorStatus,
+		nil,
+		showCmdOptionVerbose,
+		sdc.UnimplementedOption(showCmdOptionNamespace),
+		sdc.UnimplementedOption(showCmdOptionFetchFromHW),
+		showCmdOptionInterface,
+	)
+	sdc.RegisterCliPath(
+		[]string{"SHOW", "version"},
+		getVersion,
 		nil,
 	)
 }

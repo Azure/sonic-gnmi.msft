@@ -12,8 +12,6 @@ import (
 )
 
 // getInterfacesInNamespace retrieves all interface details from a given network namespace.
-// It locks to a single OS thread, temporarily switches netns (if needed), queries rtnetlink,
-// and assembles the result.
 func getInterfacesInNamespace(namespace string, addressFamily string) ([]IPInterfaceDetail, error) {
 	// Ensure namespace ops happen on a single OS thread.
 	runtime.LockOSThread()
@@ -117,6 +115,7 @@ type linkInfo struct {
 	name        string
 	masterIndex int32
 	flags       uint32
+	carrier     *bool // nil = not present, non-nil = present (true=up, false=down)
 }
 
 // parseLinks builds linkInfo keyed by ifindex from RTM_NEWLINK messages.
@@ -140,6 +139,11 @@ func parseLinks(linkMsgs []netlink.Message) map[int32]linkInfo {
 				li.name = string(bytes.TrimRight(a.Data, "\x00"))
 			case unix.IFLA_MASTER:
 				li.masterIndex = int32(nlenc.Uint32(a.Data))
+			case unix.IFLA_CARRIER:
+				if len(a.Data) > 0 {
+					up := a.Data[0] != 0
+					li.carrier = &up
+				}
 			}
 		}
 		if li.name == "" || idx == 0 {
@@ -200,6 +204,10 @@ func assembleInterfaces(links map[int32]linkInfo, v4, v6 map[int32][]IPAddressDe
 		} else if family == AddressFamilyIPv6 {
 			ipAddresses = v6[ifidx]
 		}
+		// Skip pure L2 interfaces (no addresses for the selected family) to mirror python ipintutil behavior.
+		if len(ipAddresses) == 0 {
+			continue
+		}
 		masterName := ""
 		if li.masterIndex != 0 {
 			if mli, ok := links[li.masterIndex]; ok {
@@ -209,8 +217,8 @@ func assembleInterfaces(links map[int32]linkInfo, v4, v6 map[int32][]IPAddressDe
 		interfaces = append(interfaces, IPInterfaceDetail{
 			Name:        li.name,
 			IPAddresses: ipAddresses,
-			AdminStatus: getAdminStatusFromFlags(li.flags),
-			OperStatus:  "unknown",
+			AdminStatus: getAdminStatus(li),
+			OperStatus:  getOperStatus(li),
 			Master:      masterName,
 		})
 	}
@@ -231,9 +239,25 @@ func marshalIfAddrmsg(family uint8) []byte {
 	return b
 }
 
-// getAdminStatusFromFlags translates link flags to an admin status string ("up" or "down").
-func getAdminStatusFromFlags(flags uint32) string {
-	if flags&unix.IFF_UP != 0 {
+// getAdminStatus translates linkInfo to an admin status string ("up" or "down").
+func getAdminStatus(li linkInfo) string {
+	if li.flags&unix.IFF_UP != 0 {
+		return "up"
+	}
+	return "down"
+}
+
+// getOperStatus translates linkInfo to an oper status string ("up" or "down").
+// - Prefer IFLA_CARRIER when available (carrier != nil).
+// - Else use IFF_LOWER_UP (flags) as the carrier indicator.
+func getOperStatus(li linkInfo) string {
+	if li.carrier != nil {
+		if *li.carrier {
+			return "up"
+		}
+		return "down"
+	}
+	if li.flags&unix.IFF_LOWER_UP != 0 {
 		return "up"
 	}
 	return "down"

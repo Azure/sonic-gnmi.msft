@@ -9,38 +9,43 @@ import (
 	sdc "github.com/sonic-net/sonic-gnmi/sonic_data_client"
 )
 
+// glogAdapter provides a thin wrapper around glog to satisfy the ipinterfaces.Logger interface.
+type glogAdapter struct{}
+
+func (g *glogAdapter) Infof(format string, args ...any)  { log.Infof(format, args...) }
+func (g *glogAdapter) Warnf(format string, args ...any)  { log.Warningf(format, args...) }
+func (g *glogAdapter) Debugf(format string, args ...any) { log.V(6).Infof(format, args...) }
+
 // getIPv6Interfaces is the handler for the "show ipv6 interfaces" command.
 // It uses the ipinterfaces library to get all interface details and returns them
 // as a JSON byte slice.
 func getIPv6Interfaces(options sdc.OptionMap) ([]byte, error) {
 	log.V(2).Info("Executing 'show ipv6 interfaces' command via ipinterfaces library.")
 
-	// Ensure ipinterfaces can access ConfigDB via our show_client DB helper.
-	ipinterfaces.DBQuery = GetMapFromQueries
-	// Hook up logging so library messages are visible with glog flags.
-	ipinterfaces.LogWarnf = log.Warningf
-	ipinterfaces.LogInfof = log.Infof
-	ipinterfaces.LogDebugf = log.V(2).Infof
+	// Instantiate the provider with its dependencies.
+	deps := ipinterfaces.Dependencies{
+		Logger:  &glogAdapter{},
+		DBQuery: GetMapFromQueries,
+	}
 
 	// Extract optional namespace and display options from validated options.
-	var namespacePtr *string
+	opts := &ipinterfaces.GetInterfacesOptions{}
 	if ns, ok := options["namespace"].String(); ok {
-		namespacePtr = &ns
+		opts.Namespace = &ns
 	}
-	var displayPtr *string
 	if dv, ok := options["display"].String(); ok {
-		displayPtr = &dv
+		opts.Display = &dv
 	}
 
-	allIPv6Interfaces, err := ipinterfaces.GetIPInterfaces(ipinterfaces.AddressFamilyIPv6, namespacePtr, displayPtr)
+	allIPv6Interfaces, err := ipinterfaces.GetIPInterfaces(deps, ipinterfaces.AddressFamilyIPv6, opts)
 	if err != nil {
 		nsLog := "<auto>"
-		if namespacePtr != nil {
-			nsLog = *namespacePtr
+		if opts.Namespace != nil {
+			nsLog = *opts.Namespace
 		}
 		dispLog := "<auto>"
-		if displayPtr != nil {
-			dispLog = *displayPtr
+		if opts.Display != nil {
+			dispLog = *opts.Display
 		}
 		log.Errorf("Failed to get IP interface details (ns=%s display=%s): %v", nsLog, dispLog, err)
 		return nil, fmt.Errorf("error retrieving interface information: %w", err)

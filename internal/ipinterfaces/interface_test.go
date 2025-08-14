@@ -12,8 +12,17 @@ func TestGetIPInterfaces_SingleASIC_WithBGPEnrichment(t *testing.T) {
 	patches := gomonkey.NewPatches()
 	defer patches.Reset()
 
+	deps := Dependencies{
+		Logger: DiscardLogger,
+		DBQuery: func(q [][]string) (map[string]interface{}, error) {
+			return map[string]interface{}{
+				"10.0.0.2": map[string]interface{}{"local_addr": "192.0.2.1", "name": "peerA"},
+			}, nil
+		},
+	}
+
 	// Single ASIC path
-	patches.ApplyFunc(IsMultiASIC, func() (bool, error) { return false, nil })
+	patches.ApplyFunc(IsMultiASIC, func(DBQueryFunc) (bool, error) { return false, nil })
 
 	// Stub interface data from default namespace
 	patches.ApplyFunc(getInterfacesInNamespace, func(ns, af string) ([]IPInterfaceDetail, error) {
@@ -28,16 +37,7 @@ func TestGetIPInterfaces_SingleASIC_WithBGPEnrichment(t *testing.T) {
 		}}, nil
 	})
 
-	// Inject BGP data via DBQuery
-	saved := DBQuery
-	DBQuery = func(q [][]string) (map[string]interface{}, error) {
-		return map[string]interface{}{
-			"BGP_NEIGHBOR|10.0.0.2": map[string]interface{}{"local_addr": "192.0.2.1", "name": "peerA"},
-		}, nil
-	}
-	defer func() { DBQuery = saved }()
-
-	got, err := GetIPInterfaces(AddressFamilyIPv4, nil, nil)
+	got, err := GetIPInterfaces(deps, AddressFamilyIPv4, nil)
 	if err != nil {
 		t.Fatalf("GetIPInterfaces error: %v", err)
 	}
@@ -57,9 +57,14 @@ func TestGetIPInterfaces_MultiASIC_MergesAndAppendsDefault(t *testing.T) {
 	patches := gomonkey.NewPatches()
 	defer patches.Reset()
 
+	deps := Dependencies{
+		Logger:  DiscardLogger,
+		DBQuery: func(q [][]string) (map[string]interface{}, error) { return map[string]interface{}{}, nil },
+	}
+
 	// Multi-ASIC and one frontend namespace
-	patches.ApplyFunc(IsMultiASIC, func() (bool, error) { return true, nil })
-	patches.ApplyFunc(GetAllNamespaces, func() (*NamespacesByRole, error) {
+	patches.ApplyFunc(IsMultiASIC, func(DBQueryFunc) (bool, error) { return true, nil })
+	patches.ApplyFunc(GetAllNamespaces, func(Logger, DBQueryFunc) (*NamespacesByRole, error) {
 		return &NamespacesByRole{Frontend: []string{"asic0"}}, nil
 	})
 
@@ -82,12 +87,7 @@ func TestGetIPInterfaces_MultiASIC_MergesAndAppendsDefault(t *testing.T) {
 		}
 	})
 
-	// Inject empty BGP to focus on merging behavior
-	saved := DBQuery
-	DBQuery = func(q [][]string) (map[string]interface{}, error) { return map[string]interface{}{}, nil }
-	defer func() { DBQuery = saved }()
-
-	got, err := GetIPInterfaces(AddressFamilyIPv6, nil, nil)
+	got, err := GetIPInterfaces(deps, AddressFamilyIPv6, nil)
 	if err != nil {
 		t.Fatalf("GetIPInterfaces error: %v", err)
 	}
@@ -110,7 +110,8 @@ func TestGetIPInterfaces_MultiASIC_MergesAndAppendsDefault(t *testing.T) {
 }
 
 func TestGetIPInterfaces_UnsupportedFamily_ReturnsError(t *testing.T) {
-	if _, err := GetIPInterfaces("ipv5", nil, nil); err == nil {
+	deps := Dependencies{Logger: DiscardLogger, DBQuery: nil}
+	if _, err := GetIPInterfaces(deps, "ipv5", nil); err == nil {
 		t.Fatalf("expected error for unsupported address family")
 	}
 }
@@ -119,7 +120,9 @@ func TestGetIPInterfaces_SingleASIC_UnknownNamespace_Error(t *testing.T) {
 	patches := gomonkey.NewPatches()
 	defer patches.Reset()
 
-	patches.ApplyFunc(IsMultiASIC, func() (bool, error) { return false, nil })
+	deps := Dependencies{Logger: DiscardLogger, DBQuery: nil}
+
+	patches.ApplyFunc(IsMultiASIC, func(DBQueryFunc) (bool, error) { return false, nil })
 	// Ensure getInterfacesInNamespace is NOT called
 	patches.ApplyFunc(getInterfacesInNamespace, func(ns, af string) ([]IPInterfaceDetail, error) {
 		t.Fatalf("getInterfacesInNamespace should not be called on invalid namespace in single-ASIC")
@@ -127,7 +130,8 @@ func TestGetIPInterfaces_SingleASIC_UnknownNamespace_Error(t *testing.T) {
 	})
 
 	ns := "asic0"
-	if _, err := GetIPInterfaces(AddressFamilyIPv4, &ns, nil); err == nil {
+	opts := &GetInterfacesOptions{Namespace: &ns}
+	if _, err := GetIPInterfaces(deps, AddressFamilyIPv4, opts); err == nil {
 		t.Fatalf("expected error for unknown namespace in single-ASIC mode")
 	}
 }
@@ -136,8 +140,13 @@ func TestGetIPInterfaces_MultiASIC_ExplicitNamespace_Dedup(t *testing.T) {
 	patches := gomonkey.NewPatches()
 	defer patches.Reset()
 
-	patches.ApplyFunc(IsMultiASIC, func() (bool, error) { return true, nil })
-	patches.ApplyFunc(GetAllNamespaces, func() (*NamespacesByRole, error) {
+	deps := Dependencies{
+		Logger:  DiscardLogger,
+		DBQuery: func(q [][]string) (map[string]interface{}, error) { return map[string]interface{}{}, nil },
+	}
+
+	patches.ApplyFunc(IsMultiASIC, func(DBQueryFunc) (bool, error) { return true, nil })
+	patches.ApplyFunc(GetAllNamespaces, func(Logger, DBQueryFunc) (*NamespacesByRole, error) {
 		return &NamespacesByRole{Frontend: []string{"asic0", "asic1"}, Backend: []string{"asic2"}}, nil
 	})
 
@@ -158,13 +167,10 @@ func TestGetIPInterfaces_MultiASIC_ExplicitNamespace_Dedup(t *testing.T) {
 		}
 	})
 
-	saved := DBQuery
-	DBQuery = func(q [][]string) (map[string]interface{}, error) { return map[string]interface{}{}, nil }
-	defer func() { DBQuery = saved }()
-
 	ns := "asic2"
 	frontend := DisplayExternal
-	got, err := GetIPInterfaces(AddressFamilyIPv4, &ns, &frontend)
+	opts := &GetInterfacesOptions{Namespace: &ns, Display: &frontend}
+	got, err := GetIPInterfaces(deps, AddressFamilyIPv4, opts)
 	if err != nil {
 		t.Fatalf("GetIPInterfaces error: %v", err)
 	}
@@ -180,8 +186,10 @@ func TestGetIPInterfaces_MultiASIC_FrontendOnly_DefaultNsError_DBQueryNil(t *tes
 	patches := gomonkey.NewPatches()
 	defer patches.Reset()
 
-	patches.ApplyFunc(IsMultiASIC, func() (bool, error) { return true, nil })
-	patches.ApplyFunc(GetAllNamespaces, func() (*NamespacesByRole, error) {
+	deps := Dependencies{Logger: DiscardLogger, DBQuery: nil}
+
+	patches.ApplyFunc(IsMultiASIC, func(DBQueryFunc) (bool, error) { return true, nil })
+	patches.ApplyFunc(GetAllNamespaces, func(Logger, DBQueryFunc) (*NamespacesByRole, error) {
 		return &NamespacesByRole{Frontend: []string{"asic0", "asic1"}}, nil
 	})
 	patches.ApplyFunc(getInterfacesInNamespace, func(ns, af string) ([]IPInterfaceDetail, error) {
@@ -197,13 +205,9 @@ func TestGetIPInterfaces_MultiASIC_FrontendOnly_DefaultNsError_DBQueryNil(t *tes
 		}
 	})
 
-	// Force DB enrichment to take error path (DBQuery unset -> getBGPNeighborsFromDB returns error)
-	saved := DBQuery
-	DBQuery = nil
-	defer func() { DBQuery = saved }()
-
 	frontend := DisplayExternal
-	got, err := GetIPInterfaces(AddressFamilyIPv6, nil, &frontend)
+	opts := &GetInterfacesOptions{Display: &frontend}
+	got, err := GetIPInterfaces(deps, AddressFamilyIPv6, opts)
 	if err != nil {
 		t.Fatalf("GetIPInterfaces error: %v", err)
 	}
@@ -220,8 +224,15 @@ func TestEnrichWithBGPData_InvalidCIDR_Skipped(t *testing.T) {
 	patches := gomonkey.NewPatches()
 	defer patches.Reset()
 
+	deps := Dependencies{
+		Logger: DiscardLogger,
+		DBQuery: func(q [][]string) (map[string]interface{}, error) {
+			return map[string]interface{}{"10.0.0.2": map[string]interface{}{"local_addr": "203.0.113.1", "name": "peerA"}}, nil
+		},
+	}
+
 	// Single ASIC to keep it simple
-	patches.ApplyFunc(IsMultiASIC, func() (bool, error) { return false, nil })
+	patches.ApplyFunc(IsMultiASIC, func(DBQueryFunc) (bool, error) { return false, nil })
 	patches.ApplyFunc(getInterfacesInNamespace, func(ns, af string) ([]IPInterfaceDetail, error) {
 		return []IPInterfaceDetail{{
 			Name:        "Ethernet0",
@@ -229,13 +240,7 @@ func TestEnrichWithBGPData_InvalidCIDR_Skipped(t *testing.T) {
 		}}, nil
 	})
 
-	saved := DBQuery
-	DBQuery = func(q [][]string) (map[string]interface{}, error) {
-		return map[string]interface{}{"BGP_NEIGHBOR|10.0.0.2": map[string]interface{}{"local_addr": "203.0.113.1", "name": "peerA"}}, nil
-	}
-	defer func() { DBQuery = saved }()
-
-	got, err := GetIPInterfaces(AddressFamilyIPv4, nil, nil)
+	got, err := GetIPInterfaces(deps, AddressFamilyIPv4, nil)
 	if err != nil {
 		t.Fatalf("GetIPInterfaces error: %v", err)
 	}
@@ -252,8 +257,13 @@ func TestGetIPInterfaces_MultiASIC_DefaultAlreadyIncluded_NoDuplicateAppend(t *t
 	patches := gomonkey.NewPatches()
 	defer patches.Reset()
 
-	patches.ApplyFunc(IsMultiASIC, func() (bool, error) { return true, nil })
-	patches.ApplyFunc(GetAllNamespaces, func() (*NamespacesByRole, error) {
+	deps := Dependencies{
+		Logger:  DiscardLogger,
+		DBQuery: func(q [][]string) (map[string]interface{}, error) { return map[string]interface{}{}, nil },
+	}
+
+	patches.ApplyFunc(IsMultiASIC, func(DBQueryFunc) (bool, error) { return true, nil })
+	patches.ApplyFunc(GetAllNamespaces, func(Logger, DBQueryFunc) (*NamespacesByRole, error) {
 		// Frontend already includes default namespace
 		return &NamespacesByRole{Frontend: []string{"", "asic0"}}, nil
 	})
@@ -269,11 +279,8 @@ func TestGetIPInterfaces_MultiASIC_DefaultAlreadyIncluded_NoDuplicateAppend(t *t
 			return nil, nil
 		}
 	})
-	saved := DBQuery
-	DBQuery = func(q [][]string) (map[string]interface{}, error) { return map[string]interface{}{}, nil }
-	defer func() { DBQuery = saved }()
 
-	got, err := GetIPInterfaces(AddressFamilyIPv4, nil, nil)
+	got, err := GetIPInterfaces(deps, AddressFamilyIPv4, nil)
 	if err != nil {
 		t.Fatalf("GetIPInterfaces error: %v", err)
 	}
@@ -292,10 +299,12 @@ func TestGetIPInterfaces_MultiASIC_GetAllNamespaces_Error(t *testing.T) {
 	patches := gomonkey.NewPatches()
 	defer patches.Reset()
 
-	patches.ApplyFunc(IsMultiASIC, func() (bool, error) { return true, nil })
-	patches.ApplyFunc(GetAllNamespaces, func() (*NamespacesByRole, error) { return nil, fmt.Errorf("ns err") })
+	deps := Dependencies{Logger: DiscardLogger, DBQuery: nil}
 
-	if _, err := GetIPInterfaces(AddressFamilyIPv4, nil, nil); err == nil {
+	patches.ApplyFunc(IsMultiASIC, func(DBQueryFunc) (bool, error) { return true, nil })
+	patches.ApplyFunc(GetAllNamespaces, func(Logger, DBQueryFunc) (*NamespacesByRole, error) { return nil, fmt.Errorf("ns err") })
+
+	if _, err := GetIPInterfaces(deps, AddressFamilyIPv4, nil); err == nil {
 		t.Fatalf("expected error when GetAllNamespaces fails")
 	}
 }
@@ -304,12 +313,15 @@ func TestGetIPInterfaces_MultiASIC_ExplicitUnknownNamespace_Error(t *testing.T) 
 	patches := gomonkey.NewPatches()
 	defer patches.Reset()
 
-	patches.ApplyFunc(IsMultiASIC, func() (bool, error) { return true, nil })
-	patches.ApplyFunc(GetAllNamespaces, func() (*NamespacesByRole, error) {
+	deps := Dependencies{Logger: DiscardLogger, DBQuery: nil}
+
+	patches.ApplyFunc(IsMultiASIC, func(DBQueryFunc) (bool, error) { return true, nil })
+	patches.ApplyFunc(GetAllNamespaces, func(Logger, DBQueryFunc) (*NamespacesByRole, error) {
 		return &NamespacesByRole{Frontend: []string{"asic0"}, Backend: []string{"asic1"}}, nil
 	})
 	ns := "weird"
-	if _, err := GetIPInterfaces(AddressFamilyIPv4, &ns, nil); err == nil {
+	opts := &GetInterfacesOptions{Namespace: &ns}
+	if _, err := GetIPInterfaces(deps, AddressFamilyIPv4, opts); err == nil {
 		t.Fatalf("expected error for unknown namespace in multi-ASIC")
 	}
 }
@@ -318,8 +330,13 @@ func TestGetIPInterfaces_MultiASIC_NonDefaultNamespaceError_Ignored(t *testing.T
 	patches := gomonkey.NewPatches()
 	defer patches.Reset()
 
-	patches.ApplyFunc(IsMultiASIC, func() (bool, error) { return true, nil })
-	patches.ApplyFunc(GetAllNamespaces, func() (*NamespacesByRole, error) {
+	deps := Dependencies{
+		Logger:  DiscardLogger,
+		DBQuery: func(q [][]string) (map[string]interface{}, error) { return map[string]interface{}{}, nil },
+	}
+
+	patches.ApplyFunc(IsMultiASIC, func(DBQueryFunc) (bool, error) { return true, nil })
+	patches.ApplyFunc(GetAllNamespaces, func(Logger, DBQueryFunc) (*NamespacesByRole, error) {
 		return &NamespacesByRole{Frontend: []string{"asic0", "asic1"}}, nil
 	})
 	patches.ApplyFunc(getInterfacesInNamespace, func(ns, af string) ([]IPInterfaceDetail, error) {
@@ -334,11 +351,8 @@ func TestGetIPInterfaces_MultiASIC_NonDefaultNamespaceError_Ignored(t *testing.T
 			return nil, nil
 		}
 	})
-	saved := DBQuery
-	DBQuery = func(q [][]string) (map[string]interface{}, error) { return map[string]interface{}{}, nil }
-	defer func() { DBQuery = saved }()
 
-	got, err := GetIPInterfaces(AddressFamilyIPv6, nil, nil)
+	got, err := GetIPInterfaces(deps, AddressFamilyIPv6, nil)
 	if err != nil {
 		t.Fatalf("GetIPInterfaces error: %v", err)
 	}

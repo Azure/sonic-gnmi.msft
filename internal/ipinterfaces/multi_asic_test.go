@@ -28,13 +28,18 @@ func TestGetPlatform_FromEnv(t *testing.T) {
 		return nil, errors.New("os.Open should not be called when PLATFORM is set")
 	})
 
-	got := getPlatform()
+	got := getPlatform(nil)
 	if got != "x86_64-mlnx_msn2700-r0" {
 		t.Fatalf("getPlatform from env: got %q, want %q", got, "x86_64-mlnx_msn2700-r0")
 	}
 }
 
 func TestGetPlatform_FromConfigDB(t *testing.T) {
+	dbq := func(q [][]string) (map[string]interface{}, error) {
+		return map[string]interface{}{
+			"DEVICE_METADATA|localhost": map[string]interface{}{"platform": "arm64-dummy"},
+		}, nil
+	}
 	patches := gomonkey.ApplyFunc(os.Getenv, func(key string) string { return "" })
 	defer patches.Reset()
 
@@ -46,16 +51,7 @@ func TestGetPlatform_FromConfigDB(t *testing.T) {
 		return nil, os.ErrNotExist
 	})
 
-	// Inject DBQuery
-	old := DBQuery
-	DBQuery = func(q [][]string) (map[string]interface{}, error) {
-		return map[string]interface{}{
-			"DEVICE_METADATA|localhost": map[string]interface{}{"platform": "arm64-dummy"},
-		}, nil
-	}
-	defer func() { DBQuery = old }()
-
-	got := getPlatform()
+	got := getPlatform(dbq)
 	if got != "arm64-dummy" {
 		t.Fatalf("getPlatform from DB: got %q, want %q", got, "arm64-dummy")
 	}
@@ -71,12 +67,8 @@ func TestGetNumASICs_NoFile(t *testing.T) {
 	// Ensure platform lookup doesn’t accidentally find something
 	patches.ApplyFunc(os.Getenv, func(key string) string { return "" })
 	patches.ApplyFunc(os.Open, func(name string) (*os.File, error) { return nil, os.ErrNotExist })
-	// Ensure DBQuery is nil
-	old := DBQuery
-	DBQuery = nil
-	defer func() { DBQuery = old }()
 
-	n, err := GetNumASICs()
+	n, err := GetNumASICs(nil)
 	if err != nil {
 		t.Fatalf("GetNumASICs error: %v", err)
 	}
@@ -114,7 +106,7 @@ func TestGetNumASICs_FromAsicConf(t *testing.T) {
 		return nil, os.ErrNotExist
 	})
 
-	n, err := GetNumASICs()
+	n, err := GetNumASICs(nil)
 	if err != nil {
 		t.Fatalf("GetNumASICs error: %v", err)
 	}
@@ -146,7 +138,7 @@ func TestGetNumASICs_MalformedValue_Error(t *testing.T) {
 		}
 		return nil, os.ErrNotExist
 	})
-	if _, err := GetNumASICs(); err == nil {
+	if _, err := GetNumASICs(nil); err == nil {
 		t.Fatalf("expected error for malformed num_asic value")
 	}
 }
@@ -180,7 +172,7 @@ func TestGetNumASICs_ScannerError(t *testing.T) {
 		return nil, os.ErrNotExist
 	})
 
-	if _, err := GetNumASICs(); err == nil {
+	if _, err := GetNumASICs(nil); err == nil {
 		t.Fatalf("expected scanner error due to oversized line")
 	}
 }
@@ -188,17 +180,17 @@ func TestGetNumASICs_ScannerError(t *testing.T) {
 func TestIsMultiASIC_ErrorPropagates(t *testing.T) {
 	patches := gomonkey.NewPatches()
 	defer patches.Reset()
-	patches.ApplyFunc(GetNumASICs, func() (int, error) { return 0, fmt.Errorf("boom") })
-	if _, err := IsMultiASIC(); err == nil {
+	patches.ApplyFunc(GetNumASICs, func(DBQueryFunc) (int, error) { return 0, fmt.Errorf("boom") })
+	if _, err := IsMultiASIC(nil); err == nil {
 		t.Fatalf("expected error to propagate")
 	}
 }
 
 func TestGetAllNamespaces_SingleASIC(t *testing.T) {
-	patches := gomonkey.ApplyFunc(GetNumASICs, func() (int, error) { return 1, nil })
+	patches := gomonkey.ApplyFunc(GetNumASICs, func(DBQueryFunc) (int, error) { return 1, nil })
 	defer patches.Reset()
 
-	ns, err := GetAllNamespaces()
+	ns, err := GetAllNamespaces(DiscardLogger, nil)
 	if err != nil {
 		t.Fatalf("GetAllNamespaces error: %v", err)
 	}
@@ -209,12 +201,7 @@ func TestGetAllNamespaces_SingleASIC(t *testing.T) {
 }
 
 func TestGetAllNamespaces_MultiASIC(t *testing.T) {
-	patches := gomonkey.ApplyFunc(GetNumASICs, func() (int, error) { return 2, nil })
-	defer patches.Reset()
-
-	// Inject DBQuery
-	old := DBQuery
-	DBQuery = func(q [][]string) (map[string]interface{}, error) {
+	dbq := func(q [][]string) (map[string]interface{}, error) {
 		if len(q) == 0 || len(q[0]) == 0 {
 			return nil, fmt.Errorf("bad query")
 		}
@@ -229,9 +216,10 @@ func TestGetAllNamespaces_MultiASIC(t *testing.T) {
 			"DEVICE_METADATA|localhost": map[string]interface{}{"sub_role": role},
 		}, nil
 	}
-	defer func() { DBQuery = old }()
+	patches := gomonkey.ApplyFunc(GetNumASICs, func(DBQueryFunc) (int, error) { return 2, nil })
+	defer patches.Reset()
 
-	ns, err := GetAllNamespaces()
+	ns, err := GetAllNamespaces(DiscardLogger, dbq)
 	if err != nil {
 		t.Fatalf("GetAllNamespaces error: %v", err)
 	}
@@ -244,12 +232,8 @@ func TestGetAllNamespaces_MultiASIC(t *testing.T) {
 }
 
 func TestGetAllNamespaces_DBFailureAndFabricRole(t *testing.T) {
-	patches := gomonkey.NewPatches()
-	defer patches.Reset()
-	patches.ApplyFunc(GetNumASICs, func() (int, error) { return 3, nil })
 	calls := 0
-	old := DBQuery
-	DBQuery = func(q [][]string) (map[string]interface{}, error) {
+	dbq := func(q [][]string) (map[string]interface{}, error) {
 		calls++
 		db := q[0][0]
 		if strings.Contains(db, "asic0") {
@@ -261,9 +245,11 @@ func TestGetAllNamespaces_DBFailureAndFabricRole(t *testing.T) {
 		}
 		return map[string]interface{}{"DEVICE_METADATA|localhost": map[string]interface{}{"sub_role": role}}, nil
 	}
-	defer func() { DBQuery = old }()
+	patches := gomonkey.NewPatches()
+	defer patches.Reset()
+	patches.ApplyFunc(GetNumASICs, func(DBQueryFunc) (int, error) { return 3, nil })
 
-	ns, err := GetAllNamespaces()
+	ns, err := GetAllNamespaces(DiscardLogger, dbq)
 	if err != nil {
 		t.Fatalf("GetAllNamespaces error: %v", err)
 	}

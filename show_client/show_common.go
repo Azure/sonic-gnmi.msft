@@ -1,16 +1,20 @@
 package show_client
 
 import (
+	"bufio"
 	"fmt"
+	"os"
 	"os/exec"
 	"sort"
 	"strconv"
+	"strings"
 
 	log "github.com/golang/glog"
 	"github.com/google/shlex"
 	natural "github.com/maruel/natural"
 	gnmipb "github.com/openconfig/gnmi/proto/gnmi"
 	sdc "github.com/sonic-net/sonic-gnmi/sonic_data_client"
+	"gopkg.in/yaml.v2"
 )
 
 const AppDBPortTable = "PORT_TABLE"
@@ -115,6 +119,39 @@ func CreateTablePathsFromQueries(queries [][]string) ([]sdc.TablePath, error) {
 		}
 	}
 	return allPaths, nil
+}
+
+func ReadYamlToMap(filePath string) (map[string]interface{}, error) {
+	yamlFile, err := sdc.ImplIoutilReadFile(filePath)
+	if err != nil {
+		return nil, fmt.Errorf("failed to read YAML file: %w", err)
+	}
+	var data map[string]interface{}
+	err = yaml.Unmarshal(yamlFile, &data)
+	if err != nil {
+		return nil, fmt.Errorf("failed to unmarshal YAML: %w", err)
+	}
+	return data, nil
+}
+
+func ReadConfToMap(filePath string) (map[string]interface{}, error) {
+	file, err := os.Open(filePath)
+	if err != nil {
+		return nil, err
+	}
+	defer file.Close()
+
+	machineVars := make(map[string]interface{})
+	scanner := bufio.NewScanner(file)
+	for scanner.Scan() {
+		line := scanner.Text()
+		tokens := strings.SplitN(line, "=", 2)
+		if len(tokens) < 2 {
+			continue
+		}
+		machineVars[tokens[0]] = strings.TrimSpace(tokens[1])
+	}
+	return machineVars, nil
 }
 
 func RemapAliasToPortName(portData map[string]interface{}) map[string]interface{} {

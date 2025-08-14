@@ -76,4 +76,9 @@ func init() {
 		sdc.UnimplementedOption(showCmdOptionFetchFromHW),
 		showCmdOptionInterface,
 	)
+	sdc.RegisterCliPath(
+		[]string{"SHOW", "version"},
+		getVersion,
+		nil,
+	)
 }

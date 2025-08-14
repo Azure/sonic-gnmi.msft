@@ -108,8 +108,8 @@ func TestGetInterfacesInNamespace_IPv4_DefaultNS(t *testing.T) {
 	if err != nil {
 		t.Fatalf("getInterfacesInNamespace default ns failed: %v", err)
 	}
-	if len(ifs) != 2 {
-		t.Fatalf("expected 2 interfaces, got %d", len(ifs))
+	if len(ifs) != 1 { // PortChannel1 has no IPv4 address and is filtered out
+		t.Fatalf("expected 1 interface (Ethernet1), got %d", len(ifs))
 	}
 
 	// Map by name for assertions independent of order
@@ -132,15 +132,8 @@ func TestGetInterfacesInNamespace_IPv4_DefaultNS(t *testing.T) {
 		t.Errorf("Ethernet1 Master: want '', got %q", eth1.Master)
 	}
 
-	pc1, ok := byName["PortChannel1"]
-	if !ok {
-		t.Fatalf("missing PortChannel1 in result")
-	}
-	if pc1.AdminStatus != "up" {
-		t.Errorf("PortChannel1 admin status: want up, got %s", pc1.AdminStatus)
-	}
-	if len(pc1.IPAddresses) != 0 {
-		t.Errorf("PortChannel1 IPs: want none, got %+v", pc1.IPAddresses)
+	if _, ok := byName["PortChannel1"]; ok {
+		t.Fatalf("PortChannel1 should have been filtered out (no IPv4 addresses)")
 	}
 }
 
@@ -198,9 +191,8 @@ func TestGetInterfacesInNamespace_MasterRelation_And_IPv6(t *testing.T) {
 	if err != nil {
 		t.Fatalf("getInterfacesInNamespace ns=%s failed: %v", ns, err)
 	}
-	if len(ifs) != 2 {
-		// Two links discovered regardless of IP family
-		t.Fatalf("expected 2 interfaces, got %d", len(ifs))
+	if len(ifs) != 1 { // PortChannel100 has no IPv6 address and is filtered out
+		t.Fatalf("expected 1 interface (Ethernet100), got %d", len(ifs))
 	}
 
 	// Build a map by interface name for deterministic assertions
@@ -209,25 +201,17 @@ func TestGetInterfacesInNamespace_MasterRelation_And_IPv6(t *testing.T) {
 		byName[i.Name] = i
 	}
 
-	pc, ok := byName["PortChannel100"]
-	if !ok {
-		t.Fatalf("missing PortChannel100 in result")
-	}
 	eth, ok := byName["Ethernet100"]
 	if !ok {
 		t.Fatalf("missing Ethernet100 in result")
 	}
-
-	if pc.AdminStatus != "up" {
-		t.Errorf("PortChannel100 admin: want up, got %s", pc.AdminStatus)
-	}
-	if pc.Master != "" {
-		t.Errorf("PortChannel100 master: want '', got %q", pc.Master)
+	if _, ok := byName["PortChannel100"]; ok {
+		t.Fatalf("PortChannel100 should have been filtered out (no IPv6 addresses)")
 	}
 	if eth.AdminStatus != "down" {
 		t.Errorf("Ethernet100 admin: want down, got %s", eth.AdminStatus)
 	}
-	if eth.Master != "PortChannel100" {
+	if eth.Master != "PortChannel100" { // Master name still resolved from links map
 		t.Errorf("Ethernet100 master: want PortChannel100, got %q", eth.Master)
 	}
 	if len(eth.IPAddresses) != 1 || eth.IPAddresses[0].Address != "2001:db8::1/64" {
@@ -254,7 +238,6 @@ func TestDumpErrors_Propagate(t *testing.T) {
 	patches.ApplyFunc(unix.Setns, func(fd int, nstype int) error { return nil })
 
 	// Conn that fails on link dump
-	type fakeConn struct{}
 	patches.ApplyFunc(netlink.Dial, func(proto int, cfg *netlink.Config) (*netlink.Conn, error) { return &netlink.Conn{}, nil })
 	patches.ApplyMethod(reflect.TypeOf(&netlink.Conn{}), "Close", func(_ *netlink.Conn) error { return nil })
 	patches.ApplyMethod(reflect.TypeOf(&netlink.Conn{}), "Execute", func(_ *netlink.Conn, req netlink.Message) ([]netlink.Message, error) {
@@ -298,27 +281,19 @@ func TestAssembleInterfaces_FamilySelection_And_AdminFlags(t *testing.T) {
 	v6 := map[int32][]IPAddressDetail{2: {{Address: "2001:db8::2/64"}}}
 
 	got4 := assembleInterfaces(links, v4, v6, AddressFamilyIPv4)
-	if len(got4) != 2 {
-		t.Fatalf("want 2 entries, got %d", len(got4))
+	if len(got4) != 1 || got4[0].Name != "eth0" {
+		t.Fatalf("expected only eth0 for IPv4, got: %+v", got4)
 	}
-	by := map[string]IPInterfaceDetail{}
-	for _, i := range got4 {
-		by[i.Name] = i
-	}
-	if by["eth0"].AdminStatus != "up" || len(by["eth0"].IPAddresses) != 1 {
-		t.Fatalf("eth0 unexpected: %+v", by["eth0"])
-	}
-	if by["eth1"].AdminStatus != "down" || by["eth1"].Master != "eth0" || len(by["eth1"].IPAddresses) != 0 {
-		t.Fatalf("eth1 unexpected: %+v", by["eth1"])
+	if got4[0].AdminStatus != "up" || len(got4[0].IPAddresses) != 1 {
+		t.Fatalf("eth0 unexpected: %+v", got4[0])
 	}
 
 	got6 := assembleInterfaces(links, v4, v6, AddressFamilyIPv6)
-	by = map[string]IPInterfaceDetail{}
-	for _, i := range got6 {
-		by[i.Name] = i
+	if len(got6) != 1 || got6[0].Name != "eth1" {
+		t.Fatalf("expected only eth1 for IPv6, got: %+v", got6)
 	}
-	if len(by["eth1"].IPAddresses) != 1 || by["eth1"].IPAddresses[0].Address != "2001:db8::2/64" {
-		t.Fatalf("ipv6 selection failed: %+v", by["eth1"])
+	if len(got6[0].IPAddresses) != 1 || got6[0].IPAddresses[0].Address != "2001:db8::2/64" {
+		t.Fatalf("ipv6 selection failed: %+v", got6[0])
 	}
 }
 
@@ -348,12 +323,109 @@ func TestMarshalHelpers(t *testing.T) {
 	}
 }
 
-func TestGetAdminStatusFromFlags(t *testing.T) {
-	if getAdminStatusFromFlags(unix.IFF_UP) != "up" {
+func TestGetAdminStatus(t *testing.T) {
+	if getAdminStatus(linkInfo{flags: unix.IFF_UP}) != "up" {
 		t.Fatalf("IFF_UP should be up")
 	}
-	if getAdminStatusFromFlags(0) != "down" {
+	if getAdminStatus(linkInfo{flags: 0}) != "down" {
 		t.Fatalf("0 flags should be down")
+	}
+}
+
+// Test oper status derived from carrier and flags and ensure admin/oper consistency.
+func TestGetOperStatus_CarrierAndFlags(t *testing.T) {
+	up := true
+	down := false
+	// Carrier present and up -> oper up
+	if getOperStatus(linkInfo{carrier: &up}) != "up" {
+		t.Fatalf("carrier up should yield oper up")
+	}
+	// Carrier present and down -> oper down
+	if getOperStatus(linkInfo{carrier: &down}) != "down" {
+		t.Fatalf("carrier down should yield oper down")
+	}
+	// No carrier attr, but IFF_LOWER_UP flag set -> oper up
+	if getOperStatus(linkInfo{flags: unix.IFF_LOWER_UP}) != "up" {
+		t.Fatalf("IFF_LOWER_UP should yield oper up when carrier missing")
+	}
+	// No carrier and no lower_up -> oper down
+	if getOperStatus(linkInfo{flags: 0}) != "down" {
+		t.Fatalf("no carrier and no lower_up should yield oper down")
+	}
+	// Admin down but carrier present -> admin down, oper up (parity with Python)
+	li := linkInfo{flags: 0, carrier: &up}
+	if getAdminStatus(li) != "down" {
+		t.Fatalf("admin should be down when IFF_UP not set")
+	}
+	if getOperStatus(li) != "up" {
+		t.Fatalf("oper should be up when carrier is present even if admin is down")
+	}
+}
+
+// Test parseLinks extracts flags and IFLA_CARRIER from RTM_NEWLINK messages.
+func TestParseLinks_CarrierAndFlags(t *testing.T) {
+	msgs := []netlink.Message{}
+
+	// idx=5, flags=0, carrier=1 (up)
+	hdr1 := make([]byte, unix.SizeofIfInfomsg)
+	copy(hdr1[4:8], nlenc.Uint32Bytes(uint32(5)))
+	copy(hdr1[8:12], nlenc.Uint32Bytes(uint32(0)))
+	attrs1 := []netlink.Attribute{
+		{Type: unix.IFLA_IFNAME, Data: append([]byte("eth5"), 0x00)},
+		{Type: unix.IFLA_CARRIER, Data: []byte{1}},
+	}
+	attrBytes1, _ := netlink.MarshalAttributes(attrs1)
+	msgs = append(msgs, netlink.Message{Header: netlink.Header{Type: unix.RTM_NEWLINK}, Data: append(hdr1, attrBytes1...)})
+
+	// idx=6, flags=IFF_LOWER_UP, no carrier attr
+	hdr2 := make([]byte, unix.SizeofIfInfomsg)
+	copy(hdr2[4:8], nlenc.Uint32Bytes(uint32(6)))
+	copy(hdr2[8:12], nlenc.Uint32Bytes(uint32(unix.IFF_LOWER_UP)))
+	attrs2 := []netlink.Attribute{{Type: unix.IFLA_IFNAME, Data: append([]byte("eth6"), 0x00)}}
+	attrBytes2, _ := netlink.MarshalAttributes(attrs2)
+	msgs = append(msgs, netlink.Message{Header: netlink.Header{Type: unix.RTM_NEWLINK}, Data: append(hdr2, attrBytes2...)})
+
+	// idx=7, flags=0, carrier=0 (down)
+	hdr3 := make([]byte, unix.SizeofIfInfomsg)
+	copy(hdr3[4:8], nlenc.Uint32Bytes(uint32(7)))
+	copy(hdr3[8:12], nlenc.Uint32Bytes(uint32(0)))
+	attrs3 := []netlink.Attribute{
+		{Type: unix.IFLA_IFNAME, Data: append([]byte("eth7"), 0x00)},
+		{Type: unix.IFLA_CARRIER, Data: []byte{0}},
+	}
+	attrBytes3, _ := netlink.MarshalAttributes(attrs3)
+	msgs = append(msgs, netlink.Message{Header: netlink.Header{Type: unix.RTM_NEWLINK}, Data: append(hdr3, attrBytes3...)})
+
+	links := parseLinks(msgs)
+
+	li5, ok := links[5]
+	if !ok {
+		t.Fatalf("missing parsed link idx 5")
+	}
+	if li5.flags != 0 {
+		t.Fatalf("idx5 flags: want 0 got %d", li5.flags)
+	}
+	if li5.carrier == nil || !*li5.carrier {
+		t.Fatalf("idx5 carrier: want present and up")
+	}
+
+	li6, ok := links[6]
+	if !ok {
+		t.Fatalf("missing parsed link idx 6")
+	}
+	if li6.flags&unix.IFF_LOWER_UP == 0 {
+		t.Fatalf("idx6 flags: want IFF_LOWER_UP set")
+	}
+	if li6.carrier != nil {
+		t.Fatalf("idx6 carrier: want not present")
+	}
+
+	li7, ok := links[7]
+	if !ok {
+		t.Fatalf("missing parsed link idx 7")
+	}
+	if li7.carrier == nil || *li7.carrier {
+		t.Fatalf("idx7 carrier: want present and down")
 	}
 }
 

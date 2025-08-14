@@ -18,52 +18,76 @@ const (
 	asicConfFilename      = "asic.conf"
 )
 
-// getPlatform retrieves the device's platform identifier.
-// This is a port of the logic from sonic_py_common/device_info.py
-func getPlatform() string {
-	// 1. Check PLATFORM environment variable
-	if platformEnv := os.Getenv("PLATFORM"); platformEnv != "" {
-		return platformEnv
+// getPlatform retrieves the device's platform identifier by checking the environment,
+// machine.conf, and the config DB in that order.
+func getPlatform(dbQuery DBQueryFunc) string {
+	if platform := getPlatformFromEnv(); platform != "" {
+		return platform
 	}
 
-	// 2. Check machine.conf
+	if platform, err := getPlatformFromMachineConf(); err == nil && platform != "" {
+		return platform
+	}
+
+	if platform, err := getPlatformFromConfigDB(dbQuery); err == nil && platform != "" {
+		return platform
+	}
+
+	return ""
+}
+
+// getPlatformFromEnv reads the platform from the "PLATFORM" environment variable.
+func getPlatformFromEnv() string {
+	return os.Getenv("PLATFORM")
+}
+
+// getPlatformFromMachineConf reads the platform from onie_platform or aboot_platform in machine.conf.
+func getPlatformFromMachineConf() (string, error) {
 	file, err := os.Open(machineConfPath)
-	if err == nil {
-		defer file.Close()
-		scanner := bufio.NewScanner(file)
-		for scanner.Scan() {
-			line := scanner.Text()
-			if parts := strings.SplitN(line, "=", 2); len(parts) == 2 {
-				key, value := strings.TrimSpace(parts[0]), strings.TrimSpace(parts[1])
-				if key == "onie_platform" || key == "aboot_platform" {
-					return value
-				}
+	if err != nil {
+		return "", err
+	}
+	defer file.Close()
+
+	scanner := bufio.NewScanner(file)
+	for scanner.Scan() {
+		line := scanner.Text()
+		if parts := strings.SplitN(line, "=", 2); len(parts) == 2 {
+			key, value := strings.TrimSpace(parts[0]), strings.TrimSpace(parts[1])
+			if key == "onie_platform" || key == "aboot_platform" {
+				return value, nil
 			}
 		}
 	}
+	return "", scanner.Err()
+}
 
-	// 3. Fallback to ConfigDB via injected DBQuery if available
-	if DBQuery == nil {
-		return ""
+// getPlatformFromConfigDB reads the platform from DEVICE_METADATA in the ConfigDB.
+func getPlatformFromConfigDB(dbQuery DBQueryFunc) (string, error) {
+	if dbQuery == nil {
+		return "", nil // Not an error, just unavailable.
 	}
 	queries := [][]string{{"CONFIG_DB", "DEVICE_METADATA", "localhost"}}
-	msi, err := DBQuery(queries)
-	if err != nil || msi == nil {
-		return ""
+	msi, err := dbQuery(queries)
+	if err != nil {
+		return "", err
+	}
+	if msi == nil {
+		return "", nil
 	}
 	entry, ok := msi["DEVICE_METADATA|localhost"].(map[string]interface{})
 	if !ok {
-		return ""
+		return "", nil
 	}
 	if platform, ok := entry["platform"].(string); ok {
-		return platform
+		return platform, nil
 	}
-	return ""
+	return "", nil
 }
 
 // getAsicConfFilePath retrieves the path to the ASIC configuration file.
 // This is a port of the logic from sonic_py_common/device_info.py
-func getAsicConfFilePath() string {
+func getAsicConfFilePath(dbQuery DBQueryFunc) string {
 	// Candidate 1: /usr/share/sonic/platform/asic.conf
 	candidate1 := filepath.Join(containerPlatformPath, asicConfFilename)
 	if _, err := os.Stat(candidate1); err == nil {
@@ -71,7 +95,7 @@ func getAsicConfFilePath() string {
 	}
 
 	// Candidate 2: /usr/share/sonic/device/<platform>/asic.conf
-	platform := getPlatform()
+	platform := getPlatform(dbQuery)
 	if platform != "" {
 		candidate2 := filepath.Join(hostDevicePath, platform, asicConfFilename)
 		if _, err := os.Stat(candidate2); err == nil {
@@ -84,8 +108,8 @@ func getAsicConfFilePath() string {
 
 // GetNumASICs retrieves the number of ASICs present on the platform.
 // It reads the asic.conf file and counts the number of lines.
-func GetNumASICs() (int, error) {
-	asicConfPath := getAsicConfFilePath()
+func GetNumASICs(dbQuery DBQueryFunc) (int, error) {
+	asicConfPath := getAsicConfFilePath(dbQuery)
 	if asicConfPath == "" {
 		// If no asic.conf file is found, assume a single ASIC platform.
 		return 1, nil
@@ -125,8 +149,8 @@ func GetNumASICs() (int, error) {
 }
 
 // IsMultiASIC checks if the device is a multi-ASIC platform.
-func IsMultiASIC() (bool, error) {
-	numAsics, err := GetNumASICs()
+func IsMultiASIC(dbQuery DBQueryFunc) (bool, error) {
+	numAsics, err := GetNumASICs(dbQuery)
 	if err != nil {
 		return false, err
 	}
@@ -136,8 +160,9 @@ func IsMultiASIC() (bool, error) {
 // GetAllNamespaces returns a slice of all network namespace names.
 // On a single-ASIC system, it returns a slice with one empty string ""
 // which represents the default (host) namespace.
-func GetAllNamespaces() (*NamespacesByRole, error) {
-	numAsics, err := GetNumASICs()
+
+func GetAllNamespaces(logger Logger, dbQuery DBQueryFunc) (*NamespacesByRole, error) {
+	numAsics, err := GetNumASICs(dbQuery)
 	if err != nil {
 		return nil, err
 	}
@@ -154,21 +179,21 @@ func GetAllNamespaces() (*NamespacesByRole, error) {
 		dbTarget := fmt.Sprintf("CONFIG_DB/%s", ns)
 		queries := [][]string{{dbTarget, "DEVICE_METADATA", "localhost"}}
 
-		if DBQuery == nil {
-			LogWarnf("DBQuery not configured; skipping namespace '%s' role detection", ns)
+		if dbQuery == nil {
+			logger.Warnf("DBQuery not configured; skipping namespace '%s' role detection", ns)
 			continue
 		}
-		msi, err := DBQuery(queries)
+		msi, err := dbQuery(queries)
 		if err != nil {
 			// Log warning but continue, one failing namespace shouldn't stop the whole process.
-			LogWarnf("could not get metadata for namespace '%s': %v", ns, err)
+			logger.Warnf("could not get metadata for namespace '%s': %v", ns, err)
 			continue
 		}
 
 		key := "DEVICE_METADATA|localhost"
 		entry, ok := msi[key].(map[string]interface{})
 		if !ok {
-			LogWarnf("could not parse metadata for namespace '%s'", ns)
+			logger.Warnf("could not parse metadata for namespace '%s'", ns)
 			continue
 		}
 

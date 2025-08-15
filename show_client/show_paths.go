@@ -76,4 +76,12 @@ func init() {
 		sdc.UnimplementedOption(showCmdOptionFetchFromHW),
 		showCmdOptionInterface,
 	)
+	sdc.RegisterCliPath(
+		[]string{"SHOW", "buffer_pool", "watermark"},
+		getBufferPoolWatermark,
+	)
+	sdc.RegisterCliPath(
+		[]string{"SHOW", "buffer_pool", "persistent-watermark"},
+		getBufferPoolPersistentWatermark,
+	)
 }

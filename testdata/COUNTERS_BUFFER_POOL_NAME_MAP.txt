@@ -1,0 +1,7 @@
+{
+  "COUNTERS_BUFFER_POOL_NAME_MAP": {
+    "egress_lossless_pool": "oid:0x7000000000001",
+    "egress_lossy_pool": "oid:0x7000000000002",
+    "ingress_lossless_pool": "oid:0x7000000000003"
+  }
+}

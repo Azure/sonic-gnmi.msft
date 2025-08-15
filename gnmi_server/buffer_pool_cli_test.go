@@ -1,0 +1,69 @@
+package gnmi
+
+import (
+	"crypto/tls"
+	"testing"
+	"time"
+
+	pb "github.com/openconfig/gnmi/proto/gnmi"
+	"golang.org/x/net/context"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/credentials"
+)
+
+func TestShowBufferPoolWatermarks(t *testing.T) {
+	s := createServer(t, ServerPort)
+	t.Logf("Starting GNMI test server on port %d (target %s)", ServerPort, TargetAddr)
+	go runServer(t, s)
+	defer s.ForceStop()
+	defer ResetDataSetsAndMappings(t)
+
+	tlsConfig := &tls.Config{InsecureSkipVerify: true}
+	opts := []grpc.DialOption{grpc.WithTransportCredentials(credentials.NewTLS(tlsConfig))}
+
+	conn, err := grpc.Dial(TargetAddr, opts...)
+	if err != nil {
+		t.Fatalf("Dialing to %q failed: %v", TargetAddr, err)
+	}
+	defer conn.Close()
+
+	gClient := pb.NewGNMIClient(conn)
+	ctx, cancel := context.WithTimeout(context.Background(), QueryTimeout*time.Second)
+	defer cancel()
+
+	// Test data files (USER + PERSISTENT watermarks)
+	poolsMapFile := "../testdata/COUNTERS_BUFFER_POOL_NAME_MAP.txt"
+	userWatermarksFile := "../testdata/USER_WATERMARKS:BUFFER_POOL.txt"
+	persistentWatermarksFile := "../testdata/PERSISTENT_WATERMARKS:BUFFER_POOL.txt"
+
+	// populate COUNTERS_DB
+	t.Logf("Loading datasets into COUNTERS_DB: %s, %s, %s", poolsMapFile, userWatermarksFile, persistentWatermarksFile)
+	AddDataSet(t, CountersDbNum, poolsMapFile)
+	AddDataSet(t, CountersDbNum, userWatermarksFile)
+	AddDataSet(t, CountersDbNum, persistentWatermarksFile)
+
+	// SHOW buffer_pool watermark
+	t.Run("query SHOW buffer_pool watermark", func(t *testing.T) {
+		textPbPath := `
+			elem: <name: "buffer_pool" >
+			elem: <name: "watermark" >
+		`
+		t.Log("Sending GET for SHOW/buffer_pool/watermark (user watermarks)")
+		// Expected JSON (order not guaranteed, DeepEqual done on map) matching USER_WATERMARKS testdata
+		expectedJSON := `{"egress_lossless_pool":{"Bytes":"12345"},"egress_lossy_pool":{"Bytes":"67890"},"ingress_lossless_pool":{"Bytes":"24680"}}`
+		runTestGet(t, ctx, gClient, "SHOW", textPbPath, codes.OK, []byte(expectedJSON), true)
+	})
+
+	// SHOW buffer_pool persistent-watermark
+	t.Run("query SHOW buffer_pool persistent-watermark", func(t *testing.T) {
+		textPbPath := `
+			elem: <name: "buffer_pool" >
+			elem: <name: "persistent-watermark" >
+		`
+		t.Log("Sending GET for SHOW/buffer_pool/persistent-watermark (persistent watermarks)")
+		// Expected JSON matches PERSISTENT_WATERMARKS testdata values
+		expectedJSON := `{"egress_lossless_pool":{"Bytes":"9216"},"egress_lossy_pool":{"Bytes":"6656"},"ingress_lossless_pool":{"Bytes":"40192"}}`
+		runTestGet(t, ctx, gClient, "SHOW", textPbPath, codes.OK, []byte(expectedJSON), true)
+	})
+}

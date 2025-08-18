@@ -61,4 +61,14 @@ func init() {
 		getWatermarkTelemetryInterval,
 		nil,
 	)
+	sdc.RegisterCliPath(
+		[]string{"SHOW", "reboot-cause", "history"},
+		getRebootCauseHistory,
+		nil,
+	)
+	sdc.RegisterCliPath(
+		[]string{"SHOW", "vlan", "brief"},
+		getVlanBrief,
+		nil,
+	)
 }

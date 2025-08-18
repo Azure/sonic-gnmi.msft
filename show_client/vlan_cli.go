@@ -1,11 +1,12 @@
 package show_client
 
 import (
+	"bytes"
+	"fmt"
 	"sort"
 	"strings"
 
 	log "github.com/golang/glog"
-	"github.com/olekukonko/tablewriter"
 	sdc "github.com/sonic-net/sonic-gnmi/sonic_data_client"
 )
 
@@ -142,20 +143,34 @@ func getVlanBrief(options sdc.OptionMap) ([]byte, error) {
 	vlanCfg := VlanConfig{vlanData, vlanInterfaceData, vlanMemberData}
 
 	vlans := getSortedKeys(vlanData)
+	var data [][]string
+
 	for _, vlan := range vlans {
 		row := []string{}
 		for _, col := range VlanBriefColumns {
 			row = append(row, col.Getter(vlanCfg, vlan))
 		}
-		body = append(body, row)
+		data = append(data, row)
 	}
 
-	table := tablewriter.NewWriter(os.Stdout)
-	table.SetHeader(header)
-	for _, v := range body {
-		table.Append(v)
+	for _, innerSlice := range data {
+		fmt.Println("==>")
+		fmt.Println(innerSlice)
 	}
-	table.Render()
 
-	return data, nil
+	var buffer bytes.Buffer
+	for i, innerSlice := range data {
+		for j, s := range innerSlice {
+			buffer.WriteString(s)
+			if j < len(innerSlice)-1 {
+				buffer.WriteString(",") // Delimiter for inner slice elements
+			}
+		}
+		if i < len(data)-1 {
+			buffer.WriteString(";") // Delimiter for outer slice elements
+		}
+	}
+
+	byteSlice := buffer.Bytes()
+	return byteSlice, nil
 }

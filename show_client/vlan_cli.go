@@ -1,7 +1,11 @@
 package show_client
 
 import (
+	"sort"
+	"strings"
+
 	log "github.com/golang/glog"
+	"github.com/olekukonko/tablewriter"
 	sdc "github.com/sonic-net/sonic-gnmi/sonic_data_client"
 )
 
@@ -37,12 +41,9 @@ func getSortedKeys(m map[string]interface{}) []string {
 	return keys
 }
 
-// isIPPrefixInKey checks if the key contains an IP address (i.e., is a tuple in Python).
-// In Go, we check if the key is a slice of length >= 2 (since Python tuple is mapped to Go slice).
 func isIPPrefixInKey(key interface{}) bool {
-	switch k := key.(type) {
+	switch key.(type) {
 	case []interface{}:
-		// Python tuple is often represented as a slice in Go
 		return true
 	default:
 		return false
@@ -55,7 +56,7 @@ func getVlanId(cfg VlanConfig, vlan string) string {
 
 func getVlanIpAddress(cfg VlanConfig, vlan string) string {
 	ipAddress := ""
-	for key, value := range cfg.VlanIpData {
+	for key, _ := range cfg.VlanIpData {
 		if isIPPrefixInKey(key) {
 			ifname, address := parseKey(key)
 			if vlan == ifname {
@@ -122,26 +123,25 @@ func getVlanBrief(options sdc.OptionMap) ([]byte, error) {
 
 	vlanData, derr := GetMapFromQueries(queriesVlan)
 	if derr != nil {
-		log.Errorf("Unable to get data from queries %v, got err: %v", queries, derr)
+		log.Errorf("Unable to get data from queries %v, got err: %v", queriesVlan, derr)
 		return nil, derr
 	}
 
 	vlanInterfaceData, ierr := GetMapFromQueries(queriesVlanInterface)
 	if ierr != nil {
-		log.Errorf("Unable to get data from queries %v, got err: %v", queries, ierr)
+		log.Errorf("Unable to get data from queries %v, got err: %v", queriesVlanInterface, ierr)
 		return nil, ierr
 	}
 
 	vlanMemberData, merr := GetMapFromQueries(queriesVlanMember)
 	if merr != nil {
-		log.Errorf("Unable to get data from queries %v, got err: %v", queries, merr)
+		log.Errorf("Unable to get data from queries %v, got err: %v", queriesVlanMember, merr)
 		return nil, merr
 	}
 
 	vlanCfg := VlanConfig{vlanData, vlanInterfaceData, vlanMemberData}
 
 	vlans := getSortedKeys(vlanData)
-	db := nil
 	for _, vlan := range vlans {
 		row := []string{}
 		for _, col := range VlanBriefColumns {

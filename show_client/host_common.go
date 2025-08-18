@@ -1,7 +1,6 @@
 package show_client
 
 import (
-	"bufio"
 	"fmt"
 	"os"
 	"path/filepath"

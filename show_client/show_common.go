@@ -136,23 +136,23 @@ func ReadYamlToMap(filePath string) (map[string]interface{}, error) {
 
 func ReadConfToMap(filePath string) (map[string]interface{}, error) {
 	dataBytes, err := sdc.ImplIoutilReadFile(filePath)
-	
-    if err != nil {
+
+	if err != nil {
 		return nil, fmt.Errorf("failed to read CONF: %w", err)
 	}
 
 	confData := make(map[string]interface{})
-    
-    content := string(dataBytes)
-    lines := strings.Split(content, "\n")
-    for _, line := range lines {
-        if strings.Contains(line, "=") {
-            parts := strings.SplitN(line, "=", 2)
-            key := strings.TrimSpace(parts[0])
-            value := strings.TrimSpace(parts[1])
-            confData[key] = value
-        }
-    }
+
+	content := string(dataBytes)
+	lines := strings.Split(content, "\n")
+	for _, line := range lines {
+		if strings.Contains(line, "=") {
+			parts := strings.SplitN(line, "=", 2)
+			key := strings.TrimSpace(parts[0])
+			value := strings.TrimSpace(parts[1])
+			confData[key] = value
+		}
+	}
 
 	return confData, nil
 }

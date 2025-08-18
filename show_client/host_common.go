@@ -18,12 +18,12 @@ const (
 	hostDevicePath        = "/usr/share/sonic/device"
 	machineConfPath       = "/host/machine.conf"
 	platformEnvConfFile   = "platform_env.conf"
-    serial = "serial"
-    model = "model"
-    revision = "revision"
-    platform = "platform"
-    hwsku = "hwsku"
-    platformEnvVar = "PLATFORM"
+	serial                = "serial"
+	model                 = "model"
+	revision              = "revision"
+	platform              = "platform"
+	hwsku                 = "hwsku"
+	platformEnvVar        = "PLATFORM"
 )
 
 var hwInfoDict map[string]interface{}

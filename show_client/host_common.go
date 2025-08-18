@@ -13,31 +13,21 @@ import (
 )
 
 const (
-	AsicConfFilename      = "asic.conf"
-	ContainerPlatformPath = "/usr/share/sonic/platform"
-	HostDevicePath        = "/usr/share/sonic/device"
-	MachineConfPath       = "/host/machine.conf"
-	PlatformEnvConfFile   = "platform_env.conf"
+	asicConfFilename      = "asic.conf"
+	containerPlatformPath = "/usr/share/sonic/platform"
+	hostDevicePath        = "/usr/share/sonic/device"
+	machineConfPath       = "/host/machine.conf"
+	platformEnvConfFile   = "platform_env.conf"
+    serial = "serial"
+    model = "model"
+    revision = "revision"
+    platform = "platform"
+    hwsku = "hwsku"
+    platformEnvVar = "PLATFORM"
 )
 
 var hwInfoDict map[string]interface{}
 var hwInfoOnce sync.Once
-
-// Utility functions
-func FileExists(path string) bool {
-	info, err := os.Stat(path)
-	if err != nil {
-		return false
-	}
-	return !info.IsDir()
-}
-
-func GetValueOrDefault(data map[string]interface{}, key string, defaultValue string) string {
-	if val, ok := data[key]; ok {
-		return val.(string)
-	}
-	return defaultValue
-}
 
 func GetChassisInfo() (map[string]string, error) {
 	chassisDict := make(map[string]string)
@@ -52,9 +42,9 @@ func GetChassisInfo() (map[string]string, error) {
 		return nil, err
 	}
 
-	chassisDict["serial"] = GetValueOrDefault(metadata, "serial", "")
-	chassisDict["model"] = GetValueOrDefault(metadata, "model", "")
-	chassisDict["revision"] = GetValueOrDefault(metadata, "revision", "")
+	chassisDict[serial] = GetValueOrDefault(metadata, serial, "")
+	chassisDict[model] = GetValueOrDefault(metadata, model, "")
+	chassisDict[revision] = GetValueOrDefault(metadata, revision, "")
 
 	return chassisDict, nil
 }
@@ -74,7 +64,7 @@ func GetDockerInfo() string {
 	dockerCmd := "sudo docker images --format '{Repository:{{.Repository}}, Tag:{{.Tag}}, ID:{{.ID}}, Size:{{.Size}}}'"
 	dockerInfo, err := GetDataFromHostCommand(dockerCmd)
 	if err != nil {
-		log.Errorf("Failed to get Docker info: %v", err)
+		log.Warningf("Failed to get Docker info: %v", err)
 		return "N/A"
 	}
 	return strings.TrimSpace(dockerInfo)
@@ -83,8 +73,8 @@ func GetDockerInfo() string {
 func GetPlatformInfo(versionInfo map[string]interface{}) (map[string]interface{}, error) {
 	hwInfoOnce.Do(func() {
 		hwInfoDict = make(map[string]interface{})
-		hwInfoDict["platform"] = GetPlatform()
-		hwInfoDict["hwsku"] = GetHwsku()
+		hwInfoDict[platform] = GetPlatform()
+		hwInfoDict[hwsku] = GetHwsku()
 		if versionInfo != nil {
 			if asicType, ok := versionInfo["asic_type"]; ok {
 				hwInfoDict["asic_type"] = asicType
@@ -104,7 +94,7 @@ func GetPlatformInfo(versionInfo map[string]interface{}) (map[string]interface{}
 
 // Platform and hardware info functions
 func GetPlatform() string {
-	platformEnv := os.Getenv("PLATFORM")
+	platformEnv := os.Getenv(platformEnvVar)
 	if platformEnv != "" {
 		return platformEnv
 	}
@@ -120,7 +110,7 @@ func GetPlatform() string {
 }
 
 func GetMachineInfo() map[string]string {
-	data, err := ReadConfToMap(MachineConfPath)
+	data, err := ReadConfToMap(machineConfPath)
 	if err != nil {
 		return nil
 	}
@@ -134,17 +124,17 @@ func GetMachineInfo() map[string]string {
 }
 
 func GetHwsku() string {
-	return GetLocalhostInfo("hwsku")
+	return GetLocalhostInfo(hwsku)
 }
 
 func GetPlatformEnvConfFilePath() string {
-	candidate := filepath.Join(ContainerPlatformPath, PlatformEnvConfFile)
+	candidate := filepath.Join(containerPlatformPath, platformEnvConfFile)
 	if FileExists(candidate) {
 		return candidate
 	}
 	platform := GetPlatform()
 	if platform != "" {
-		candidate = filepath.Join(HostDevicePath, platform, PlatformEnvConfFile)
+		candidate = filepath.Join(hostDevicePath, platform, platformEnvConfFile)
 		if FileExists(candidate) {
 			return candidate
 		}
@@ -167,11 +157,11 @@ func GetAsicCount() (int, error) {
 
 // ASIC and multi-ASIC functions
 func IsMultiAsic() bool {
-	numAsics := GetNumAsics()
-	return numAsics > 1
+	configuredAsicCount := ReadAsicConfValue()
+	return configuredAsicCount > 1
 }
 
-func GetNumAsics() int {
+func ReadAsicConfValue() int {
 	asicConfFilePath := GetAsicConfFilePath()
 	if asicConfFilePath == "" {
 		return 1
@@ -219,7 +209,7 @@ func GetLocalhostInfo(field string) string {
 // Returns the path as a string if found, or an empty string if not found.
 func GetAsicConfFilePath() string {
 	// 1. Check container platform path
-	candidate := filepath.Join(ContainerPlatformPath, AsicConfFilename)
+	candidate := filepath.Join(containerPlatformPath, asicConfFilename)
 	if FileExists(candidate) {
 		return candidate
 	}
@@ -227,7 +217,7 @@ func GetAsicConfFilePath() string {
 	// 2. Check host device path with platform
 	platform := GetPlatform()
 	if platform != "" {
-		candidate = filepath.Join(HostDevicePath, platform, AsicConfFilename)
+		candidate = filepath.Join(hostDevicePath, platform, asicConfFilename)
 		if FileExists(candidate) {
 			return candidate
 		}
@@ -241,7 +231,7 @@ func GetAsicPresenceList() []int {
 	var asicsList []int
 	if IsMultiAsic() {
 		if !IsSupervisor() {
-			numAsics := GetNumAsics()
+			numAsics := ReadAsicConfValue()
 			for i := 0; i < numAsics; i++ {
 				asicsList = append(asicsList, i)
 			}
@@ -274,7 +264,7 @@ func GetAsicPresenceList() []int {
 			}
 		}
 	} else {
-		numAsics := GetNumAsics()
+		numAsics := ReadAsicConfValue()
 		for i := 0; i < numAsics; i++ {
 			asicsList = append(asicsList, i)
 		}

@@ -135,23 +135,41 @@ func ReadYamlToMap(filePath string) (map[string]interface{}, error) {
 }
 
 func ReadConfToMap(filePath string) (map[string]interface{}, error) {
-	file, err := os.Open(filePath)
-	if err != nil {
-		return nil, err
+	dataBytes, err := sdc.ImplIoutilReadFile(filePath)
+	
+    if err != nil {
+		return nil, fmt.Errorf("failed to read CONF: %w", err)
 	}
-	defer file.Close()
 
-	machineVars := make(map[string]interface{})
-	scanner := bufio.NewScanner(file)
-	for scanner.Scan() {
-		line := scanner.Text()
-		tokens := strings.SplitN(line, "=", 2)
-		if len(tokens) < 2 {
-			continue
-		}
-		machineVars[tokens[0]] = strings.TrimSpace(tokens[1])
+	confData := make(map[string]interface{})
+    
+    content := string(dataBytes)
+    lines := strings.Split(content, "\n")
+    for _, line := range lines {
+        if strings.Contains(line, "=") {
+            parts := strings.SplitN(line, "=", 2)
+            key := strings.TrimSpace(parts[0])
+            value := strings.TrimSpace(parts[1])
+            confData[key] = value
+        }
+    }
+
+	return confData, nil
+}
+
+func FileExists(path string) bool {
+	info, err := os.Stat(path)
+	if err != nil {
+		return false
 	}
-	return machineVars, nil
+	return !info.IsDir()
+}
+
+func GetValueOrDefault(data map[string]interface{}, key string, defaultValue string) string {
+	if val, ok := data[key]; ok {
+		return val.(string)
+	}
+	return defaultValue
 }
 
 func RemapAliasToPortName(portData map[string]interface{}) map[string]interface{} {

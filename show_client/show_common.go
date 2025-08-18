@@ -193,3 +193,13 @@ func natsortInterfaces(interfaces []string) []string {
 	sort.Sort(natural.StringSlice(interfaces))
 	return interfaces
 }
+
+// toString converts any value to string, returning the value directly if it is already a string.
+func toString(v interface{}) string {
+	switch x := v.(type) {
+	case string:
+		return x
+	default:
+		return fmt.Sprint(v)
+	}
+}

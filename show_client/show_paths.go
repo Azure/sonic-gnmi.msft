@@ -92,4 +92,9 @@ func init() {
 		getBufferPoolPersistentWatermark,
 		nil,
 	)
+	sdc.RegisterCliPath(
+		[]string{"SHOW", "mac", "aging-time"},
+		getMacAgingTime,
+		nil,
+	)
 }

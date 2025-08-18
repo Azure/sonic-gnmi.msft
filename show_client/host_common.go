@@ -1,6 +1,7 @@
 package show_client
 
 import (
+	"bufio"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -60,13 +61,14 @@ func GetUptime() string {
 }
 
 func GetDockerInfo() string {
-	dockerCmd := "sudo docker images --format '{Repository:{{.Repository}}, Tag:{{.Tag}}, ID:{{.ID}}, Size:{{.Size}}}'"
+	dockerCmd := "docker images --format '{\"Repository\":\"{{.Repository}}\", \"Tag\":\"{{.Tag}}\", \"ID\":\"{{.ID}}\", \"Size\":\"{{.Size}}\"}'"
 	dockerInfo, err := GetDataFromHostCommand(dockerCmd)
 	if err != nil {
 		log.Warningf("Failed to get Docker info: %v", err)
 		return "N/A"
 	}
-	return strings.TrimSpace(dockerInfo)
+	jsonDockerInfo := "[" + strings.ReplaceAll(dockerInfo, "\n", ",") + "]"
+	return strings.TrimSpace(jsonDockerInfo)
 }
 
 func GetPlatformInfo(versionInfo map[string]interface{}) (map[string]interface{}, error) {

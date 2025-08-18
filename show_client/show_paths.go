@@ -76,4 +76,10 @@ func init() {
 		sdc.UnimplementedOption(showCmdOptionFetchFromHW),
 		showCmdOptionInterface,
 	)
+	sdc.RegisterCliPath(
+		[]string{"SHOW", "interface", "status"},
+		getInterfaceStatus,
+		nil,
+		showCmdOptionInterface
+	)
 }

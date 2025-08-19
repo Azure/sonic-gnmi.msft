@@ -79,11 +79,11 @@ func decodeCapabilities(hexStr string) ([]string, error) {
 		log.Errorf("Hex string %v is too short to decode capabilities", hexStr)
 		return nil, nil
 	}
-	
+
 	// Parse the hex string (only the first byte)
 	val, err := strconv.ParseUint(hexStr[:2], 16, 8)
 	if err != nil {
-		log.Errorf("Unable to parse hex string %v to unint, got err %v", queries, err)
+		log.Errorf("Unable to parse hex string %v to unint, got err %v", hexStr, err)
 		return nil, err
 	}
 
@@ -100,10 +100,10 @@ func decodeCapabilities(hexStr string) ([]string, error) {
 
 // Parses the hex string representing LLDP capabilities and returns a string of capability codes.
 func parseCapabilityCodes(hexStr string) (string, error) {
-	var capabilities, err = decodeCapabilities(hexStr)
+	capabilities, err := decodeCapabilities(hexStr)
 	if err != nil {
 		log.Errorf("Failed to decode capability from hex string %v, got err %v", hexStr, err)
-		return nil, err
+		return DefaultEmptyString, err
 	}
 
 	capabilityCodes := ""
@@ -136,11 +136,10 @@ func getLLDPTable(options sdc.OptionMap) ([]byte, error) {
 	for key, lldpTableItem := range lldpTableOutput {
 		log.V(2).Infof("LLDP Table item: %v, %+v", key, lldpTableItem)
 
-		var enabledCapHexString = GetFieldValueString(lldpTableOutput, key, DefaultEmptyString, "lldp_rem_sys_cap_enabled")
-
-		capabilitiesCode, err = parseCapabilityCodes(enabledCapHexString)
+		enabledCapHexString := GetFieldValueString(lldpTableOutput, key, DefaultEmptyString, "lldp_rem_sys_cap_enabled")
+		capabilitiesCode, err := parseCapabilityCodes(enabledCapHexString)
 		if err != nil {
-			log.Errorf("Unable to parse capability %v, got err %v", enabledCapabilities, err)
+			log.Errorf("Unable to parse capability %v, got err %v", enabledCapHexString, err)
 			return nil, err
 		}
 

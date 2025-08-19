@@ -412,13 +412,124 @@ func getPortchannelIntfsFromConfigDB(intf string) ([]string, error) {
 	return ports, nil
 }
 
+func getPortOptics(intf string) string {
+	// Query port optics type from STATE_DB
+	queries := [][]string{
+		{"STATE_DB", "TRANSCEIVER_INFO", intf},
+	}
+	data, err := GetMapFromQueries(queries)
+	if err != nil {
+		log.Errorf("Failed to get optics type for port %s: %v", intf, err)
+		return "", err
+	}
+
+	if _, ok := data["type"]; !ok {
+		if isRj45Port(intf) {
+			return "RJ45"
+		} else {
+			return "N/A"
+		}
+	}
+	return fmt.Sprint(data["type"])
+}
+
+func portSpeedParse(inSpeed, opticsType string) string {
+	// fetched speed is in megabits per second
+	speed, err := strconv.Atoi(inSpeed)
+	if err != nil {
+		// If parse fails, return the input as-is (adjust as needed)
+		return inSpeed
+	}
+
+	if opticsType == "RJ45" && speed <= 1000 {
+		return fmt.Sprintf("%dM", speed)
+	} else if speed < 1000 {
+		return fmt.Sprintf("%dM", speed)
+	} else if speed%1000 >= 100 {
+		return fmt.Sprintf("%.1fG", float64(speed)/1000.0)
+	}
+	return fmt.Sprintf("%.0fG", float64(speed)/1000.0)
+}
+
+func getPortOperSpeed(intf string) string {
+	// Query port optics type from STATE_DB
+	queries := [][]string{
+		{"STATE_DB", StateDBPortTable, intf},
+	}
+	stateData, err := GetMapFromQueries(queries)
+	if err != nil {
+		log.Errorf("Failed to get state for port %s from STATE_DB: %v", intf, err)
+		return ""
+	}
+
+	queries = [][]string{
+		{"APPL_DB", AppDBPortTable, intf},
+	}
+	appData, err := GetMapFromQueries(queries)
+	if err != nil {
+		log.Errorf("Failed to get state for port %s from APPL_DB: %v", intf, err)
+		return ""
+	}
+	if _, ok := appData["oper_status"]; !ok || appData["oper_status"] != "up" {
+		return fmt.Sprint(appData["speed"])
+	}
+	if _, ok := stateData["speed"]; !ok {
+		return fmt.Sprint(appData["speed"])
+	} else {
+		opticsType, err := getPortOptics(intf)
+		if err != nil {
+			log.Errorf("Failed to get optics type for port %s: %v", intf, err)
+			return "", err
+		}
+		return portSpeedParse(fmt.Sprint(stateData["speed"]), opticsType)
+	}
+}
+
 func getSubIntfsFromAppDB(intf string) ([]string, error) {
-	// TODO: implement this function
-	return nil, nil
+	// get the list of sub-interfaces from APPL_DB
+	queries := [][]string{
+		{"APPL_DB", "INTF_TABLE"},
+	}
+	portTable, err := GetMapFromQueries(queries)
+	if err != nil {
+		log.Errorf("Failed to get sub-interface list from APPL_DB: %v", err)
+		return nil, err
+	}
+
+	// If intf is specified, return only that interface
+	if intf != "" {
+		if _, ok := portTable[intf]; !ok {
+			return nil, fmt.Errorf("Sub-interface %s not found in APPL_DB", intf)
+		}
+		return []string{intf}, nil
+	}
+
+	// If no specific interface is requested, return all interfaces
+	ports := make([]string, 0, len(portTable))
+	for key := range portTable {
+		ports = append(ports, key)
+	}
+	return ports, nil
 }
 
 func getSubInterfaceStatus(intf string) ([]byte, error) {
-	// TODO: get intf status for sub interfaces
+	// Get the status of sub-interfaces
+	ports := getSubIntfsFromAppDB(intf)
+	ports = natsortInterfaces(ports)
+
+	interfaceStatus := make([]map[string]string, 0, len(ports))
+	for i := range ports {
+		interfaceStatus = append(interfaceStatus, map[string]string{
+			"Interface":   ports[i],
+			"Speed":       "N/A",
+			"MTU":         "N/A",
+			"Vlan":        "N/A",
+			"Oper":        "N/A",
+			"Admin":       "N/A",
+			"Optics Type": "N/A",
+		})
+	}
+	return json.Marshal(interfaceStatus)
 }
 
 func getInterfaceStatus(options sdc.OptionMap) ([]byte, error) {
@@ -503,7 +614,8 @@ func getInterfaceStatus(options sdc.OptionMap) ([]byte, error) {
 			portPfcAsymStatus = fmt.Sprint(data["pfc_asym"])
 		}
 
-		// TODO: parse port speed and optics type from STATE_DB
+		portOperSpeed = getPortOperSpeed(port)
+		portOpticsType = getPortOptics(port)
 
 		interfaceStatus = append(interfaceStatus, map[string]string{
 			"Interface":   port,

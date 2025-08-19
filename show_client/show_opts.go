@@ -12,6 +12,11 @@ const (
 	showCmdOptionInterfaceDesc     = "[interface=TEXT] Filter by single interface name"
 	showCmdOptionPeriodDesc        = "[period=INTEGER] Display statistics over a specified period (in seconds)"
 	showCmdOptionJsonDesc          = "[json=true] No-op since response is in json format"
+	showCmdOptionVlanDesc          = "[vlan=INTEGER] Filter by VLAN ID"
+	showCmdOptionPortDesc          = "[port=TEXT] Filter by interface or PortChannel name"
+	showCmdOptionAddressDesc       = "[address=MAC] Filter by MAC address"
+	showCmdOptionMacTypeDesc       = "[type=TEXT] Filter by MAC entry type: dynamic|static"
+	showCmdOptionCountDesc         = "[count=true] Return only count"
 )
 
 var (
@@ -61,5 +66,36 @@ var (
 		"fetch-from-hardware",
 		showCmdOptionUnimplementedDesc,
 		sdc.StringValue,
+	)
+
+	// MAC table specific options
+	showCmdOptionVlan = sdc.NewShowCmdOption(
+		"vlan",
+		showCmdOptionVlanDesc,
+		sdc.IntValue,
+	)
+
+	showCmdOptionPort = sdc.NewShowCmdOption(
+		"port",
+		showCmdOptionPortDesc,
+		sdc.StringValue,
+	)
+
+	showCmdOptionAddress = sdc.NewShowCmdOption(
+		"address",
+		showCmdOptionAddressDesc,
+		sdc.StringValue,
+	)
+
+	showCmdOptionMacType = sdc.NewShowCmdOption(
+		"type",
+		showCmdOptionMacTypeDesc,
+		sdc.StringValue,
+	)
+
+	showCmdOptionCount = sdc.NewShowCmdOption(
+		"count",
+		showCmdOptionCountDesc,
+		sdc.BoolValue,
 	)
 )

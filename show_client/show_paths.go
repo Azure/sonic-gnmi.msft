@@ -76,4 +76,15 @@ func init() {
 		sdc.UnimplementedOption(showCmdOptionFetchFromHW),
 		showCmdOptionInterface,
 	)
+	sdc.RegisterCliPath(
+		[]string{"SHOW", "mac"},
+		getMacTable,
+		nil,
+		showCmdOptionVlan,
+		showCmdOptionPort,
+		showCmdOptionAddress,
+		showCmdOptionMacType,
+		showCmdOptionCount,
+		showCmdOptionVerbose,
+	)
 }

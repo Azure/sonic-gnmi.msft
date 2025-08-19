@@ -29,7 +29,7 @@ import (
 	sdc "github.com/sonic-net/sonic-gnmi/sonic_data_client"
 )
 
-const DefaultNull = "N/A"
+const DefaultEmptyString = ""
 
 // LLDPTableResponse represents the response structure for show llpd table command.
 type LLDPTableResponse struct {
@@ -69,9 +69,16 @@ var capabilityCodeMap = map[string]string{
 // The hex string is expected to be in the format where each bit represents a capability.
 // For example, Hex string "28 00" would indicate "bridge" and "router".
 func decodeCapabilities(hexStr string) ([]string, error) {
+	if hexStr == "" {
+		log.Errorf("Hex string is empty, cannot decode capabilities")
+		return nil, nil
+	}
+
+	// Ensure the hex string is at least 2 characters long
 	if len(hexStr) < 2 {
 		log.Errorf("Hex string %v is too short to decode capabilities", hexStr)
 		return nil, nil
+	}
 	
 	// Parse the hex string (only the first byte)
 	val, err := strconv.ParseUint(hexStr[:2], 16, 8)
@@ -129,7 +136,7 @@ func getLLDPTable(options sdc.OptionMap) ([]byte, error) {
 	for key, lldpTableItem := range lldpTableOutput {
 		log.V(2).Infof("LLDP Table item: %v, %+v", key, lldpTableItem)
 
-		var enabledCapHexString = GetFieldValueString(lldpTableOutput, key, DefaultNull, "lldp_rem_sys_cap_enabled")
+		var enabledCapHexString = GetFieldValueString(lldpTableOutput, key, DefaultEmptyString, "lldp_rem_sys_cap_enabled")
 
 		capabilitiesCode, err = parseCapabilityCodes(enabledCapHexString)
 		if err != nil {
@@ -140,10 +147,10 @@ func getLLDPTable(options sdc.OptionMap) ([]byte, error) {
 		// Create LLDPNeighbor instance
 		neighbor := LLDPNeighbor{
 			LocalPort:       key,
-			RemoteDevice: GetFieldValueString(lldpTableOutput, key, DefaultNull, "lldp_rem_sys_name"),
-			RemotePortID: GetFieldValueString(lldpTableOutput, key, DefaultNull, "lldp_rem_port_id"),
+			RemoteDevice: GetFieldValueString(lldpTableOutput, key, DefaultEmptyString, "lldp_rem_sys_name"),
+			RemotePortID: GetFieldValueString(lldpTableOutput, key, DefaultEmptyString, "lldp_rem_port_id"),
 			Capability: capabilitiesCode,
-			RemotePortDescr: GetFieldValueString(lldpTableOutput, key, DefaultNull, "lldp_rem_port_desc"),
+			RemotePortDescr: GetFieldValueString(lldpTableOutput, key, DefaultEmptyString, "lldp_rem_port_desc"),
 		}
 		neighbors = append(neighbors, neighbor)
 	}

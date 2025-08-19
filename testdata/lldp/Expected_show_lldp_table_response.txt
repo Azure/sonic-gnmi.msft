@@ -1,0 +1,19 @@
+{
+	"neighbors": [
+		{
+			"localPort": "Ethernet354",
+			"remoteDevice": "str3-7060x6-64pe-6",
+			"remotePortId": "Ethernet45/3",
+			"capability": "BR",
+			"remotePortDescr": "Ethernet354"
+		},
+		{
+			"localPort": "Ethernet355",
+			"remoteDevice": "str3-7060x6-64pe-7",
+			"remotePortId": "Ethernet45/2",
+			"capability": "BR",
+			"remotePortDescr": "Ethernet355"
+		}
+    ],
+	"total":"2"
+}

@@ -61,4 +61,9 @@ func init() {
 		getWatermarkTelemetryInterval,
 		nil,
 	)
+	sdc.RegisterCliPath(
+		[]string{"SHOW", "lldp", "table"},
+		getLLDPTable,
+		nil,
+	)
 }

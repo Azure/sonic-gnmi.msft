@@ -1,0 +1,152 @@
+package gnmi
+
+// lldp_cli_test.go
+// Tests SHOW lldp table
+
+import (
+	"crypto/tls"
+	"testing"
+	"time"
+
+	pb "github.com/openconfig/gnmi/proto/gnmi"
+
+	"github.com/agiledragon/gomonkey/v2"
+	"golang.org/x/net/context"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/credentials"
+)
+
+func TestDecodeCapabilities(t *testing.T) {
+	// Test with a valid hex string representing capabilities
+	hexStr := "28 00"
+    caps := show_client.DecodeCapabilities("28")
+    assert.Contains(t, caps, "bridge")
+    assert.Contains(t, caps, "router")
+    assert.NotContains(t, caps, "other")
+
+	// Test with an invalid hex string
+	hexStr = "ZZ"
+	_, err := show_client.DecodeCapabilities(hexStr)
+	if err == nil {
+		t.Errorf("Expected an error when decoding capabilities from invalid hex string %s, but got nil", hexStr)
+	}
+	assert.Error(t, err)
+
+	// Test with an empty hex string
+	hexStr = ""
+	caps = show_client.DecodeCapabilities(hexStr)
+	if len(caps) != 0 {
+		t.Errorf("Expected an empty slice when decoding capabilities from an empty hex string, but got %v", caps)
+	}
+}
+
+func TestparseCapabilityCodes(t *testing.T) {
+    code := show_client.parseCapabilityCodes("28")
+    assert.Contains(t, code, "B")
+    assert.Contains(t, code, "R")
+
+	// bit 0 set, which is "other"
+    code = show_client.parseCapabilityCodes("80") 
+    assert.Equal(t, "O", code)
+
+	// Test with an empty hex string
+	code = show_client.parseCapabilityCodes("")
+    assert.Equal(t, "", code)
+}
+
+func TestGetLLDPTable(t *testing.T) {
+	s := createServer(t, ServerPort)
+	go runServer(t, s)
+	defer s.ForceStop()
+	defer ResetDataSetsAndMappings(t)
+
+	tlsConfig := &tls.Config{InsecureSkipVerify: true}
+	opts := []grpc.DialOption{grpc.WithTransportCredentials(credentials.NewTLS(tlsConfig))}
+
+	conn, err := grpc.Dial(TargetAddr, opts...)
+	if err != nil {
+		t.Fatalf("Dialing to %q failed: %v", TargetAddr, err)
+	}
+	defer conn.Close()
+
+	gClient := pb.NewGNMIClient(conn)
+	ctx, cancel := context.WithTimeout(context.Background(), QueryTimeout*time.Second)
+	defer cancel()
+	
+	ResetDataSetsAndMappings(t)
+
+	lldpTableFileName := "../testdata/lldp/LLDP_ENTRY_TABLE.txt"
+
+	// Expected output for the LLDP table
+	expectedLLDPTableResponseFilName := "../testdata/lldp/Expected_show_lldp_table_response.txt"
+	expectedEmptyDBResponse := `{"neighbors": [], "total": 0}`		
+	expectedLLDPTableResponse, err := ioutil.ReadFile(expectedLLDPTableResponseFilName)
+	if err != nil {
+		t.Fatalf("Failed to read file %v err: %v", expectedLLDPTableResponseFilName, err)
+	}
+
+	tests := []struct {
+		desc           string
+		pathTarget     string
+		textPbPath     string
+		wantRetCode    codes.Code
+		wantRespVal    interface{}
+		valTest        bool
+		mockGetMapFromQueries func(queries []string) (map[string]string, error)
+		testInit       func()
+	}{
+		{
+			desc:       "query SHOW lldp table read DB error",
+			pathTarget: "SHOW",
+			textPbPath: `
+				elem: <name: "lldp" >
+				elem: <name: "table" >
+			`,
+			wantRetCode: codes.NotFound,
+			mockGetMapFromQueries: func(queries []string) (map[string]string, error) {
+				return nil, errors.New("db error")
+			}
+		},
+		{
+			desc:       "query SHOW lldp table from empty DB",
+			pathTarget: "SHOW",
+			textPbPath:  `
+				elem: <name: "lldp" >
+				elem: <name: "table" >
+			`,
+			wantRetCode:    codes.OK,
+			wantRespVal:    []byte(expectedEmptyDBResponse),
+			valTest:        true,
+		},
+		{
+			desc:       "query SHOW lldp table",
+			pathTarget: "SHOW",
+			textPbPath:  `
+				elem: <name: "lldp" >
+				elem: <name: "table" >
+			`,
+			wantRetCode:    codes.OK,
+			wantRespVal:    []byte(expectedLLDPTableResponse),
+			valTest:        true,
+			testInit: func() {
+				AddDataSet(t, ApplDbNum, lldpTableFileName)
+			},
+		},
+	}
+
+	for _, test := range tests {
+		if test.testInit != nil {
+			test.testInit()
+		}
+
+		if test.mockGetMapFromQueries != nil {
+			patches := gomonkey.ApplyFunc(GetMapFromQueries, test.mockGetMapFromQueries)
+			defer patches.Reset()
+		}
+
+		t.Run(test.desc, func(t *testing.T) {
+			runTestGet(t, ctx, gClient, test.pathTarget, test.textPbPath, test.wantRetCode, test.wantRespVal, test.valTest)
+		})
+	}
+}

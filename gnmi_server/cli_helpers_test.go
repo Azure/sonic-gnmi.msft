@@ -1,7 +1,6 @@
 package gnmi
 
 import (
-	"fmt"
 	sdcfg "github.com/sonic-net/sonic-gnmi/sonic_db_config"
 	"io/ioutil"
 	"os/exec"
@@ -27,7 +26,6 @@ const (
 )
 
 func MockNSEnterBGPSummary(t *testing.T, fileName string) *gomonkey.Patches {
-    fmt.Println("========================== normal Called =======>")
 	fileContentBytes, err := ioutil.ReadFile(fileName)
 	if err != nil {
 		t.Fatalf("read file %v err: %v", fileName, err)
@@ -42,27 +40,25 @@ func MockNSEnterBGPSummary(t *testing.T, fileName string) *gomonkey.Patches {
 }
 
 func MockExecCmds(t *testing.T, cmdAndFileMap map[string]string) *gomonkey.Patches {
-    fmt.Println("========================== Called =======>"+ fmt.Sprint(len(cmdAndFileMap)))
 	var fileContentBytes []byte
 	var err error
 
 	patches := gomonkey.ApplyFunc(exec.Command, func(name string, args ...string) *exec.Cmd {
-        found := false
+		found := false
 		for mockCmd := range cmdAndFileMap {
 			for _, cmdArg := range args {
 				if strings.Contains(cmdArg, mockCmd) {
-					fmt.Println(cmdArg + "------------>" + mockCmd + "------->" + cmdAndFileMap[mockCmd])
 					fileContentBytes, err = ioutil.ReadFile(cmdAndFileMap[mockCmd])
 					if err != nil {
 						t.Fatalf("read file %v err: %v", cmdAndFileMap[mockCmd], err)
 					}
-                    found = true
-                    break
+					found = true
+					break
 				}
 			}
-            if found {
-                break
-            }
+			if found {
+				break
+			}
 		}
 		return &exec.Cmd{}
 	})

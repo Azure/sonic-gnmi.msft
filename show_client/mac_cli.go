@@ -14,7 +14,7 @@ import (
 type macEntry struct {
 	Vlan    string `json:"vlan"`
 	Port    string `json:"port"`
-	Address string `json:"address"`
+	MacAddress string `json:"macAddress"`
 	Type    string `json:"type"`
 }
 
@@ -47,14 +47,14 @@ func getMacTable(options sdc.OptionMap) ([]byte, error) {
 	}
 
 	if countOnly {
-		n, perr := parseFdbshowCount(out)
+		n, perr := ParseFdbshowCount(out)
 		if perr != nil {
 			return nil, perr
 		}
 		return json.Marshal(map[string]int{"count": n})
 	}
 
-	entries, perr := parseFdbshowTable(out)
+	entries, perr := ParseFdbshowTable(out)
 	if perr != nil {
 		return nil, perr
 	}
@@ -65,7 +65,8 @@ func getMacTable(options sdc.OptionMap) ([]byte, error) {
 var fdbshowRowRe = regexp.MustCompile(`^\s*(\d+)\s+(\d+)\s+([0-9A-Fa-f:]{17})\s+(\S+)\s+(Dynamic|Static)\s*$`)
 var fdbshowTotalRe = regexp.MustCompile(`(?i)Total\s+number\s+of\s+entries\s+(\d+)`)
 
-func parseFdbshowCount(out string) (int, error) {
+// ParseFdbshowCount parses the total count line from fdbshow output.
+func ParseFdbshowCount(out string) (int, error) {
 	m := fdbshowTotalRe.FindStringSubmatch(out)
 	if len(m) < 2 {
 		return 0, fmt.Errorf("failed to parse fdbshow count from output")
@@ -78,7 +79,8 @@ func parseFdbshowCount(out string) (int, error) {
 	return n, nil
 }
 
-func parseFdbshowTable(out string) ([]macEntry, error) {
+// ParseFdbshowTable parses the table rows from fdbshow output into entries.
+func ParseFdbshowTable(out string) ([]macEntry, error) {
 	lines := strings.Split(out, "\n")
 	entries := make([]macEntry, 0, 64)
 	for _, line := range lines {
@@ -95,7 +97,7 @@ func parseFdbshowTable(out string) ([]macEntry, error) {
 			// m[1]=index, m[2]=vlan, m[3]=mac, m[4]=port, m[5]=type
 			entries = append(entries, macEntry{
 				Vlan:    m[2],
-				Address: strings.ToUpper(m[3]),
+				MacAddress: strings.ToUpper(m[3]),
 				Port:    m[4],
 				Type:    m[5],
 			})

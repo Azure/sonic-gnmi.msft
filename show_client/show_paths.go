@@ -77,7 +77,7 @@ func init() {
 		showCmdOptionInterface,
 	)
 	sdc.RegisterCliPath(
-    []string{"SHOW", "interface", "transceiver", "presence"},
+		[]string{"SHOW", "interface", "transceiver", "presence"},
 		getInterfaceTransceiverPresence,
 		nil,
 		showCmdOptionInterface,

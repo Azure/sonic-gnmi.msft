@@ -419,7 +419,7 @@ func getPortOptics(intf string) string {
 	data, err := GetMapFromQueries(queries)
 	if err != nil {
 		log.Errorf("Failed to get optics type for port %s: %v", intf, err)
-		return "", err
+		return "N/A"
 	}
 
 	if _, ok := data["type"]; !ok {
@@ -511,11 +511,7 @@ func getPortOperSpeed(intf string) string {
 	if _, ok := stateData["speed"]; !ok {
 		return fmt.Sprint(appData["speed"])
 	} else {
-		opticsType, err := getPortOptics(intf)
-		if err != nil {
-			log.Errorf("Failed to get optics type for port %s: %v", intf, err)
-			return "N/A", err
-		}
+		opticsType := getPortOptics(intf)
 		return portSpeedFmt(fmt.Sprint(stateData["speed"]), opticsType)
 	}
 }
@@ -602,6 +598,7 @@ func getPortchannelModeMap(portchannels []string) map[string]string {
 		vlanMembers[vlanMemberKey] = content[0]
 	}
 
+	poModeMap := make(map[string]string)
 	for i := range portchannels {
 		port := portchannels[i]
 		queries = [][]string{
@@ -656,7 +653,7 @@ func getPortchannelSpeedMap(portchannels []string) map[string]string {
 		for _, speed := range speedList {
 			aggSpeed += portSpeedParse(speed)
 		}
-		poSpeedMap[portchannel] = portSpeedFmt(fmt.Sprint(aggSpeed))
+		poSpeedMap[portchannel] = portSpeedFmt(fmt.Sprint(aggSpeed), "N/A")
 	}
 
 	return poSpeedMap
@@ -691,7 +688,11 @@ func getSubIntfsFromAppDB(intf string) ([]string, error) {
 
 func getSubInterfaceStatus(intf string) ([]byte, error) {
 	// Get the status of sub-interfaces
-	ports := getSubIntfsFromAppDB(intf)
+	ports, err := getSubIntfsFromAppDB(intf)
+	if err != nil {
+		log.Errorf("Failed to get sub-interfaces from APPL_DB: %v", err)
+		return nil, err
+	}
 	ports = natsortInterfaces(ports)
 
 	interfaceStatus := make([]map[string]string, 0, len(ports))
@@ -724,8 +725,16 @@ func getInterfaceStatus(options sdc.OptionMap) ([]byte, error) {
 		return getSubInterfaceStatus(intf)
 	}
 
-	ports := getIntfsFromConfigDB(intf)
-	portchannels := getPortchannelIntfsFromConfigDB(intf)
+	ports, err := getIntfsFromConfigDB(intf)
+	if err != nil {
+		log.Errorf("Failed to get front panel port list from CONFIG_DB: %v", err)
+		return nil, err
+	}
+	portchannels, err := getPortchannelIntfsFromConfigDB(intf)
+	if err != nil {
+		log.Errorf("Failed to get portchannel list from CONFIG_DB: %v", err)
+		return nil, err
+	}
 	ports = natsortInterfaces(ports)
 	portchannels = natsortInterfaces(portchannels)
 	intfModeMap := getIntfModeMap(ports)

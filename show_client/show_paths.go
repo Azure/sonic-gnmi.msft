@@ -82,10 +82,10 @@ func init() {
 		nil,
 		showCmdOptionInterface,
 	)
-  sdc.RegisterCliPath(
-    []string{"SHOW", "interface", "status"},
+	sdc.RegisterCliPath(
+		[]string{"SHOW", "interface", "status"},
 		getInterfaceStatus,
 		nil,
-		showCmdOptionInterface
-  )
+		showCmdOptionInterface,
+	)
 }

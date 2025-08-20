@@ -63,7 +63,14 @@ func GetIPInterfaces(deps Dependencies, addressFamily string, opts *GetInterface
 			// Merge IP addresses (avoid duplicates)
 			existing := interfaceMap[iface.Name]
 			for _, ipd := range iface.IPAddresses {
-				if !ipAddressExists(existing.IPAddresses, ipd.Address) {
+				exists := false
+				for _, a := range existing.IPAddresses {
+					if a.Address == ipd.Address {
+						exists = true
+						break
+					}
+				}
+				if !exists {
 					existing.IPAddresses = append(existing.IPAddresses, ipd)
 				}
 			}
@@ -80,15 +87,6 @@ func GetIPInterfaces(deps Dependencies, addressFamily string, opts *GetInterface
 		deps.Logger.Warnf("failed to enrich with BGP data: %v", err)
 	}
 	return all, nil
-}
-
-func ipAddressExists(list []IPAddressDetail, addr string) bool {
-	for _, a := range list {
-		if a.Address == addr {
-			return true
-		}
-	}
-	return false
 }
 
 // resolveNamespaceSelection builds namespace list.

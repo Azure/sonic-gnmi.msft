@@ -86,13 +86,13 @@ func TestGetShowInterfaceStatus(t *testing.T) {
 				elem: <name: "status" >
 			`,
 			wantRetCode: codes.OK,
-			wantRespVal: []byte(fullDataWithoutStateDB),
+			wantRespVal: []byte(fullDataWithStateDB),
 			valTest:     true,
 			testInit: func() {
 				FlushDataSet(t, StateDbNum)
 				AddDataSet(t, ConfigDbNum, configDbFileName)
 				AddDataSet(t, ApplDbNum, appDbFileName)
-				AddDataSet(t, StateDbNum, stateDBFileName)
+				AddDataSet(t, StateDbNum, stateDbFileName)
 			},
 		},
 		{
@@ -108,7 +108,7 @@ func TestGetShowInterfaceStatus(t *testing.T) {
 			testInit: func() {
 				AddDataSet(t, ConfigDbNum, configDbFileName)
 				AddDataSet(t, ApplDbNum, appDbFileName)
-				AddDataSet(t, StateDbNum, stateDBFileName)
+				AddDataSet(t, StateDbNum, stateDbFileName)
 			},
 		},
 	}

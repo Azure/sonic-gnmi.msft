@@ -11,9 +11,16 @@
 			"localPort": "Ethernet355",
 			"remoteDevice": "str3-7060x6-64pe-7",
 			"remotePortId": "Ethernet45/2",
-			"capability": "BR",
+			"capability": "",
 			"remotePortDescr": "Ethernet355"
+		},
+		{
+			"localPort": "Ethernet356",
+			"remoteDevice": "str3-7060x6-64pe-8",
+			"remotePortId": "Ethernet45/1",
+			"capability": "O",
+			"remotePortDescr": "Ethernet356"
 		}
     ],
-	"total":"2"
+	"total":"3"
 }

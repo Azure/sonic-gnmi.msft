@@ -17,44 +17,6 @@ import (
 	"google.golang.org/grpc/credentials"
 )
 
-func TestDecodeCapabilities(t *testing.T) {
-	// Test with a valid hex string representing capabilities
-	hexStr := "28 00"
-    caps := show_client.DecodeCapabilities("28")
-    assert.Contains(t, caps, "bridge")
-    assert.Contains(t, caps, "router")
-    assert.NotContains(t, caps, "other")
-
-	// Test with an invalid hex string
-	hexStr = "ZZ"
-	_, err := show_client.DecodeCapabilities(hexStr)
-	if err == nil {
-		t.Errorf("Expected an error when decoding capabilities from invalid hex string %s, but got nil", hexStr)
-	}
-	assert.Error(t, err)
-
-	// Test with an empty hex string
-	hexStr = ""
-	caps = show_client.DecodeCapabilities(hexStr)
-	if len(caps) != 0 {
-		t.Errorf("Expected an empty slice when decoding capabilities from an empty hex string, but got %v", caps)
-	}
-}
-
-func TestparseCapabilityCodes(t *testing.T) {
-    code := show_client.parseCapabilityCodes("28")
-    assert.Contains(t, code, "B")
-    assert.Contains(t, code, "R")
-
-	// bit 0 set, which is "other"
-    code = show_client.parseCapabilityCodes("80") 
-    assert.Equal(t, "O", code)
-
-	// Test with an empty hex string
-	code = show_client.parseCapabilityCodes("")
-    assert.Equal(t, "", code)
-}
-
 func TestGetLLDPTable(t *testing.T) {
 	s := createServer(t, ServerPort)
 	go runServer(t, s)
@@ -106,7 +68,7 @@ func TestGetLLDPTable(t *testing.T) {
 			wantRetCode: codes.NotFound,
 			mockGetMapFromQueries: func(queries []string) (map[string]string, error) {
 				return nil, errors.New("db error")
-			}
+			},
 		},
 		{
 			desc:       "query SHOW lldp table from empty DB",

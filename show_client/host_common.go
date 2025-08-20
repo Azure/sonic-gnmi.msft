@@ -61,14 +61,14 @@ func GetUptime() string {
 }
 
 func GetDockerInfo() string {
-	dockerCmd := "docker images --format '{\"Repository\":\"{{.Repository}}\", \"Tag\":\"{{.Tag}}\", \"ID\":\"{{.ID}}\", \"Size\":\"{{.Size}}\"}'"
-	dockerInfo, err := GetDataFromHostCommand(dockerCmd)
+	cmdOutput, err := GetDataFromHostCommand(`bash -o pipefail -c 'docker images --no-trunc --format '\''{"Repository":"{{.Repository}}","Tag":"{{.Tag}}","ID":"{{.ID}}","Size":"{{.Size}}"}'\'' | jq -s .'`)
+
 	if err != nil {
 		log.Warningf("Failed to get Docker info: %v", err)
 		return "N/A"
 	}
-	jsonDockerInfo := "[" + strings.ReplaceAll(dockerInfo, "\n", ",") + "]"
-	return strings.TrimSpace(jsonDockerInfo)
+
+	return cmdOutput
 }
 
 func GetPlatformInfo(versionInfo map[string]interface{}) (map[string]interface{}, error) {

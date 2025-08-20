@@ -1,10 +1,12 @@
 package gnmi
 
 import (
+	"fmt"
 	sdcfg "github.com/sonic-net/sonic-gnmi/sonic_db_config"
 	"io/ioutil"
 	"os/exec"
 	"reflect"
+	"strings"
 	"testing"
 
 	"github.com/agiledragon/gomonkey/v2"
@@ -25,11 +27,43 @@ const (
 )
 
 func MockNSEnterBGPSummary(t *testing.T, fileName string) *gomonkey.Patches {
+    fmt.Println("========================== normal Called =======>")
 	fileContentBytes, err := ioutil.ReadFile(fileName)
 	if err != nil {
 		t.Fatalf("read file %v err: %v", fileName, err)
 	}
 	patches := gomonkey.ApplyFunc(exec.Command, func(name string, args ...string) *exec.Cmd {
+		return &exec.Cmd{}
+	})
+	patches.ApplyMethod(reflect.TypeOf(&exec.Cmd{}), "CombinedOutput", func(_ *exec.Cmd) ([]byte, error) {
+		return fileContentBytes, nil
+	})
+	return patches
+}
+
+func MockExecCmds(t *testing.T, cmdAndFileMap map[string]string) *gomonkey.Patches {
+    fmt.Println("========================== Called =======>"+ fmt.Sprint(len(cmdAndFileMap)))
+	var fileContentBytes []byte
+	var err error
+
+	patches := gomonkey.ApplyFunc(exec.Command, func(name string, args ...string) *exec.Cmd {
+        found := false
+		for mockCmd := range cmdAndFileMap {
+			for _, cmdArg := range args {
+				if strings.Contains(cmdArg, mockCmd) {
+					fmt.Println(cmdArg + "------------>" + mockCmd + "------->" + cmdAndFileMap[mockCmd])
+					fileContentBytes, err = ioutil.ReadFile(cmdAndFileMap[mockCmd])
+					if err != nil {
+						t.Fatalf("read file %v err: %v", cmdAndFileMap[mockCmd], err)
+					}
+                    found = true
+                    break
+				}
+			}
+            if found {
+                break
+            }
+		}
 		return &exec.Cmd{}
 	})
 	patches.ApplyMethod(reflect.TypeOf(&exec.Cmd{}), "CombinedOutput", func(_ *exec.Cmd) ([]byte, error) {

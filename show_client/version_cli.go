@@ -1,6 +1,7 @@
 package show_client
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"time"
@@ -14,23 +15,23 @@ const (
 )
 
 type VersionOutput struct {
-	SonicSoftwareVersion string `json:"sonic_software_version"`
-	SonicOSVersion       string `json:"sonic_os_version"`
-	Distribution         string `json:"distribution"`
-	Kernel               string `json:"kernel"`
-	BuildCommit          string `json:"build_commit"`
-	BuildDate            string `json:"build_date"`
-	BuiltBy              string `json:"built_by"`
-	Platform             string `json:"platform"`
-	HwSKU                string `json:"hwsku"`
-	ASIC                 string `json:"asic"`
-	ASICCount            string `json:"asic_count"`
-	SerialNumber         string `json:"serial_number"`
-	ModelNumber          string `json:"model_number"`
-	HardwareRevision     string `json:"hardware_revision"`
-	Uptime               string `json:"uptime"`
-	Date                 string `json:"date"`
-	DockerInfo           string `json:"docker_info"`
+	SonicSoftwareVersion string          `json:"sonic_software_version"`
+	SonicOSVersion       string          `json:"sonic_os_version"`
+	Distribution         string          `json:"distribution"`
+	Kernel               string          `json:"kernel"`
+	BuildCommit          string          `json:"build_commit"`
+	BuildDate            string          `json:"build_date"`
+	BuiltBy              string          `json:"built_by"`
+	Platform             string          `json:"platform"`
+	HwSKU                string          `json:"hwsku"`
+	ASIC                 string          `json:"asic"`
+	ASICCount            string          `json:"asic_count"`
+	SerialNumber         string          `json:"serial_number"`
+	ModelNumber          string          `json:"model_number"`
+	HardwareRevision     string          `json:"hardware_revision"`
+	Uptime               string          `json:"uptime"`
+	Date                 string          `json:"date"`
+	DockerInfo           json.RawMessage `json:"docker_info"`
 }
 
 func getVersion(options sdc.OptionMap) ([]byte, error) {
@@ -51,7 +52,11 @@ func getVersion(options sdc.OptionMap) ([]byte, error) {
 	}
 	uptime := GetUptime()
 	sysDate := time.Now()
-	dockerInfo := GetDockerInfo()
+	var jsonDockerInfoBuf bytes.Buffer
+	if errDockerInfo := json.Indent(&jsonDockerInfoBuf, []byte(GetDockerInfo()), "", " "); errDockerInfo != nil {
+		log.Errorf("Failed to get docker info: %v", errDockerInfo)
+	}
+	dockerInfo := json.RawMessage(jsonDockerInfoBuf.Bytes())
 
 	out := VersionOutput{
 		SonicSoftwareVersion: fmt.Sprintf("SONiC.%v", versionInfo["build_version"]),

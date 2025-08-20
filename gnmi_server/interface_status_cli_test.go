@@ -37,7 +37,7 @@ func TestGetShowInterfaceStatus(t *testing.T) {
 	fullDataWithStateDB := `[{"Interface":"Ethernet0","Lanes":"2304,2305,2306,2307","Speed":"200G","MTU":"9100","FEC":"rs","Alias":"etp0","Vlan":"routed","Oper":"up","Admin":"up","Type":"SFP","Asym":"off"},{"Interface":"Ethernet40","Lanes":"2048,2049,2050,2051","Speed":"200G","MTU":"9100","FEC":"rs","Alias":"etp10","Vlan":"routed","Oper":"up","Admin":"up","Type":"SFP","Asym":"off"},{"Interface":"Ethernet80","Lanes":"2568,2569,2570,2571","Speed":"200G","MTU":"9100","FEC":"rs","Alias":"etp20","Vlan":"routed","Oper":"up","Admin":"up","Type":"SFP","Asym":"off"},{"Interface":"Ethernet120","Lanes":"2668,2669,2670,2671","Speed":"200G","MTU":"9100","FEC":"rs","Alias":"etp30","Vlan":"trunk","Oper":"up","Admin":"up","Type":"SFP","Asym":"off"},{"Interface":"PortChannel1","Lanes":"N/A","Speed":"400G","MTU":"9100","FEC":"N/A","Alias":"N/A","Vlan":"routed","Oper":"up","Admin":"up","Type":"N/A","Asym":"off"}]`
 	singleInterfaceDataWithStateDB := `[{"Interface":"Ethernet0","Lanes":"2304,2305,2306,2307","Speed":"200G","MTU":"9100","FEC":"rs","Alias":"etp0","Vlan":"routed","Oper":"up","Admin":"up","Type":"SFP","Asym":"off"}]`
 
-	configDbFileName := "../testdata/PORTS.txt"
+	configDbFileName := "../testdata/CONFIG_DB.json"
 	appDbFileName := "../testdata/PORT_TABLE.txt"
 	stateDbFileName := "../testdata/STATE_DB.json"
 

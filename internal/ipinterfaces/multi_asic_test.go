@@ -261,6 +261,55 @@ func TestGetAllNamespaces_DBFailureAndFabricRole(t *testing.T) {
 	}
 }
 
+func TestGetAllNamespaces_DBQueryNil_MultiASIC(t *testing.T) {
+	patches := gomonkey.NewPatches()
+	defer patches.Reset()
+	// Force multi-ASIC path (3 ASICs) but provide nil DBQuery so all role detections are skipped
+	patches.ApplyFunc(GetNumASICs, func(DBQueryFunc) (int, error) { return 3, nil })
+	ns, err := GetAllNamespaces(DiscardLogger, nil)
+	if err != nil {
+		t.Fatalf("GetAllNamespaces error: %v", err)
+	}
+	if len(ns.Frontend) != 0 || len(ns.Backend) != 0 || len(ns.Fabric) != 0 {
+		t.Fatalf("expected all role slices empty with nil DBQuery, got %+v", ns)
+	}
+}
+
+func TestGetAllNamespaces_RoleClassification_UnknownAndError(t *testing.T) {
+	patches := gomonkey.NewPatches()
+	defer patches.Reset()
+	// 5 ASICs: front/back/fabric + unknown role + error
+	patches.ApplyFunc(GetNumASICs, func(DBQueryFunc) (int, error) { return 5, nil })
+	calls := 0
+	dbq := func(q [][]string) (map[string]interface{}, error) {
+		calls++
+		src := q[0][0]
+		switch src {
+		case "CONFIG_DB/asic0":
+			return map[string]interface{}{"DEVICE_METADATA|localhost": map[string]interface{}{"sub_role": "Frontend"}}, nil
+		case "CONFIG_DB/asic1":
+			return map[string]interface{}{"DEVICE_METADATA|localhost": map[string]interface{}{"sub_role": "Backend"}}, nil
+		case "CONFIG_DB/asic2":
+			return map[string]interface{}{"DEVICE_METADATA|localhost": map[string]interface{}{"sub_role": "Fabric"}}, nil
+		case "CONFIG_DB/asic3":
+			return map[string]interface{}{"DEVICE_METADATA|localhost": map[string]interface{}{"sub_role": "Weird"}}, nil // unknown, skipped
+		case "CONFIG_DB/asic4":
+			return nil, fmt.Errorf("boom") // error path skipped
+		}
+		return nil, fmt.Errorf("unexpected query %s", src)
+	}
+	ns, err := GetAllNamespaces(DiscardLogger, dbq)
+	if err != nil {
+		t.Fatalf("GetAllNamespaces error: %v", err)
+	}
+	if !sameStringSet(ns.Frontend, []string{"asic0"}) || !sameStringSet(ns.Backend, []string{"asic1"}) || !sameStringSet(ns.Fabric, []string{"asic2"}) {
+		t.Fatalf("unexpected namespaces classification: %+v", ns)
+	}
+	if calls != 5 {
+		t.Fatalf("expected 5 DB calls, got %d", calls)
+	}
+}
+
 func sameStringSet(a, b []string) bool {
 	if len(a) != len(b) {
 		return false

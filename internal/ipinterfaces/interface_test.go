@@ -53,6 +53,45 @@ func TestGetIPInterfaces_SingleASIC_WithBGPEnrichment(t *testing.T) {
 	}
 }
 
+func TestGetIPInterfaces_SkipInterfaceBranch(t *testing.T) {
+	patches := gomonkey.NewPatches()
+	defer patches.Reset()
+
+	deps := Dependencies{
+		Logger: DiscardLogger,
+		DBQuery: func(q [][]string) (map[string]interface{}, error) {
+			return map[string]interface{}{}, nil
+		},
+	}
+
+	// Single ASIC path for simplicity.
+	patches.ApplyFunc(IsMultiASIC, func(DBQueryFunc) (bool, error) { return false, nil })
+	// Patch skip function to skip one interface only.
+	patches.ApplyFunc(shouldSkipInterface, func(name string, opts *GetInterfacesOptions) bool {
+		return name == "SkipMe"
+	})
+	patches.ApplyFunc(getInterfacesInNamespace, func(ns, af string) ([]IPInterfaceDetail, error) {
+		if ns != defaultNamespace {
+			t.Fatalf("expected default namespace, got %q", ns)
+		}
+		return []IPInterfaceDetail{
+			{Name: "SkipMe", IPAddresses: []IPAddressDetail{{Address: "192.0.2.100/31"}}},
+			{Name: "KeepMe", IPAddresses: []IPAddressDetail{{Address: "192.0.2.101/31"}}},
+		}, nil
+	})
+
+	got, err := GetIPInterfaces(deps, AddressFamilyIPv4, nil)
+	if err != nil {
+		t.Fatalf("GetIPInterfaces error: %v", err)
+	}
+	if len(got) != 1 || got[0].Name != "KeepMe" {
+		t.Fatalf("expected only KeepMe after skip, got %+v", got)
+	}
+	if got[0].IPAddresses[0].Address != "192.0.2.101/31" {
+		t.Fatalf("unexpected IPs: %+v", got[0].IPAddresses)
+	}
+}
+
 func TestGetIPInterfaces_MultiASIC_MergesAndAppendsDefault(t *testing.T) {
 	patches := gomonkey.NewPatches()
 	defer patches.Reset()
@@ -358,5 +397,24 @@ func TestGetIPInterfaces_MultiASIC_NonDefaultNamespaceError_Ignored(t *testing.T
 	}
 	if len(got) != 1 || got[0].Name != "Ethernet8" || len(got[0].IPAddresses) != 2 {
 		t.Fatalf("unexpected result when one ns errors: %+v", got)
+	}
+}
+
+func TestGetIPInterfaces_IsMultiASIC_Error(t *testing.T) {
+	patches := gomonkey.NewPatches()
+	defer patches.Reset()
+
+	deps := Dependencies{Logger: DiscardLogger, DBQuery: nil}
+
+	// Force IsMultiASIC to return an error so GetIPInterfaces should fail fast.
+	patches.ApplyFunc(IsMultiASIC, func(DBQueryFunc) (bool, error) { return false, fmt.Errorf("probe fail") })
+	// Ensure no interface enumeration happens if error propagates.
+	patches.ApplyFunc(getInterfacesInNamespace, func(ns, af string) ([]IPInterfaceDetail, error) {
+		t.Fatalf("getInterfacesInNamespace should not be called when IsMultiASIC errors")
+		return nil, nil
+	})
+
+	if _, err := GetIPInterfaces(deps, AddressFamilyIPv4, nil); err == nil {
+		t.Fatalf("expected error propagation when IsMultiASIC fails")
 	}
 }

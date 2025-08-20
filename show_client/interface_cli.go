@@ -300,7 +300,7 @@ func getInterfaceErrors(options sdc.OptionMap) ([]byte, error) {
 func getIntfsFromConfigDB(intf string) ([]string, error) {
 	// Get the list of ports from the SONiC CONFIG_DB
 	queries := [][]string{
-		{"CONFIG_DB", "PORT"},
+		{"CONFIG_DB", ConfigDBPortTable},
 	}
 	portTable, err := GetMapFromQueries(queries)
 	if err != nil {

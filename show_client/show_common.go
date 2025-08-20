@@ -13,6 +13,7 @@ import (
 	sdc "github.com/sonic-net/sonic-gnmi/sonic_data_client"
 )
 
+const ConfigDBPortTable = "PORT"
 const AppDBPortTable = "PORT_TABLE"
 const StateDBPortTable = "PORT_TABLE"
 const ConfigDBPortChannelTable = "PORTCHANNEL"

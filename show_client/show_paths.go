@@ -100,6 +100,6 @@ func init() {
 	sdc.RegisterCliPath(
 		[]string{"SHOW", "vlan", "brief"},
 		getVlanBrief,
-    nil,
-  )
+		nil,
+	)
 }

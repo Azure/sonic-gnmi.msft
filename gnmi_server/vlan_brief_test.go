@@ -15,7 +15,7 @@ import (
 	show_client "github.com/sonic-net/sonic-gnmi/show_client"
 )
 
-func TestGetShowRebootCauseHistory(t *testing.T) {
+func TestGetShowVlanBrief(t *testing.T) {
 	s := createServer(t, ServerPort)
 	go runServer(t, s)
 	defer s.ForceStop()

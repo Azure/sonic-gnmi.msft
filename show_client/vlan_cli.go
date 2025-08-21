@@ -144,6 +144,7 @@ func getVlanBrief(options sdc.OptionMap) ([]byte, error) {
 
 	vlans := getSortedKeys(vlanData)
 	var data [][]string
+	//    var data map[string]interface{}
 
 	for _, vlan := range vlans {
 		row := []string{}

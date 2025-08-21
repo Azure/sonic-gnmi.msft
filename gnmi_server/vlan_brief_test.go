@@ -11,8 +11,6 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/credentials"
-
-	show_client "github.com/sonic-net/sonic-gnmi/show_client"
 )
 
 func TestGetShowVlanBrief(t *testing.T) {

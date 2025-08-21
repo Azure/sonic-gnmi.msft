@@ -1,26 +1,33 @@
 {
 	"neighbors": [
 		{
+			"capability": "BR",
 			"localPort": "Ethernet354",
 			"remoteDevice": "str3-7060x6-64pe-6",
-			"remotePortId": "Ethernet45/3",
-			"capability": "BR",
-			"remotePortDescr": "Ethernet354"
+			"remotePortDescr": "Ethernet354",
+			"remotePortId": "Ethernet45/3"
 		},
 		{
+			"capability": "",
 			"localPort": "Ethernet355",
 			"remoteDevice": "str3-7060x6-64pe-7",
-			"remotePortId": "Ethernet45/2",
-			"capability": "",
-			"remotePortDescr": "Ethernet355"
+			"remotePortDescr": "Ethernet355",
+			"remotePortId": "Ethernet45/2"
 		},
 		{
+			"capability": "",
+			"localPort": "Ethernet353",
+			"remoteDevice": "str3-7060x6-64pe-5",
+			"remotePortDescr": "Ethernet353",
+			"remotePortId": "Ethernet45/0"
+		},
+		{
+			"capability": "O",
 			"localPort": "Ethernet356",
 			"remoteDevice": "str3-7060x6-64pe-8",
-			"remotePortId": "Ethernet45/1",
-			"capability": "O",
-			"remotePortDescr": "Ethernet356"
+			"remotePortDescr": "Ethernet356",
+			"remotePortId": "Ethernet45/1"
 		}
     ],
-	"total":"3"
+	"total":4
 }

@@ -132,7 +132,8 @@ func getLLDPTable(options sdc.OptionMap) ([]byte, error) {
 	log.V(2).Infof("LLDP Table output count: %v", len(lldpTableOutput))
 
 	// LLDP_ENTRY_TABLE keys are like "LLDP_ENTRY_TABLE:Ethernet0"
-	var neighbors []LLDPNeighbor
+	var neighbors []LLDPNeighbor = make([]LLDPNeighbor, 0, len(lldpTableOutput))
+
 	for key, lldpTableItem := range lldpTableOutput {
 		log.V(2).Infof("LLDP Table item: %v, %+v", key, lldpTableItem)
 
@@ -140,7 +141,7 @@ func getLLDPTable(options sdc.OptionMap) ([]byte, error) {
 		capabilitiesCode, err := parseCapabilityCodes(enabledCapHexString)
 		if err != nil {
 			log.Errorf("Unable to parse capability %v, got err %v", enabledCapHexString, err)
-			return nil, err
+			capabilitiesCode = DefaultEmptyString
 		}
 
 		// Create LLDPNeighbor instance

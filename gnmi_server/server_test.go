@@ -19,6 +19,7 @@ import (
 	"testing"
 	"time"
 	"unsafe"
+	"sort"
 
 	"crypto/x509"
 	"crypto/x509/pkix"
@@ -345,7 +346,7 @@ func TestPFCWDErrors(t *testing.T) {
 // runTestGet requests a path from the server by Get grpc call, and compares if
 // the return code and response value are expected.
 func runTestGet(t *testing.T, ctx context.Context, gClient pb.GNMIClient, pathTarget string,
-	textPbPath string, wantRetCode codes.Code, wantRespVal interface{}, valTest bool) {
+	textPbPath string, wantRetCode codes.Code, wantRespVal interface{}, valTest bool, ignoreValOrder ...bool) {
 	//var retCodeOk bool
 	// Send request
 	t.Helper()
@@ -406,9 +407,36 @@ func runTestGet(t *testing.T, ctx context.Context, gClient pb.GNMIClient, pathTa
 			}
 		}
 
+		if len(ignoreValOrder) > 0 && ignoreValOrder[0] {
+			// Normalize the values to allow order-insensitive comparison
+			gotVal = normalize(gotVal)
+			wantRespVal = normalize(wantRespVal)
+		}
+
 		if !reflect.DeepEqual(gotVal, wantRespVal) {
 			t.Errorf("got: %v (%T),\nwant %v (%T)", gotVal, gotVal, wantRespVal, wantRespVal)
 		}
+	}
+}
+
+// Normalize recursively sorts maps and slices to allow order-insensitive comparison
+func normalize(v interface{}) interface{} {
+	switch val := v.(type) {
+	case map[string]interface{}:
+		for k, v2 := range val {
+			val[k] = normalize(v2)
+		}
+		return val
+	case []interface{}:
+		for i, v2 := range val {
+			val[i] = normalize(v2)
+		}
+		sort.SliceStable(val, func(i, j int) bool {
+			return fmt.Sprintf("%v", val[i]) < fmt.Sprintf("%v", val[j])
+		})
+		return val
+	default:
+		return val
 	}
 }
 

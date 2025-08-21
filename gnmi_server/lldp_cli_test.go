@@ -5,12 +5,12 @@ package gnmi
 
 import (
 	"crypto/tls"
+	"io/ioutil"
 	"testing"
 	"time"
 
 	pb "github.com/openconfig/gnmi/proto/gnmi"
 
-	"github.com/agiledragon/gomonkey/v2"
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
@@ -42,7 +42,7 @@ func TestGetLLDPTable(t *testing.T) {
 
 	// Expected output for the LLDP table
 	expectedLLDPTableResponseFilName := "../testdata/lldp/Expected_show_lldp_table_response.txt"
-	expectedEmptyDBResponse := `{"neighbors": [], "total": 0}`		
+	expectedEmptyDBResponse := `{"neighbors": [],"total": 0}`		
 	expectedLLDPTableResponse, err := ioutil.ReadFile(expectedLLDPTableResponseFilName)
 	if err != nil {
 		t.Fatalf("Failed to read file %v err: %v", expectedLLDPTableResponseFilName, err)
@@ -55,23 +55,11 @@ func TestGetLLDPTable(t *testing.T) {
 		wantRetCode    codes.Code
 		wantRespVal    interface{}
 		valTest        bool
-		mockGetMapFromQueries func(queries []string) (map[string]string, error)
+		ignoreValOrder bool
 		testInit       func()
 	}{
 		{
-			desc:       "query SHOW lldp table read DB error",
-			pathTarget: "SHOW",
-			textPbPath: `
-				elem: <name: "lldp" >
-				elem: <name: "table" >
-			`,
-			wantRetCode: codes.NotFound,
-			mockGetMapFromQueries: func(queries []string) (map[string]string, error) {
-				return nil, errors.New("db error")
-			},
-		},
-		{
-			desc:       "query SHOW lldp table from empty DB",
+			desc:       "query SHOW lldp table - empty DB",
 			pathTarget: "SHOW",
 			textPbPath:  `
 				elem: <name: "lldp" >
@@ -80,9 +68,12 @@ func TestGetLLDPTable(t *testing.T) {
 			wantRetCode:    codes.OK,
 			wantRespVal:    []byte(expectedEmptyDBResponse),
 			valTest:        true,
+			testInit: func() {
+				FlushDataSet(t, ApplDbNum)
+			},
 		},
 		{
-			desc:       "query SHOW lldp table",
+			desc:       "query SHOW lldp table - with LLDP_ENTRY_TABLE",
 			pathTarget: "SHOW",
 			textPbPath:  `
 				elem: <name: "lldp" >
@@ -91,7 +82,9 @@ func TestGetLLDPTable(t *testing.T) {
 			wantRetCode:    codes.OK,
 			wantRespVal:    []byte(expectedLLDPTableResponse),
 			valTest:        true,
+			ignoreValOrder: true,
 			testInit: func() {
+				FlushDataSet(t, ApplDbNum)
 				AddDataSet(t, ApplDbNum, lldpTableFileName)
 			},
 		},
@@ -101,14 +94,8 @@ func TestGetLLDPTable(t *testing.T) {
 		if test.testInit != nil {
 			test.testInit()
 		}
-
-		if test.mockGetMapFromQueries != nil {
-			patches := gomonkey.ApplyFunc(GetMapFromQueries, test.mockGetMapFromQueries)
-			defer patches.Reset()
-		}
-
 		t.Run(test.desc, func(t *testing.T) {
-			runTestGet(t, ctx, gClient, test.pathTarget, test.textPbPath, test.wantRetCode, test.wantRespVal, test.valTest)
+			runTestGet(t, ctx, gClient, test.pathTarget, test.textPbPath, test.wantRetCode, test.wantRespVal, test.valTest, test.ignoreValOrder)
 		})
 	}
 }

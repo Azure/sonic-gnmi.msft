@@ -1,0 +1,46 @@
+package show_client
+
+import (
+	"encoding/json"
+	"strings"
+
+	sdc "github.com/sonic-net/sonic-gnmi/sonic_data_client"
+)
+
+// https://github.com/Azure/sonic-utilities.msft/blob/3cb0eb2402a8da806b7c858eaa7e6be950c92fe3/scripts/watermarkstat#L212C44-L212C90
+const fieldHeadroomPool = "SAI_BUFFER_POOL_STAT_XOFF_ROOM_WATERMARK_BYTES"
+
+func getHeadroomPoolWatermark(options sdc.OptionMap) ([]byte, error) {
+	return getHeadroomPoolWatermarkByType(false)
+}
+
+func getHeadroomPoolPersistentWatermark(options sdc.OptionMap) ([]byte, error) {
+	return getHeadroomPoolWatermarkByType(true)
+}
+
+// https://github.com/Azure/sonic-utilities.msft/blob/3cb0eb2402a8da806b7c858eaa7e6be950c92fe3/scripts/watermarkstat#L290
+func getHeadroomPoolWatermarkByType(persistent bool) ([]byte, error) {
+	// 1. Load buffer pool name -> OID map (poolName -> oid:0x...)
+	poolToOid, err := loadBufferPoolNameMap()
+	if err != nil {
+		return nil, err
+	}
+
+	// 2. Restrict to ingress lossless pool only
+	// https://github.com/Azure/sonic-utilities.msft/blob/3cb0eb2402a8da806b7c858eaa7e6be950c92fe3/scripts/watermarkstat#L294
+	filtered := make(map[string]string, 1)
+	for pool, oid := range poolToOid {
+		if strings.Contains(pool, "ingress_lossless") {
+			filtered[pool] = oid
+			break
+		}
+	}
+
+	tableName := userWatermarkTable
+	if persistent {
+		tableName = persistentWatermarkTable
+	}
+
+	result := collectBufferPoolWatermarks(filtered, tableName, fieldHeadroomPool)
+	return json.Marshal(result)
+}

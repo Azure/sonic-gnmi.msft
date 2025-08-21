@@ -43,10 +43,25 @@ func getSortedKeys(m map[string]interface{}) []string {
 }
 
 func isIPPrefixInKey(key interface{}) bool {
-	switch key.(type) {
-	case []interface{}:
+	if keyStr, ok := key.(string); ok {
+		part1, part2 := parseKey(keyStr)
+
+		if part1 == "" {
+			return false
+		}
+
+		ipaddr, ipNet, err := net.ParseCIDR(part2)
+		if err != nil {
+			ip := net.ParseIP(part2)
+			if ip != nil {
+				return true
+			} else {
+				return false
+			}
+		}
 		return true
-	default:
+	} else {
+		log.Errorf("Unable to parse the key")
 		return false
 	}
 }
@@ -86,11 +101,11 @@ func getVlanPorts(cfg VlanConfig, vlan string) []string {
 func getVlanPortsTagging(cfg VlanConfig, vlan string) []string {
 	var vlanPortsTagging []string
 	for key, value := range cfg.VlanPortsData {
-		portsKey, _ := parseKey(key)
+		portsKey, portsValue := parseKey(key)
 		if vlan != portsKey {
 			continue
 		}
-		taggingMode := value.(map[string]interface{})["tagging_mode"].(string)
+		taggingMode := portsValue + ";" + value.(map[string]interface{})["tagging_mode"].(string)
 		vlanPortsTagging = append(vlanPortsTagging, taggingMode)
 	}
 	return vlanPortsTagging

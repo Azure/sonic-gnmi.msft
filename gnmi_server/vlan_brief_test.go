@@ -1,9 +1,5 @@
 package gnmi
 
-// reboot_cause_cli_test.go
-
-// Tests SHOW reboot-cause and SHOW reboot-cause history
-
 import (
 	"crypto/tls"
 	"testing"
@@ -39,7 +35,7 @@ func TestGetShowRebootCauseHistory(t *testing.T) {
 	defer cancel()
 
 	vlanBriefDataFileName := "../testdata/VLAN_BRIEF_DB_DATA.txt"
-	rebootCauseHistoryWatchdog := `{"2025_07_10_20_06_34":{"cause":"reboot","comment":"N/A","time":"Thu Jul 10 08:05:33 PM UTC 2025","user":"admin"},"2025_07_10_20_12_49":{"cause":"fast-reboot","comment":"N/A","time":"Thu Jul 10 08:10:49 PM UTC 2025","user":"admin"},"2025_07_10_20_19_34":{"cause":"warm-reboot","comment":"N/A","time":"Thu Jul 10 08:17:34 PM UTC 2025","user":"admin"},"2025_07_10_20_31_14":{"cause":"Watchdog (watchdog, description: Watchdog fired, time: 2025-07-10 20:30:26)","comment":"Unknown","time":"N/A","user":"N/A"},"2025_07_10_20_36_35":{"cause":"reboot","comment":"N/A","time":"Thu Jul 10 08:35:34 PM UTC 2025","user":"admin"},"2025_07_10_20_41_54":{"cause":"reboot","comment":"N/A","time":"Thu Jul 10 08:40:52 PM UTC 2025","user":"admin"},"2025_07_10_20_47_15":{"cause":"reboot","comment":"N/A","time":"Thu Jul 10 08:46:13 PM UTC 2025","user":"admin"},"2025_07_11_01_49_30":{"cause":"reboot","comment":"N/A","time":"Fri Jul 11 01:48:29 AM UTC 2025","user":"admin"},"2025_07_11_02_00_24":{"cause":"reboot","comment":"N/A","time":"Fri Jul 11 01:59:22 AM UTC 2025","user":"admin"},"2025_07_11_02_35_51":{"cause":"Unknown","comment":"N/A","time":"N/A","user":"N/A"}}`
+	vlanBriefResp := `{"2025_07_10_20_06_34":{"cause":"reboot","comment":"N/A","time":"Thu Jul 10 08:05:33 PM UTC 2025","user":"admin"},"2025_07_10_20_12_49":{"cause":"fast-reboot","comment":"N/A","time":"Thu Jul 10 08:10:49 PM UTC 2025","user":"admin"},"2025_07_10_20_19_34":{"cause":"warm-reboot","comment":"N/A","time":"Thu Jul 10 08:17:34 PM UTC 2025","user":"admin"},"2025_07_10_20_31_14":{"cause":"Watchdog (watchdog, description: Watchdog fired, time: 2025-07-10 20:30:26)","comment":"Unknown","time":"N/A","user":"N/A"},"2025_07_10_20_36_35":{"cause":"reboot","comment":"N/A","time":"Thu Jul 10 08:35:34 PM UTC 2025","user":"admin"},"2025_07_10_20_41_54":{"cause":"reboot","comment":"N/A","time":"Thu Jul 10 08:40:52 PM UTC 2025","user":"admin"},"2025_07_10_20_47_15":{"cause":"reboot","comment":"N/A","time":"Thu Jul 10 08:46:13 PM UTC 2025","user":"admin"},"2025_07_11_01_49_30":{"cause":"reboot","comment":"N/A","time":"Fri Jul 11 01:48:29 AM UTC 2025","user":"admin"},"2025_07_11_02_00_24":{"cause":"reboot","comment":"N/A","time":"Fri Jul 11 01:59:22 AM UTC 2025","user":"admin"},"2025_07_11_02_35_51":{"cause":"Unknown","comment":"N/A","time":"N/A","user":"N/A"}}`
 	ResetDataSetsAndMappings(t)
 
 	tests := []struct {

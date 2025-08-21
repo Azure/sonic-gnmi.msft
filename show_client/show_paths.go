@@ -86,10 +86,12 @@ func init() {
 		[]string{"SHOW", "buffer_pool", "watermark"},
 		getBufferPoolWatermark,
 		nil,
+		sdc.UnimplementedOption(showCmdOptionNamespace),
 	)
 	sdc.RegisterCliPath(
 		[]string{"SHOW", "buffer_pool", "persistent-watermark"},
 		getBufferPoolPersistentWatermark,
 		nil,
+		sdc.UnimplementedOption(showCmdOptionNamespace),
 	)
 }

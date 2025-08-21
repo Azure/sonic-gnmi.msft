@@ -23,7 +23,7 @@ const (
 	userWatermarkTable       = "USER_WATERMARKS"
 	persistentWatermarkTable = "PERSISTENT_WATERMARKS"
 	bufferPoolNameMapKey     = "COUNTERS_BUFFER_POOL_NAME_MAP"
-	logPrefix                = "[buffer_pool] "
+	bufferPoolLogPrefix      = "[buffer_pool] "
 	fieldPrimaryBufferPool   = "SAI_BUFFER_POOL_STAT_WATERMARK_BYTES"
 )
 
@@ -33,7 +33,7 @@ func loadBufferPoolNameMap() (map[string]string, error) {
 	nameMapQueries := [][]string{{"COUNTERS_DB", bufferPoolNameMapKey}}
 	nameMap, err := GetMapFromQueries(nameMapQueries)
 	if err != nil {
-		return nil, fmt.Errorf(logPrefix+"get buffer pool name map %s failed: %w", bufferPoolNameMapKey, err)
+		return nil, fmt.Errorf(bufferPoolLogPrefix+"get buffer pool name map %s failed: %w", bufferPoolNameMapKey, err)
 	}
 
 	poolToOid := make(map[string]string, len(nameMap))
@@ -44,11 +44,11 @@ func loadBufferPoolNameMap() (map[string]string, error) {
 		}
 	}
 	if len(poolToOid) == 0 {
-		return nil, fmt.Errorf(logPrefix+"no buffer pool OIDs extracted from %s", bufferPoolNameMapKey)
+		return nil, fmt.Errorf(bufferPoolLogPrefix+"no buffer pool OIDs extracted from %s", bufferPoolNameMapKey)
 	}
 	if log.V(4) {
 		for k, v := range poolToOid {
-			log.Infof(logPrefix+"debug poolToOid %s -> %s", k, v)
+			log.Infof(bufferPoolLogPrefix+"debug poolToOid %s -> %s", k, v)
 		}
 	}
 	return poolToOid, nil
@@ -83,13 +83,13 @@ func getBufferPoolWatermarkByType(persistent bool) ([]byte, error) {
 		data, err := GetMapFromQueries([][]string{{"COUNTERS_DB", tableName, oid}})
 		if err != nil {
 			// Fetch failed (hash missing / Redis error)
-			log.Errorf(logPrefix+"Fetch db failed, pool %s oid %s fetch error: %v -> Bytes=%s", pool, oid, err, defaultMissingCounterValue)
+			log.Errorf(bufferPoolLogPrefix+"Fetch db failed, pool %s oid %s fetch error: %v -> Bytes=%s", pool, oid, err, defaultMissingCounterValue)
 			result[pool] = BufferPoolStat{Bytes: defaultMissingCounterValue}
 			continue
 		}
 		if len(data) == 0 {
 			// Hash exists but has no fields (counter not yet produced / abnormal)
-			log.Errorf(logPrefix+"Empty hash, pool %s oid %s -> Bytes=%s", pool, oid, defaultMissingCounterValue)
+			log.Errorf(bufferPoolLogPrefix+"Empty hash, pool %s oid %s -> Bytes=%s", pool, oid, defaultMissingCounterValue)
 			result[pool] = BufferPoolStat{Bytes: defaultMissingCounterValue}
 			continue
 		}
@@ -99,12 +99,12 @@ func getBufferPoolWatermarkByType(persistent bool) ([]byte, error) {
 			bytes = toString(val)
 		} else {
 			// Expected field missing in COUNTERS_DB watermark table
-			log.Errorf(logPrefix+"Missing field %s in %s for pool %s oid %s -> Bytes=%s", fieldPrimaryBufferPool, tableName, pool, oid, bytes)
+			log.Errorf(bufferPoolLogPrefix+"Missing field %s in %s for pool %s oid %s -> Bytes=%s", fieldPrimaryBufferPool, tableName, pool, oid, bytes)
 		}
 
 		// Record the bytes for the pool
 		result[pool] = BufferPoolStat{Bytes: bytes}
-		log.V(4).Infof(logPrefix+"Gets Pool %s oid %s -> Bytes=%s", pool, oid, bytes)
+		log.V(4).Infof(bufferPoolLogPrefix+"Gets Pool %s oid %s -> Bytes=%s", pool, oid, bytes)
 	}
 	return json.Marshal(result)
 }

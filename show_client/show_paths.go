@@ -98,8 +98,13 @@ func init() {
 		nil,
 	)
 	sdc.RegisterCliPath(
-		[]string{"SHOW", "vlan", "brief"},
-		getVlanBrief,
+		[]string{"SHOW", "mac", "aging-time"},
+		getMacAgingTime,
 		nil,
 	)
+	sdc.RegisterCliPath(
+		[]string{"SHOW", "vlan", "brief"},
+		getVlanBrief,
+    nil,
+  )
 }

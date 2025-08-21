@@ -716,6 +716,7 @@ func getInterfaceStatus(options sdc.OptionMap) ([]byte, error) {
 	if intf != "" {
 		if intf == "subport" {
 			isSubIntf = true
+			intf = ""
 		} else if strings.ContainsRune(intf, '.') {
 			isSubIntf = true
 		}

@@ -2,7 +2,7 @@ package show_client
 
 import (
 	"encoding/json"
-	"fmt"
+	"net"
 	"sort"
 	"strings"
 
@@ -50,7 +50,7 @@ func isIPPrefixInKey(key interface{}) bool {
 			return false
 		}
 
-		ipaddr, ipNet, err := net.ParseCIDR(part2)
+		_, _, err := net.ParseCIDR(part2)
 		if err != nil {
 			ip := net.ParseIP(part2)
 			if ip != nil {
@@ -88,7 +88,6 @@ func getVlanIpAddress(cfg VlanConfig, vlan string) []string {
 func getVlanPorts(cfg VlanConfig, vlan string) []string {
 	var vlanPorts []string
 	for key := range cfg.VlanPortsData {
-		fmt.Println("Key ==>" + key)
 		portsKey, portsValue := parseKey(key)
 		if vlan != portsKey {
 			continue
@@ -158,24 +157,18 @@ func getVlanBrief(options sdc.OptionMap) ([]byte, error) {
 		log.Errorf("Unable to get data from queries %v, got err: %v", queriesVlan, derr)
 		return nil, derr
 	}
-	fmt.Println("vlanData")
-	fmt.Println(vlanData)
 
 	vlanInterfaceData, ierr := GetMapFromQueries(queriesVlanInterface)
 	if ierr != nil {
 		log.Errorf("Unable to get data from queries %v, got err: %v", queriesVlanInterface, ierr)
 		return nil, ierr
 	}
-	fmt.Println("vlanIntData")
-	fmt.Println(vlanInterfaceData)
 
 	vlanMemberData, merr := GetMapFromQueries(queriesVlanMember)
 	if merr != nil {
 		log.Errorf("Unable to get data from queries %v, got err: %v", queriesVlanMember, merr)
 		return nil, merr
 	}
-	fmt.Println("vlanMemData")
-	fmt.Println(vlanMemberData)
 
 	vlanCfg := VlanConfig{vlanData, vlanInterfaceData, vlanMemberData}
 
@@ -188,11 +181,6 @@ func getVlanBrief(options sdc.OptionMap) ([]byte, error) {
 			data[col.Name] = col.Getter(vlanCfg, vlan)
 		}
 		vlanBriefData[vlan] = data
-	}
-
-	for _, innerSlice := range vlanBriefData {
-		fmt.Println("==>")
-		fmt.Println(innerSlice)
 	}
 
 	jsonVlanBrief, jsonErr := json.Marshal(vlanBriefData)

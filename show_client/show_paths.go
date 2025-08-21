@@ -92,9 +92,9 @@ func init() {
 		getBufferPoolPersistentWatermark,
 		nil,
 	)
-  sdc.RegisterCliPath(
+	sdc.RegisterCliPath(
 		[]string{"SHOW", "version"},
 		getVersion,
-    nil,
-  )
+		nil,
+	)
 }

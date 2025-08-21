@@ -87,5 +87,20 @@ func init() {
 		getInterfaceStatus,
 		nil,
 		showCmdOptionInterface,
+  )
+  sdc.RegisterCliPath(
+		[]string{"SHOW", "buffer_pool", "watermark"},
+		getBufferPoolWatermark,
+		nil,
+	)
+	sdc.RegisterCliPath(
+		[]string{"SHOW", "buffer_pool", "persistent-watermark"},
+		getBufferPoolPersistentWatermark,
+		nil,
+	)
+	sdc.RegisterCliPath(
+		[]string{"SHOW", "mac", "aging-time"},
+		getMacAgingTime,
+		nil,
 	)
 }

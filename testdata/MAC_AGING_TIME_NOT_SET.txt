@@ -1,0 +1,7 @@
+{
+    "SWITCH_TABLE:switch":{
+        "drop_monitor_supported":"True",
+        "ecmp_hash_seed":"10",
+        "lag_hash_seed":"10"
+    }
+}

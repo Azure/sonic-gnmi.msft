@@ -2,6 +2,8 @@ package show_client
 
 import (
 	"encoding/json"
+	"net"
+
 	log "github.com/golang/glog"
 	sdc "github.com/sonic-net/sonic-gnmi/sonic_data_client"
 )
@@ -39,7 +41,8 @@ type Peer struct {
 }
 
 var (
-	vtyshBGPIPv6SummaryCommand = "vtysh -c \"show bgp ipv6 summary json\""
+	vtyshBGPIPv6SummaryCommand      = "vtysh -c \"show bgp ipv6 summary json\""
+	vtyshBGPIPv6BGPNeighborsCommand = "vtysh -c \"show bgp ipv6 neighbors json\""
 )
 
 func getIPv6BGPSummary(options sdc.OptionMap) ([]byte, error) {
@@ -89,4 +92,44 @@ func getIPv6BGPSummary(options sdc.OptionMap) ([]byte, error) {
 		return nil, err
 	}
 	return ipv6BGPSummaryJSON, nil
+}
+
+func isIPv6Address(ip string) bool {
+	// Check if the given string is a valid IPv6 address
+	parsedIP := net.ParseIP(ip)
+	return parsedIP != nil && parsedIP.To4() == nil
+}
+
+func isBGPNeighborPresent(ip string) bool {
+	// Fetch neighbor name from CONFIG DB
+	queries := [][]string{
+		{"CONFIG_DB", "BGP_NEIGHBOR"},
+	}
+
+	bgpNeighborTableOutput, err := GetMapFromQueries(queries)
+	if err != nil {
+		log.Errorf("Unable to pull data for queries %v, got err %v", queries, err)
+		return false
+	}
+
+	// Check if the IP exists in the neighbor table
+	_, exists := bgpNeighborTableOutput[ip]
+	return exists
+}
+
+func getIPv6BGPNeighbors(options sdc.OptionMap) ([]byte, error) {
+	// Get data from vtysh shell
+	vtyshOutput, err := GetDataFromHostCommand(vtyshBGPIPv6BGPNeighborsCommand)
+	if err != nil {
+		log.Errorf("Unable to successfully execute command %v, got err %v",
+			vtyshBGPIPv6BGPNeighborsCommand, err)
+		return nil, err
+	}
+
+	var neighbors map[string]IPv6BGPPeer
+	if err := json.Unmarshal([]byte(vtyshOutput), &neighbors); err != nil {
+		log.Errorf("Unable to create IPv6 BGP Neighbor response from vtysh output %v", err)
+		return nil, err
+	}
+
 }

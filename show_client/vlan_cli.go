@@ -1,7 +1,7 @@
 package show_client
 
 import (
-	"bytes"
+	"encoding/json"
 	"fmt"
 	"sort"
 	"strings"
@@ -22,7 +22,7 @@ type VlanConfig struct {
 
 type VlanBriefColumn struct {
 	Name   string
-	Getter func(cfg VlanConfig, vlan string) string
+	Getter func(cfg VlanConfig, vlan string) []string
 }
 
 var VlanBriefColumns = []VlanBriefColumn{
@@ -51,36 +51,39 @@ func isIPPrefixInKey(key interface{}) bool {
 	}
 }
 
-func getVlanId(cfg VlanConfig, vlan string) string {
-	return strings.TrimPrefix(vlan, "Vlan")
+func getVlanId(cfg VlanConfig, vlan string) []string {
+	var ids []string
+	ids = append(ids, strings.TrimPrefix(vlan, "Vlan"))
+	return ids
 }
 
-func getVlanIpAddress(cfg VlanConfig, vlan string) string {
-	ipAddress := ""
+func getVlanIpAddress(cfg VlanConfig, vlan string) []string {
+	var ipAddress []string
 	for key, _ := range cfg.VlanIpData {
 		if isIPPrefixInKey(key) {
 			ifname, address := parseKey(key)
 			if vlan == ifname {
-				ipAddress += "\n" + address
+				ipAddress = append(ipAddress, address)
 			}
 		}
 	}
 	return ipAddress
 }
 
-func getVlanPorts(cfg VlanConfig, vlan string) string {
+func getVlanPorts(cfg VlanConfig, vlan string) []string {
 	var vlanPorts []string
 	for key := range cfg.VlanPortsData {
+		fmt.Println("Key ==>" + key)
 		portsKey, portsValue := parseKey(key)
 		if vlan != portsKey {
 			continue
 		}
 		vlanPorts = append(vlanPorts, portsValue)
 	}
-	return strings.Join(vlanPorts, "\n")
+	return vlanPorts
 }
 
-func getVlanPortsTagging(cfg VlanConfig, vlan string) string {
+func getVlanPortsTagging(cfg VlanConfig, vlan string) []string {
 	var vlanPortsTagging []string
 	for key, value := range cfg.VlanPortsData {
 		portsKey, _ := parseKey(key)
@@ -90,10 +93,10 @@ func getVlanPortsTagging(cfg VlanConfig, vlan string) string {
 		taggingMode := value.(map[string]interface{})["tagging_mode"].(string)
 		vlanPortsTagging = append(vlanPortsTagging, taggingMode)
 	}
-	return strings.Join(vlanPortsTagging, "\n")
+	return vlanPortsTagging
 }
 
-func getProxyArp(cfg VlanConfig, vlan string) string {
+func getProxyArp(cfg VlanConfig, vlan string) []string {
 	proxyArp := "disabled"
 	for key, value := range cfg.VlanIpData {
 		if vlan == key {
@@ -102,11 +105,24 @@ func getProxyArp(cfg VlanConfig, vlan string) string {
 			}
 		}
 	}
-	return proxyArp
+
+	var arp []string
+	arp = append(arp, proxyArp)
+	return arp
 }
 
 func parseKey(key interface{}) (string, string) {
-	return "", ""
+	keyStr, ok := key.(string)
+	if !ok {
+		log.Errorf("parse Key failure to convert key as string:")
+	}
+
+	parts := strings.Split(keyStr, "|")
+	if len(parts) < 2 {
+		log.Errorf("Unable to parse the string")
+		return "", ""
+	}
+	return parts[0], parts[1]
 }
 
 func getVlanBrief(options sdc.OptionMap) ([]byte, error) {
@@ -127,51 +143,48 @@ func getVlanBrief(options sdc.OptionMap) ([]byte, error) {
 		log.Errorf("Unable to get data from queries %v, got err: %v", queriesVlan, derr)
 		return nil, derr
 	}
+	fmt.Println("vlanData")
+	fmt.Println(vlanData)
 
 	vlanInterfaceData, ierr := GetMapFromQueries(queriesVlanInterface)
 	if ierr != nil {
 		log.Errorf("Unable to get data from queries %v, got err: %v", queriesVlanInterface, ierr)
 		return nil, ierr
 	}
+	fmt.Println("vlanIntData")
+	fmt.Println(vlanInterfaceData)
 
 	vlanMemberData, merr := GetMapFromQueries(queriesVlanMember)
 	if merr != nil {
 		log.Errorf("Unable to get data from queries %v, got err: %v", queriesVlanMember, merr)
 		return nil, merr
 	}
+	fmt.Println("vlanMemData")
+	fmt.Println(vlanMemberData)
 
 	vlanCfg := VlanConfig{vlanData, vlanInterfaceData, vlanMemberData}
 
 	vlans := getSortedKeys(vlanData)
-	var data [][]string
-	//    var data map[string]interface{}
+	vlanBriefData := make(map[string]interface{})
 
 	for _, vlan := range vlans {
-		row := []string{}
+		data := make(map[string]interface{})
 		for _, col := range VlanBriefColumns {
-			row = append(row, col.Getter(vlanCfg, vlan))
+			data[col.Name] = col.Getter(vlanCfg, vlan)
 		}
-		data = append(data, row)
+		vlanBriefData[vlan] = data
 	}
 
-	for _, innerSlice := range data {
+	for _, innerSlice := range vlanBriefData {
 		fmt.Println("==>")
 		fmt.Println(innerSlice)
 	}
 
-	var buffer bytes.Buffer
-	for i, innerSlice := range data {
-		for j, s := range innerSlice {
-			buffer.WriteString(s)
-			if j < len(innerSlice)-1 {
-				buffer.WriteString(",") // Delimiter for inner slice elements
-			}
-		}
-		if i < len(data)-1 {
-			buffer.WriteString(";") // Delimiter for outer slice elements
-		}
+	jsonVlanBrief, jsonErr := json.Marshal(vlanBriefData)
+	if jsonErr != nil {
+		log.Errorf("Unable to parse the json: %v", jsonErr)
+		return nil, jsonErr
 	}
 
-	byteSlice := buffer.Bytes()
-	return byteSlice, nil
+	return jsonVlanBrief, nil
 }

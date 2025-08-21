@@ -53,11 +53,7 @@
     "mtu": "9100",
     "tpid": "0x8100"
   },
-  "PORTCHANNEL_MEMBER": {
-    "PortChannel1|Ethernet0": {},
-    "PortChannel1|Ethernet40": {}
-  },
-  "VLAN_MEMBER": {
-    "Vlan1|Ethernet120": {}
-  }
+  "PORTCHANNEL_MEMBER|PortChannel1|Ethernet0": {},
+  "PORTCHANNEL_MEMBER|PortChannel1|Ethernet40": {},
+  "VLAN_MEMBER|Vlan1|Ethernet120": {}
 }

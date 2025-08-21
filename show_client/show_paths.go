@@ -52,9 +52,15 @@ func init() {
 	)
 	sdc.RegisterCliPath(
 		[]string{"SHOW", "interface", "errors"},
-		getIntfErrors,
+		getInterfaceErrors,
 		nil,
 		sdc.RequiredOption(showCmdOptionInterface),
+	)
+	sdc.RegisterCliPath(
+		[]string{"SHOW", "interface", "fec", "status"},
+		getInterfaceFecStatus,
+		nil,
+		showCmdOptionInterface,
 	)
 	sdc.RegisterCliPath(
 		[]string{"SHOW", "watermark", "telemetry", "interval"},
@@ -67,8 +73,33 @@ func init() {
 		nil,
 	)
 	sdc.RegisterCliPath(
-		[]string{"SHOW", "vlan", "brief"},
-		getVlanBrief,
+		[]string{"SHOW", "interface", "transceiver", "error-status"},
+		getTransceiverErrorStatus,
+		nil,
+		showCmdOptionVerbose,
+		sdc.UnimplementedOption(showCmdOptionNamespace),
+		sdc.UnimplementedOption(showCmdOptionFetchFromHW),
+		showCmdOptionInterface,
+	)
+	sdc.RegisterCliPath(
+		[]string{"SHOW", "interface", "transceiver", "presence"},
+		getInterfaceTransceiverPresence,
+		nil,
+		showCmdOptionInterface,
+	)
+	sdc.RegisterCliPath(
+		[]string{"SHOW", "buffer_pool", "watermark"},
+		getBufferPoolWatermark,
 		nil,
 	)
+	sdc.RegisterCliPath(
+		[]string{"SHOW", "buffer_pool", "persistent-watermark"},
+		getBufferPoolPersistentWatermark,
+		nil,
+	)
+	sdc.RegisterCliPath(
+		[]string{"SHOW", "vlan", "brief"},
+		getVlanBrief,
+    nil,
+  )
 }

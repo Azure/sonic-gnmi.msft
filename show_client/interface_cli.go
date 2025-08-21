@@ -505,13 +505,14 @@ func getPortOperSpeed(intf string) string {
 		log.Errorf("Failed to get state for port %s from APPL_DB: %v", intf, err)
 		return ""
 	}
+
+	opticsType := getPortOptics(intf)
 	if _, ok := appData["oper_status"]; !ok || appData["oper_status"] != "up" {
-		return fmt.Sprint(appData["speed"])
+		return portSpeedFmt(fmt.Sprint(appData["speed"]), opticsType)
 	}
 	if _, ok := stateData["speed"]; !ok {
-		return fmt.Sprint(appData["speed"])
+		return portSpeedFmt(fmt.Sprint(appData["speed"]), opticsType)
 	} else {
-		opticsType := getPortOptics(intf)
 		return portSpeedFmt(fmt.Sprint(stateData["speed"]), opticsType)
 	}
 }

@@ -93,6 +93,11 @@ func init() {
 		nil,
 	)
 	sdc.RegisterCliPath(
+		[]string{"SHOW", "mac", "aging-time"},
+		getMacAgingTime,
+    nil,
+  )
+	sdc.RegisterCliPath(
 		[]string{"SHOW", "version"},
 		getVersion,
 		nil,

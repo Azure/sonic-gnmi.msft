@@ -306,10 +306,10 @@ func getIntfsFromConfigDB(intf string) ([]string, error) {
 		return nil, err
 	}
 
-	// If intf is specified, return only that interface
+	// If intf is specified, return only that interface if exists
 	if intf != "" {
 		if _, ok := portTable[intf]; !ok {
-			return nil, fmt.Errorf("interface %s not found in CONFIG_DB", intf)
+			return []string{}, nil
 		}
 		return []string{intf}, nil
 	}
@@ -395,10 +395,10 @@ func getPortchannelIntfsFromConfigDB(intf string) ([]string, error) {
 		return nil, err
 	}
 
-	// If intf is specified, return only that interface
+	// If intf is specified, return only that interface if exists
 	if intf != "" {
 		if _, ok := portTable[intf]; !ok {
-			return nil, fmt.Errorf("interface %s not found in CONFIG_DB port table", intf)
+			return []string{}, nil
 		}
 		return []string{intf}, nil
 	}

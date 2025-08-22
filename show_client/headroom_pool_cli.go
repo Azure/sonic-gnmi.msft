@@ -8,7 +8,10 @@ import (
 )
 
 // https://github.com/Azure/sonic-utilities.msft/blob/3cb0eb2402a8da806b7c858eaa7e6be950c92fe3/scripts/watermarkstat#L212C44-L212C90
-const fieldHeadroomPool = "SAI_BUFFER_POOL_STAT_XOFF_ROOM_WATERMARK_BYTES"
+const (
+	fieldHeadroomPool       = "SAI_BUFFER_POOL_STAT_XOFF_ROOM_WATERMARK_BYTES"
+	ingressLosslessPoolName = "ingress_lossless"
+)
 
 func getHeadroomPoolWatermark(options sdc.OptionMap) ([]byte, error) {
 	return getHeadroomPoolWatermarkByType(false)
@@ -30,7 +33,7 @@ func getHeadroomPoolWatermarkByType(persistent bool) ([]byte, error) {
 	// https://github.com/Azure/sonic-utilities.msft/blob/3cb0eb2402a8da806b7c858eaa7e6be950c92fe3/scripts/watermarkstat#L294
 	filtered := make(map[string]string, 1)
 	for pool, oid := range poolToOid {
-		if strings.Contains(pool, "ingress_lossless") {
+		if strings.Contains(pool, ingressLosslessPoolName) {
 			filtered[pool] = oid
 			break
 		}

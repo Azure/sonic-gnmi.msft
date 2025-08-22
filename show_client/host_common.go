@@ -82,11 +82,10 @@ func GetPlatformInfo(versionInfo map[string]interface{}) (map[string]interface{}
 				hwInfoDict["asic_type"] = asicType
 			}
 		}
+		hwInfoDict["asic_count"] = "N/A"
 		asicCount, err := GetAsicCount()
 		if err == nil {
 			hwInfoDict["asic_count"] = asicCount
-		} else {
-			hwInfoDict["asic_count"] = "N/A"
 		}
 		switchType := GetLocalhostInfo("switch_type")
 		hwInfoDict["switch_type"] = switchType
@@ -132,11 +131,9 @@ func GetHwsku() string {
 func GetAsicCount() (int, error) {
 	val := GetAsicPresenceList()
 	if val == nil {
-		log.Error("No ASIC presence list found")
 		return 0, fmt.Errorf("no ASIC presence list found")
 	}
 	if len(val) == 0 {
-		log.Error("ASIC presence list is empty")
 		return 0, fmt.Errorf("ASIC presence list is empty")
 	}
 	return len(val), nil
@@ -218,7 +215,6 @@ func GetAsicPresenceList() []int {
 	var asicsList []int
 	if IsMultiAsic() {
 		//Currently MultiAsic is not configured. One can refer PR change history to refer the removed code(MultiAsic support).
-		log.Errorf("MultiAsic is not supported.")
 		asicsList = append(asicsList, 0)
 	} else {
 		numAsics := ReadAsicConfValue()

@@ -61,5 +61,9 @@
   "TRANSCEIVER_INFO|Ethernet80": {
     "type": "SFP",
     "serial": "XYZ987654"
+  },
+  "TRANSCEIVER_INFO|Ethernet120": {
+    "type": "SFP",
+    "serial": "XYZ987654"
   }
 }

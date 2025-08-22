@@ -37,6 +37,7 @@ func TestGetShowVlanBrief(t *testing.T) {
 	vlanBriefNoVlanIntDataFileName := "../testdata/VLAN_BRIEF_DB_DATA_NO_VLANINT.txt"
 	vlanBriefNoVlanMemDataFileName := "../testdata/VLAN_BRIEF_DB_DATA_NO_VLANMEM.txt"
 	vlanBriefWrongIpDataFileName := "../testdata/VLAN_BRIEF_DB_DATA_WRONGIP.txt"
+	vlanBriefWrongKeyDataFileName := "../testdata/VLAN_BRIEF_DB_DATA_WRONGKEY.txt"
 	vlanBriefResp := `{"Vlan1":{"IP Address":["192.168.0.1/21"],"Port Tagging":["Ethernet120;untagged"],"Ports":["Ethernet120"],"Proxy ARP":["disabled"], "VLAN ID":["1"]}}`
 
 	vlanBriefRespEmpty := `{}`
@@ -149,6 +150,21 @@ func TestGetShowVlanBrief(t *testing.T) {
 			testInit: func() {
 				FlushDataSet(t, ConfigDbNum)
 				AddDataSet(t, ConfigDbNum, vlanBriefWrongIpDataFileName)
+			},
+		},
+		{
+			desc:       "query SHOW vlan brief wrong vlan interface key dataset",
+			pathTarget: "SHOW",
+			textPbPath: `
+				elem: <name: "vlan" >
+				elem: <name: "brief" >
+			`,
+			wantRetCode: codes.OK,
+			wantRespVal: []byte(vlanBriefRespEmptyIp),
+			valTest:     true,
+			testInit: func() {
+				FlushDataSet(t, ConfigDbNum)
+				AddDataSet(t, ConfigDbNum, vlanBriefWrongKeyDataFileName)
 			},
 		},
 	}

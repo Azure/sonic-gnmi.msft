@@ -23,22 +23,21 @@ package show_client
 
 import (
 	"encoding/json"	
+	"fmt"
 	"strconv"
 	    
 	log "github.com/golang/glog"
 	sdc "github.com/sonic-net/sonic-gnmi/sonic_data_client"
 )
 
-const DefaultEmptyString = ""
-
-// LLDPTableResponse represents the response structure for show llpd table command.
-type LLDPTableResponse struct {
-    Neighbors []LLDPNeighbor `json:"neighbors"`
+// lldpTableResponse represents the response structure for show llpd table command.
+type lldpTableResponse struct {
+    Neighbors []lldpNeighbor `json:"neighbors"`
     Total     uint `json:"total"`
 }
 
-// LLDPNeighbor represents a single LLDP table entry.
-type LLDPNeighbor struct {
+// lldpNeighbor represents a single LLDP table entry.
+type lldpNeighbor struct {
     LocalPort       string `json:"localPort"`
     RemoteDevice    string `json:"remoteDevice"`
     RemotePortID    string `json:"remotePortId"`
@@ -70,14 +69,12 @@ var capabilityCodeMap = map[string]string{
 // For example, Hex string "28 00" would indicate "bridge" and "router".
 func decodeCapabilities(hexStr string) ([]string, error) {
 	if hexStr == "" {
-		log.Errorf("Hex string is empty, cannot decode capabilities")
-		return nil, nil
+		return nil, fmt.Errorf("Hex string is empty, cannot decode capabilities")
 	}
 
 	// Ensure the hex string is at least 2 characters long
 	if len(hexStr) < 2 {
-		log.Errorf("Hex string %v is too short to decode capabilities", hexStr)
-		return nil, nil
+		return nil, fmt.Errorf("Hex string %v is too short to decode capabilities", hexStr)
 	}
 
 	// Parse the hex string (only the first byte)
@@ -87,6 +84,11 @@ func decodeCapabilities(hexStr string) ([]string, error) {
 		return nil, err
 	}
 
+	// Decode the capabilities based on the bits set in the first byte
+	// Each bit corresponds to a capability defined in the capabilityMap
+	// See:
+	// http://www.ieee802.org/1/files/public/MIBs/LLDP-MIB-200505060000Z.txt
+	// https://github.com/sonic-net/sonic-dbsyncd/blob/master/src/lldp_syncd/conventions.py#L73
 	var capabilities []string
 	for i := 0; i < 8; i++ {
 		if val&(1<<uint(7-i)) != 0 {
@@ -129,13 +131,13 @@ func getLLDPTable(options sdc.OptionMap) ([]byte, error) {
 		log.Errorf("Unable to pull data for queries %v, got err %v", queries, err)
 		return nil, err
 	}
-	log.V(2).Infof("LLDP Table output count: %v", len(lldpTableOutput))
+	log.V(6).Infof("LLDP Table output count: %v", len(lldpTableOutput))
 
 	// LLDP_ENTRY_TABLE keys are like "LLDP_ENTRY_TABLE:Ethernet0"
-	var neighbors []LLDPNeighbor = make([]LLDPNeighbor, 0, len(lldpTableOutput))
+	var neighbors []lldpNeighbor = make([]lldpNeighbor, 0, len(lldpTableOutput))
 
 	for key, lldpTableItem := range lldpTableOutput {
-		log.V(2).Infof("LLDP Table item: %v, %+v", key, lldpTableItem)
+		log.V(6).Infof("LLDP Table item: %v, %+v", key, lldpTableItem)
 
 		enabledCapHexString := GetFieldValueString(lldpTableOutput, key, DefaultEmptyString, "lldp_rem_sys_cap_enabled")
 		capabilitiesCode, err := parseCapabilityCodes(enabledCapHexString)
@@ -144,8 +146,8 @@ func getLLDPTable(options sdc.OptionMap) ([]byte, error) {
 			capabilitiesCode = DefaultEmptyString
 		}
 
-		// Create LLDPNeighbor instance
-		neighbor := LLDPNeighbor{
+		// Create lldpNeighbor instance
+		neighbor := lldpNeighbor{
 			LocalPort:       key,
 			RemoteDevice: GetFieldValueString(lldpTableOutput, key, DefaultEmptyString, "lldp_rem_sys_name"),
 			RemotePortID: GetFieldValueString(lldpTableOutput, key, DefaultEmptyString, "lldp_rem_port_id"),
@@ -156,16 +158,10 @@ func getLLDPTable(options sdc.OptionMap) ([]byte, error) {
 	}
 
 	// Create response structure
-	var response = LLDPTableResponse{
+	var response = lldpTableResponse{
 		Neighbors: neighbors,
 		Total:     uint(len(neighbors)),
 	}
-
-	responseBytes, err := json.Marshal(response)
-	if err != nil {
-		log.Errorf("Failed to marshal LLDP table response: %v", err)
-		return nil, err
-	}
-
-	return responseBytes, nil	
+	log.V(6).Infof("LLDP Table response: %+v", response)
+	return json.Marshal(response)	
 }

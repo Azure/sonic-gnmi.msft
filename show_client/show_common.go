@@ -15,6 +15,7 @@ import (
 
 const AppDBPortTable = "PORT_TABLE"
 const StateDBPortTable = "PORT_TABLE"
+const DefaultEmptyString = ""
 
 const (
 	dbIndex    = 0 // The first index for a query will be the DB

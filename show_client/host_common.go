@@ -8,8 +8,6 @@ import (
 	"strconv"
 	"strings"
 	"sync"
-
-	log "github.com/golang/glog"
 )
 
 var HostDevicePath string = "/usr/share/sonic/device"

@@ -39,7 +39,6 @@ func GetChassisInfo() (map[string]string, error) {
 	metadata, err := GetMapFromQueries(queries)
 
 	if err != nil {
-		log.Errorf("Failed to get metadata from table paths: %v", err)
 		return nil, err
 	}
 
@@ -54,7 +53,6 @@ func GetUptime() string {
 	uptimeCommand := "uptime"
 	uptime, err := GetDataFromHostCommand(uptimeCommand)
 	if err != nil {
-		log.Errorf("Failed to get uptime: %v", err)
 		return "N/A"
 	}
 
@@ -65,7 +63,6 @@ func GetDockerInfo() string {
 	cmdOutput, err := GetDataFromHostCommand(`bash -o pipefail -c 'docker images --no-trunc --format '\''{"Repository":"{{.Repository}}","Tag":"{{.Tag}}","ID":"{{.ID}}","Size":"{{.Size}}"}'\'' | jq -s .'`)
 
 	if err != nil {
-		log.Warningf("Failed to get Docker info: %v", err)
 		return "N/A"
 	}
 

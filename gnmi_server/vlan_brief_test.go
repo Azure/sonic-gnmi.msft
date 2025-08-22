@@ -32,8 +32,17 @@ func TestGetShowVlanBrief(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), QueryTimeout*time.Second)
 	defer cancel()
 
-	vlanBriefDataFileName := "../testdata/VLAN_BRIEF_DB_DATA.txt"
+	vlanBriefFullDataFileName := "../testdata/VLAN_BRIEF_DB_DATA.txt"
+	vlanBriefNoVlanDataFileName := "../testdata/VLAN_BRIEF_DB_DATA_NO_VLAN.txt"
+	vlanBriefNoVlanIntDataFileName := "../testdata/VLAN_BRIEF_DB_DATA_NO_VLANINT.txt"
+	vlanBriefNoVlanMemDataFileName := "../testdata/VLAN_BRIEF_DB_DATA_NO_VLANMEM.txt"
+	vlanBriefWrongIpDataFileName := "../testdata/VLAN_BRIEF_DB_DATA_WRONGIP.txt"
 	vlanBriefResp := `{"Vlan1":{"IP Address":["192.168.0.1/21"],"Port Tagging":["Ethernet120;untagged"],"Ports":["Ethernet120"],"Proxy ARP":["disabled"], "VLAN ID":["1"]}}`
+
+	vlanBriefRespEmpty := `{}`
+	vlanBriefRespEmptyIp := `{"Vlan1":{"IP Address":null,"Port Tagging":["Ethernet120;untagged"],"Ports":["Ethernet120"],"Proxy ARP":["disabled"], "VLAN ID":["1"]}}`
+	vlanBriefRespEmptyMem := `{"Vlan1":{"IP Address":["192.168.0.1/21"],"Port Tagging":null,"Ports":null,"Proxy ARP":["disabled"], "VLAN ID":["1"]}}`
+
 	ResetDataSetsAndMappings(t)
 
 	tests := []struct {
@@ -65,7 +74,81 @@ func TestGetShowVlanBrief(t *testing.T) {
 			wantRespVal: []byte(vlanBriefResp),
 			valTest:     true,
 			testInit: func() {
-				AddDataSet(t, ConfigDbNum, vlanBriefDataFileName)
+				AddDataSet(t, ConfigDbNum, vlanBriefFullDataFileName)
+			},
+		},
+		{
+			desc:       "query SHOW vlan brief no vlan dataset",
+			pathTarget: "SHOW",
+			textPbPath: `
+				elem: <name: "vlan" >
+				elem: <name: "brief" >
+			`,
+			wantRetCode: codes.OK,
+			wantRespVal: []byte(vlanBriefRespEmpty),
+			valTest:     true,
+			testInit: func() {
+				FlushDataSet(t, ConfigDbNum)
+				AddDataSet(t, ConfigDbNum, vlanBriefNoVlanDataFileName)
+			},
+		},
+		{
+			desc:       "query SHOW vlan brief no vlan interface dataset",
+			pathTarget: "SHOW",
+			textPbPath: `
+				elem: <name: "vlan" >
+				elem: <name: "brief" >
+			`,
+			wantRetCode: codes.OK,
+			wantRespVal: []byte(vlanBriefRespEmptyIp),
+			valTest:     true,
+			testInit: func() {
+				FlushDataSet(t, ConfigDbNum)
+				AddDataSet(t, ConfigDbNum, vlanBriefNoVlanIntDataFileName)
+			},
+		},
+		{
+			desc:       "query SHOW vlan brief no vlan mem dataset",
+			pathTarget: "SHOW",
+			textPbPath: `
+				elem: <name: "vlan" >
+				elem: <name: "brief" >
+			`,
+			wantRetCode: codes.OK,
+			wantRespVal: []byte(vlanBriefRespEmptyMem),
+			valTest:     true,
+			testInit: func() {
+				FlushDataSet(t, ConfigDbNum)
+				AddDataSet(t, ConfigDbNum, vlanBriefNoVlanMemDataFileName)
+			},
+		},
+		{
+			desc:       "query SHOW vlan brief no dataset",
+			pathTarget: "SHOW",
+			textPbPath: `
+				elem: <name: "vlan" >
+				elem: <name: "brief" >
+			`,
+			wantRetCode: codes.OK,
+			wantRespVal: []byte(vlanBriefRespEmpty),
+			valTest:     true,
+			testInit: func() {
+				FlushDataSet(t, ConfigDbNum)
+			},
+		},
+		{
+			desc:       "query SHOW vlan brief wrong vlan interface dataset",
+			pathTarget: "SHOW",
+			textPbPath: `
+				elem: <name: "vlan" >
+				elem: <name: "brief" >
+			`,
+			wantRetCode: codes.OK,
+			wantRespVal: []byte(vlanBriefRespEmptyIp),
+			valTest:     true,
+			testInit: func() {
+				FlushDataSet(t, ConfigDbNum)
+				AddDataSet(t, ConfigDbNum, vlanBriefWrongIpDataFileName)
 			},
 		},
 	}

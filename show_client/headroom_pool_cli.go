@@ -29,13 +29,12 @@ func getHeadroomPoolWatermarkByType(persistent bool) ([]byte, error) {
 		return nil, err
 	}
 
-	// 2. Restrict to ingress lossless pool only
-	// https://github.com/Azure/sonic-utilities.msft/blob/3cb0eb2402a8da806b7c858eaa7e6be950c92fe3/scripts/watermarkstat#L294
-	filtered := make(map[string]string, 1)
+	// 2. Filter to ALL ingress lossless pools
+	// https://github.com/Azure/sonic-utilities.msft/blob/3cb0eb2402a8da806b7c858eaa7e6be950c92fe3/scripts/watermarkstat#L293-L302
+	filtered := make(map[string]string)
 	for pool, oid := range poolToOid {
 		if strings.Contains(pool, ingressLosslessPoolName) {
 			filtered[pool] = oid
-			break
 		}
 	}
 

@@ -3,28 +3,28 @@
 		{
 			"capability": "BR",
 			"localPort": "Ethernet354",
-			"remoteDevice": "str3-7060x6-64pe-6",
+			"remoteDevice": "sonic-device-6",
 			"remotePortDescr": "Ethernet354",
 			"remotePortId": "Ethernet45/3"
 		},
 		{
 			"capability": "",
 			"localPort": "Ethernet355",
-			"remoteDevice": "str3-7060x6-64pe-7",
+			"remoteDevice": "sonic-device-7",
 			"remotePortDescr": "Ethernet355",
 			"remotePortId": "Ethernet45/2"
 		},
 		{
 			"capability": "",
 			"localPort": "Ethernet353",
-			"remoteDevice": "str3-7060x6-64pe-5",
+			"remoteDevice": "sonic-device-5",
 			"remotePortDescr": "Ethernet353",
 			"remotePortId": "Ethernet45/0"
 		},
 		{
 			"capability": "O",
 			"localPort": "Ethernet356",
-			"remoteDevice": "str3-7060x6-64pe-8",
+			"remoteDevice": "sonic-device-8",
 			"remotePortDescr": "Ethernet356",
 			"remotePortId": "Ethernet45/1"
 		}

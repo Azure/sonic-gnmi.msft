@@ -11,7 +11,7 @@
         "lldp_rem_sys_desc": "SONiC Software Version: SONiC.20241211.29 - HwSku: Arista-7060X6-64PE-256x200G - Distribution: Debian 12.9 - Kernel: 6.1.0-29-2-amd64",
         "lldp_rem_index": "23",
         "lldp_rem_chassis_id": "b4:92:fe:d4:fc:c1",
-        "lldp_rem_sys_name": "str3-7060x6-64pe-5"
+        "lldp_rem_sys_name": "sonic-device-5"
     },
     "LLDP_ENTRY_TABLE:Ethernet354": {
         "lldp_rem_chassis_id_subtype": "4",
@@ -25,7 +25,7 @@
         "lldp_rem_sys_desc": "SONiC Software Version: SONiC.20241211.29 - HwSku: Arista-7060X6-64PE-256x200G - Distribution: Debian 12.9 - Kernel: 6.1.0-29-2-amd64",
         "lldp_rem_index": "23",
         "lldp_rem_chassis_id": "b4:92:fe:d4:fc:c0",
-        "lldp_rem_sys_name": "str3-7060x6-64pe-6"
+        "lldp_rem_sys_name": "sonic-device-6"
     },
     "LLDP_ENTRY_TABLE:Ethernet355": {
         "lldp_rem_chassis_id_subtype": "4",
@@ -38,7 +38,7 @@
         "lldp_rem_sys_desc": "SONiC Software Version: SONiC.20241211.29 - HwSku: Arista-7060X6-64PE-256x200G - Distribution: Debian 12.9 - Kernel: 6.1.0-29-2-amd64",
         "lldp_rem_index": "23",
         "lldp_rem_chassis_id": "b4:92:fe:d4:fc:c1",
-        "lldp_rem_sys_name": "str3-7060x6-64pe-7"
+        "lldp_rem_sys_name": "sonic-device-7"
     },
     "LLDP_ENTRY_TABLE:Ethernet356": {
         "lldp_rem_chassis_id_subtype": "4",
@@ -52,6 +52,6 @@
         "lldp_rem_sys_desc": "SONiC Software Version: SONiC.20241211.29 - HwSku: Arista-7060X6-64PE-256x200G - Distribution: Debian 12.9 - Kernel: 6.1.0-29-2-amd64",
         "lldp_rem_index": "23",
         "lldp_rem_chassis_id": "b4:92:fe:d4:fc:c1",
-        "lldp_rem_sys_name": "str3-7060x6-64pe-8"
+        "lldp_rem_sys_name": "sonic-device-8"
     }
 }

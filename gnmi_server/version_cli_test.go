@@ -485,21 +485,8 @@ sonic_utilities: 1.2
 			return testTime
 		})
 
-		fileOpenPatch := gomonkey.ApplyFunc(show_client.ReadConfToMap, func(string) (map[string]interface{}, error) {
-			data := map[string]interface{}{
-				"onie_platform":  "test_onie_platform",
-				"aboot_platform": "test_aboot_platform",
-			}
-			return data, nil
-		})
-
-		asicFilePatch := gomonkey.ApplyFunc(show_client.GetAsicConfFilePath, func() string {
-			return "../testdata/version_test_asics_num.conf"
-		})
-
-		platformConfigFilePatch := gomonkey.ApplyFunc(show_client.GetPlatformEnvConfFilePath, func() string {
-			return "../testdata/VERSION_TEST_PLATFORM.conf"
-		})
+		show_client.MachineConfPath = "../testdata/VERSION_MACHINE_CONF.conf"
+		show_client.HostDevicePath = "../testdata/"
 
 		t.Run(test.desc, func(t *testing.T) {
 			runTestGet(t, ctx, gClient, test.pathTarget, test.textPbPath, test.wantRetCode, test.wantRespVal, test.valTest)
@@ -510,15 +497,6 @@ sonic_utilities: 1.2
 		}
 		if timepatch != nil {
 			timepatch.Reset()
-		}
-		if fileOpenPatch != nil {
-			fileOpenPatch.Reset()
-		}
-		if asicFilePatch != nil {
-			asicFilePatch.Reset()
-		}
-		if platformConfigFilePatch != nil {
-			platformConfigFilePatch.Reset()
 		}
 	}
 }

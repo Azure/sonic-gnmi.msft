@@ -12,12 +12,13 @@ import (
 	log "github.com/golang/glog"
 )
 
+var HostDevicePath string = "/usr/share/sonic/device"
+var MachineConfPath string = "/host/machine.conf"
+
 const (
-	asicConfFilename      = "asic.conf"
-	containerPlatformPath = "/usr/share/sonic/platform"
-	hostDevicePath        = "/usr/share/sonic/device"
-	machineConfPath       = "/host/machine.conf"
-	platformEnvConfFile   = "platform_env.conf"
+	AsicConfFilename      = "asic.conf"
+	ContainerPlatformPath = "/usr/share/sonic/platform"
+	PlatformEnvConfFile   = "platform_env.conf"
 	serial                = "serial"
 	model                 = "model"
 	revision              = "revision"
@@ -111,7 +112,7 @@ func GetPlatform() string {
 }
 
 func GetMachineInfo() map[string]string {
-	data, err := ReadConfToMap(machineConfPath)
+	data, err := ReadConfToMap(MachineConfPath)
 	if err != nil {
 		return nil
 	}
@@ -126,21 +127,6 @@ func GetMachineInfo() map[string]string {
 
 func GetHwsku() string {
 	return GetLocalhostInfo(hwsku)
-}
-
-func GetPlatformEnvConfFilePath() string {
-	candidate := filepath.Join(containerPlatformPath, platformEnvConfFile)
-	if FileExists(candidate) {
-		return candidate
-	}
-	platform := GetPlatform()
-	if platform != "" {
-		candidate = filepath.Join(hostDevicePath, platform, platformEnvConfFile)
-		if FileExists(candidate) {
-			return candidate
-		}
-	}
-	return ""
 }
 
 func GetAsicCount() (int, error) {
@@ -210,7 +196,7 @@ func GetLocalhostInfo(field string) string {
 // Returns the path as a string if found, or an empty string if not found.
 func GetAsicConfFilePath() string {
 	// 1. Check container platform path
-	candidate := filepath.Join(containerPlatformPath, asicConfFilename)
+	candidate := filepath.Join(ContainerPlatformPath, AsicConfFilename)
 	if FileExists(candidate) {
 		return candidate
 	}
@@ -218,7 +204,7 @@ func GetAsicConfFilePath() string {
 	// 2. Check host device path with platform
 	platform := GetPlatform()
 	if platform != "" {
-		candidate = filepath.Join(hostDevicePath, platform, asicConfFilename)
+		candidate = filepath.Join(HostDevicePath, platform, AsicConfFilename)
 		if FileExists(candidate) {
 			return candidate
 		}
@@ -231,39 +217,9 @@ func GetAsicConfFilePath() string {
 func GetAsicPresenceList() []int {
 	var asicsList []int
 	if IsMultiAsic() {
-		if !IsSupervisor() {
-			numAsics := ReadAsicConfValue()
-			for i := 0; i < numAsics; i++ {
-				asicsList = append(asicsList, i)
-			}
-		} else {
-			queries := [][]string{
-				{"CHASSIS_STATE_DB", "CHASSIS_FABRIC_ASIC_TABLE"},
-			}
-			asicTblData, err := GetMapFromQueries(queries)
-			if err != nil {
-				log.Errorf("Failed to get metadata from table paths: %v", err)
-				return nil
-			}
-			if asicTblData == nil {
-				log.Error("No ASIC data found in CHASSIS_FABRIC_ASIC_TABLE")
-				return nil
-			}
-			// Iterate through ASIC names in the table and extract IDs
-			for asicName := range asicTblData {
-				idStr := GetAsicIDFromName(asicName)
-				id, err := strconv.Atoi(idStr)
-				if err == nil {
-					asicsList = append(asicsList, id)
-				} else {
-					log.Errorf("Failed to convert ASIC ID from name %s: %v", asicName, err)
-				}
-			}
-			if len(asicsList) == 0 {
-				log.Error("No valid ASIC IDs found in CHASSIS_FABRIC_ASIC_TABLE")
-				return nil
-			}
-		}
+		//Currently MultiAsic is not configured. One can refer PR change history to refer the removed code(MultiAsic support).
+		log.Errorf("MultiAsic is not supported.")
+		asicsList = append(asicsList, 0)
 	} else {
 		numAsics := ReadAsicConfValue()
 		for i := 0; i < numAsics; i++ {
@@ -271,39 +227,4 @@ func GetAsicPresenceList() []int {
 		}
 	}
 	return asicsList
-}
-
-func GetAsicIDFromName(asicName string) string {
-	const prefix = "asic"
-	if len(asicName) > len(prefix) && asicName[:len(prefix)] == prefix {
-		return asicName[len(prefix):]
-	}
-	return ""
-}
-
-func IsSupervisor() bool {
-	path := GetPlatformEnvConfFilePath()
-	if path == "" {
-		return false
-	}
-	file, err := os.Open(path)
-	if err != nil {
-		return false
-	}
-	defer file.Close()
-	scanner := bufio.NewScanner(file)
-	for scanner.Scan() {
-		line := scanner.Text()
-		tokens := strings.SplitN(line, "=", 2)
-		if len(tokens) < 2 {
-			continue
-		}
-		if strings.ToLower(strings.TrimSpace(tokens[0])) == "supervisor" {
-			val := strings.TrimSpace(tokens[1])
-			if val == "1" {
-				return true
-			}
-		}
-	}
-	return false
 }

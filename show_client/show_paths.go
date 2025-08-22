@@ -97,4 +97,15 @@ func init() {
 		getMacAgingTime,
 		nil,
 	)
+	sdc.RegisterCliPath(
+		[]string{"SHOW", "mac"},
+		getMacTable,
+		nil,
+		showCmdOptionVlan,
+		showCmdOptionPort,
+		showCmdOptionAddress,
+		showCmdOptionType,
+		showCmdOptionCount,
+		showCmdOptionVerbose,
+	)
 }

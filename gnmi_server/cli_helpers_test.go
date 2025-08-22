@@ -1,7 +1,6 @@
 package gnmi
 
 import (
-	sdcfg "github.com/sonic-net/sonic-gnmi/sonic_db_config"
 	"io/ioutil"
 	"os/exec"
 	"reflect"
@@ -10,6 +9,7 @@ import (
 
 	"github.com/agiledragon/gomonkey/v2"
 	sdc "github.com/sonic-net/sonic-gnmi/sonic_data_client"
+	sdcfg "github.com/sonic-net/sonic-gnmi/sonic_db_config"
 )
 
 const (
@@ -25,7 +25,7 @@ const (
 	chassisStateDbNum = 13
 )
 
-func MockNSEnterBGPSummary(t *testing.T, fileName string) *gomonkey.Patches {
+func MockNSEnterOutput(t *testing.T, fileName string) *gomonkey.Patches {
 	fileContentBytes, err := ioutil.ReadFile(fileName)
 	if err != nil {
 		t.Fatalf("read file %v err: %v", fileName, err)

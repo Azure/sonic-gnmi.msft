@@ -149,4 +149,10 @@ func init() {
 		nil,
 		showCmdOptionVerbose,
 	)
+	sdc.RegisterCliPath(
+		[]string{"SHOW", "ipv6", "protocol"},
+		getIPv6Protocol,
+		nil,
+		showCmdOptionVerbose,
+	)
 }

@@ -51,7 +51,24 @@ func getIPv6Interfaces(options sdc.OptionMap) ([]byte, error) {
 		return nil, fmt.Errorf("error retrieving interface information: %w", err)
 	}
 
-	jsonOutput, err := json.Marshal(allIPv6Interfaces)
+	// Transform slice into a map keyed by interface name, omitting the redundant name field in the value.
+	type ipv6InterfaceEntry struct {
+		IPv6Addresses []ipinterfaces.IPAddressDetail `json:"ipv6_addresses"`
+		AdminStatus   string                         `json:"admin_status"`
+		OperStatus    string                         `json:"oper_status"`
+		Master        string                         `json:"master,omitempty"`
+	}
+	response := make(map[string]ipv6InterfaceEntry, len(allIPv6Interfaces))
+	for _, d := range allIPv6Interfaces {
+		response[d.Name] = ipv6InterfaceEntry{
+			IPv6Addresses: d.IPAddresses,
+			AdminStatus:   d.AdminStatus,
+			OperStatus:    d.OperStatus,
+			Master:        d.Master,
+		}
+	}
+
+	jsonOutput, err := json.Marshal(response)
 	if err != nil {
 		log.Errorf("Failed to marshal interface details to JSON: %v", err)
 		return nil, fmt.Errorf("error formatting output: %w", err)

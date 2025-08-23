@@ -5,6 +5,7 @@ import (
 	"io/ioutil"
 	"os/exec"
 	"reflect"
+	"strings"
 	"testing"
 
 	"github.com/agiledragon/gomonkey/v2"
@@ -19,8 +20,9 @@ const (
 	ConfigDbNum   = 4
 	StateDbNum    = 6
 
-	TargetAddr   = "127.0.0.1:8081"
-	QueryTimeout = 10
+	TargetAddr        = "127.0.0.1:8081"
+	QueryTimeout      = 10
+	chassisStateDbNum = 13
 )
 
 func MockNSEnterBGPSummary(t *testing.T, fileName string) *gomonkey.Patches {
@@ -29,6 +31,35 @@ func MockNSEnterBGPSummary(t *testing.T, fileName string) *gomonkey.Patches {
 		t.Fatalf("read file %v err: %v", fileName, err)
 	}
 	patches := gomonkey.ApplyFunc(exec.Command, func(name string, args ...string) *exec.Cmd {
+		return &exec.Cmd{}
+	})
+	patches.ApplyMethod(reflect.TypeOf(&exec.Cmd{}), "CombinedOutput", func(_ *exec.Cmd) ([]byte, error) {
+		return fileContentBytes, nil
+	})
+	return patches
+}
+
+func MockExecCmds(t *testing.T, cmdAndFileMap map[string]string) *gomonkey.Patches {
+	var fileContentBytes []byte
+	var err error
+
+	patches := gomonkey.ApplyFunc(exec.Command, func(name string, args ...string) *exec.Cmd {
+		found := false
+		for mockCmd := range cmdAndFileMap {
+			for _, cmdArg := range args {
+				if strings.Contains(cmdArg, mockCmd) {
+					fileContentBytes, err = ioutil.ReadFile(cmdAndFileMap[mockCmd])
+					if err != nil {
+						t.Fatalf("read file %v err: %v", cmdAndFileMap[mockCmd], err)
+					}
+					found = true
+					break
+				}
+			}
+			if found {
+				break
+			}
+		}
 		return &exec.Cmd{}
 	})
 	patches.ApplyMethod(reflect.TypeOf(&exec.Cmd{}), "CombinedOutput", func(_ *exec.Cmd) ([]byte, error) {
@@ -77,4 +108,8 @@ func ResetDataSetsAndMappings(t *testing.T) {
 	FlushDataSet(t, ConfigDbNum)
 	FlushDataSet(t, StateDbNum)
 	sdc.ClearMappings()
+}
+
+func MockEnvironmentVariable(t *testing.T, key string, value string) {
+	t.Setenv(key, value)
 }

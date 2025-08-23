@@ -111,4 +111,9 @@ func init() {
 		getMacAgingTime,
 		nil,
 	)
+	sdc.RegisterCliPath(
+		[]string{"SHOW", "version"},
+		getVersion,
+		nil,
+	)
 }

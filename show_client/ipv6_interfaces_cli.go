@@ -56,12 +56,23 @@ func getIPv6Interfaces(options sdc.OptionMap) ([]byte, error) {
 		IPv6Addresses []ipinterfaces.IPAddressDetail `json:"ipv6_addresses"`
 		AdminStatus   string                         `json:"admin_status"`
 		OperStatus    string                         `json:"oper_status"`
-		Master        string                         `json:"master,omitempty"`
+		Master        string                         `json:"master"`
 	}
 	response := make(map[string]ipv6InterfaceEntry, len(allIPv6Interfaces))
 	for _, d := range allIPv6Interfaces {
+		// Backfill missing BGP neighbor details with "N/A" for presentation.
+		addrs := make([]ipinterfaces.IPAddressDetail, 0, len(d.IPAddresses))
+		for _, a := range d.IPAddresses {
+			if a.BGPNeighborIP == "" {
+				a.BGPNeighborIP = "N/A"
+			}
+			if a.BGPNeighborName == "" {
+				a.BGPNeighborName = "N/A"
+			}
+			addrs = append(addrs, a)
+		}
 		response[d.Name] = ipv6InterfaceEntry{
-			IPv6Addresses: d.IPAddresses,
+			IPv6Addresses: addrs,
 			AdminStatus:   d.AdminStatus,
 			OperStatus:    d.OperStatus,
 			Master:        d.Master,

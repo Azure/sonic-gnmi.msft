@@ -42,7 +42,7 @@ func TestGetLLDPTable(t *testing.T) {
 
 	// Expected output for the LLDP table
 	expectedLLDPTableResponseFilName := "../testdata/lldp/Expected_show_lldp_table_response.txt"
-	expectedEmptyDBResponse := `{"neighbors": [],"total": 0}`		
+	expectedEmptyDBResponse := `{"capability_codes_helper":"Capability codes: (R) Router, (B) Bridge, (O) Other","neighbors": [],"total": 0}`		
 	expectedLLDPTableResponse, err := ioutil.ReadFile(expectedLLDPTableResponseFilName)
 	if err != nil {
 		t.Fatalf("Failed to read file %v err: %v", expectedLLDPTableResponseFilName, err)

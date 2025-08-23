@@ -32,8 +32,9 @@ import (
 
 // lldpTableResponse represents the response structure for show llpd table command.
 type lldpTableResponse struct {
-    Neighbors []lldpNeighbor `json:"neighbors"`
-    Total     uint `json:"total"`
+	CapabilityCodesHelper string           `json:"capability_codes_helper"`
+    Neighbors               []lldpNeighbor `json:"neighbors"`
+    Total                   uint           `json:"total"`
 }
 
 // lldpNeighbor represents a single LLDP table entry.
@@ -159,8 +160,9 @@ func getLLDPTable(options sdc.OptionMap) ([]byte, error) {
 
 	// Create response structure
 	var response = lldpTableResponse{
-		Neighbors: neighbors,
-		Total:     uint(len(neighbors)),
+		CapabilityCodesHelper: "Capability codes: (R) Router, (B) Bridge, (O) Other",
+		Neighbors:              neighbors,
+		Total:                  uint(len(neighbors)),
 	}
 	log.V(6).Infof("LLDP Table response: %+v", response)
 	return json.Marshal(response)	

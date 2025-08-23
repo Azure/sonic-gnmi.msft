@@ -1,4 +1,5 @@
-{
+{   
+	"capability_codes_helper": "Capability codes: (R) Router, (B) Bridge, (O) Other",
 	"neighbors": [
 		{
 			"capability": "BR",

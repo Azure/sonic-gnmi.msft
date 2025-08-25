@@ -10,50 +10,53 @@ import (
 	sdc "github.com/sonic-net/sonic-gnmi/sonic_data_client"
 )
 
-const VlanTable = "VLAN"
-const VlanInterfaceTable = "VLAN_INTERFACE"
-const VlanMemberTable = "VLAN_MEMBER"
+const (
+	vlanTable          = "VLAN"
+	vlanInterfaceTable = "VLAN_INTERFACE"
+	vlanMemberTable    = "VLAN_MEMBER"
+	proxyArpKey        = "proxy_arp"
+	vlanKey            = "Vlan"
+	pipeDelimiter      = "|"
+	dhcpServers        = "dhcp_servers@"
+)
 
-type VlanConfig struct {
+type vlanConfig struct {
 	VlanData      map[string]interface{}
 	VlanIpData    map[string]interface{}
 	VlanPortsData map[string]interface{}
 }
 
-type VlanBriefColumn struct {
+type vlanBriefColumn struct {
 	Name   string
-	Getter func(cfg VlanConfig, vlan string) []string
+	Getter func(cfg vlanConfig, vlan string) interface{}
 }
 
-var VlanBriefColumns = []VlanBriefColumn{
+var vlanBriefColumns = []vlanBriefColumn{
 	{"VLAN ID", getVlanId},
 	{"IP Address", getVlanIpAddress},
-	{"Ports", getVlanPorts},
-	{"Port Tagging", getVlanPortsTagging},
+	{"Ports", getVlanPortsAndTagging},
 	{"Proxy ARP", getProxyArp},
+	{"Dhcp Helper Addresses", getVlanDhcpHelperAddress},
 }
 
-func getSortedKeys(m map[string]interface{}) []string {
-	keys := make([]string, 0, len(m))
-	for k := range m {
-		keys = append(keys, k)
-	}
-	sort.Strings(keys)
-	return keys
+type portAndTagging struct {
+	name         string
+	port_tagging string
 }
 
+//Function to check if given key is having valid IP, IP CIDR
 func isIPPrefixInKey(key interface{}) bool {
 	if keyStr, ok := key.(string); ok {
-		part1, part2 := parseKey(keyStr)
+		vlanId, ip := ParseKey(keyStr, pipeDelimiter)
 
-		if part1 == "" {
+		if vlanId == "" {
 			return false
 		}
 
-		_, _, err := net.ParseCIDR(part2)
+		_, _, err := net.ParseCIDR(ip)
 		if err != nil {
-			ip := net.ParseIP(part2)
-			if ip != nil {
+			parsedIp := net.ParseIP(ip)
+			if parsedIp != nil {
 				return true
 			} else {
 				return false
@@ -66,17 +69,17 @@ func isIPPrefixInKey(key interface{}) bool {
 	}
 }
 
-func getVlanId(cfg VlanConfig, vlan string) []string {
+func getVlanId(cfg vlanConfig, vlan string) interface{} {
 	var ids []string
-	ids = append(ids, strings.TrimPrefix(vlan, "Vlan"))
+	ids = append(ids, strings.TrimPrefix(vlan, vlanKey))
 	return ids
 }
 
-func getVlanIpAddress(cfg VlanConfig, vlan string) []string {
+func getVlanIpAddress(cfg vlanConfig, vlan string) interface{} {
 	var ipAddress []string
 	for key, _ := range cfg.VlanIpData {
 		if isIPPrefixInKey(key) {
-			ifname, address := parseKey(key)
+			ifname, address := ParseKey(key, pipeDelimiter)
 			if vlan == ifname {
 				ipAddress = append(ipAddress, address)
 			}
@@ -85,109 +88,94 @@ func getVlanIpAddress(cfg VlanConfig, vlan string) []string {
 	return ipAddress
 }
 
-func getVlanPorts(cfg VlanConfig, vlan string) []string {
-	var vlanPorts []string
-	for key := range cfg.VlanPortsData {
-		portsKey, portsValue := parseKey(key)
+func getVlanDhcpHelperAddress(cfg vlanConfig, vlan string) interface{} {
+	var ipAddress []string
+	for key, value := range cfg.VlanData {
+		if key == vlan {
+			if dhcpHelperIps, ok := value.(map[string]interface{})[dhcpServers]; ok {
+				ipAddress = strings.Split(dhcpHelperIps, ",")
+				break
+			}
+		}
+	}
+	ipAddress := natsortInterfaces(ipAddress)
+	return ipAddress
+}
+
+func getVlanPortsAndTagging(cfg vlanConfig, vlan string) interface{} {
+	var vlanPorts []portAndTagging
+	for key, value := range cfg.VlanPortsData {
+		portsKey, portsValue := ParseKey(key, pipeDelimiter)
 		if vlan != portsKey {
 			continue
 		}
-		vlanPorts = append(vlanPorts, portsValue)
+
+		vlanPorts = append(vlanPorts, portAndTagging{portsValue, value.(map[string]interface{})["tagging_mode"].(string)})
 	}
+
+	//sort data
+	sort.Slice(vlanPorts, func(i, j int) bool {
+		return vlanPorts[i].name < vlanPorts[j].name
+	})
 	return vlanPorts
 }
 
-func getVlanPortsTagging(cfg VlanConfig, vlan string) []string {
-	var vlanPortsTagging []string
-	for key, value := range cfg.VlanPortsData {
-		portsKey, portsValue := parseKey(key)
-		if vlan != portsKey {
-			continue
-		}
-		taggingMode := portsValue + ";" + value.(map[string]interface{})["tagging_mode"].(string)
-		vlanPortsTagging = append(vlanPortsTagging, taggingMode)
-	}
-	return vlanPortsTagging
-}
-
-func getProxyArp(cfg VlanConfig, vlan string) []string {
+func getProxyArp(cfg vlanConfig, vlan string) interface{} {
 	proxyArp := "disabled"
 	for key, value := range cfg.VlanIpData {
 		if vlan == key {
-			if v, ok := value.(map[string]interface{})["proxy_arp"]; ok {
+			if v, ok := value.(map[string]interface{})[proxyArpKey]; ok {
 				proxyArp = v.(string)
 			}
 		}
 	}
 
-	var arp []string
-	arp = append(arp, proxyArp)
-	return arp
-}
-
-func parseKey(key interface{}) (string, string) {
-	keyStr, ok := key.(string)
-	if !ok {
-		log.Errorf("parse Key failure to convert key as string:")
-	}
-
-	parts := strings.Split(keyStr, "|")
-	if len(parts) < 2 {
-		log.Errorf("Unable to parse the string")
-		return "", ""
-	}
-	return parts[0], parts[1]
+	return proxyArp
 }
 
 func getVlanBrief(options sdc.OptionMap) ([]byte, error) {
 	queriesVlan := [][]string{
-		{"CONFIG_DB", VlanTable},
+		{"CONFIG_DB", vlanTable},
 	}
 
 	queriesVlanInterface := [][]string{
-		{"CONFIG_DB", VlanInterfaceTable},
+		{"CONFIG_DB", vlanInterfaceTable},
 	}
 
 	queriesVlanMember := [][]string{
-		{"CONFIG_DB", VlanMemberTable},
+		{"CONFIG_DB", vlanMemberTable},
 	}
 
-	vlanData, derr := GetMapFromQueries(queriesVlan)
+	vlanData, err := GetMapFromQueries(queriesVlan)
 	if derr != nil {
-		log.Errorf("Unable to get data from queries %v, got err: %v", queriesVlan, derr)
-		return nil, derr
+		log.Errorf("Unable to get data from queries %v, got err: %v", queriesVlan, err)
+		return nil, err
 	}
 
-	vlanInterfaceData, ierr := GetMapFromQueries(queriesVlanInterface)
+	vlanInterfaceData, err := GetMapFromQueries(queriesVlanInterface)
 	if ierr != nil {
-		log.Errorf("Unable to get data from queries %v, got err: %v", queriesVlanInterface, ierr)
-		return nil, ierr
+		log.Errorf("Unable to get data from queries %v, got err: %v", queriesVlanInterface, err)
+		return nil, err
 	}
 
-	vlanMemberData, merr := GetMapFromQueries(queriesVlanMember)
+	vlanMemberData, err := GetMapFromQueries(queriesVlanMember)
 	if merr != nil {
-		log.Errorf("Unable to get data from queries %v, got err: %v", queriesVlanMember, merr)
-		return nil, merr
+		log.Errorf("Unable to get data from queries %v, got err: %v", queriesVlanMember, err)
+		return nil, err
 	}
 
-	vlanCfg := VlanConfig{vlanData, vlanInterfaceData, vlanMemberData}
+	vlanCfg := vlanConfig{vlanData, vlanInterfaceData, vlanMemberData}
 
-	vlans := getSortedKeys(vlanData)
+	vlans := GetSortedKeys(vlanData)
 	vlanBriefData := make(map[string]interface{})
 
 	for _, vlan := range vlans {
 		data := make(map[string]interface{})
-		for _, col := range VlanBriefColumns {
+		for _, col := range vlanBriefColumns {
 			data[col.Name] = col.Getter(vlanCfg, vlan)
 		}
 		vlanBriefData[vlan] = data
 	}
 
-	jsonVlanBrief, jsonErr := json.Marshal(vlanBriefData)
-	if jsonErr != nil {
-		log.Errorf("Unable to parse the json: %v", jsonErr)
-		return nil, jsonErr
-	}
-
-	return jsonVlanBrief, nil
+	return json.Marshal(vlanBriefData)
 }

@@ -93,12 +93,12 @@ func getVlanDhcpHelperAddress(cfg vlanConfig, vlan string) interface{} {
 	for key, value := range cfg.VlanData {
 		if key == vlan {
 			if dhcpHelperIps, ok := value.(map[string]interface{})[dhcpServers]; ok {
-				ipAddress = strings.Split(dhcpHelperIps, ",")
+				ipAddress = strings.Split(dhcpHelperIps.(string), ",")
 				break
 			}
 		}
 	}
-	ipAddress := natsortInterfaces(ipAddress)
+	ipAddress = natsortInterfaces(ipAddress)
 	return ipAddress
 }
 
@@ -147,19 +147,19 @@ func getVlanBrief(options sdc.OptionMap) ([]byte, error) {
 	}
 
 	vlanData, err := GetMapFromQueries(queriesVlan)
-	if derr != nil {
+	if err != nil {
 		log.Errorf("Unable to get data from queries %v, got err: %v", queriesVlan, err)
 		return nil, err
 	}
 
 	vlanInterfaceData, err := GetMapFromQueries(queriesVlanInterface)
-	if ierr != nil {
+	if err != nil {
 		log.Errorf("Unable to get data from queries %v, got err: %v", queriesVlanInterface, err)
 		return nil, err
 	}
 
 	vlanMemberData, err := GetMapFromQueries(queriesVlanMember)
-	if merr != nil {
+	if err != nil {
 		log.Errorf("Unable to get data from queries %v, got err: %v", queriesVlanMember, err)
 		return nil, err
 	}

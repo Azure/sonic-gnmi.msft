@@ -84,6 +84,10 @@ func getMacTable(options sdc.OptionMap) ([]byte, error) {
 		portIsValid = true
 	}
 
+	if typeFilter != "" && (strings.ToLower(typeFilter) != "static" && strings.ToLower(typeFilter) != "dynamic") {
+		return nil, errors.New("Invalid type " + typeFilter)
+	}
+
 	addIfMatch := func(vlan, macAddress, port, mtype string) {
 		// Filters
 		if vlanFilter >= 0 && vlan != fmt.Sprint(vlanFilter) {

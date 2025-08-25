@@ -139,4 +139,14 @@ func TestShowMacCommand(t *testing.T) {
 		`
 		runTestGet(t, ctx, gClient, "SHOW", textPbPath, codes.NotFound, nil, false)
 	})
+
+	// Invalid Type
+	t.Run("query SHOW mac -t DDStatic", func(t *testing.T) {
+		textPbPath := `
+			elem: <name: "mac" 
+			key: { key: "type" value: "DDStatic" }
+			>
+		`
+		runTestGet(t, ctx, gClient, "SHOW", textPbPath, codes.NotFound, nil, false)
+	})
 }

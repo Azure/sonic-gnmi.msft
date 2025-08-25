@@ -136,10 +136,6 @@ func getMacTable(options sdc.OptionMap) ([]byte, error) {
 
 	processFDBData(stateData, StateDb, addIfMatch)
 
-	if !portIsValid {
-		return nil, errors.New("Invalid port " + portFilter)
-	}
-
 	if wantCount {
 		resp := map[string]int{"count": len(entries)}
 		return json.Marshal(resp)

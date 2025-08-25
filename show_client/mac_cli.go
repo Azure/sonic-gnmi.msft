@@ -80,7 +80,7 @@ func getMacTable(options sdc.OptionMap) ([]byte, error) {
 	seen := make(map[string]struct{})
 	entries := make([]macEntry, 0, len(stateData))
 
-	// Check if port is valid
+	// Check if portFilter is valid
 	portIsValid := false
 	if portFilter == "" {
 		portIsValid = true
@@ -102,7 +102,7 @@ func getMacTable(options sdc.OptionMap) ([]byte, error) {
 		return nil, errors.New("Invalid port " + portFilter)
 	}
 
-	// Check if type is valid
+	// Check if typeFilter is valid
 	if typeFilter != "" && (strings.ToLower(typeFilter) != "static" && strings.ToLower(typeFilter) != "dynamic") {
 		return nil, errors.New("Invalid type " + typeFilter)
 	}

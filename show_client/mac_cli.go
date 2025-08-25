@@ -2,6 +2,7 @@ package show_client
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"sort"
 	"strings"
@@ -49,19 +50,13 @@ func getMacAgingTime(options sdc.OptionMap) ([]byte, error) {
 	return json.Marshal(result)
 }
 
-// MacEntry represents a single FDB entry
-type MacEntry struct {
+// macEntry represents a single FDB entry
+type macEntry struct {
 	Vlan       string `json:"vlan"`
 	MacAddress string `json:"macAddress"`
 	Port       string `json:"port"`
 	Type       string `json:"type"`
 }
-
-const (
-	ApplDb   = "APPL_DB"
-	StateDb  = "STATE_DB"
-	FDBTable = "FDB_TABLE"
-)
 
 // getMacTable queries APPL_DB and STATE_DB FDB_TABLE entries and returns either the list or count per options
 func getMacTable(options sdc.OptionMap) ([]byte, error) {
@@ -75,12 +70,6 @@ func getMacTable(options sdc.OptionMap) ([]byte, error) {
 	typeFilter, _ := options["type"].String()
 	wantCount, _ := options["count"].Bool()
 
-	// Fetch APPL_DB and STATE_DB separately to preserve source and avoid key collisions
-	applData, err := GetMapFromQueries([][]string{{ApplDb, FDBTable}})
-	if err != nil {
-		log.Errorf("Unable to get APPL_DB FDB_TABLE, err: %v", err)
-		return nil, err
-	}
 	stateData, err := GetMapFromQueries([][]string{{StateDb, FDBTable}})
 	if err != nil {
 		log.Errorf("Unable to get STATE_DB FDB_TABLE, err: %v", err)
@@ -89,15 +78,23 @@ func getMacTable(options sdc.OptionMap) ([]byte, error) {
 
 	// Prefer APPL_DB entries on duplicates; track seen keys "vlan|mac"
 	seen := make(map[string]struct{})
-	entries := make([]MacEntry, 0, len(applData)+len(stateData))
+	entries := make([]macEntry, 0, len(stateData))
+	portIsValid := false
+	if portFilter == "" {
+		portIsValid = true
+	}
 
 	addIfMatch := func(vlan, macAddress, port, mtype string) {
 		// Filters
 		if vlanFilter >= 0 && vlan != fmt.Sprint(vlanFilter) {
 			return
 		}
-		if portFilter != "" && !strings.EqualFold(port, portFilter) {
-			return
+		if portFilter != "" {
+			if strings.EqualFold(port, portFilter) {
+				portIsValid = true
+			} else {
+				return
+			}
 		}
 		if addrFilter != "" && !strings.EqualFold(strings.ToLower(addrFilter), strings.ToLower(macAddress)) {
 			return
@@ -110,7 +107,7 @@ func getMacTable(options sdc.OptionMap) ([]byte, error) {
 			return
 		}
 		seen[key] = struct{}{}
-		entries = append(entries, MacEntry{
+		entries = append(entries, macEntry{
 			Vlan:       vlan,
 			MacAddress: macAddress,
 			Port:       port,
@@ -118,8 +115,11 @@ func getMacTable(options sdc.OptionMap) ([]byte, error) {
 		})
 	}
 
-	ProcessFDBData(applData, ApplDb, addIfMatch)
-	ProcessFDBData(stateData, StateDb, addIfMatch)
+	processFDBData(stateData, StateDb, addIfMatch)
+
+	if !portIsValid {
+		return nil, errors.New("Invalid port " + portFilter)
+	}
 
 	if wantCount {
 		resp := map[string]int{"count": len(entries)}
@@ -135,13 +135,13 @@ func getMacTable(options sdc.OptionMap) ([]byte, error) {
 	return json.Marshal(entries)
 }
 
-func ProcessFDBData(data map[string]interface{}, source string, addIfMatch func(string, string, string, string)) {
+func processFDBData(data map[string]interface{}, source string, addIfMatch func(string, string, string, string)) {
 	for k, v := range data {
 		fv, ok := v.(map[string]interface{})
 		if !ok {
 			continue
 		}
-		vlan, mac, ok := ParseKey(k)
+		vlan, mac, ok := parseKey(k)
 		if !ok {
 			continue
 		}
@@ -149,7 +149,7 @@ func ProcessFDBData(data map[string]interface{}, source string, addIfMatch func(
 	}
 }
 
-func ParseKey(k string) (vlan string, mac string, ok bool) {
+func parseKey(k string) (vlan string, mac string, ok bool) {
 	idx := strings.Index(k, ":")
 	if idx <= 0 || idx >= len(k)-1 {
 		return "", "", false

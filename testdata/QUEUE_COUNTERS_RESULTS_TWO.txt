@@ -1,0 +1,80 @@
+{
+    "Ethernet0:0": {
+        "Counter/pkts": "N/A",
+        "Counter/bytes": "N/A",
+        "Drop/pkts": "N/A",
+        "Drop/bytes": "N/A",
+        "Trim/pkts": "N/A",
+        "TrimSent/pkts": "N/A",
+        "TrimDrop/pkts": "N/A",
+        "WredDrp/pkts": "N/A",
+        "WredDrp/bytes": "N/A",
+        "EcnMarked/pkts": "N/A",
+        "EcnMarked/bytes": "N/A"
+    },
+    "Ethernet0:1": {
+        "Counter/pkts": "N/A",
+        "Counter/bytes": "N/A",
+        "Drop/pkts": "N/A",
+        "Drop/bytes": "N/A",
+        "Trim/pkts": "N/A",
+        "TrimSent/pkts": "N/A",
+        "TrimDrop/pkts": "N/A",
+        "WredDrp/pkts": "N/A",
+        "WredDrp/bytes": "N/A",
+        "EcnMarked/pkts": "N/A",
+        "EcnMarked/bytes": "N/A"
+    },
+    "Ethernet0:2": {
+        "Counter/pkts": "100",
+        "Counter/bytes": "25600",
+        "Drop/pkts": "2",
+        "Drop/bytes": "512",
+        "Trim/pkts": "N/A",
+        "TrimSent/pkts": "N/A",
+        "TrimDrop/pkts": "N/A",
+        "WredDrp/pkts": "2",
+        "WredDrp/bytes": "512",
+        "EcnMarked/pkts": "0",
+        "EcnMarked/bytes": "0"
+    },
+    "Ethernet80:0": {
+        "Counter/pkts": "10",
+        "Counter/bytes": "1000",
+        "Drop/pkts": "2",
+        "Drop/bytes": "200",
+        "Trim/pkts": "1",
+        "TrimSent/pkts": "0",
+        "TrimDrop/pkts": "0",
+        "WredDrp/pkts": "N/A",
+        "WredDrp/bytes": "N/A",
+        "EcnMarked/pkts": "N/A",
+        "EcnMarked/bytes": "N/A"
+    },
+    "Ethernet80:1": {
+        "Counter/pkts": "N/A",
+        "Counter/bytes": "N/A",
+        "Drop/pkts": "N/A",
+        "Drop/bytes": "N/A",
+        "Trim/pkts": "N/A",
+        "TrimSent/pkts": "N/A",
+        "TrimDrop/pkts": "N/A",
+        "WredDrp/pkts": "N/A",
+        "WredDrp/bytes": "N/A",
+        "EcnMarked/pkts": "N/A",
+        "EcnMarked/bytes": "N/A"
+    },
+    "Ethernet80:2": {
+        "Counter/pkts": "N/A",
+        "Counter/bytes": "N/A",
+        "Drop/pkts": "N/A",
+        "Drop/bytes": "N/A",
+        "Trim/pkts": "N/A",
+        "TrimSent/pkts": "N/A",
+        "TrimDrop/pkts": "N/A",
+        "WredDrp/pkts": "N/A",
+        "WredDrp/bytes": "N/A",
+        "EcnMarked/pkts": "N/A",
+        "EcnMarked/bytes": "N/A"
+    }
+}

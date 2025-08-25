@@ -1,0 +1,13 @@
+{
+    "COUNTERS_QUEUE_NAME_MAP": {
+        "Ethernet0:0": "oid:0x1500000000009a",
+        "Ethernet0:1": "oid:0x1500000000009b",
+        "Ethernet0:2": "oid:0x1500000000009c",
+        "Ethernet40:0": "oid:0x150000000000c3",
+        "Ethernet40:1": "oid:0x150000000000c4",
+        "Ethernet40:2": "oid:0x150000000000c5",
+        "Ethernet80:0": "oid:0x150000000000ec",
+        "Ethernet80:1": "oid:0x150000000000ed",
+        "Ethernet80:2": "oid:0x150000000000ee"
+    }
+}

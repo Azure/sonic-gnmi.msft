@@ -5,6 +5,7 @@ import (
 	"os/exec"
 	"sort"
 	"strconv"
+	"strings"
 
 	log "github.com/golang/glog"
 	"github.com/google/shlex"
@@ -28,6 +29,17 @@ const (
 	base10                     = 10
 	maxShowCommandPeriod       = 300 // Max time allotted for SHOW commands period argument
 )
+
+var countersDBSeparator string
+
+func init() {
+	var err error
+	countersDBSeparator, err = sdc.GetTableKeySeparator("COUNTERS_DB", "")
+	if err != nil {
+		log.Warningf("Failed to get table key separator for COUNTERS DB: %v\nUsing the default separator ':'.", err)
+		countersDBSeparator = ":"
+	}
+}
 
 func GetDataFromHostCommand(command string) (string, error) {
 	baseArgs := []string{
@@ -140,6 +152,42 @@ func RemapAliasToPortName(portData map[string]interface{}) map[string]interface{
 		}
 	}
 	return remapped
+}
+
+func RemapAliasToPortNameForQueues(queueData map[string]interface{}) map[string]interface{} {
+	aliasMap := sdc.AliasToPortNameMap()
+	remapped := make(map[string]interface{})
+
+	for key, val := range queueData {
+		port, queueIdx, found := strings.Cut(key, countersDBSeparator)
+		if !found {
+			log.Warningf("Ignoring the invalid queue '%v'", key)
+			continue
+		}
+		if sonicPortName, ok := aliasMap[port]; ok {
+			remapped[sonicPortName+countersDBSeparator+queueIdx] = val
+		} else {
+			remapped[key] = val
+		}
+	}
+
+	return remapped
+}
+
+func GetValueOrDefault(values map[string]interface{}, key string, defaultValue string) string {
+	if value, ok := values[key]; ok {
+		return fmt.Sprint(value)
+	}
+	return defaultValue
+}
+
+func GetNonZeroValueOrEmpty(values map[string]interface{}, key string) string {
+	if value, ok := values[key]; ok {
+		if intValue, err := strconv.ParseInt(fmt.Sprint(value), base10, 64); err == nil && intValue != 0 {
+			return fmt.Sprint(value)
+		}
+	}
+	return ""
 }
 
 func GetFieldValueString(data map[string]interface{}, key string, defaultValue string, field string) string {

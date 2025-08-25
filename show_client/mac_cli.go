@@ -71,6 +71,25 @@ func getMacTable(options sdc.OptionMap) ([]byte, error) {
 	typeFilter, _ := options["type"].String()
 	wantCount, _ := options["count"].Bool()
 
+	// Check vlanFilter is valid
+	if vlanFilter != -1 {
+		if vlanFilter < 1 || vlanFilter > 4095 {
+			return nil, errors.New("Error: Invalid vlan " + fmt.Sprint(vlanFilter))
+		}
+	}
+
+	// Check if typeFilter is valid
+	if typeFilter != "" && (strings.ToLower(typeFilter) != "static" && strings.ToLower(typeFilter) != "dynamic") {
+		return nil, errors.New("Error: Invalid type " + typeFilter)
+	}
+
+	// Check mac address format is valid
+	macAddressPattern := "^([0-9A-Fa-f]{2}[:]){5}([0-9A-Fa-f]{2})$"
+	re := regexp.MustCompile(macAddressPattern)
+	if addrFilter != "" && !re.MatchString(addrFilter) {
+		return nil, errors.New("Error: Invalid mac address " + addrFilter)
+	}
+
 	stateData, err := GetMapFromQueries([][]string{{StateDb, FDBTable}})
 	if err != nil {
 		log.Errorf("Unable to get STATE_DB FDB_TABLE, err: %v", err)
@@ -101,18 +120,6 @@ func getMacTable(options sdc.OptionMap) ([]byte, error) {
 
 	if !portIsValid {
 		return nil, errors.New("Error: Invalid port " + portFilter)
-	}
-
-	// Check if typeFilter is valid
-	if typeFilter != "" && (strings.ToLower(typeFilter) != "static" && strings.ToLower(typeFilter) != "dynamic") {
-		return nil, errors.New("Error: Invalid type " + typeFilter)
-	}
-
-	// Check mac address format is valid
-	macAddressPattern := "^([0-9A-Fa-f]{2}[:]){5}([0-9A-Fa-f]{2})$"
-	re := regexp.MustCompile(macAddressPattern)
-	if addrFilter != "" && !re.MatchString(addrFilter) {
-		return nil, errors.New("Error: Invalid mac address " + addrFilter)
 	}
 
 	addIfMatch := func(vlan, macAddress, port, mtype string) {

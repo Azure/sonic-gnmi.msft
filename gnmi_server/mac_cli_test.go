@@ -174,4 +174,14 @@ func TestShowMacCommand(t *testing.T) {
 		`
 		runTestGet(t, ctx, gClient, "SHOW", textPbPath, codes.NotFound, nil, false)
 	})
+
+	// Invalid vlan
+	t.Run("query SHOW mac -v 4096", func(t *testing.T) {
+		textPbPath := `
+			elem: <name: "mac" 
+				key: { key: "vlan" value: "4096" }
+				>
+		`
+		runTestGet(t, ctx, gClient, "SHOW", textPbPath, codes.NotFound, nil, false)
+	})
 }

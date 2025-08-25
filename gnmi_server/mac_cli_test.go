@@ -43,13 +43,16 @@ func TestShowMacCommand(t *testing.T) {
 		textPbPath := `
 			elem: <name: "mac" >
 		`
-		wantRespVal := []byte(`[
+		wantRespVal := []byte(`{
+			"entries":[
         {"macAddress": "e8:eb:d3:32:f0:08", "port": "Ethernet320", "type": "dynamic", "vlan": "1000"},
         {"macAddress": "e8:eb:d3:32:f0:1b", "port": "Ethernet108", "type": "dynamic", "vlan": "1000"},
         {"macAddress": "e8:eb:d3:32:f0:1e", "port": "Ethernet120", "type": "dynamic", "vlan": "1000"},
         {"macAddress": "e8:eb:d3:32:f0:25", "port": "Ethernet148", "type": "static", "vlan": "1000"},
         {"macAddress": "e8:eb:d3:32:f0:28", "port": "Ethernet160", "type": "dynamic", "vlan": "1001"}
-    ]`)
+			],
+			"total": 5
+		}`)
 		runTestGet(t, ctx, gClient, "SHOW", textPbPath, codes.OK, wantRespVal, true)
 	})
 
@@ -58,8 +61,8 @@ func TestShowMacCommand(t *testing.T) {
 			elem: <name: "mac"  key: { key: "count" value: "True" } >
 		`
 		wantRespVal := []byte(`{
-														"count": 5
-														}`)
+														  "total": 5
+													 }`)
 		runTestGet(t, ctx, gClient, "SHOW", textPbPath, codes.OK, wantRespVal, true)
 	})
 
@@ -69,9 +72,12 @@ func TestShowMacCommand(t *testing.T) {
 				key: { key: "address" value: "e8:eb:d3:32:f0:08" }
 				>
 		`
-		wantRespVal := []byte(`[
-        {"macAddress": "e8:eb:d3:32:f0:08", "port": "Ethernet320", "type": "dynamic", "vlan": "1000"}
-    ]`)
+		wantRespVal := []byte(`{
+				"entries":[
+						{"macAddress": "e8:eb:d3:32:f0:08", "port": "Ethernet320", "type": "dynamic", "vlan": "1000"}
+					],
+				"total": 1
+		}`)
 		runTestGet(t, ctx, gClient, "SHOW", textPbPath, codes.OK, wantRespVal, true)
 	})
 
@@ -83,7 +89,7 @@ func TestShowMacCommand(t *testing.T) {
 				>
 		`
 		wantRespVal := []byte(`{
-														"count": 1
+														"total": 1
 														}`)
 		runTestGet(t, ctx, gClient, "SHOW", textPbPath, codes.OK, wantRespVal, true)
 	})
@@ -94,12 +100,15 @@ func TestShowMacCommand(t *testing.T) {
 				key: { key: "vlan" value: "1000" }
 				>
 		`
-		wantRespVal := []byte(`[
-        {"macAddress": "e8:eb:d3:32:f0:08", "port": "Ethernet320", "type": "dynamic", "vlan": "1000"},
-        {"macAddress": "e8:eb:d3:32:f0:1b", "port": "Ethernet108", "type": "dynamic", "vlan": "1000"},
-        {"macAddress": "e8:eb:d3:32:f0:1e", "port": "Ethernet120", "type": "dynamic", "vlan": "1000"},
-        {"macAddress": "e8:eb:d3:32:f0:25", "port": "Ethernet148", "type": "static", "vlan": "1000"}
-    ]`)
+		wantRespVal := []byte(`{
+			"entries":[
+									{"macAddress": "e8:eb:d3:32:f0:08", "port": "Ethernet320", "type": "dynamic", "vlan": "1000"},
+									{"macAddress": "e8:eb:d3:32:f0:1b", "port": "Ethernet108", "type": "dynamic", "vlan": "1000"},
+									{"macAddress": "e8:eb:d3:32:f0:1e", "port": "Ethernet120", "type": "dynamic", "vlan": "1000"},
+									{"macAddress": "e8:eb:d3:32:f0:25", "port": "Ethernet148", "type": "static", "vlan": "1000"}
+								],
+								"total": 4
+				}`)
 		runTestGet(t, ctx, gClient, "SHOW", textPbPath, codes.OK, wantRespVal, true)
 	})
 
@@ -109,12 +118,15 @@ func TestShowMacCommand(t *testing.T) {
 				key: { key: "type" value: "dynamic" }
 				>
 		`
-		wantRespVal := []byte(`[
-        {"macAddress": "e8:eb:d3:32:f0:08", "port": "Ethernet320", "type": "dynamic", "vlan": "1000"},
-        {"macAddress": "e8:eb:d3:32:f0:1b", "port": "Ethernet108", "type": "dynamic", "vlan": "1000"},
-        {"macAddress": "e8:eb:d3:32:f0:1e", "port": "Ethernet120", "type": "dynamic", "vlan": "1000"},
-        {"macAddress": "e8:eb:d3:32:f0:28", "port": "Ethernet160", "type": "dynamic", "vlan": "1001"}
-    ]`)
+		wantRespVal := []byte(`{
+			"entries":[
+					{"macAddress": "e8:eb:d3:32:f0:08", "port": "Ethernet320", "type": "dynamic", "vlan": "1000"},
+					{"macAddress": "e8:eb:d3:32:f0:1b", "port": "Ethernet108", "type": "dynamic", "vlan": "1000"},
+					{"macAddress": "e8:eb:d3:32:f0:1e", "port": "Ethernet120", "type": "dynamic", "vlan": "1000"},
+					{"macAddress": "e8:eb:d3:32:f0:28", "port": "Ethernet160", "type": "dynamic", "vlan": "1001"}
+			],
+		"total":4
+		}`)
 		runTestGet(t, ctx, gClient, "SHOW", textPbPath, codes.OK, wantRespVal, true)
 	})
 
@@ -124,9 +136,12 @@ func TestShowMacCommand(t *testing.T) {
 			key: { key: "port" value: "Ethernet320" }
 			>
 		`
-		wantRespVal := []byte(`[
-        {"macAddress": "e8:eb:d3:32:f0:08", "port": "Ethernet320", "type": "dynamic", "vlan": "1000"}
-    ]`)
+		wantRespVal := []byte(`{
+			"entries":[
+				{"macAddress": "e8:eb:d3:32:f0:08", "port": "Ethernet320", "type": "dynamic", "vlan": "1000"}
+			],
+			"total": 1
+		}`)
 		runTestGet(t, ctx, gClient, "SHOW", textPbPath, codes.OK, wantRespVal, true)
 	})
 

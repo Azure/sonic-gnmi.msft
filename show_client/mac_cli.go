@@ -137,7 +137,7 @@ func getMacTable(options sdc.OptionMap) ([]byte, error) {
 	processFDBData(stateData, StateDb, addIfMatch)
 
 	if wantCount {
-		resp := map[string]int{"count": len(entries)}
+		resp := map[string]int{"total": len(entries)}
 		return json.Marshal(resp)
 	}
 
@@ -147,7 +147,9 @@ func getMacTable(options sdc.OptionMap) ([]byte, error) {
 		}
 		return entries[i].Vlan < entries[j].Vlan
 	})
-	return json.Marshal(entries)
+
+	resp := map[string]interface{}{"entries": entries, "total": len(entries)}
+	return json.Marshal(resp)
 }
 
 func processFDBData(data map[string]interface{}, source string, addIfMatch func(string, string, string, string)) {

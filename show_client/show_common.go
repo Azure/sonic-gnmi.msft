@@ -5,6 +5,7 @@ import (
 	"os/exec"
 	"sort"
 	"strconv"
+	"strings"
 
 	log "github.com/golang/glog"
 	"github.com/google/shlex"
@@ -202,4 +203,27 @@ func toString(v interface{}) string {
 	default:
 		return fmt.Sprint(v)
 	}
+}
+
+func GetSortedKeys(m map[string]interface{}) []string {
+	keys := make([]string, 0, len(m))
+	for k := range m {
+		keys = append(keys, k)
+	}
+	sort.Strings(keys)
+	return keys
+}
+
+func ParseKey(key interface{}, delimiter string) (string, string) {
+	keyStr, ok := key.(string)
+	if !ok {
+		log.Errorf("parse Key failure to convert key as string:")
+	}
+
+	parts := strings.Split(keyStr, delimiter)
+	if len(parts) < 2 {
+		log.Errorf("Unable to parse the string")
+		return "", ""
+	}
+	return parts[0], parts[1]
 }

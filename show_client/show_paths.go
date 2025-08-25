@@ -68,6 +68,11 @@ func init() {
 		nil,
 	)
 	sdc.RegisterCliPath(
+		[]string{"SHOW", "reboot-cause", "history"},
+		getRebootCauseHistory,
+		nil,
+	)
+	sdc.RegisterCliPath(
 		[]string{"SHOW", "interface", "transceiver", "error-status"},
 		getTransceiverErrorStatus,
 		nil,
@@ -109,6 +114,11 @@ func init() {
 	sdc.RegisterCliPath(
 		[]string{"SHOW", "mac", "aging-time"},
 		getMacAgingTime,
+		nil,
+	)
+	sdc.RegisterCliPath(
+		[]string{"SHOW", "vlan", "brief"},
+		getVlanBrief,
 		nil,
 	)
 }

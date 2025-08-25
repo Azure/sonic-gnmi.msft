@@ -10,47 +10,13 @@ import (
 	"time"
 
 	pb "github.com/openconfig/gnmi/proto/gnmi"
-	"github.com/sonic-net/sonic-gnmi/show_client"
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/credentials"
 )
 
-func TestParseKey(t *testing.T) {
-	tests := []struct {
-		key      string
-		expected show_client.MacEntry
-	}{
-		{
-			key: "Vlan1000:e8:eb:d3:32:f0:1e",
-			expected: show_client.MacEntry{
-				Vlan:       "1000",
-				MacAddress: "e8:eb:d3:32:f0:1e",
-			},
-		},
-		{
-			key: "Vlan1000:e8:eb:d3:32:f0:1a",
-			expected: show_client.MacEntry{
-				Vlan:       "1000",
-				MacAddress: "e8:eb:d3:32:f0:1a",
-			},
-		},
-	}
-
-	for _, test := range tests {
-		vlan, mac, success := show_client.ParseKey(test.key)
-		if !success {
-			t.Errorf("Failed to ParseKey(%q)", test.key)
-			continue
-		}
-		if vlan != test.expected.Vlan || mac != test.expected.MacAddress {
-			t.Errorf("parseKey(%q) = %+v; want %+v", test.key, show_client.MacEntry{Vlan: vlan, MacAddress: mac}, test.expected)
-		}
-	}
-}
-
-func TestProcessFDBData(t *testing.T) {
+func TestShowMacCommand(t *testing.T) {
 	s := createServer(t, ServerPort)
 	go runServer(t, s)
 	defer s.ForceStop()
@@ -162,5 +128,15 @@ func TestProcessFDBData(t *testing.T) {
         {"macAddress": "e8:eb:d3:32:f0:08", "port": "Ethernet320", "type": "dynamic", "vlan": "1000"}
     ]`)
 		runTestGet(t, ctx, gClient, "SHOW", textPbPath, codes.OK, wantRespVal, true)
+	})
+
+	// Invalid Port
+	t.Run("query SHOW mac -p Ethernet999", func(t *testing.T) {
+		textPbPath := `
+			elem: <name: "mac" 
+			key: { key: "port" value: "Ethernet999" }
+			>
+		`
+		runTestGet(t, ctx, gClient, "SHOW", textPbPath, codes.NotFound, nil, false)
 	})
 }

@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"regexp"
 	"sort"
 	"strings"
 
@@ -99,12 +100,19 @@ func getMacTable(options sdc.OptionMap) ([]byte, error) {
 	}
 
 	if !portIsValid {
-		return nil, errors.New("Invalid port " + portFilter)
+		return nil, errors.New("Error: Invalid port " + portFilter)
 	}
 
 	// Check if typeFilter is valid
 	if typeFilter != "" && (strings.ToLower(typeFilter) != "static" && strings.ToLower(typeFilter) != "dynamic") {
-		return nil, errors.New("Invalid type " + typeFilter)
+		return nil, errors.New("Error: Invalid type " + typeFilter)
+	}
+
+	// Check mac address format is valid
+	macAddressPattern := "^([0-9A-Fa-f]{2}[:]){5}([0-9A-Fa-f]{2})$"
+	re := regexp.MustCompile(macAddressPattern)
+	if addrFilter != "" && !re.MatchString(addrFilter) {
+		return nil, errors.New("Error: Invalid mac address " + addrFilter)
 	}
 
 	addIfMatch := func(vlan, macAddress, port, mtype string) {

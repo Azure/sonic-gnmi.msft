@@ -164,4 +164,14 @@ func TestShowMacCommand(t *testing.T) {
 		`
 		runTestGet(t, ctx, gClient, "SHOW", textPbPath, codes.NotFound, nil, false)
 	})
+
+	// Invalid mac address
+	t.Run("query SHOW mac -a g8:eb:d3:32:f0:08", func(t *testing.T) {
+		textPbPath := `
+			elem: <name: "mac" 
+				key: { key: "address" value: "g8:eb:d3:32:f0:08" }
+				>
+		`
+		runTestGet(t, ctx, gClient, "SHOW", textPbPath, codes.NotFound, nil, false)
+	})
 }

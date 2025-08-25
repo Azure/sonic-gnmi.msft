@@ -79,11 +79,30 @@ func getMacTable(options sdc.OptionMap) ([]byte, error) {
 	// Prefer APPL_DB entries on duplicates; track seen keys "vlan|mac"
 	seen := make(map[string]struct{})
 	entries := make([]macEntry, 0, len(stateData))
+
+	// Check if port is valid
 	portIsValid := false
 	if portFilter == "" {
 		portIsValid = true
+	} else {
+		for _, v := range stateData {
+			fv, ok := v.(map[string]interface{})
+			if !ok {
+				continue
+			}
+			port := toString(fv["port"])
+			if strings.EqualFold(port, portFilter) {
+				portIsValid = true
+				break
+			}
+		}
 	}
 
+	if !portIsValid {
+		return nil, errors.New("Invalid port " + portFilter)
+	}
+
+	// Check if type is valid
 	if typeFilter != "" && (strings.ToLower(typeFilter) != "static" && strings.ToLower(typeFilter) != "dynamic") {
 		return nil, errors.New("Invalid type " + typeFilter)
 	}
@@ -93,12 +112,8 @@ func getMacTable(options sdc.OptionMap) ([]byte, error) {
 		if vlanFilter >= 0 && vlan != fmt.Sprint(vlanFilter) {
 			return
 		}
-		if portFilter != "" {
-			if strings.EqualFold(port, portFilter) {
-				portIsValid = true
-			} else {
-				return
-			}
+		if portFilter != "" && !strings.EqualFold(port, portFilter) {
+			return
 		}
 		if addrFilter != "" && !strings.EqualFold(strings.ToLower(addrFilter), strings.ToLower(macAddress)) {
 			return

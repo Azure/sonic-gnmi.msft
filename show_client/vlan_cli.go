@@ -32,16 +32,16 @@ type vlanBriefColumn struct {
 }
 
 var vlanBriefColumns = []vlanBriefColumn{
-	{"VLAN ID", getVlanId},
-	{"IP Address", getVlanIpAddress},
-	{"Ports", getVlanPortsAndTagging},
-	{"Proxy ARP", getProxyArp},
-	{"Dhcp Helper Addresses", getVlanDhcpHelperAddress},
+	{"vlan_id", getVlanId},
+	{"ip_address", getVlanIpAddress},
+	{"ports", getVlanPortsAndTagging},
+	{"proxy_arp", getProxyArp},
+	{"dhcp_helper_addresses", getVlanDhcpHelperAddress},
 }
 
 type portAndTagging struct {
-	name         string
-	port_tagging string
+	Name         string `json:"name"`
+	Port_tagging string `json:"port_tagging"`
 }
 
 //Function to check if given key is having valid IP, IP CIDR
@@ -64,7 +64,7 @@ func isIPPrefixInKey(key interface{}) bool {
 		}
 		return true
 	} else {
-		log.Errorf("Unable to parse the key")
+		log.Info("Unable to parse the key")
 		return false
 	}
 }
@@ -115,7 +115,7 @@ func getVlanPortsAndTagging(cfg vlanConfig, vlan string) interface{} {
 
 	//sort data
 	sort.Slice(vlanPorts, func(i, j int) bool {
-		return vlanPorts[i].name < vlanPorts[j].name
+		return vlanPorts[i].Name < vlanPorts[j].Name
 	})
 	return vlanPorts
 }

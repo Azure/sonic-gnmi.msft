@@ -38,11 +38,11 @@ func TestGetShowVlanBrief(t *testing.T) {
 	vlanBriefNoVlanMemDataFileName := "../testdata/VLAN_BRIEF_DB_DATA_NO_VLANMEM.txt"
 	vlanBriefWrongIpDataFileName := "../testdata/VLAN_BRIEF_DB_DATA_WRONGIP.txt"
 	vlanBriefWrongKeyDataFileName := "../testdata/VLAN_BRIEF_DB_DATA_WRONGKEY.txt"
-	vlanBriefResp := `{"Vlan1":{"IP Address":["192.168.0.1/21"],"Port Tagging":["Ethernet120;untagged"],"Ports":["Ethernet120"],"Proxy ARP":["disabled"], "VLAN ID":["1"]}}`
 
+	vlanBriefResp := `{"Vlan1":{"dhcp_helper_addresses":["192.0.0.1"],"ip_address":["192.168.0.1/21"],"ports":[{"name":"Ethernet120","port_tagging":"untagged"}],"proxy_arp":"disabled","vlan_id":["1"]}}`
 	vlanBriefRespEmpty := `{}`
-	vlanBriefRespEmptyIp := `{"Vlan1":{"IP Address":null,"Port Tagging":["Ethernet120;untagged"],"Ports":["Ethernet120"],"Proxy ARP":["disabled"], "VLAN ID":["1"]}}`
-	vlanBriefRespEmptyMem := `{"Vlan1":{"IP Address":["192.168.0.1/21"],"Port Tagging":null,"Ports":null,"Proxy ARP":["disabled"], "VLAN ID":["1"]}}`
+	vlanBriefRespEmptyIp := `{"Vlan1":{"dhcp_helper_addresses":null,"ip_address":null,"ports":[{"name":"Ethernet120","port_tagging":"untagged"}],"proxy_arp":"disabled","vlan_id":["1"]}}`
+	vlanBriefRespEmptyMem := `{"Vlan1":{"dhcp_helper_addresses":null,"ip_address":["192.168.0.1/21"],"ports":null,"proxy_arp":"disabled","vlan_id":["1"]}}`
 
 	ResetDataSetsAndMappings(t)
 

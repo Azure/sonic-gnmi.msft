@@ -218,11 +218,12 @@ func ParseKey(key interface{}, delimiter string) (string, string) {
 	keyStr, ok := key.(string)
 	if !ok {
 		log.Errorf("parse Key failure to convert key as string:")
+		return "", ""
 	}
 
 	parts := strings.Split(keyStr, delimiter)
 	if len(parts) < 2 {
-		log.Errorf("Unable to parse the string")
+		log.Info("Unable to parse the string")
 		return "", ""
 	}
 	return parts[0], parts[1]

@@ -83,6 +83,12 @@ func init() {
 		showCmdOptionInterface,
 	)
 	sdc.RegisterCliPath(
+		[]string{"SHOW", "interface", "status"},
+		getInterfaceStatus,
+		nil,
+		showCmdOptionInterface,
+  )
+  sdc.RegisterCliPath(
 		[]string{"SHOW", "headroom_pool", "watermark"},
 		getHeadroomPoolWatermark,
 		nil,

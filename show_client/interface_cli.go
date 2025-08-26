@@ -3,6 +3,7 @@ package show_client
 import (
 	"encoding/json"
 	"fmt"
+	"math"
 	"strconv"
 	"strings"
 	"time"
@@ -294,28 +295,28 @@ func getInterfaceErrors(options sdc.OptionMap) ([]byte, error) {
 	return json.Marshal(portErrors)
 }
 
-func getFrontPanelPorts(intf string) ([]string, error) {
-	// Get the front panel ports from the SONiC CONFIG_DB
+func getIntfsFromConfigDB(intf string) ([]string, error) {
+	// Get the list of ports from the SONiC CONFIG_DB
 	queries := [][]string{
-		{"CONFIG_DB", "PORT"},
+		{"CONFIG_DB", ConfigDBPortTable},
 	}
-	frontPanelPorts, err := GetMapFromQueries(queries)
+	portTable, err := GetMapFromQueries(queries)
 	if err != nil {
-		log.Errorf("Failed to get front panel ports: %v", err)
+		log.Errorf("Failed to get interface list from CONFIG_DB: %v", err)
 		return nil, err
 	}
 
-	// If intf is specified, return only that interface
+	// If intf is specified, return only that interface if exists
 	if intf != "" {
-		if _, ok := frontPanelPorts[intf]; !ok {
-			return nil, fmt.Errorf("interface %s not found in front panel ports", intf)
+		if _, ok := portTable[intf]; !ok {
+			return []string{}, nil
 		}
 		return []string{intf}, nil
 	}
 
-	// If no specific interface is requested, return all front panel ports
-	ports := make([]string, 0, len(frontPanelPorts))
-	for key := range frontPanelPorts {
+	// If no specific interface is requested, return all interfaces
+	ports := make([]string, 0, len(portTable))
+	for key := range portTable {
 		ports = append(ports, key)
 	}
 	return ports, nil
@@ -324,7 +325,7 @@ func getFrontPanelPorts(intf string) ([]string, error) {
 func getInterfaceFecStatus(options sdc.OptionMap) ([]byte, error) {
 	intf, _ := options["interface"].String()
 
-	ports, err := getFrontPanelPorts(intf)
+	ports, err := getIntfsFromConfigDB(intf)
 	if err != nil {
 		log.Errorf("Failed to get front panel ports: %v", err)
 		return nil, err
@@ -381,4 +382,545 @@ func getInterfaceFecStatus(options sdc.OptionMap) ([]byte, error) {
 	}
 
 	return json.Marshal(portFecStatus)
+}
+
+func getPortchannelIntfsFromConfigDB(intf string) ([]string, error) {
+	// Get the list of portchannel interfaces from the SONiC CONFIG_DB
+	queries := [][]string{
+		{"CONFIG_DB", ConfigDBPortChannelTable},
+	}
+	portTable, err := GetMapFromQueries(queries)
+	if err != nil {
+		log.Errorf("Failed to get portchannel interface list from CONFIG_DB: %v", err)
+		return nil, err
+	}
+
+	// If intf is specified, return only that interface if exists
+	if intf != "" {
+		if _, ok := portTable[intf]; !ok {
+			return []string{}, nil
+		}
+		return []string{intf}, nil
+	}
+
+	// If no specific interface is requested, return all interfaces
+	ports := make([]string, 0, len(portTable))
+	for key := range portTable {
+		ports = append(ports, key)
+	}
+	return ports, nil
+}
+
+func getPortOptics(intf string) string {
+	// Query port optics type from STATE_DB
+	queries := [][]string{
+		{"STATE_DB", "TRANSCEIVER_INFO", intf},
+	}
+	data, err := GetMapFromQueries(queries)
+	if err != nil {
+		log.Errorf("Failed to get optics type for port %s: %v", intf, err)
+		return "N/A"
+	}
+
+	if _, ok := data["type"]; !ok {
+		return "N/A"
+	}
+	return fmt.Sprint(data["type"])
+}
+
+func portSpeedFmt(inSpeed, opticsType string) string {
+	// fetched speed is in megabits per second
+	speed, err := strconv.Atoi(inSpeed)
+	if err != nil {
+		// If parse fails, return "N/A"
+		return "N/A"
+	}
+
+	if opticsType == "RJ45" && speed <= 1000 {
+		return fmt.Sprintf("%dM", speed)
+	} else if speed < 1000 {
+		return fmt.Sprintf("%dM", speed)
+	} else if speed%1000 >= 100 {
+		return fmt.Sprintf("%.1fG", float64(speed)/1000.0)
+	}
+	return fmt.Sprintf("%.0fG", float64(speed)/1000.0)
+}
+
+// portSpeedParse converts a human-readable port speed string to an integer Mbps value.
+// Examples:
+//
+//	"100M"   -> 100
+//	"1G"     -> 1000
+//	"2.5G"   -> 2500
+//	"100000" -> 100000 (assumed already in Mbps)
+//	"N/A" or parse errors -> 0
+func portSpeedParse(speedStr string) int {
+	s := strings.TrimSpace(strings.ToUpper(speedStr))
+	if s == "" || s == "N/A" {
+		return 0
+	}
+
+	if strings.HasSuffix(s, "G") {
+		v := strings.TrimSuffix(s, "G")
+		f, err := strconv.ParseFloat(v, 64)
+		if err != nil {
+			return 0
+		}
+		return int(math.Round(f * 1000.0))
+	}
+
+	if strings.HasSuffix(s, "M") {
+		v := strings.TrimSuffix(s, "M")
+		f, err := strconv.ParseFloat(v, 64)
+		if err != nil {
+			return 0
+		}
+		return int(math.Round(f))
+	}
+
+	// Assume raw number already represents Mbps
+	f, err := strconv.ParseFloat(s, 64)
+	if err != nil {
+		return 0
+	}
+	return int(math.Round(f))
+}
+
+func getPortOperSpeed(intf string) string {
+	// Query port optics type from STATE_DB
+	queries := [][]string{
+		{"STATE_DB", StateDBPortTable, intf},
+	}
+	stateData, err := GetMapFromQueries(queries)
+	if err != nil {
+		log.Errorf("Failed to get state for port %s from STATE_DB: %v", intf, err)
+		return "N/A"
+	}
+
+	queries = [][]string{
+		{"APPL_DB", AppDBPortTable, intf},
+	}
+	appData, err := GetMapFromQueries(queries)
+	if err != nil {
+		log.Errorf("Failed to get state for port %s from APPL_DB: %v", intf, err)
+		return "N/A"
+	}
+
+	opticsType := getPortOptics(intf)
+	if status, ok := appData["oper_status"]; !ok || fmt.Sprint(status) != "up" {
+		return portSpeedFmt(fmt.Sprint(appData["speed"]), opticsType)
+	}
+	if _, ok := stateData["speed"]; !ok {
+		return portSpeedFmt(fmt.Sprint(appData["speed"]), opticsType)
+	} else {
+		return portSpeedFmt(fmt.Sprint(stateData["speed"]), opticsType)
+	}
+}
+
+func getIntfModeMap(ports []string) map[string]string {
+	queries := [][]string{
+		{"CONFIG_DB", "VLAN_MEMBER"},
+	}
+	vlanMemberTable, err := GetMapFromQueries(queries)
+	if err != nil {
+		log.Errorf("Failed to get VLAN_MEMBER table from CONFIG_DB: %v", err)
+		return nil
+	}
+
+	// Get the map of interfaces to VLANs
+	vlanMembers := map[string]string{}
+	for key := range vlanMemberTable {
+		content := strings.Split(key, "|")
+		if len(content) < 2 {
+			// Invalid Key, ignoring it
+			continue
+		}
+		vlanMemberKey := content[1]
+
+		vlanMembers[vlanMemberKey] = content[0]
+	}
+
+	queries = [][]string{
+		{"CONFIG_DB", "PORTCHANNEL_MEMBER"},
+	}
+	portChannelMemberTable, err := GetMapFromQueries(queries)
+	if err != nil {
+		log.Errorf("Failed to get PORTCHANNEL_MEMBER table from CONFIG_DB: %v", err)
+		return nil
+	}
+
+	// Get the map of interfaces to Portchannels
+	portChannelMembers := map[string]string{}
+	for key := range portChannelMemberTable {
+		content := strings.Split(key, "|")
+		if len(content) < 2 {
+			// Invalid Key, ignoring it
+			continue
+		}
+		portChannelMemberKey := content[1]
+
+		portChannelMembers[portChannelMemberKey] = content[0]
+	}
+
+	// Create a map to hold the interface mode
+	intfModeMap := make(map[string]string)
+	for i := range ports {
+		port := ports[i]
+		queries = [][]string{
+			{"CONFIG_DB", "PORT", port},
+		}
+		portData, err := GetMapFromQueries(queries)
+		if err != nil {
+			log.Errorf("Failed to get port data for %s: %v", port, err)
+			continue
+		}
+
+		if mode, ok := portData["mode"]; ok {
+			intfModeMap[port] = fmt.Sprint(mode)
+		} else if _, ok := portChannelMembers[port]; ok {
+			intfModeMap[port] = portChannelMembers[port]
+		} else if _, ok := vlanMembers[port]; ok {
+			intfModeMap[port] = "trunk"
+		} else {
+			intfModeMap[port] = "routed"
+		}
+	}
+	return intfModeMap
+}
+
+func getPortchannelModeMap(portchannels []string) map[string]string {
+	queries := [][]string{
+		{"CONFIG_DB", "VLAN_MEMBER"},
+	}
+	vlanMemberTable, err := GetMapFromQueries(queries)
+	if err != nil {
+		log.Errorf("Failed to get VLAN_MEMBER table from CONFIG_DB: %v", err)
+		return nil
+	}
+
+	// Get the map of interfaces to VLANs
+	vlanMembers := map[string]string{}
+	for key := range vlanMemberTable {
+		content := strings.Split(key, "|")
+		if len(content) < 2 {
+			// Invalid Key, ignoring it
+			continue
+		}
+		vlanMemberKey := content[1]
+
+		vlanMembers[vlanMemberKey] = content[0]
+	}
+
+	poModeMap := make(map[string]string)
+	for i := range portchannels {
+		port := portchannels[i]
+		queries = [][]string{
+			{"CONFIG_DB", "PORTCHANNEL", port},
+		}
+		portData, err := GetMapFromQueries(queries)
+		if err != nil {
+			log.Errorf("Failed to get port data for %s: %v", port, err)
+			continue
+		}
+
+		if mode, ok := portData["mode"]; ok {
+			poModeMap[port] = fmt.Sprint(mode)
+		} else if _, ok := vlanMembers[port]; ok {
+			poModeMap[port] = "trunk"
+		} else {
+			poModeMap[port] = "routed"
+		}
+	}
+	return poModeMap
+}
+
+func getPortchannelSpeedMap(portchannels []string) map[string]string {
+	queries := [][]string{
+		{"CONFIG_DB", "PORTCHANNEL_MEMBER"},
+	}
+	portChannelMemberTable, err := GetMapFromQueries(queries)
+	if err != nil {
+		log.Errorf("Failed to get PORTCHANNEL_MEMBER table from CONFIG_DB: %v", err)
+		return nil
+	}
+
+	// Get the map of Portchannels to Interfaces
+	portChannelMembership := map[string][]string{}
+	for key := range portChannelMemberTable {
+		content := strings.Split(key, "|")
+		if len(content) < 2 {
+			// Invalid Key, ignoring it
+			continue
+		}
+		portChannel := content[0]
+
+		portChannelMembership[portChannel] = append(portChannelMembership[portChannel], content[1])
+	}
+
+	// Calculate the speed for each portchannel by summing the speeds of its member interfaces
+	poSpeedMap := make(map[string]string)
+	for portchannel := range portChannelMembership {
+		speedList := []string{}
+		for i := range portChannelMembership[portchannel] {
+			speed := getPortOperSpeed(portChannelMembership[portchannel][i])
+			speedList = append(speedList, speed)
+		}
+
+		aggSpeed := 0
+		for _, speed := range speedList {
+			aggSpeed += portSpeedParse(speed)
+		}
+		poSpeedMap[portchannel] = portSpeedFmt(fmt.Sprint(aggSpeed), "N/A")
+	}
+
+	return poSpeedMap
+}
+
+func getSubIntfsFromAppDB(intf string) ([]string, error) {
+	// get the list of sub-interfaces from APPL_DB
+	queries := [][]string{
+		{"APPL_DB", "INTF_TABLE"},
+	}
+	portTable, err := GetMapFromQueries(queries)
+	if err != nil {
+		log.Errorf("Failed to get sub-interface list from APPL_DB: %v", err)
+		return nil, err
+	}
+
+	// If intf is specified, return only that interface
+	if intf != "" {
+		if _, ok := portTable[intf]; !ok {
+			return nil, fmt.Errorf("Sub-interface %s not found in APPL_DB", intf)
+		}
+		return []string{intf}, nil
+	}
+
+	// If no specific interface is requested, return all interfaces
+	ports := make([]string, 0, len(portTable))
+	for key := range portTable {
+		ports = append(ports, key)
+	}
+	return ports, nil
+}
+
+func getSubInterfaceStatus(intf string) ([]byte, error) {
+	// Get the status of sub-interfaces
+	ports, err := getSubIntfsFromAppDB(intf)
+	if err != nil {
+		log.Errorf("Failed to get sub-interfaces from APPL_DB: %v", err)
+		return nil, err
+	}
+	ports = natsortInterfaces(ports)
+
+	interfaceStatus := make([]map[string]string, 0, len(ports))
+	for i := range ports {
+		interfaceStatus = append(interfaceStatus, map[string]string{
+			"Interface":   ports[i],
+			"Speed":       "N/A",
+			"MTU":         "N/A",
+			"Vlan":        "N/A",
+			"Oper":        "N/A",
+			"Admin":       "N/A",
+			"Optics Type": "N/A",
+		})
+	}
+	return json.Marshal(interfaceStatus)
+}
+
+func getInterfaceStatus(options sdc.OptionMap) ([]byte, error) {
+	isSubIntf := false
+	intf, _ := options["interface"].String()
+	if intf != "" {
+		if intf == "subport" {
+			isSubIntf = true
+			intf = ""
+		} else if strings.ContainsRune(intf, '.') {
+			isSubIntf = true
+		}
+	}
+
+	if isSubIntf {
+		return getSubInterfaceStatus(intf)
+	}
+
+	ports, err := getIntfsFromConfigDB(intf)
+	if err != nil {
+		log.Errorf("Failed to get front panel port list from CONFIG_DB: %v", err)
+		return nil, err
+	}
+	portchannels, err := getPortchannelIntfsFromConfigDB(intf)
+	if err != nil {
+		log.Errorf("Failed to get portchannel list from CONFIG_DB: %v", err)
+		return nil, err
+	}
+	ports = natsortInterfaces(ports)
+	portchannels = natsortInterfaces(portchannels)
+	intfModeMap := getIntfModeMap(ports)
+	poModeMap := getPortchannelModeMap(portchannels)
+	poSpeedMap := getPortchannelSpeedMap(portchannels)
+	interfaceStatus := make([]map[string]string, 0, len(ports)+len(portchannels))
+
+	// Get status of front panel interfaces
+	for i := range ports {
+		port := ports[i]
+		portLanesStatus := ""
+		portOperSpeed := getPortOperSpeed(port)
+		portMtuStatus := ""
+		portFecStatus := ""
+		portAlias := ""
+		portMode := intfModeMap[port]
+		operStatus := ""
+		adminStatus := ""
+		portOpticsType := getPortOptics(port)
+		portPfcAsymStatus := ""
+
+		// Query port status from APPL_DB
+		queries := [][]string{
+			{"APPL_DB", AppDBPortTable, port},
+		}
+		data, err := GetMapFromQueries(queries)
+		if err != nil {
+			log.Errorf("Failed to get status for port %s: %v", port, err)
+			return nil, err
+		}
+
+		// parse all fields from APP_DB status data
+		if _, ok := data["lanes"]; !ok {
+			portLanesStatus = "N/A"
+		} else {
+			portLanesStatus = fmt.Sprint(data["lanes"])
+		}
+		if _, ok := data["mtu"]; !ok {
+			portMtuStatus = "N/A"
+		} else {
+			portMtuStatus = fmt.Sprint(data["mtu"])
+		}
+		if _, ok := data["fec"]; !ok {
+			portFecStatus = "N/A"
+		} else {
+			portFecStatus = fmt.Sprint(data["fec"])
+		}
+		if _, ok := data["alias"]; !ok {
+			portAlias = "N/A"
+		} else {
+			portAlias = fmt.Sprint(data["alias"])
+		}
+		if _, ok := data["oper_status"]; !ok {
+			operStatus = "N/A"
+		} else {
+			operStatus = fmt.Sprint(data["oper_status"])
+		}
+		if _, ok := data["admin_status"]; !ok {
+			adminStatus = "N/A"
+		} else {
+			adminStatus = fmt.Sprint(data["admin_status"])
+		}
+		if _, ok := data["pfc_asym"]; !ok {
+			portPfcAsymStatus = "N/A"
+		} else {
+			portPfcAsymStatus = fmt.Sprint(data["pfc_asym"])
+		}
+
+		interfaceStatus = append(interfaceStatus, map[string]string{
+			"Interface": port,
+			"Lanes":     portLanesStatus,
+			"Speed":     portOperSpeed,
+			"MTU":       portMtuStatus,
+			"FEC":       portFecStatus,
+			"Alias":     portAlias,
+			"Vlan":      portMode,
+			"Oper":      operStatus,
+			"Admin":     adminStatus,
+			"Type":      portOpticsType,
+			"Asym":      portPfcAsymStatus,
+		})
+	}
+
+	// Get status of portchannel interfaces
+	for i := range portchannels {
+		port := portchannels[i]
+		portLanesStatus := ""
+		portOperSpeed := poSpeedMap[port]
+		portMtuStatus := ""
+		portFecStatus := ""
+		portAlias := ""
+		portMode := poModeMap[port]
+		operStatus := ""
+		adminStatus := ""
+		portOpticsType := getPortOptics(port)
+		portPfcAsymStatus := ""
+
+		// Query portchannel status from APPL_DB
+		queries := [][]string{
+			{"APPL_DB", AppDBPortChannelTable, port},
+		}
+		data, err := GetMapFromQueries(queries)
+		if err != nil {
+			log.Errorf("Failed to get status for portchannel %s: %v", port, err)
+			return nil, err
+		}
+
+		// Query portchannel config from CONFIG_DB
+		queries = [][]string{
+			{"CONFIG_DB", ConfigDBPortChannelTable, port},
+		}
+		config, err := GetMapFromQueries(queries)
+		if err != nil {
+			log.Errorf("Failed to get status for portchannel %s: %v", port, err)
+			return nil, err
+		}
+
+		// parse all fields from APP_DB status data
+		if _, ok := data["lanes"]; !ok {
+			portLanesStatus = "N/A"
+		} else {
+			portLanesStatus = fmt.Sprint(data["lanes"])
+		}
+		if _, ok := config["mtu"]; !ok {
+			portMtuStatus = "N/A"
+		} else {
+			portMtuStatus = fmt.Sprint(config["mtu"])
+		}
+		if _, ok := data["fec"]; !ok {
+			portFecStatus = "N/A"
+		} else {
+			portFecStatus = fmt.Sprint(data["fec"])
+		}
+		if _, ok := data["alias"]; !ok {
+			portAlias = "N/A"
+		} else {
+			portAlias = fmt.Sprint(data["alias"])
+		}
+		if _, ok := data["oper_status"]; !ok {
+			operStatus = "N/A"
+		} else {
+			operStatus = fmt.Sprint(data["oper_status"])
+		}
+		if _, ok := data["admin_status"]; !ok {
+			adminStatus = "N/A"
+		} else {
+			adminStatus = fmt.Sprint(data["admin_status"])
+		}
+		if _, ok := data["pfc_asym"]; !ok {
+			portPfcAsymStatus = "N/A"
+		} else {
+			portPfcAsymStatus = fmt.Sprint(data["pfc_asym"])
+		}
+
+		interfaceStatus = append(interfaceStatus, map[string]string{
+			"Interface": port,
+			"Lanes":     portLanesStatus,
+			"Speed":     portOperSpeed,
+			"MTU":       portMtuStatus,
+			"FEC":       portFecStatus,
+			"Alias":     portAlias,
+			"Vlan":      portMode,
+			"Oper":      operStatus,
+			"Admin":     adminStatus,
+			"Type":      portOpticsType,
+			"Asym":      portPfcAsymStatus,
+		})
+	}
+
+	return json.Marshal(interfaceStatus)
 }

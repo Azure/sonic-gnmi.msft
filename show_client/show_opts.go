@@ -23,6 +23,8 @@ const (
 	showCmdOptionTrimDesc          = "[trim=true] Display only trim counters"
 	showCmdOptionGroupDesc         = "[group=TEXT] Filter by logical counter group (eg RX_DROPS, TX_ERR)"
 	showCmdOptionCounterTypeDesc   = "[counter_type=TEXT] Filter by counter type (eg PORT_INGRESS_DROPS, SWITCH_EGRESS_DROPS)"
+	showCmdOptionIPAddressDesc     = "[ipaddress=TEXT] Filter by single IP address"
+	showCmdOptionSubcommandDesc    = "[subcommand=TEXT] No-op since no subcommands are supported"
 )
 
 var (
@@ -115,7 +117,7 @@ var (
 		"sid",
 		showCmdOptionSidDesc,
 		sdc.StringValue,
-  )
+	)
 
 	showCmdOptionNonzero = sdc.NewShowCmdOption(
 		"nonzero",
@@ -138,6 +140,18 @@ var (
 	showCmdOptionCounterType = sdc.NewShowCmdOption(
 		"counter_type",
 		showCmdOptionCounterTypeDesc,
+		sdc.StringValue,
+	)
+
+	showCmdOptionIPAddress = sdc.NewShowCmdOption(
+		"ipaddress",
+		showCmdOptionIPAddressDesc,
+		sdc.StringValue,
+	)
+
+	showCmdOptionSubcommand = sdc.NewShowCmdOption(
+		"subcommand",
+		showCmdOptionUnimplementedDesc,
 		sdc.StringValue,
 	)
 )

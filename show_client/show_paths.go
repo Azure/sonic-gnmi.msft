@@ -41,9 +41,10 @@ func init() {
 	)
 	sdc.RegisterCliPath(
 		[]string{"SHOW", "ipv6", "bgp", "neighbors"},
-		getIPv6BGPNeighbors,
+		getIPv6BGPNeighborsHandler,
 		nil,
-		showCmdOptionInterface,
+		showCmdOptionIPAddress,
+		showCmdOptionSubcommand,
 	)
 	sdc.RegisterCliPath(
 		[]string{"SHOW", "interface", "counters"},

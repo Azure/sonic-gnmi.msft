@@ -118,25 +118,11 @@ func isBGPNeighborPresent(ip string) bool {
 	return exists
 }
 
-func getIPv6BGPNeighbors(options sdc.OptionMap) ([]byte, error) {
-	intf, _ := options["interface"].String()
-
+func getIPv6BGPNeighbors(ip string) ([]byte, error) {
 	var cmd string
-	if intf != "" {
-		// Validate IPv6 address
-		if !isIPv6Address(intf) {
-			log.Errorf("Provided neighbor IP %v is not a valid IPv6 address", intf)
-			return nil, fmt.Errorf("invalid IPv6 address: %v", intf)
-		}
-
-		// Check if neighbor exists in CONFIG_DB
-		if !isBGPNeighborPresent(intf) {
-			log.Errorf("IPv6 BGP neighbor %v does not exist in CONFIG_DB", intf)
-			return nil, fmt.Errorf("neighbor %v not found in CONFIG_DB", intf)
-		}
-
+	if ip != "" {
 		// Construct command with specific neighbor
-		cmd = fmt.Sprintf("vtysh -c \"show bgp ipv6 neighbors %s json\"", intf)
+		cmd = fmt.Sprintf("vtysh -c \"show bgp ipv6 neighbors %s json\"", ip)
 	} else {
 		// Default command for all neighbors
 		cmd = vtyshBGPIPv6BGPNeighborsCommand
@@ -156,4 +142,129 @@ func getIPv6BGPNeighbors(options sdc.OptionMap) ([]byte, error) {
 	// 	return nil, err
 	// }
 	return []byte(vtyshOutput), nil
+}
+
+func getIPv6BGPNeighborsRoutes(ip string) ([]byte, error) {
+	// Construct command with specific neighbor
+	cmd := fmt.Sprintf("vtysh -c \"show bgp ipv6 neighbors %s routes json\"", ip)
+
+	// Get data from vtysh shell
+	vtyshOutput, err := GetDataFromHostCommand(cmd)
+	if err != nil {
+		log.Errorf("Unable to successfully execute command %v, got err %v",
+			cmd, err)
+		return nil, err
+	}
+
+	// Define struct for unmarshalling
+	var routesResp IPv6BGPNeighborRoutes
+
+	// Unmarshal raw JSON into struct
+	if err := json.Unmarshal([]byte(vtyshOutput), &routesResp); err != nil {
+		log.Errorf("Failed to unmarshal vtysh output for %v: %v", cmd, err)
+		return nil, fmt.Errorf("failed to parse routes response: %v", err)
+	}
+
+	// Marshal back to JSON to return clean structured data
+	result, err := json.Marshal(routesResp)
+	if err != nil {
+		log.Errorf("Failed to marshal IPv6 BGP routes response: %v", err)
+		return nil, err
+	}
+
+	return result, nil
+}
+
+func getIPv6BGPNeighborsAdvertisedRoutes(ip string) ([]byte, error) {
+	// Construct vtysh command for advertised routes
+	cmd := fmt.Sprintf("vtysh -c \"show bgp ipv6 neighbors %s advertised-routes json\"", ip)
+
+	// Run the command
+	vtyshOutput, err := GetDataFromHostCommand(cmd)
+	if err != nil {
+		log.Errorf("Unable to execute command %v, got err %v", cmd, err)
+		return nil, err
+	}
+
+	// Unmarshal JSON response
+	var advRoutesResp IPv6BGPAdvertisedRoutesResponse
+	if err := json.Unmarshal([]byte(vtyshOutput), &advRoutesResp); err != nil {
+		log.Errorf("Failed to unmarshal vtysh output: %v", err)
+		return nil, fmt.Errorf("failed to parse advertised routes response: %v", err)
+	}
+
+	// Marshal back to JSON
+	result, err := json.MarshalIndent(advRoutesResp, "", "  ")
+	if err != nil {
+		log.Errorf("Failed to marshal advertised routes response: %v", err)
+		return nil, err
+	}
+
+	return result, nil
+}
+
+func getIPv6BGPNeighborsReceivedRoutes(ip string) ([]byte, error) {
+	// Construct vtysh command for received routes
+	cmd := fmt.Sprintf("vtysh -c \"show bgp ipv6 neighbors %s received-routes json\"", ip)
+
+	// Run the command
+	vtyshOutput, err := GetDataFromHostCommand(cmd)
+	if err != nil {
+		log.Errorf("Unable to execute command %v, got err %v", cmd, err)
+		return nil, err
+	}
+
+	// Unmarshal JSON response
+	var recRoutesResp IPv6BGPReceivedRoutesResponse
+	if err := json.Unmarshal([]byte(vtyshOutput), &recRoutesResp); err != nil {
+		log.Errorf("Failed to unmarshal vtysh output: %v", err)
+		return nil, fmt.Errorf("failed to parse received routes response: %v", err)
+	}
+
+	// Marshal back to JSON
+	result, err := json.MarshalIndent(recRoutesResp, "", "  ")
+	if err != nil {
+		log.Errorf("Failed to marshal received routes response: %v", err)
+		return nil, err
+	}
+
+	return result, nil
+}
+
+func getIPv6BGPNeighborsHandler(options sdc.OptionMap) ([]byte, error) {
+	ip, _ := options["ipaddress"].String()
+	subcmd, _ := options["subcommand"].String()
+
+	// Validate IPv6 address if provided
+	if ip != "" && !isIPv6Address(ip) {
+		log.Errorf("Invalid IPv6 address: %v", ip)
+		return nil, fmt.Errorf("invalid IPv6 address: %v", ip)
+	}
+
+	// If subcommand is provided, ip becomes required
+	if subcmd != "" && ip == "" {
+		log.Errorf("IPv6 address is required when subcommand %v is specified", subcmd)
+		return nil, fmt.Errorf("IPv6 address is required when subcommand %v is specified", subcmd)
+	}
+
+	// Check neighbor exists if IP is provided
+	if ip != "" && !isBGPNeighborPresent(ip) {
+		log.Errorf("IPv6 BGP neighbor %v does not exist in CONFIG_DB", ip)
+		return nil, fmt.Errorf("neighbor %v not found in CONFIG_DB", ip)
+	}
+
+	// Dispatch based on subcommand
+	switch subcmd {
+	case "routes":
+		return getIPv6BGPNeighborsRoutes(ip)
+	case "advertised-routes":
+		return getIPv6BGPNeighborsAdvertisedRoutes(ip)
+	case "received-routes":
+		return getIPv6BGPNeighborsReceivedRoutes(ip)
+	case "":
+		return getIPv6BGPNeighbors(ip) // ip may be empty → list all
+	default:
+		log.Errorf("Invalid subcommand: %v", subcmd)
+		return nil, fmt.Errorf("invalid subcommand: %v", subcmd)
+	}
 }

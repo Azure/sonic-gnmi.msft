@@ -14,6 +14,7 @@ const (
 	showCmdOptionDomDesc           = "[dom=false] Also display Digital Optical Monitoring (DOM) data"
 	showCmdOptionPeriodDesc        = "[period=INTEGER] Display statistics over a specified period (in seconds)"
 	showCmdOptionJsonDesc          = "[json=true] No-op since response is in json format"
+	showCmdOptionSidDesc           = "[sid=TEXT] Filter by SRv6 SID"
 )
 
 var (
@@ -74,6 +75,12 @@ var (
 	showCmdOptionFetchFromHW = sdc.NewShowCmdOption(
 		"fetch-from-hardware",
 		showCmdOptionUnimplementedDesc,
+		sdc.StringValue,
+	)
+
+	showCmdOptionSid = sdc.NewShowCmdOption(
+		"sid",
+		showCmdOptionSidDesc,
 		sdc.StringValue,
 	)
 )

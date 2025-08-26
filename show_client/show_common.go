@@ -218,7 +218,7 @@ func GetSortedKeys(m map[string]interface{}) []string {
 func ParseKey(key interface{}, delimiter string) (string, string) {
 	keyStr, ok := key.(string)
 	if !ok {
-		log.Errorf("parse Key failure to convert key as string:")
+		log.Info("parse Key failure to convert key as string.")
 		return "", ""
 	}
 

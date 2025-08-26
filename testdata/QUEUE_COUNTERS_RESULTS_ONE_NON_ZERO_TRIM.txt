@@ -1,0 +1,9 @@
+{
+    "Ethernet40:0": {},
+    "Ethernet40:1": {
+        "Trim/pkts": "5",
+        "TrimSent/pkts": "4",
+        "TrimDrop/pkts": "1"
+    },
+    "Ethernet40:2": {}
+}

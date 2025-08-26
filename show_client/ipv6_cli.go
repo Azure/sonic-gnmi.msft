@@ -136,12 +136,21 @@ func getIPv6BGPNeighbors(ip string) ([]byte, error) {
 		return nil, err
 	}
 
-	// var neighbors map[string]IPv6BGPPeer
-	// if err := json.Unmarshal([]byte(vtyshOutput), &neighbors); err != nil {
-	// 	log.Errorf("Unable to create IPv6 BGP Neighbor response from vtysh output %v", err)
-	// 	return nil, err
-	// }
-	return []byte(vtyshOutput), nil
+	var neighbors map[string]IPv6BGPPeer
+	// Unmarshal JSON response
+	if err := json.Unmarshal([]byte(vtyshOutput), &neighbors); err != nil {
+		log.Errorf("Unable to create IPv6 BGP Neighbors response from vtysh output %v", err)
+		return nil, err
+	}
+
+	// Marshal back to JSON to return clean structured data
+	result, err := json.Marshal(neighbors)
+	if err != nil {
+		log.Errorf("Failed to marshal IPv6 BGP neighbors response: %v", err)
+		return nil, err
+	}
+
+	return result, nil
 }
 
 func getIPv6BGPNeighborsRoutes(ip string) ([]byte, error) {
@@ -194,7 +203,7 @@ func getIPv6BGPNeighborsAdvertisedRoutes(ip string) ([]byte, error) {
 	}
 
 	// Marshal back to JSON
-	result, err := json.MarshalIndent(advRoutesResp, "", "  ")
+	result, err := json.Marshal(advRoutesResp)
 	if err != nil {
 		log.Errorf("Failed to marshal advertised routes response: %v", err)
 		return nil, err
@@ -222,7 +231,7 @@ func getIPv6BGPNeighborsReceivedRoutes(ip string) ([]byte, error) {
 	}
 
 	// Marshal back to JSON
-	result, err := json.MarshalIndent(recRoutesResp, "", "  ")
+	result, err := json.Marshal(recRoutesResp)
 	if err != nil {
 		log.Errorf("Failed to marshal received routes response: %v", err)
 		return nil, err

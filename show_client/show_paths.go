@@ -83,14 +83,28 @@ func init() {
 		showCmdOptionInterface,
 	)
 	sdc.RegisterCliPath(
+		[]string{"SHOW", "headroom_pool", "watermark"},
+		getHeadroomPoolWatermark,
+		nil,
+		sdc.UnimplementedOption(showCmdOptionNamespace),
+	)
+	sdc.RegisterCliPath(
+		[]string{"SHOW", "headroom_pool", "persistent-watermark"},
+		getHeadroomPoolPersistentWatermark,
+		nil,
+		sdc.UnimplementedOption(showCmdOptionNamespace),
+	)
+	sdc.RegisterCliPath(
 		[]string{"SHOW", "buffer_pool", "watermark"},
 		getBufferPoolWatermark,
 		nil,
+		sdc.UnimplementedOption(showCmdOptionNamespace),
 	)
 	sdc.RegisterCliPath(
 		[]string{"SHOW", "buffer_pool", "persistent-watermark"},
 		getBufferPoolPersistentWatermark,
 		nil,
+		sdc.UnimplementedOption(showCmdOptionNamespace),
 	)
 	sdc.RegisterCliPath(
 		[]string{"SHOW", "mac", "aging-time"},
@@ -98,8 +112,26 @@ func init() {
 		nil,
 	)
 	sdc.RegisterCliPath(
+		[]string{"SHOW", "ipv6", "interfaces"},
+		getIPv6Interfaces,
+		nil,
+		sdc.UnimplementedOption(showCmdOptionNamespace),
+		showCmdOptionDisplay,
+	)
+	sdc.RegisterCliPath(
+		[]string{"SHOW", "lldp", "table"},
+		getLLDPTable,
+		nil,
+	)
+	sdc.RegisterCliPath(
+		[]string{"SHOW", "interface", "alias"},
+		getInterfaceAlias,
+		nil,
+		showCmdOptionInterface,
+	)
+	sdc.RegisterCliPath(
 		[]string{"SHOW", "uptime"},
 		getUptime,
 		nil,
-	)
+  )
 }

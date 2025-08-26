@@ -144,6 +144,12 @@ func init() {
 		showCmdOptionVerbose,
 	)
 	sdc.RegisterCliPath(
+		[]string{"SHOW", "version"},
+		getVersion,
+		nil,
+		showCmdOptionVerbose,
+	)
+	sdc.RegisterCliPath(
 		[]string{"SHOW", "uptime"},
 		getUptime,
 		nil,

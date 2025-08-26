@@ -2,6 +2,7 @@ package show_client
 
 import (
 	"fmt"
+	"os"
 	"os/exec"
 	"sort"
 	"strconv"
@@ -12,6 +13,7 @@ import (
 	natural "github.com/maruel/natural"
 	gnmipb "github.com/openconfig/gnmi/proto/gnmi"
 	sdc "github.com/sonic-net/sonic-gnmi/sonic_data_client"
+	"gopkg.in/yaml.v2"
 )
 
 const AppDBPortTable = "PORT_TABLE"
@@ -128,6 +130,50 @@ func CreateTablePathsFromQueries(queries [][]string) ([]sdc.TablePath, error) {
 		}
 	}
 	return allPaths, nil
+}
+
+func ReadYamlToMap(filePath string) (map[string]interface{}, error) {
+	yamlFile, err := sdc.ImplIoutilReadFile(filePath)
+	if err != nil {
+		return nil, fmt.Errorf("failed to read YAML file: %w", err)
+	}
+	var data map[string]interface{}
+	err = yaml.Unmarshal(yamlFile, &data)
+	if err != nil {
+		return nil, fmt.Errorf("failed to unmarshal YAML: %w", err)
+	}
+	return data, nil
+}
+
+func ReadConfToMap(filePath string) (map[string]interface{}, error) {
+	dataBytes, err := sdc.ImplIoutilReadFile(filePath)
+
+	if err != nil {
+		return nil, fmt.Errorf("failed to read CONF: %w", err)
+	}
+
+	confData := make(map[string]interface{})
+
+	content := string(dataBytes)
+	lines := strings.Split(content, "\n")
+	for _, line := range lines {
+		if strings.Contains(line, "=") {
+			parts := strings.SplitN(line, "=", 2)
+			key := strings.TrimSpace(parts[0])
+			value := strings.TrimSpace(parts[1])
+			confData[key] = value
+		}
+	}
+
+	return confData, nil
+}
+
+func FileExists(path string) bool {
+	info, err := os.Stat(path)
+	if err != nil {
+		return false
+	}
+	return !info.IsDir()
 }
 
 func RemapAliasToPortName(portData map[string]interface{}) map[string]interface{} {

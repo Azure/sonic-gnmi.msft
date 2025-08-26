@@ -1,0 +1,8 @@
+{
+  "CHASSIS_INFO|chassis 1": {
+    "model": "8102-64H-O",
+    "psu_num": "2",
+    "revision": "0.21",
+    "serial": "FLM25040614"
+  }
+}

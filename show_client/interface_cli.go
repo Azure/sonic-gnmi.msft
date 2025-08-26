@@ -507,7 +507,7 @@ func getPortOperSpeed(intf string) string {
 	}
 
 	opticsType := getPortOptics(intf)
-	if _, ok := appData["oper_status"]; !ok || appData["oper_status"] != "up" {
+	if status, ok := appData["oper_status"]; !ok || fmt.Sprint(status) != "up" {
 		return portSpeedFmt(fmt.Sprint(appData["speed"]), opticsType)
 	}
 	if _, ok := stateData["speed"]; !ok {

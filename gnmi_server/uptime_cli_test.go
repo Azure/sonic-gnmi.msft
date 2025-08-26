@@ -2,18 +2,19 @@ package gnmi
 
 import (
 	"crypto/tls"
-	"errors"
-	"os"
 	"testing"
 	"time"
 
 	pb "github.com/openconfig/gnmi/proto/gnmi"
+
+	"github.com/agiledragon/gomonkey/v2"
+	"golang.org/x/net/context"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/credentials"
 )
 
 func TestGetUptime(t *testing.T) {
-	cleanup := saveEnv("PLATFORM")
-	t.Cleanup(cleanup)
-
 	s := createServer(t, ServerPort)
 	go runServer(t, s)
 	defer s.ForceStop()
@@ -68,6 +69,7 @@ func TestGetUptime(t *testing.T) {
 		if test.testInit != nil {
 			test.testInit()
 		}
+
 		var patches *gomonkey.Patches
 		if len(test.mockOutputFile) > 0 {
 			patches = MockExecCmds(t, test.mockOutputFile)

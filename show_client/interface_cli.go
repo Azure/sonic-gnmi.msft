@@ -531,6 +531,10 @@ func getIntfModeMap(ports []string) map[string]string {
 	vlanMembers := map[string]string{}
 	for key := range vlanMemberTable {
 		content := strings.Split(key, "|")
+		if len(content) < 2 {
+			// Invalid Key, ignoring it
+			continue
+		}
 		vlanMemberKey := content[1]
 
 		vlanMembers[vlanMemberKey] = content[0]
@@ -549,6 +553,10 @@ func getIntfModeMap(ports []string) map[string]string {
 	portChannelMembers := map[string]string{}
 	for key := range portChannelMemberTable {
 		content := strings.Split(key, "|")
+		if len(content) < 2 {
+			// Invalid Key, ignoring it
+			continue
+		}
 		portChannelMemberKey := content[1]
 
 		portChannelMembers[portChannelMemberKey] = content[0]
@@ -594,6 +602,10 @@ func getPortchannelModeMap(portchannels []string) map[string]string {
 	vlanMembers := map[string]string{}
 	for key := range vlanMemberTable {
 		content := strings.Split(key, "|")
+		if len(content) < 2 {
+			// Invalid Key, ignoring it
+			continue
+		}
 		vlanMemberKey := content[1]
 
 		vlanMembers[vlanMemberKey] = content[0]

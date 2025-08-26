@@ -141,5 +141,5 @@ func init() {
 		[]string{"SHOW", "version"},
 		getVersion,
 		nil,
-  )
+	)
 }

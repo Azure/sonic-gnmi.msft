@@ -134,5 +134,5 @@ func init() {
 		getVlanBrief,
 		nil,
 		showCmdOptionVerbose,
- 	)
+	)
 }

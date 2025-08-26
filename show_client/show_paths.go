@@ -107,6 +107,13 @@ func init() {
 		sdc.UnimplementedOption(showCmdOptionNamespace),
 	)
 	sdc.RegisterCliPath(
+		[]string{"SHOW", "mmu"},
+		getMmuConfig,
+		nil,
+		sdc.UnimplementedOption(showCmdOptionNamespace),
+		showCmdOptionVerbose,
+	)
+	sdc.RegisterCliPath(
 		[]string{"SHOW", "mac", "aging-time"},
 		getMacAgingTime,
 		nil,

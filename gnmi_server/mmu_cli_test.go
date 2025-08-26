@@ -1,0 +1,157 @@
+package gnmi
+
+import (
+	"crypto/tls"
+	"testing"
+	"time"
+
+	pb "github.com/openconfig/gnmi/proto/gnmi"
+	"golang.org/x/net/context"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/credentials"
+)
+
+func TestShowMmu_HappyPath(t *testing.T) {
+	s := createServer(t, ServerPort)
+	go runServer(t, s)
+	defer s.ForceStop()
+	defer ResetDataSetsAndMappings(t)
+
+	tlsConfig := &tls.Config{InsecureSkipVerify: true}
+	opts := []grpc.DialOption{grpc.WithTransportCredentials(credentials.NewTLS(tlsConfig))}
+	conn, err := grpc.Dial(TargetAddr, opts...)
+	if err != nil {
+		t.Fatalf("Dial failed: %v", err)
+	}
+	defer conn.Close()
+
+	gClient := pb.NewGNMIClient(conn)
+	ctx, cancel := context.WithTimeout(context.Background(), QueryTimeout*time.Second)
+	defer cancel()
+
+	// Load CONFIG_DB datasets
+	AddDataSet(t, ConfigDbNum, "../testdata/CONFIG_DB_DEFAULT_LOSSLESS_BUFFER_PARAMETER.txt")
+	AddDataSet(t, ConfigDbNum, "../testdata/CONFIG_DB_BUFFER_POOL.txt")
+	AddDataSet(t, ConfigDbNum, "../testdata/CONFIG_DB_BUFFER_PROFILE.txt")
+
+	textPbPath := `elem: <name: "mmu" >`
+
+	// Expected JSON (order-insensitive map compare enabled by valTest=true)
+	expected := []byte(`{
+        "losslessTrafficPatterns": {
+            "pattern": { "field1": "value1" }
+        },
+        "pools": {
+            "egress_lossless_pool": { "mode":"static","size":"164075364","type":"egress" },
+            "ingress_lossless_pool": { "mode":"dynamic","size":"164075364","type":"ingress","xoff":"20181824" }
+        },
+        "profiles": {
+            "egress_lossless_profile": { "pool":"egress_lossless_pool","size":"0","static_th":"165364160" },
+            "egress_lossy_profile": { "pool":"egress_lossless_pool","size":"1778","dynamic_th":"0" },
+            "ingress_lossy_profile": { "pool":"ingress_lossless_pool","size":"0","static_th":"165364160" }
+        }
+    }`)
+	runTestGet(t, ctx, gClient, "SHOW", textPbPath, codes.OK, expected, true)
+}
+
+func TestShowMmu_EmptyConfigDb(t *testing.T) {
+	s := createServer(t, ServerPort)
+	go runServer(t, s)
+	defer s.ForceStop()
+	defer ResetDataSetsAndMappings(t)
+
+	tlsConfig := &tls.Config{InsecureSkipVerify: true}
+	opts := []grpc.DialOption{grpc.WithTransportCredentials(credentials.NewTLS(tlsConfig))}
+	conn, err := grpc.Dial(TargetAddr, opts...)
+	if err != nil {
+		t.Fatalf("Dial failed: %v", err)
+	}
+	defer conn.Close()
+
+	gClient := pb.NewGNMIClient(conn)
+	ctx, cancel := context.WithTimeout(context.Background(), QueryTimeout*time.Second)
+	defer cancel()
+
+	// No datasets loaded in CONFIG_DB -> response is {}
+	textPbPath := `elem: <name: "mmu" >`
+	expected := []byte(`{}`)
+	runTestGet(t, ctx, gClient, "SHOW", textPbPath, codes.OK, expected, true)
+}
+
+func TestShowMmu_PartialOnlyPools(t *testing.T) {
+	s := createServer(t, ServerPort)
+	go runServer(t, s)
+	defer s.ForceStop()
+	defer ResetDataSetsAndMappings(t)
+
+	tlsConfig := &tls.Config{InsecureSkipVerify: true}
+	opts := []grpc.DialOption{grpc.WithTransportCredentials(credentials.NewTLS(tlsConfig))}
+	conn, err := grpc.Dial(TargetAddr, opts...)
+	if err != nil {
+		t.Fatalf("Dial failed: %v", err)
+	}
+	defer conn.Close()
+
+	gClient := pb.NewGNMIClient(conn)
+	ctx, cancel := context.WithTimeout(context.Background(), QueryTimeout*time.Second)
+	defer cancel()
+
+	// Load only BUFFER_POOL table
+	AddDataSet(t, ConfigDbNum, "../testdata/CONFIG_DB_BUFFER_POOL.txt")
+
+	textPbPath := `elem: <name: "mmu" >`
+	expected := []byte(`{
+        "pools": {
+            "egress_lossless_pool": { "mode":"static","size":"164075364","type":"egress" },
+            "ingress_lossless_pool": { "mode":"dynamic","size":"164075364","type":"ingress","xoff":"20181824" }
+        }
+    }`)
+	runTestGet(t, ctx, gClient, "SHOW", textPbPath, codes.OK, expected, true)
+}
+
+func TestShowMmu_VerboseTotals(t *testing.T) {
+	s := createServer(t, ServerPort)
+	go runServer(t, s)
+	defer s.ForceStop()
+	defer ResetDataSetsAndMappings(t)
+
+	tlsConfig := &tls.Config{InsecureSkipVerify: true}
+	opts := []grpc.DialOption{grpc.WithTransportCredentials(credentials.NewTLS(tlsConfig))}
+	conn, err := grpc.Dial(TargetAddr, opts...)
+	if err != nil {
+		t.Fatalf("Dial failed: %v", err)
+	}
+	defer conn.Close()
+
+	gClient := pb.NewGNMIClient(conn)
+	ctx, cancel := context.WithTimeout(context.Background(), QueryTimeout*time.Second)
+	defer cancel()
+
+	// Load CONFIG_DB datasets for pools + profiles (+ optional default lossless params)
+	AddDataSet(t, ConfigDbNum, "../testdata/CONFIG_DB_DEFAULT_LOSSLESS_BUFFER_PARAMETER.txt")
+	AddDataSet(t, ConfigDbNum, "../testdata/CONFIG_DB_BUFFER_POOL.txt")
+	AddDataSet(t, ConfigDbNum, "../testdata/CONFIG_DB_BUFFER_PROFILE.txt")
+
+	// Pass verbose=true as an option on the "mmu" elem
+	textPbPath := `
+        elem: <name: "mmu" key: { key: "verbose" value: "true" } >
+    `
+
+	expected := []byte(`{
+        "losslessTrafficPatterns": {
+            "pattern": { "field1": "value1" }
+        },
+        "pools": {
+            "egress_lossless_pool": { "mode":"static","size":"164075364","type":"egress" },
+            "ingress_lossless_pool": { "mode":"dynamic","size":"164075364","type":"ingress","xoff":"20181824" }
+        },
+        "profiles": {
+            "egress_lossless_profile": { "pool":"egress_lossless_pool","size":"0","static_th":"165364160" },
+            "egress_lossy_profile": { "pool":"egress_lossless_pool","size":"1778","dynamic_th":"0" },
+            "ingress_lossy_profile": { "pool":"ingress_lossless_pool","size":"0","static_th":"165364160" }
+        },
+        "totals": { "pools": 2, "profiles": 3 }
+    }`)
+	runTestGet(t, ctx, gClient, "SHOW", textPbPath, codes.OK, expected, true)
+}

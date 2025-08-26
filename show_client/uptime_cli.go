@@ -4,10 +4,11 @@ import (
 	"encoding/json"
 	log "github.com/golang/glog"
 	sdc "github.com/sonic-net/sonic-gnmi/sonic_data_client"
+	"strings"
 )
 
 type uptimeResponse struct {
-	uptime string `json:"uptime"`
+	Uptime string `json:"uptime"`
 }
 
 func getUptime(options sdc.OptionMap) ([]byte, error) {
@@ -19,6 +20,6 @@ func getUptime(options sdc.OptionMap) ([]byte, error) {
 	}
 
 	var uptimeResp uptimeResponse
-	uptimeResp.uptime = uptimeData
+	uptimeResp.Uptime = strings.TrimSuffix(uptimeData, "\n")
 	return json.Marshal(uptimeResp)
 }

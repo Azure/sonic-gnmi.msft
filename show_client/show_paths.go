@@ -100,7 +100,9 @@ func init() {
 	sdc.RegisterCliPath(
 		[]string{"SHOW", "mac"},
 		getMacTable,
-		nil,
+		map[string]string{
+			"aging-time": "show/mac/aging-time",
+		},
 		showCmdOptionVlan,
 		showCmdOptionPort,
 		showCmdOptionAddress,

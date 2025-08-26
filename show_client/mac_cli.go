@@ -4,8 +4,9 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"regexp"
+	"net"
 	"sort"
+	"strconv"
 	"strings"
 
 	log "github.com/golang/glog"
@@ -53,13 +54,13 @@ func getMacAgingTime(options sdc.OptionMap) ([]byte, error) {
 
 // macEntry represents a single FDB entry
 type macEntry struct {
-	Vlan       string `json:"vlan"`
+	Vlan       int    `json:"vlan"`
 	MacAddress string `json:"macAddress"`
 	Port       string `json:"port"`
 	Type       string `json:"type"`
 }
 
-// getMacTable queries APPL_DB and STATE_DB FDB_TABLE entries and returns either the list or count per options
+// getMacTable queries STATE_DB FDB_TABLE entries and returns either the list or count per options
 func getMacTable(options sdc.OptionMap) ([]byte, error) {
 	// Parse filters
 	vlanFilter := -1
@@ -84,10 +85,11 @@ func getMacTable(options sdc.OptionMap) ([]byte, error) {
 	}
 
 	// Check mac address format is valid
-	macAddressPattern := "^([0-9A-Fa-f]{2}[:]){5}([0-9A-Fa-f]{2})$"
-	re := regexp.MustCompile(macAddressPattern)
-	if addrFilter != "" && !re.MatchString(addrFilter) {
-		return nil, errors.New("Error: Invalid mac address " + addrFilter)
+	if addrFilter != "" {
+		_, err := net.ParseMAC(addrFilter)
+		if err != nil {
+			return nil, errors.New("Error: Invalid mac address " + addrFilter)
+		}
 	}
 
 	stateData, err := GetMapFromQueries([][]string{{StateDb, FDBTable}})
@@ -105,12 +107,14 @@ func getMacTable(options sdc.OptionMap) ([]byte, error) {
 	if portFilter == "" {
 		portIsValid = true
 	} else {
-		for _, v := range stateData {
-			fv, ok := v.(map[string]interface{})
-			if !ok {
-				continue
-			}
-			port := toString(fv["port"])
+		allPorts, err := GetMapFromQueries([][]string{{ConfigDb, ConfigDbPort}})
+		if err != nil {
+			log.Errorf("Unable to get CONFIG_DB port, err: %v", err)
+			return nil, err
+		}
+
+		for k, _ := range allPorts {
+			port := k
 			if strings.EqualFold(port, portFilter) {
 				portIsValid = true
 				break
@@ -122,9 +126,9 @@ func getMacTable(options sdc.OptionMap) ([]byte, error) {
 		return nil, errors.New("Error: Invalid port " + portFilter)
 	}
 
-	addIfMatch := func(vlan, macAddress, port, mtype string) {
+	addIfMatch := func(vlan int, macAddress, port, mtype string) {
 		// Filters
-		if vlanFilter >= 0 && vlan != fmt.Sprint(vlanFilter) {
+		if vlanFilter >= 0 && vlan != vlanFilter {
 			return
 		}
 		if portFilter != "" && !strings.EqualFold(port, portFilter) {
@@ -136,7 +140,7 @@ func getMacTable(options sdc.OptionMap) ([]byte, error) {
 		if typeFilter != "" && strings.ToLower(typeFilter) != strings.ToLower(mtype) {
 			return
 		}
-		key := vlan + "|" + strings.ToLower(macAddress)
+		key := fmt.Sprint(vlan, "|", strings.ToLower(macAddress))
 		if _, exists := seen[key]; exists {
 			return
 		}
@@ -167,13 +171,13 @@ func getMacTable(options sdc.OptionMap) ([]byte, error) {
 	return json.Marshal(resp)
 }
 
-func processFDBData(data map[string]interface{}, source string, addIfMatch func(string, string, string, string)) {
+func processFDBData(data map[string]interface{}, source string, addIfMatch func(int, string, string, string)) {
 	for k, v := range data {
 		fv, ok := v.(map[string]interface{})
 		if !ok {
 			continue
 		}
-		vlan, mac, ok := parseKey(k)
+		vlan, mac, ok := parseFDBTableKey(k)
 		if !ok {
 			continue
 		}
@@ -181,12 +185,16 @@ func processFDBData(data map[string]interface{}, source string, addIfMatch func(
 	}
 }
 
-func parseKey(k string) (vlan string, mac string, ok bool) {
+func parseFDBTableKey(k string) (vlan int, mac string, ok bool) {
 	idx := strings.Index(k, ":")
 	if idx <= 0 || idx >= len(k)-1 {
-		return "", "", false
+		return -1, "", false
 	}
-	vlan = strings.TrimPrefix(k[:idx], "Vlan")
+	vlanStr := strings.TrimPrefix(k[:idx], "Vlan")
+	vlan, err := strconv.Atoi(vlanStr)
+	if err != nil {
+		return -1, "", false
+	}
 	mac = k[idx+1:]
 	return vlan, mac, true
 }

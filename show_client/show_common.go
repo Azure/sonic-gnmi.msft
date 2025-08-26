@@ -16,6 +16,8 @@ import (
 const AppDBPortTable = "PORT_TABLE"
 const StateDBPortTable = "PORT_TABLE"
 const StateDb = "STATE_DB"
+const ConfigDb = "CONFIG_DB"
+const ConfigDbPort = "PORT"
 const FDBTable = "FDB_TABLE"
 
 const (

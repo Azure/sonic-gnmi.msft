@@ -36,20 +36,24 @@ func TestShowMacCommand(t *testing.T) {
 	defer cancel()
 
 	stateDbContentFileNameForShowMac := "../testdata/ShowMacStateDb.txt"
+	configDbContentFileNameForShowMac := "../testdata/ShowMacConfigDB.txt"
 
 	FlushDataSet(t, StateDbNum)
+	FlushDataSet(t, ConfigDbNum)
 	AddDataSet(t, StateDbNum, stateDbContentFileNameForShowMac)
+	AddDataSet(t, ConfigDbNum, configDbContentFileNameForShowMac)
+
 	t.Run("query SHOW mac", func(t *testing.T) {
 		textPbPath := `
 			elem: <name: "mac" >
 		`
 		wantRespVal := []byte(`{
 			"entries":[
-        {"macAddress": "e8:eb:d3:32:f0:08", "port": "Ethernet320", "type": "dynamic", "vlan": "1000"},
-        {"macAddress": "e8:eb:d3:32:f0:1b", "port": "Ethernet108", "type": "dynamic", "vlan": "1000"},
-        {"macAddress": "e8:eb:d3:32:f0:1e", "port": "Ethernet120", "type": "dynamic", "vlan": "1000"},
-        {"macAddress": "e8:eb:d3:32:f0:25", "port": "Ethernet148", "type": "static", "vlan": "1000"},
-        {"macAddress": "e8:eb:d3:32:f0:28", "port": "Ethernet160", "type": "dynamic", "vlan": "1001"}
+        {"macAddress": "e8:eb:d3:32:f0:08", "port": "Ethernet320", "type": "dynamic", "vlan": 1000},
+        {"macAddress": "e8:eb:d3:32:f0:1b", "port": "Ethernet108", "type": "dynamic", "vlan": 1000},
+        {"macAddress": "e8:eb:d3:32:f0:1e", "port": "Ethernet120", "type": "dynamic", "vlan": 1000},
+        {"macAddress": "e8:eb:d3:32:f0:25", "port": "Ethernet148", "type": "static", "vlan": 1000},
+        {"macAddress": "e8:eb:d3:32:f0:28", "port": "Ethernet160", "type": "dynamic", "vlan": 1001}
 			],
 			"total": 5
 		}`)
@@ -74,7 +78,7 @@ func TestShowMacCommand(t *testing.T) {
 		`
 		wantRespVal := []byte(`{
 				"entries":[
-						{"macAddress": "e8:eb:d3:32:f0:08", "port": "Ethernet320", "type": "dynamic", "vlan": "1000"}
+						{"macAddress": "e8:eb:d3:32:f0:08", "port": "Ethernet320", "type": "dynamic", "vlan": 1000}
 					],
 				"total": 1
 		}`)
@@ -102,10 +106,10 @@ func TestShowMacCommand(t *testing.T) {
 		`
 		wantRespVal := []byte(`{
 			"entries":[
-									{"macAddress": "e8:eb:d3:32:f0:08", "port": "Ethernet320", "type": "dynamic", "vlan": "1000"},
-									{"macAddress": "e8:eb:d3:32:f0:1b", "port": "Ethernet108", "type": "dynamic", "vlan": "1000"},
-									{"macAddress": "e8:eb:d3:32:f0:1e", "port": "Ethernet120", "type": "dynamic", "vlan": "1000"},
-									{"macAddress": "e8:eb:d3:32:f0:25", "port": "Ethernet148", "type": "static", "vlan": "1000"}
+									{"macAddress": "e8:eb:d3:32:f0:08", "port": "Ethernet320", "type": "dynamic", "vlan": 1000},
+									{"macAddress": "e8:eb:d3:32:f0:1b", "port": "Ethernet108", "type": "dynamic", "vlan": 1000},
+									{"macAddress": "e8:eb:d3:32:f0:1e", "port": "Ethernet120", "type": "dynamic", "vlan": 1000},
+									{"macAddress": "e8:eb:d3:32:f0:25", "port": "Ethernet148", "type": "static", "vlan": 1000}
 								],
 								"total": 4
 				}`)
@@ -120,10 +124,10 @@ func TestShowMacCommand(t *testing.T) {
 		`
 		wantRespVal := []byte(`{
 			"entries":[
-					{"macAddress": "e8:eb:d3:32:f0:08", "port": "Ethernet320", "type": "dynamic", "vlan": "1000"},
-					{"macAddress": "e8:eb:d3:32:f0:1b", "port": "Ethernet108", "type": "dynamic", "vlan": "1000"},
-					{"macAddress": "e8:eb:d3:32:f0:1e", "port": "Ethernet120", "type": "dynamic", "vlan": "1000"},
-					{"macAddress": "e8:eb:d3:32:f0:28", "port": "Ethernet160", "type": "dynamic", "vlan": "1001"}
+					{"macAddress": "e8:eb:d3:32:f0:08", "port": "Ethernet320", "type": "dynamic", "vlan": 1000},
+					{"macAddress": "e8:eb:d3:32:f0:1b", "port": "Ethernet108", "type": "dynamic", "vlan": 1000},
+					{"macAddress": "e8:eb:d3:32:f0:1e", "port": "Ethernet120", "type": "dynamic", "vlan": 1000},
+					{"macAddress": "e8:eb:d3:32:f0:28", "port": "Ethernet160", "type": "dynamic", "vlan": 1001}
 			],
 		"total":4
 		}`)
@@ -138,9 +142,23 @@ func TestShowMacCommand(t *testing.T) {
 		`
 		wantRespVal := []byte(`{
 			"entries":[
-				{"macAddress": "e8:eb:d3:32:f0:08", "port": "Ethernet320", "type": "dynamic", "vlan": "1000"}
+				{"macAddress": "e8:eb:d3:32:f0:08", "port": "Ethernet320", "type": "dynamic", "vlan": 1000}
 			],
 			"total": 1
+		}`)
+		runTestGet(t, ctx, gClient, "SHOW", textPbPath, codes.OK, wantRespVal, true)
+	})
+
+	// Ethernet121 port didn't exist in STATE_DB, it exist in CONFIG_DB
+	t.Run("query SHOW mac -p Ethernet121", func(t *testing.T) {
+		textPbPath := `
+			elem: <name: "mac" 
+			key: { key: "port" value: "Ethernet121" }
+			>
+		`
+		wantRespVal := []byte(`{
+			"entries":[],
+			"total": 0
 		}`)
 		runTestGet(t, ctx, gClient, "SHOW", textPbPath, codes.OK, wantRespVal, true)
 	})

@@ -112,6 +112,13 @@ func init() {
 		nil,
 	)
 	sdc.RegisterCliPath(
+		[]string{"SHOW", "ipv6", "interfaces"},
+		getIPv6Interfaces,
+		nil,
+		sdc.UnimplementedOption(showCmdOptionNamespace),
+		showCmdOptionDisplay,
+	)
+	sdc.RegisterCliPath(
 		[]string{"SHOW", "lldp", "table"},
 		getLLDPTable,
 		nil,

@@ -21,8 +21,8 @@ import (
 	"github.com/golang/protobuf/proto"
 	gnmipb "github.com/openconfig/gnmi/proto/gnmi"
 	gnmi_extpb "github.com/openconfig/gnmi/proto/gnmi_ext"
-	gnoi_system_pb "github.com/openconfig/gnoi/system"
 	gnoi_file_pb "github.com/openconfig/gnoi/file"
+	gnoi_system_pb "github.com/openconfig/gnoi/system"
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
@@ -53,7 +53,6 @@ type Server struct {
 	ReqFromMaster func(req *gnmipb.SetRequest, masterEID *uint128) error
 	masterEID     uint128
 }
-
 
 // FileServer is the server API for File service.
 // All implementations must embed UnimplementedFileServer
@@ -385,6 +384,7 @@ func (s *Server) Get(ctx context.Context, req *gnmipb.GetRequest) (*gnmipb.GetRe
 		return nil, status.Error(codes.Unimplemented, err.Error())
 	}
 
+	addMetadata := false
 	target := ""
 	origin := ""
 	prefix := req.GetPrefix()
@@ -404,6 +404,7 @@ func (s *Server) Get(ctx context.Context, req *gnmipb.GetRequest) (*gnmipb.GetRe
 		dc, err = sdc.NewNonDbClient(paths, prefix)
 	} else if target == "SHOW" {
 		dc, err = sdc.NewShowClient(paths, prefix)
+		addMetadata = true
 	} else if _, ok, _, _ := sdc.IsTargetDb(target); ok {
 		dc, err = sdc.NewDbClient(paths, prefix)
 	} else {
@@ -447,6 +448,13 @@ func (s *Server) Get(ctx context.Context, req *gnmipb.GetRequest) (*gnmipb.GetRe
 			Update:    []*gnmipb.Update{update},
 		}
 	}
+
+	if addMetadata {
+		if metadataNotification := buildMetadataNotification(); metadataNotification != nil {
+			notifications = append(notifications, metadataNotification)
+		}
+	}
+
 	return &gnmipb.GetResponse{Notification: notifications}, nil
 }
 

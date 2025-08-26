@@ -940,7 +940,7 @@ sonic_utilities: 1.2
 			textPbPath: `
 				elem: <name: "version" >
 			`,
-			wantRetCode: codes.OK,
+			wantRetCode: codes.NotFound,
 			wantRespVal: nil,
 			valTest:     true,
 			mockOutputFile: map[string]string{

@@ -494,7 +494,7 @@ func getPortOperSpeed(intf string) string {
 	stateData, err := GetMapFromQueries(queries)
 	if err != nil {
 		log.Errorf("Failed to get state for port %s from STATE_DB: %v", intf, err)
-		return ""
+		return "N/A"
 	}
 
 	queries = [][]string{
@@ -503,7 +503,7 @@ func getPortOperSpeed(intf string) string {
 	appData, err := GetMapFromQueries(queries)
 	if err != nil {
 		log.Errorf("Failed to get state for port %s from APPL_DB: %v", intf, err)
-		return ""
+		return "N/A"
 	}
 
 	opticsType := getPortOptics(intf)

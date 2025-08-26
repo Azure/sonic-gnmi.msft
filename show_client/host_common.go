@@ -23,6 +23,7 @@ const (
 	platform              = "platform"
 	hwsku                 = "hwsku"
 	platformEnvVar        = "PLATFORM"
+	chassisInfoKey        = "chassis 1"
 )
 
 var hwInfoDict map[string]interface{}
@@ -34,15 +35,19 @@ func GetChassisInfo() (map[string]string, error) {
 		{"STATE_DB", "CHASSIS_INFO"},
 	}
 
-	metadata, err := GetMapFromQueries(queries)
-
+	chassisInfo, err := GetMapFromQueries(queries)
 	if err != nil {
 		return nil, err
 	}
+	chassisDict[serial] = "N/A"
+	chassisDict[model] = "N/A"
+	chassisDict[revision] = "N/A"
 
-	chassisDict[serial] = GetValueOrDefault(metadata, serial, "")
-	chassisDict[model] = GetValueOrDefault(metadata, model, "")
-	chassisDict[revision] = GetValueOrDefault(metadata, revision, "")
+	if chassisMetadata, ok := chassisInfo[chassisInfoKey].(map[string]interface{}); ok {
+		chassisDict[serial] = GetValueOrDefault(chassisMetadata, serial, "N/A")
+		chassisDict[model] = GetValueOrDefault(chassisMetadata, model, "N/A")
+		chassisDict[revision] = GetValueOrDefault(chassisMetadata, revision, "N/A")
+	}
 
 	return chassisDict, nil
 }

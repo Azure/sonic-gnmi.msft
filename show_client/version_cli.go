@@ -31,7 +31,7 @@ type VersionOutput struct {
 	HardwareRevision     string          `json:"hardware_revision"`
 	Uptime               string          `json:"uptime"`
 	Date                 string          `json:"date"`
-	DockerInfo           json.RawMessage `json:"docker_info"`
+	DockerInfo           json.RawMessage `json:"docker_images"`
 }
 
 func getVersion(options sdc.OptionMap) ([]byte, error) {

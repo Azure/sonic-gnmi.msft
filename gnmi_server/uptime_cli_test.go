@@ -54,7 +54,7 @@ func TestGetUptime(t *testing.T) {
 			desc:       "query show uptime with success case",
 			pathTarget: "SHOW",
 			textPbPath: `
-				elem: <name: "version" >
+				elem: <name: "uptime" >
 			`,
 			wantRetCode: codes.OK,
 			wantRespVal: []byte(expectedUptime),

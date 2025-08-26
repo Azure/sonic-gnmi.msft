@@ -176,13 +176,6 @@ func FileExists(path string) bool {
 	return !info.IsDir()
 }
 
-func GetValueOrDefault(data map[string]interface{}, key string, defaultValue string) string {
-	if val, ok := data[key]; ok {
-		return val.(string)
-	}
-	return defaultValue
-}
-
 func RemapAliasToPortName(portData map[string]interface{}) map[string]interface{} {
 	aliasMap := sdc.AliasToPortNameMap()
 	remapped := make(map[string]interface{})

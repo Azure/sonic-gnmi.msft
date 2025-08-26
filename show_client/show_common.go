@@ -15,6 +15,7 @@ import (
 
 const AppDBPortTable = "PORT_TABLE"
 const StateDBPortTable = "PORT_TABLE"
+const DefaultEmptyString = ""
 const StateDb = "STATE_DB"
 const ConfigDb = "CONFIG_DB"
 const ConfigDbPort = "PORT"

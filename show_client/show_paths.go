@@ -119,6 +119,11 @@ func init() {
 		showCmdOptionDisplay,
 	)
 	sdc.RegisterCliPath(
+		[]string{"SHOW", "lldp", "table"},
+		getLLDPTable,
+		nil,
+	)
+	sdc.RegisterCliPath(
 		[]string{"SHOW", "mac"},
 		getMacTable,
 		map[string]string{

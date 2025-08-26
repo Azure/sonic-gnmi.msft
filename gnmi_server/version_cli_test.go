@@ -89,7 +89,7 @@ sonic_utilities: 1.2
   "hardware_revision": "",
   "uptime": "07:42:51 up 16 days, 14:51,  2 users,  load average: 0.00, 0.00, 0.00",
   "date": "Fri 18 Jul 2025 18:00:00",
-  "docker_info": [
+  "docker_images": [
     {
         "Repository": "docker-mux",
         "Tag": "20250510.14",
@@ -554,7 +554,7 @@ sonic_utilities: 1.2
   "hardware_revision": "",
   "uptime": "07:42:51 up 16 days, 14:51,  2 users,  load average: 0.00, 0.00, 0.00",
   "date": "Fri 18 Jul 2025 18:00:00",
-  "docker_info": [
+  "docker_images": [
     {
         "Repository": "docker-mux",
         "Tag": "20250510.14",

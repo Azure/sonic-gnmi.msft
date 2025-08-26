@@ -648,6 +648,10 @@ func getPortchannelSpeedMap(portchannels []string) map[string]string {
 	portChannelMembership := map[string][]string{}
 	for key := range portChannelMemberTable {
 		content := strings.Split(key, "|")
+		if len(content) < 2 {
+			// Invalid Key, ignoring it
+			continue
+		}
 		portChannel := content[0]
 
 		portChannelMembership[portChannel] = append(portChannelMembership[portChannel], content[1])

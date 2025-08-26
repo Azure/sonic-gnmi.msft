@@ -61,6 +61,7 @@ import (
 	gnoi_file_pb "github.com/openconfig/gnoi/file"
 	gnoi_system_pb "github.com/openconfig/gnoi/system"
 	"github.com/sonic-net/sonic-gnmi/common_utils"
+	"github.com/sonic-net/sonic-gnmi/metadata"
 	"github.com/sonic-net/sonic-gnmi/swsscommon"
 )
 
@@ -247,7 +248,7 @@ func TestPFCWDErrors(t *testing.T) {
 	go runServer(t, s)
 	defer s.ForceStop()
 
-	mock := gomonkey.ApplyFunc(sdc.GetPfcwdMap, func() (map[string]map[string]string, error)  {
+	mock := gomonkey.ApplyFunc(sdc.GetPfcwdMap, func() (map[string]map[string]string, error) {
 		return nil, fmt.Errorf("Mock error")
 	})
 	defer mock.Reset()
@@ -261,16 +262,16 @@ func TestPFCWDErrors(t *testing.T) {
 	json.Unmarshal(countersEthernetWildcardByte, &countersEthernetWildcardJson)
 
 	tests := []struct {
-		desc    string
-		q       client.Query
-		wantNoti    []client.Notification
-		poll    int
+		desc     string
+		q        client.Query
+		wantNoti []client.Notification
+		poll     int
 	}{
 		{
 			desc: "query COUNTERS/Ethernet*",
 			poll: 1,
 			q: client.Query{
-				Target: "COUNTERS_DB",
+				Target:  "COUNTERS_DB",
 				Type:    client.Poll,
 				Queries: []client.Path{{"COUNTERS", "Ethernet*"}},
 				TLS:     &tls.Config{InsecureSkipVerify: true},
@@ -341,7 +342,6 @@ func TestPFCWDErrors(t *testing.T) {
 	}
 }
 
-
 // runTestGet requests a path from the server by Get grpc call, and compares if
 // the return code and response value are expected.
 func runTestGet(t *testing.T, ctx context.Context, gClient pb.GNMIClient, pathTarget string,
@@ -372,43 +372,100 @@ func runTestGet(t *testing.T, ctx context.Context, gClient pb.GNMIClient, pathTa
 		t.Fatalf("got return code %v, want %v", gotRetStatus.Code(), wantRetCode)
 	}
 
-	// Check response value
-	if valTest {
-		var gotVal interface{}
-		if resp != nil {
-			notifs := resp.GetNotification()
-			if len(notifs) != 1 {
-				t.Fatalf("got %d notifications, want 1", len(notifs))
-			}
-			updates := notifs[0].GetUpdate()
-			if len(updates) != 1 {
-				t.Fatalf("got %d updates in the notification, want 1", len(updates))
-			}
-			val := updates[0].GetVal()
-			if val.GetJsonIetfVal() == nil {
-				gotVal, err = value.ToScalar(val)
-				if err != nil {
-					t.Errorf("got: %v, want a scalar value", gotVal)
-				}
+	if !valTest {
+		return
+	}
+
+	var payloadNotifications []*pb.Notification
+	var metadataNotification *pb.Notification
+
+	if resp != nil {
+		for _, notif := range resp.GetNotification() {
+			if notif.GetPrefix().GetOrigin() == metadata.MetadataPrefix {
+				metadataNotification = notif
 			} else {
-				// Unmarshal json data to gotVal container for comparison
-				if err := json.Unmarshal(val.GetJsonIetfVal(), &gotVal); err != nil {
-					t.Fatalf("error in unmarshaling IETF JSON data to json container: %v", err)
-				}
-				var wantJSONStruct interface{}
-				if v, ok := wantRespVal.(string); ok {
-					wantRespVal = []byte(v)
-				}
-				if err := json.Unmarshal(wantRespVal.([]byte), &wantJSONStruct); err != nil {
-					t.Fatalf("error in unmarshaling IETF JSON data to json container: %v", err)
-				}
-				wantRespVal = wantJSONStruct
+				payloadNotifications = append(payloadNotifications, notif)
 			}
+		}
+	}
+
+	if os.Getenv(metadata.EnableMetadataEnvVar) == "true" {
+		if metadataNotification == nil {
+			t.Fatalf("expected metadata notification, got none")
 		}
 
-		if !reflect.DeepEqual(gotVal, wantRespVal) {
-			t.Errorf("got: %v (%T),\nwant %v (%T)", gotVal, gotVal, wantRespVal, wantRespVal)
+		if os.Getenv(metadata.VersionEnvVar) == "true" {
+			var versionUpdate *pb.Update
+			for _, update := range metadataNotification.GetUpdate() {
+				elems := update.GetPath().GetElem()
+				if len(elems) == 1 && elems[0].GetName() == metadata.VersionPath {
+					versionUpdate = update
+					break
+				}
+			}
+			if versionUpdate == nil {
+				t.Fatalf("expected version metadata notification, got none")
+			}
+
+			versionData := versionUpdate.GetVal().GetJsonIetfVal()
+			if versionData == nil {
+				t.Fatalf("version must be set as json-ietf string, got %T", versionUpdate.GetVal().GetValue())
+			}
+
+			var versionPayload map[string]string
+			if err := json.Unmarshal(versionData, &versionPayload); err != nil {
+				t.Fatalf("failed to unmarshal version json: %v", err)
+			}
+
+			versionString, ok := versionPayload[metadata.VersionKey]
+			if !ok {
+				t.Fatalf("Payload missing version key %q, payload=%v", metadata.VersionKey, versionPayload)
+			}
+
+			setVersion := os.Getenv(metadata.VersionEnvVar)
+			if setVersion == "" {
+				setVersion = metadata.DefaultVersion
+			}
+			if setVersion != versionString {
+				t.Fatalf("version mismatch: got %q, want %q", setVersion, versionString)
+			}
 		}
+	}
+
+	// Check response value
+
+	if len(payloadNotifications) != 1 {
+		t.Fatalf("got %d payload notifications, want 1", len(payloadNotifications))
+	}
+
+	updates := payloadNotifications[0].GetUpdate()
+	if len(updates) != 1 {
+		t.Fatalf("got %d updates in the notification, want 1", len(updates))
+	}
+	var gotVal interface{}
+	val := updates[0].GetVal()
+	if val.GetJsonIetfVal() == nil {
+		gotVal, err = value.ToScalar(val)
+		if err != nil {
+			t.Errorf("got: %v, want a scalar value", gotVal)
+		}
+	} else {
+		// Unmarshal json data to gotVal container for comparison
+		if err := json.Unmarshal(val.GetJsonIetfVal(), &gotVal); err != nil {
+			t.Fatalf("error in unmarshaling IETF JSON data to json container: %v", err)
+		}
+		var wantJSONStruct interface{}
+		if v, ok := wantRespVal.(string); ok {
+			wantRespVal = []byte(v)
+		}
+		if err := json.Unmarshal(wantRespVal.([]byte), &wantJSONStruct); err != nil {
+			t.Fatalf("error in unmarshaling IETF JSON data to json container: %v", err)
+		}
+		wantRespVal = wantJSONStruct
+	}
+
+	if !reflect.DeepEqual(gotVal, wantRespVal) {
+		t.Errorf("got: %v (%T),\nwant %v (%T)", gotVal, gotVal, wantRespVal, wantRespVal)
 	}
 }
 
@@ -724,7 +781,7 @@ func initFullCountersDb(t *testing.T, namespace string) {
 	fileName = "../testdata/COUNTERS_FABRIC_PORT_NAME_MAP.txt"
 	countersFabricPortNameMapByte, err := ioutil.ReadFile(fileName)
 	if err != nil {
-			t.Fatalf("read file %v err: %v", fileName, err)
+		t.Fatalf("read file %v err: %v", fileName, err)
 	}
 	mpi_fab_name_map := loadConfig(t, "COUNTERS_FABRIC_PORT_NAME_MAP", countersFabricPortNameMapByte)
 	loadDB(t, rclient, mpi_fab_name_map)
@@ -733,7 +790,7 @@ func initFullCountersDb(t *testing.T, namespace string) {
 	fileName = "../testdata/COUNTERS:oid:0x1000000000081.txt"
 	countersPort0_Byte, err := ioutil.ReadFile(fileName)
 	if err != nil {
-			t.Fatalf("read file %v err: %v", fileName, err)
+		t.Fatalf("read file %v err: %v", fileName, err)
 	}
 	mpi_fab_counter_0 := loadConfig(t, "COUNTERS:oid:0x1000000000081", countersPort0_Byte)
 	loadDB(t, rclient, mpi_fab_counter_0)
@@ -742,7 +799,7 @@ func initFullCountersDb(t *testing.T, namespace string) {
 	fileName = "../testdata/COUNTERS:oid:0x1000000000082.txt"
 	countersPort1_Byte, err := ioutil.ReadFile(fileName)
 	if err != nil {
-			t.Fatalf("read file %v err: %v", fileName, err)
+		t.Fatalf("read file %v err: %v", fileName, err)
 	}
 	mpi_fab_counter_1 := loadConfig(t, "COUNTERS:oid:0x1000000000082", countersPort1_Byte)
 	loadDB(t, rclient, mpi_fab_counter_1)
@@ -1506,7 +1563,7 @@ func runGnmiTestGet(t *testing.T, namespace string) {
 		t.Fatalf("read file %v err: %v", fileName, err)
 	}
 
-	fileName = "../testdata/COUNTERS:PORT_wildcard" +  namespace + ".txt"
+	fileName = "../testdata/COUNTERS:PORT_wildcard" + namespace + ".txt"
 	countersFabricPortWildcardByte, err := ioutil.ReadFile(fileName)
 	if err != nil {
 		t.Fatalf("read file %v err: %v", fileName, err)
@@ -1519,8 +1576,8 @@ func runGnmiTestGet(t *testing.T, namespace string) {
 	invalidFabricPortName := "PORT0-" + namespace
 	if namespace != ns {
 		stateDBPath = "STATE_DB" + "/" + namespace
-		validFabricPortName =  "PORT0-" + namespace
-		invalidFabricPortName = "PORT0" 
+		validFabricPortName = "PORT0-" + namespace
+		invalidFabricPortName = "PORT0"
 	}
 
 	type testCase struct {
@@ -1729,12 +1786,10 @@ func runGnmiTestGet(t *testing.T, namespace string) {
 					elem: <name: "` + invalidFabricPortName + `">
 								`,
 			wantRetCode: codes.NotFound,
-			valTest:     true,
 		}, {
 			desc:        "Invalid DBKey of length 1",
 			pathTarget:  stateDBPath,
 			textPbPath:  ``,
-			valTest:     true,
 			wantRetCode: codes.NotFound,
 		},
 
@@ -3579,7 +3634,7 @@ func TestGNOI(t *testing.T) {
 		if len(resp.Stats) == 0 {
 			t.Fatalf("Expected at least one StatInfo in response")
 		}
-	
+
 		statInfo := resp.Stats[0]
 
 		if statInfo.LastModified != 1609459200000000000 {
@@ -3599,7 +3654,7 @@ func TestGNOI(t *testing.T) {
 	t.Run("FileStatFailure", func(t *testing.T) {
 		mockClient := &ssc.DbusClient{}
 		expectedError := fmt.Errorf("failed to get file stats")
-		
+
 		mock := gomonkey.ApplyMethod(reflect.TypeOf(mockClient), "GetFileStat", func(_ *ssc.DbusClient, path string) (map[string]string, error) {
 			return nil, expectedError
 		})
@@ -3617,10 +3672,10 @@ func TestGNOI(t *testing.T) {
 		if resp != nil {
 			t.Fatalf("Expected nil response but got: %v", resp)
 		}
-	
+
 		if !strings.Contains(err.Error(), expectedError.Error()) {
 			t.Errorf("Expected error to contain '%v' but got '%v'", expectedError, err)
-		}	
+		}
 	})
 
 	type configData struct {
@@ -4437,16 +4492,16 @@ func TestConnectionsKeepAlive(t *testing.T) {
 	defer s.Stop()
 
 	tests := []struct {
-		desc    string
-		q       client.Query
-		want    []client.Notification
-		poll    int
+		desc string
+		q    client.Query
+		want []client.Notification
+		poll int
 	}{
 		{
 			desc: "Testing KeepAlive with goroutine count",
 			poll: 3,
 			q: client.Query{
-				Target: "COUNTERS_DB",
+				Target:  "COUNTERS_DB",
 				Type:    client.Poll,
 				Queries: []client.Path{{"COUNTERS", "Ethernet*"}},
 				TLS:     &tls.Config{InsecureSkipVerify: true},
@@ -4457,7 +4512,7 @@ func TestConnectionsKeepAlive(t *testing.T) {
 			},
 		},
 	}
-	for _, tt := range(tests) {
+	for _, tt := range tests {
 		var clients []*cacheclient.CacheClient
 		for i := 0; i < 5; i++ {
 			t.Run(tt.desc, func(t *testing.T) {
@@ -4486,7 +4541,7 @@ func TestConnectionsKeepAlive(t *testing.T) {
 				}
 			})
 		}
-		for _, cacheClient := range(clients) {
+		for _, cacheClient := range clients {
 			cacheClient.Close()
 		}
 	}
@@ -4800,7 +4855,7 @@ func TestGNMINative(t *testing.T) {
 		return &dbus.Call{}
 	})
 	defer mock2.Reset()
-	mock3 := gomonkey.ApplyFunc(sdc.RunPyCode, func(text string) error {return nil})
+	mock3 := gomonkey.ApplyFunc(sdc.RunPyCode, func(text string) error { return nil })
 	defer mock3.Reset()
 
 	sdcfg.Init()
@@ -5406,6 +5461,8 @@ func init() {
 	// Inform gNMI server to use redis tcp localhost connection
 	sdc.UseRedisLocalTcpPort = true
 	os.Setenv("UNIT_TEST", "1")
+	os.Setenv(metadata.EnableMetadataEnvVar, "false")
+	os.Setenv(metadata.EnableVersionEnvVar, "false")
 }
 
 func TestMain(m *testing.M) {

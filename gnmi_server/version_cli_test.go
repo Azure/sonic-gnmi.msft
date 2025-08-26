@@ -941,8 +941,6 @@ sonic_utilities: 1.2
 				elem: <name: "version" >
 			`,
 			wantRetCode: codes.NotFound,
-			wantRespVal: nil,
-			valTest:     true,
 			mockOutputFile: map[string]string{
 				"docker": "../testdata/VERSION_DOCKER_IMAGEDATA.txt",
 				"uptime": "../testdata/VERSION_UPTIME.txt",

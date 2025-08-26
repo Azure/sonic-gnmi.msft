@@ -138,8 +138,15 @@ func init() {
 		showCmdOptionTrim,
 	)
 	sdc.RegisterCliPath(
+		[]string{"SHOW", "vlan", "brief"},
+		getVlanBrief,
+		nil,
+		showCmdOptionVerbose,
+	)
+	sdc.RegisterCliPath(
 		[]string{"SHOW", "uptime"},
 		getUptime,
 		nil,
+		showCmdOptionVerbose,
   )
 }

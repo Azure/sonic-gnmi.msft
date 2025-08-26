@@ -252,3 +252,27 @@ func toString(v interface{}) string {
 		return fmt.Sprint(v)
 	}
 }
+
+func GetSortedKeys(m map[string]interface{}) []string {
+	keys := make([]string, 0, len(m))
+	for k := range m {
+		keys = append(keys, k)
+	}
+	sort.Strings(keys)
+	return keys
+}
+
+func ParseKey(key interface{}, delimiter string) (string, string) {
+	keyStr, ok := key.(string)
+	if !ok {
+		log.Info("parse Key failure to convert key as string.")
+		return "", ""
+	}
+
+	parts := strings.Split(keyStr, delimiter)
+	if len(parts) < 2 {
+		log.Info("Unable to parse the string")
+		return "", ""
+	}
+	return parts[0], parts[1]
+}

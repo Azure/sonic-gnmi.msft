@@ -382,3 +382,44 @@ func getInterfaceFecStatus(options sdc.OptionMap) ([]byte, error) {
 
 	return json.Marshal(portFecStatus)
 }
+
+func getInterfaceAlias(options sdc.OptionMap) ([]byte, error) {
+    intf, _ := options["interface"].String()
+
+    // Read CONFIG_DB.PORT
+    queries := [][]string{{"CONFIG_DB", "PORT"}}
+    portEntries, err := GetMapFromQueries(queries)
+    if err != nil {
+        log.Errorf("Failed to get ports from CONFIG_DB: %v", err)
+        return nil, err
+    }
+
+	nameToAlias := make(map[string]string, len(portEntries))
+    for name := range portEntries {
+        alias := GetFieldValueString(portEntries, name, "", "alias")
+        if alias == "" {
+            // fallback to itself if alias field is missing
+            alias = name
+        }
+        nameToAlias[name] = alias
+    }
+
+    // If a specific interface was requested, accept port name
+    if intf != "" {
+        name := intf
+        if _, ok := nameToAlias[name]; !ok {
+            return nil, fmt.Errorf("Invalid interface name %s", name)
+        }
+        out := map[string]map[string]string{
+            name: {"alias": nameToAlias[name]},
+        }
+        return json.Marshal(out)
+    }
+
+    // Build {"Ethernet0":{"alias":"etp0"}, ...} from CONFIG_DB PORT only
+    out := make(map[string]map[string]string, len(nameToAlias))
+    for name, alias := range nameToAlias {
+        out[name] = map[string]string{"alias": alias}
+    }
+    return json.Marshal(out)
+}

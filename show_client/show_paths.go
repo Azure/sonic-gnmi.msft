@@ -123,4 +123,10 @@ func init() {
 		getLLDPTable,
 		nil,
 	)
+	sdc.RegisterCliPath(
+		[]string{"SHOW", "interface", "alias"},
+		getInterfaceAlias,
+		nil,
+		showCmdOptionInterface,
+	)
 }

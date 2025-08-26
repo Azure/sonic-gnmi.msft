@@ -2,10 +2,13 @@ package gnmi
 
 import (
 	"crypto/tls"
+	"fmt"
 	"testing"
 	"time"
 
+	"github.com/agiledragon/gomonkey/v2"
 	pb "github.com/openconfig/gnmi/proto/gnmi"
+	sc "github.com/sonic-net/sonic-gnmi/show_client"
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
@@ -154,4 +157,36 @@ func TestShowMmu_VerboseTotals(t *testing.T) {
         "totals": { "pools": 2, "profiles": 3 }
     }`)
 	runTestGet(t, ctx, gClient, "SHOW", textPbPath, codes.OK, expected, true)
+}
+
+func TestShowMmu_ErrorOnLossless(t *testing.T) {
+	s := createServer(t, ServerPort)
+	go runServer(t, s)
+	defer s.ForceStop()
+	defer ResetDataSetsAndMappings(t)
+
+	var calls int
+	patches := gomonkey.ApplyFunc(sc.GetMapFromQueries, func(queries [][]string) (map[string]interface{}, error) {
+		calls++
+		if calls == 1 {
+			return nil, fmt.Errorf("error when read table DEFAULT_LOSSLESS_BUFFER_PARAMETER")
+		}
+		return map[string]interface{}{}, nil
+	})
+	defer patches.Reset()
+
+	tlsConfig := &tls.Config{InsecureSkipVerify: true}
+	opts := []grpc.DialOption{grpc.WithTransportCredentials(credentials.NewTLS(tlsConfig))}
+	conn, err := grpc.Dial(TargetAddr, opts...)
+	if err != nil {
+		t.Fatalf("Dial failed: %v", err)
+	}
+	defer conn.Close()
+
+	gClient := pb.NewGNMIClient(conn)
+	ctx, cancel := context.WithTimeout(context.Background(), QueryTimeout*time.Second)
+	defer cancel()
+
+	textPbPath := `elem: <name: "mmu" >`
+	runTestGet(t, ctx, gClient, "SHOW", textPbPath, codes.NotFound, nil, false)
 }

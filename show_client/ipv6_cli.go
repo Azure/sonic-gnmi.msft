@@ -2,6 +2,7 @@ package show_client
 
 import (
 	"encoding/json"
+	"fmt"
 	"net"
 
 	log "github.com/golang/glog"
@@ -118,18 +119,41 @@ func isBGPNeighborPresent(ip string) bool {
 }
 
 func getIPv6BGPNeighbors(options sdc.OptionMap) ([]byte, error) {
+	intf, _ := options["interface"].String()
+
+	var cmd string
+	if intf != "" {
+		// Validate IPv6 address
+		if !isIPv6Address(intf) {
+			log.Errorf("Provided neighbor IP %v is not a valid IPv6 address", intf)
+			return nil, fmt.Errorf("invalid IPv6 address: %v", intf)
+		}
+
+		// Check if neighbor exists in CONFIG_DB
+		if !isBGPNeighborPresent(intf) {
+			log.Errorf("IPv6 BGP neighbor %v does not exist in CONFIG_DB", intf)
+			return nil, fmt.Errorf("neighbor %v not found in CONFIG_DB", intf)
+		}
+
+		// Construct command with specific neighbor
+		cmd = fmt.Sprintf("vtysh -c \"show bgp ipv6 neighbors %s json\"", intf)
+	} else {
+		// Default command for all neighbors
+		cmd = vtyshBGPIPv6BGPNeighborsCommand
+	}
+
 	// Get data from vtysh shell
-	vtyshOutput, err := GetDataFromHostCommand(vtyshBGPIPv6BGPNeighborsCommand)
+	vtyshOutput, err := GetDataFromHostCommand(cmd)
 	if err != nil {
 		log.Errorf("Unable to successfully execute command %v, got err %v",
-			vtyshBGPIPv6BGPNeighborsCommand, err)
+			cmd, err)
 		return nil, err
 	}
 
-	var neighbors map[string]IPv6BGPPeer
-	if err := json.Unmarshal([]byte(vtyshOutput), &neighbors); err != nil {
-		log.Errorf("Unable to create IPv6 BGP Neighbor response from vtysh output %v", err)
-		return nil, err
-	}
-
+	// var neighbors map[string]IPv6BGPPeer
+	// if err := json.Unmarshal([]byte(vtyshOutput), &neighbors); err != nil {
+	// 	log.Errorf("Unable to create IPv6 BGP Neighbor response from vtysh output %v", err)
+	// 	return nil, err
+	// }
+	return []byte(vtyshOutput), nil
 }

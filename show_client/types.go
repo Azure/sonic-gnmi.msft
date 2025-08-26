@@ -1,9 +1,5 @@
 package show_client
 
-type IPv6BGPNeighborsResponse struct {
-	Neighbors map[string]IPv6BGPPeer `json:"neighbors"`
-}
-
 type IPv6BGPPeer struct {
 	RemoteAS       int    `json:"remoteAs"`
 	LocalAS        int    `json:"localAs"`
@@ -107,13 +103,22 @@ type PrefixStats struct {
 	AttributesDiscarded int `json:"attributesDiscarded"`
 }
 
+// AddressFamilyInfo
 type AddressFamilyInfo struct {
-	PeerGroupMember          string `json:"peerGroupMember"`
-	UpdateGroupID            int    `json:"updateGroupId"`
-	SubGroupID               int    `json:"subGroupId"`
-	PacketQueueLength        int    `json:"packetQueueLength"`
-	InboundSoftConfigPermit  bool   `json:"inboundSoftConfigPermit"`
-	OutboundPathPolicyConfig bool   `json:"outboundPathPolicyConfig"`
-	AcceptedPrefixCounter    int    `json:"acceptedPrefixCounter"`
-	SentPrefixCounter        int    `json:"sentPrefixCounter"`
+	PeerGroupMember                   string `json:"peerGroupMember"`
+	UpdateGroupID                     int    `json:"updateGroupId"`
+	SubGroupID                        int    `json:"subGroupId"`
+	PacketQueueLength                 int    `json:"packetQueueLength"`
+	InboundSoftConfigPermit           bool   `json:"inboundSoftConfigPermit"`
+	AllowAsInCount                    int    `json:"allowAsInCount"`
+	CommAttriSentToNbr                string `json:"commAttriSentToNbr"`
+	InboundPathPolicyConfig           bool   `json:"inboundPathPolicyConfig"`
+	OutboundPathPolicyConfig          bool   `json:"outboundPathPolicyConfig"`
+	RouteMapForIncomingAdvertisements string `json:"routeMapForIncomingAdvertisements"`
+	RouteMapForOutgoingAdvertisements string `json:"routeMapForOutgoingAdvertisements"`
+	AcceptedPrefixCounter             int    `json:"acceptedPrefixCounter"`
+	SentPrefixCounter                 int    `json:"sentPrefixCounter"`
+	PrefixAllowedMax                  int    `json:"prefixAllowedMax"`
+	PrefixAllowedMaxWarning           bool   `json:"prefixAllowedMaxWarning"`
+	PrefixAllowedWarningThresh        int    `json:"prefixAllowedWarningThresh"`
 }

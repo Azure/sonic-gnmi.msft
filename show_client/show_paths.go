@@ -118,4 +118,11 @@ func init() {
 		sdc.UnimplementedOption(showCmdOptionNamespace),
 		showCmdOptionDisplay,
 	)
+	sdc.RegisterCliPath(
+		[]string{"SHOW", "ipv6", "protocol"},
+		getIPv6Protocol,
+		nil,
+		showCmdOptionVerbose,
+		sdc.UnimplementedOption(showCmdOptionNamespace),
+	)
 }

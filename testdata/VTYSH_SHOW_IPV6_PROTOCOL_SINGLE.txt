@@ -1,0 +1,9 @@
+VRF: default
+Protocol                  : route-map
+-------------------------------------
+system                    : none
+kernel                    : none
+connected                 : none
+local                     : none
+static                    : none
+bgp                       : RM_SET_SRC6

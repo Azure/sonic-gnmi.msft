@@ -97,4 +97,9 @@ func init() {
 		getMacAgingTime,
 		nil,
 	)
+	sdc.RegisterCliPath(
+		[]string{"SHOW", "uptime"},
+		getUptime,
+		nil,
+	)
 }

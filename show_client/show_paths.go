@@ -124,9 +124,15 @@ func init() {
 		nil,
 	)
 	sdc.RegisterCliPath(
+		[]string{"SHOW", "interface", "alias"},
+		getInterfaceAlias,
+		nil,
+		showCmdOptionInterface,
+	)
+	sdc.RegisterCliPath(
 		[]string{"SHOW", "vlan", "brief"},
 		getVlanBrief,
 		nil,
 		showCmdOptionVerbose,
-	)
+ 	)
 }

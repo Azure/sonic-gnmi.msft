@@ -8,7 +8,7 @@ import (
 	sdc "github.com/sonic-net/sonic-gnmi/sonic_data_client"
 )
 
-func getSRv6Stat(options sdc.OptionMap) ([]byte, error) {
+func getSRv6Stats(options sdc.OptionMap) ([]byte, error) {
 	// Get SRv6 statistics per MY_SID entry
 	sid := ""
 	if option, ok := options["sid"].String(); ok {

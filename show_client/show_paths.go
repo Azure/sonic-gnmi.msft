@@ -131,7 +131,7 @@ func init() {
 	)
 	sdc.RegisterCliPath(
 		[]string{"SHOW", "srv6", "stats"},
-		getSRv6Stat,
+		getSRv6Stats,
 		nil,
 		showCmdOptionSid,
   )

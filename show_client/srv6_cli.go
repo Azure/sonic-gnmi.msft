@@ -35,10 +35,18 @@ func getSRv6Stats(options sdc.OptionMap) ([]byte, error) {
 		}
 	}
 
-	sidCounters := make([]map[string]string, 0, len(sidCounterMap))
-	for k, v := range sidCounterMap {
-		sid := fmt.Sprint(k)
-		counterOid := fmt.Sprint(v)
+	// Create a slice to hold the keys
+	sids := make([]string, 0, len(sidCounterMap))
+	// Iterate over the map and collect the keys
+	for k, _ := range sidCounterMap {
+		sids = append(sids, fmt.Sprintf("%s", k))
+	}
+	// Natsort the slice
+	sids = natsortInterfaces(sids)
+
+	sidCounters := make([]map[string]string, 0, len(sids))
+	for _, sid := range sids {
+		counterOid := fmt.Sprint(sidCounterMap[sid])
 		// Pull statistics for each sid and counterOid pair
 		log.V(2).Infof("Processing SID: %s with Counter OID: %v", sid, counterOid)
 		queries := [][]string{

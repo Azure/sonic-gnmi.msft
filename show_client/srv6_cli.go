@@ -36,7 +36,9 @@ func getSRv6Stat(options sdc.OptionMap) ([]byte, error) {
 	}
 
 	sidCounters := make([]map[string]string, 0, len(sidCounterMap))
-	for sid, counterOid := range sidCounterMap {
+	for k, v := range sidCounterMap {
+		sid := fmt.Sprint(k)
+		counterOid := fmt.Sprint(v)
 		// Pull statistics for each sid and counterOid pair
 		log.V(2).Infof("Processing SID: %s with Counter OID: %v", sid, counterOid)
 		queries := [][]string{

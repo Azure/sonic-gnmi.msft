@@ -33,6 +33,7 @@ func TestGetShowInterfaceStatus(t *testing.T) {
 	defer cancel()
 
 	emptyResp := `[]`
+	dataWithoutApplDB := `[{"Interface":"Ethernet0","Lanes":"N/A","Speed":"N/A","MTU":"N/A","FEC":"N/A","Alias":"N/A","Vlan":"PortChannel1","Oper":"N/A","Admin":"N/A","Type":"N/A","Asym":"N/A"},{"Interface":"Ethernet40","Lanes":"N/A","Speed":"N/A","MTU":"N/A","FEC":"N/A","Alias":"N/A","Vlan":"PortChannel1","Oper":"up","Admin":"up","Type":"N/A","Asym":"N/A"},{"Interface":"Ethernet80","Lanes":"N/A","Speed":"N/A","MTU":"N/A","FEC":"N/A","Alias":"N/A","Vlan":"routed","Oper":"N/A","Admin":"N/A","Type":"N/A","Asym":"N/A"},{"Interface":"Ethernet120","Lanes":"N/A","Speed":"N/A","MTU":"N/A","FEC":"N/A","Alias":"N/A","Vlan":"trunk","Oper":"N/A","Admin":"N/A","Type":"N/A","Asym":"N/A"},{"Interface":"PortChannel1","Lanes":"N/A","Speed":"N/A","MTU":"N/A","FEC":"N/A","Alias":"N/A","Vlan":"routed","Oper":"N/A","Admin":"N/A","Type":"N/A","Asym":"N/A"}]`
 	fullDataWithoutStateDB := `[{"Interface":"Ethernet0","Lanes":"2304,2305,2306,2307","Speed":"100G","MTU":"9100","FEC":"rs","Alias":"etp0","Vlan":"PortChannel1","Oper":"up","Admin":"up","Type":"N/A","Asym":"off"},{"Interface":"Ethernet40","Lanes":"2048,2049,2050,2051","Speed":"100G","MTU":"9100","FEC":"rs","Alias":"etp10","Vlan":"PortChannel1","Oper":"up","Admin":"up","Type":"N/A","Asym":"off"},{"Interface":"Ethernet80","Lanes":"2568,2569,2570,2571","Speed":"100G","MTU":"9100","FEC":"rs","Alias":"etp20","Vlan":"routed","Oper":"up","Admin":"up","Type":"N/A","Asym":"off"},{"Interface":"Ethernet120","Lanes":"2668,2669,2670,2671","Speed":"100G","MTU":"9100","FEC":"rs","Alias":"etp30","Vlan":"trunk","Oper":"up","Admin":"up","Type":"N/A","Asym":"off"},{"Interface":"PortChannel1","Lanes":"N/A","Speed":"200G","MTU":"9100","FEC":"N/A","Alias":"N/A","Vlan":"routed","Oper":"up","Admin":"up","Type":"N/A","Asym":"N/A"}]`
 	fullDataWithStateDB := `[{"Interface":"Ethernet0","Lanes":"2304,2305,2306,2307","Speed":"200G","MTU":"9100","FEC":"rs","Alias":"etp0","Vlan":"PortChannel1","Oper":"up","Admin":"up","Type":"SFP","Asym":"off"},{"Interface":"Ethernet40","Lanes":"2048,2049,2050,2051","Speed":"200G","MTU":"9100","FEC":"rs","Alias":"etp10","Vlan":"PortChannel1","Oper":"up","Admin":"up","Type":"SFP","Asym":"off"},{"Interface":"Ethernet80","Lanes":"2568,2569,2570,2571","Speed":"200G","MTU":"9100","FEC":"rs","Alias":"etp20","Vlan":"routed","Oper":"up","Admin":"up","Type":"SFP","Asym":"off"},{"Interface":"Ethernet120","Lanes":"2668,2669,2670,2671","Speed":"200G","MTU":"9100","FEC":"rs","Alias":"etp30","Vlan":"trunk","Oper":"up","Admin":"up","Type":"SFP","Asym":"off"},{"Interface":"PortChannel1","Lanes":"N/A","Speed":"400G","MTU":"9100","FEC":"N/A","Alias":"N/A","Vlan":"routed","Oper":"up","Admin":"up","Type":"N/A","Asym":"N/A"}]`
 	singleInterfaceDataWithStateDB := `[{"Interface":"Ethernet0","Lanes":"2304,2305,2306,2307","Speed":"200G","MTU":"9100","FEC":"rs","Alias":"etp0","Vlan":"PortChannel1","Oper":"up","Admin":"up","Type":"SFP","Asym":"off"}]`
@@ -65,6 +66,21 @@ func TestGetShowInterfaceStatus(t *testing.T) {
 			wantRetCode: codes.OK,
 			wantRespVal: []byte(emptyResp),
 			valTest:     true,
+		},
+		{
+			desc:       "query SHOW interface status - config db only",
+			pathTarget: "SHOW",
+			textPbPath: `
+				elem: <name: "interface" >
+				elem: <name: "status" >
+			`,
+			wantRetCode: codes.OK,
+			wantRespVal: []byte(dataWithoutApplDB),
+			valTest:     true,
+			testInit: func() {
+				FlushDataSet(t, ConfigDbNum)
+				AddDataSet(t, ConfigDbNum, configDbFileName)
+			},
 		},
 		{
 			desc:       "query SHOW interface status - appl db only",

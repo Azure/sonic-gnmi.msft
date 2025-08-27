@@ -41,6 +41,7 @@ func TestGetSRv6Stats(t *testing.T) {
 
 	srv6Counters := `[{"MySID":"2001:db8:1::/48","Packets":"12345","Bytes":"67890"},{"MySID":"2001:db8:2::/48","Packets":"23456","Bytes":"78901"}]`
 	srv6CountersWithoutStats := `[{"MySID":"2001:db8:1::/48","Packets":"N/A","Bytes":"N/A"},{"MySID":"2001:db8:2::/48","Packets":"N/A","Bytes":"N/A"}]`
+	singleSrv6Counter := `[{"MySID":"2001:db8:1::/48","Packets":"12345","Bytes":"67890"}]`
 
 	tests := []struct {
 		desc        string
@@ -70,6 +71,20 @@ func TestGetSRv6Stats(t *testing.T) {
 			`,
 			wantRetCode: codes.OK,
 			wantRespVal: []byte(srv6Counters),
+			valTest:     true,
+			testInit: func() {
+				AddDataSet(t, CountersDbNum, counterDbFileName)
+			},
+		},
+		{
+			desc:       "query SHOW srv6 stats SINGLE SID",
+			pathTarget: "SHOW",
+			textPbPath: `
+				elem: <name: "srv6" >
+				elem: <name: "stats" key: { key: "sid" value: "2001:db8:1::/48" } >
+			`,
+			wantRetCode: codes.OK,
+			wantRespVal: []byte(singleSrv6Counter),
 			valTest:     true,
 			testInit: func() {
 				AddDataSet(t, CountersDbNum, counterDbFileName)

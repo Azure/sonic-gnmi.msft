@@ -37,8 +37,10 @@ func TestGetSRv6Stats(t *testing.T) {
 	defer cancel()
 
 	counterDbFileName := "../testdata/SRV6_COUNTER_DB.json"
+	counterDbFileNameWithoutStats := "../testdata/SRV6_COUNTER_DB_NO_STATS.json"
 
 	srv6Counters := `[{"MySID":"2001:db8:1::/48","Packets":"12345","Bytes":"67890"},{"MySID":"2001:db8:2::/48","Packets":"23456","Bytes":"78901"}]`
+	srv6CountersWithoutStats := `[{"MySID":"2001:db8:1::/48","Packets":"N/A","Bytes":"N/A"},{"MySID":"2001:db8:2::/48","Packets":"N/A","Bytes":"N/A"}]`
 
 	tests := []struct {
 		desc        string
@@ -71,6 +73,21 @@ func TestGetSRv6Stats(t *testing.T) {
 			valTest:     true,
 			testInit: func() {
 				AddDataSet(t, CountersDbNum, counterDbFileName)
+			},
+		},
+		{
+			desc:       "query SHOW srv6 stats NO STATS",
+			pathTarget: "SHOW",
+			textPbPath: `
+				elem: <name: "srv6" >
+				elem: <name: "stats" >
+			`,
+			wantRetCode: codes.OK,
+			wantRespVal: []byte(srv6CountersWithoutStats),
+			valTest:     true,
+			testInit: func() {
+				FlushDataSet(t, CountersDbNum)
+				AddDataSet(t, CountersDbNum, counterDbFileNameWithoutStats)
 			},
 		},
 	}

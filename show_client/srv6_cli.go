@@ -49,6 +49,12 @@ func getSRv6Stats(options sdc.OptionMap) ([]byte, error) {
 			log.Errorf("Unable to pull counters data for queries %v, got err %v", queries, err)
 			return nil, err
 		}
+		if _, ok := sidStats["SAI_COUNTER_STAT_PACKETS"]; !ok {
+			sidStats["SAI_COUNTER_STAT_PACKETS"] = "N/A"
+		}
+		if _, ok := sidStats["SAI_COUNTER_STAT_BYTES"]; !ok {
+			sidStats["SAI_COUNTER_STAT_BYTES"] = "N/A"
+		}
 
 		sidCounters = append(sidCounters, map[string]string{
 			"MySID":   sid,

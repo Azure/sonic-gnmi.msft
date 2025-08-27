@@ -1,0 +1,9 @@
+{
+  "VLAN|Vlan1": {
+    "dhcp_servers": "192.0.0.1",
+    "dhcpv6_servers": ":fc02:2000::1"
+  },
+  "VLAN_MEMBER|Vlan1|Ethernet120": {
+    "tagging_mode": "untagged"
+  }
+}

@@ -130,6 +130,26 @@ func init() {
 		showCmdOptionInterface,
 	)
 	sdc.RegisterCliPath(
+		[]string{"SHOW", "queue", "counters"},
+		getQueueCounters,
+		nil,
+		showCmdOptionInterfaces,
+		showCmdOptionNonzero,
+		showCmdOptionTrim,
+	)
+	sdc.RegisterCliPath(
+		[]string{"SHOW", "vlan", "brief"},
+		getVlanBrief,
+		nil,
+		showCmdOptionVerbose,
+	)
+	sdc.RegisterCliPath(
+		[]string{"SHOW", "version"},
+		getVersion,
+		nil,
+		showCmdOptionVerbose,
+	)
+	sdc.RegisterCliPath(
 		[]string{"SHOW", "mac"},
 		getMacTable,
 		map[string]string{

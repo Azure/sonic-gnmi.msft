@@ -1,0 +1,47 @@
+{
+    "Ethernet0:0": {
+        "Trim/pkts": "N/A",
+        "TrimSent/pkts": "N/A",
+        "TrimDrop/pkts": "N/A"
+    },
+    "Ethernet0:1": {
+        "Trim/pkts": "N/A",
+        "TrimSent/pkts": "N/A",
+        "TrimDrop/pkts": "N/A"
+    },
+    "Ethernet0:2": {
+        "Trim/pkts": "N/A",
+        "TrimSent/pkts": "N/A",
+        "TrimDrop/pkts": "N/A"
+    },
+    "Ethernet40:0": {
+        "Trim/pkts": "N/A",
+        "TrimSent/pkts": "N/A",
+        "TrimDrop/pkts": "N/A"
+    },
+    "Ethernet40:1": {
+        "Trim/pkts": "5",
+        "TrimSent/pkts": "4",
+        "TrimDrop/pkts": "1"
+    },
+    "Ethernet40:2": {
+        "Trim/pkts": "N/A",
+        "TrimSent/pkts": "N/A",
+        "TrimDrop/pkts": "N/A"
+    },
+    "Ethernet80:0": {
+        "Trim/pkts": "1",
+        "TrimSent/pkts": "0",
+        "TrimDrop/pkts": "0"
+    },
+    "Ethernet80:1": {
+        "Trim/pkts": "N/A",
+        "TrimSent/pkts": "N/A",
+        "TrimDrop/pkts": "N/A"
+    },
+    "Ethernet80:2": {
+        "Trim/pkts": "N/A",
+        "TrimSent/pkts": "N/A",
+        "TrimDrop/pkts": "N/A"
+    }
+}

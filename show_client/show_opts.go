@@ -15,6 +15,8 @@ const (
 	showCmdOptionPeriodDesc        = "[period=INTEGER] Display statistics over a specified period (in seconds)"
 	showCmdOptionJsonDesc          = "[json=true] No-op since response is in json format"
 	showCmdOptionSidDesc           = "[sid=TEXT] Filter by SRv6 SID"
+	showCmdOptionNonzeroDesc       = "[nonzero=true] Display only non-zero values"
+	showCmdOptionTrimDesc          = "[trim=true] Display only trim counters"
 )
 
 var (
@@ -82,5 +84,17 @@ var (
 		"sid",
 		showCmdOptionSidDesc,
 		sdc.StringValue,
+  )
+
+	showCmdOptionNonzero = sdc.NewShowCmdOption(
+		"nonzero",
+		showCmdOptionNonzeroDesc,
+		sdc.BoolValue,
+	)
+
+	showCmdOptionTrim = sdc.NewShowCmdOption(
+		"trim",
+		showCmdOptionTrimDesc,
+		sdc.BoolValue,
 	)
 )

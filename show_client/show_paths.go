@@ -134,5 +134,25 @@ func init() {
 		getSRv6Stat,
 		nil,
 		showCmdOptionSid,
+  )
+  sdc.RegisterCliPath(
+		[]string{"SHOW", "queue", "counters"},
+		getQueueCounters,
+		nil,
+		showCmdOptionInterfaces,
+		showCmdOptionNonzero,
+		showCmdOptionTrim,
+	)
+	sdc.RegisterCliPath(
+		[]string{"SHOW", "vlan", "brief"},
+		getVlanBrief,
+		nil,
+		showCmdOptionVerbose,
+	)
+	sdc.RegisterCliPath(
+		[]string{"SHOW", "version"},
+		getVersion,
+		nil,
+		showCmdOptionVerbose,
 	)
 }

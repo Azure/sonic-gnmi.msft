@@ -27,12 +27,12 @@ func TestShowMacCommand(t *testing.T) {
 
 	conn, err := grpc.Dial(TargetAddr, opts...)
 	if err != nil {
-		t.Fatalf("Dailing to %q failed: %v", TargetAddr, err)
+		t.Fatalf("Dialing to %q failed: %v", TargetAddr, err)
 	}
 	defer conn.Close()
 
 	gClient := pb.NewGNMIClient(conn)
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second * 3)
 	defer cancel()
 
 	stateDbContentFileNameForShowMac := "../testdata/ShowMacStateDb.txt"

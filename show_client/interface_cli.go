@@ -477,6 +477,10 @@ func portSpeedParse(speedStr string) int {
 		return int(math.Round(f))
 	}
 
+	f, err := strconv.ParseFloat(s, 64)
+	if err != nil {
+		return 0
+	}
 	return int(math.Round(f))
 }
 

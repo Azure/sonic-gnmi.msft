@@ -1,10 +1,5 @@
 package client
 
-import (
-	"fmt"
-	"strings"
-)
-
 type OptionType int
 type ValueType int
 
@@ -13,6 +8,7 @@ type ShowCmdOption struct {
 	optType     OptionType // 0 means required, 1 means optional, -1 means unimplemented, all other values means invalid argument
 	description string     // will be used in help output
 	valueType   ValueType
+	enumValues  []string // valid only when valueType is EnumValue
 }
 
 type EnumShowCmdOption struct {
@@ -49,6 +45,7 @@ const (
 	StringSliceValue ValueType = 1
 	BoolValue        ValueType = 2
 	IntValue         ValueType = 3
+	EnumValue        ValueType = 4
 
 	Required      OptionType = 0
 	Optional      OptionType = 1
@@ -77,12 +74,13 @@ func (ov OptionValue) Int() (int, bool) {
 	return i, ok
 }
 
-func NewShowCmdOption(name string, desc string, valType ValueType) ShowCmdOption {
+func NewShowCmdOption(name string, desc string, valType ValueType, enumVals ...string) ShowCmdOption {
 	return ShowCmdOption{
 		optName:     name,
 		optType:     Optional,
 		description: desc,
 		valueType:   valType,
+		enumValues:  enumVals,
 	}
 }
 
@@ -94,26 +92,4 @@ func RequiredOption(option ShowCmdOption) ShowCmdOption {
 func UnimplementedOption(option ShowCmdOption) ShowCmdOption {
 	option.optType = Unimplemented
 	return option
-}
-
-// NewEnumShowCmdOption creates a new ShowCmdOption with enum validation
-func NewEnumShowCmdOption(name string, desc string, valType ValueType, enumValues ...string) EnumShowCmdOption {
-	return EnumShowCmdOption{
-		ShowCmdOption: NewShowCmdOption(name, desc, valType),
-		enumValues:    enumValues,
-	}
-}
-
-// Validate checks if the value is in the allowed enumValues
-func (e *EnumShowCmdOption) Validate(value string) error {
-	if len(e.enumValues) == 0 {
-		// no enum restriction
-		return nil
-	}
-	for _, v := range e.enumValues {
-		if value == v {
-			return nil
-		}
-	}
-	return fmt.Errorf("invalid value '%s' for option '%s', allowed values: %s", value, e.optName, strings.Join(e.enumValues, ", "))
 }

@@ -247,14 +247,6 @@ func getIPv6BGPNeighborsHandler(options sdc.OptionMap) ([]byte, error) {
 	ip, _ := options["ipaddress"].String()
 	info_type, _ := options["info_type"].String()
 
-	// Validate info_type against enum values
-	if info_type != "" {
-		if err := showCmdOptionInfoType.Validate(info_type); err != nil {
-			log.Errorf("Invalid info_type value: %v", err)
-			return nil, err
-		}
-	}
-
 	// Validate IPv6 address if provided
 	if ip != "" && !isIPv6Address(ip) {
 		log.Errorf("Invalid IPv6 address: %v", ip)

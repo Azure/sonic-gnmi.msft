@@ -44,7 +44,7 @@ func init() {
 		getIPv6BGPNeighborsHandler,
 		nil,
 		showCmdOptionIPAddress,
-		showCmdOptionInfoType.ShowCmdOption,
+		showCmdOptionInfoType,
 	)
 	sdc.RegisterCliPath(
 		[]string{"SHOW", "interface", "counters"},

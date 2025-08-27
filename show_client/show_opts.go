@@ -148,10 +148,10 @@ var (
 		sdc.StringValue,
 	)
 
-	showCmdOptionInfoType = sdc.NewEnumShowCmdOption(
+	showCmdOptionInfoType = sdc.NewShowCmdOption(
 		"info_type",
-		"Optional BGP neighbor subcommand: routes | advertised-routes | received-routes",
-		sdc.StringValue,
+		"Additional information to display: routes | advertised-routes | received-routes",
+		sdc.EnumValue,
 		"routes",
 		"advertised-routes",
 		"received-routes",

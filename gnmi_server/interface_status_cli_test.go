@@ -144,6 +144,7 @@ func TestGetShowInterfaceStatus(t *testing.T) {
 			valTest:     true,
 			testInit: func() {
 				FlushDataSet(t, ApplDbNum)
+				FlushDataSet(t, StateDbNum)
 				AddDataSet(t, ConfigDbNum, configDbFileName)
 				AddDataSet(t, ApplDbNum, errorAppDbFileName)
 			},

@@ -240,20 +240,31 @@ func getIPv6BGPNeighborsReceivedRoutes(ip string) ([]byte, error) {
 	return result, nil
 }
 
+// show ipv6 bgp neighbors -> list all neighbors
+// show ipv6 bgp neighbors <ipaddress> -> show neighbor info
+// show ipv6 bgp neighbors <ipaddress> routes|advertised-routes|received-routes → show specific option
 func getIPv6BGPNeighborsHandler(options sdc.OptionMap) ([]byte, error) {
 	ip, _ := options["ipaddress"].String()
-	subcmd, _ := options["subcommand"].String()
+	info_type, _ := options["info_type"].String()
+
+	// Validate info_type against enum values
+	if info_type != "" {
+		if err := showCmdOptionInfoType.Validate(info_type); err != nil {
+			log.Errorf("Invalid info_type value: %v", err)
+			return nil, err
+		}
+	}
 
 	// Validate IPv6 address if provided
 	if ip != "" && !isIPv6Address(ip) {
 		log.Errorf("Invalid IPv6 address: %v", ip)
-		return nil, fmt.Errorf("invalid IPv6 address: %v", ip)
+		return nil, fmt.Errorf("Invalid IPv6 address: %v", ip)
 	}
 
-	// If subcommand is provided, ip becomes required
-	if subcmd != "" && ip == "" {
-		log.Errorf("IPv6 address is required when subcommand %v is specified", subcmd)
-		return nil, fmt.Errorf("IPv6 address is required when subcommand %v is specified", subcmd)
+	// If info_type is provided, ip becomes required
+	if info_type != "" && ip == "" {
+		log.Errorf("IPv6 address is required when info_type %v is specified", info_type)
+		return nil, fmt.Errorf("IPv6 address is required when info_type %v is specified", info_type)
 	}
 
 	// Check neighbor exists if IP is provided
@@ -262,8 +273,8 @@ func getIPv6BGPNeighborsHandler(options sdc.OptionMap) ([]byte, error) {
 		return nil, fmt.Errorf("neighbor %v not found in CONFIG_DB", ip)
 	}
 
-	// Dispatch based on subcommand
-	switch subcmd {
+	// Dispatch based on info_type
+	switch info_type {
 	case "routes":
 		return getIPv6BGPNeighborsRoutes(ip)
 	case "advertised-routes":
@@ -273,7 +284,7 @@ func getIPv6BGPNeighborsHandler(options sdc.OptionMap) ([]byte, error) {
 	case "":
 		return getIPv6BGPNeighbors(ip) // ip may be empty → list all
 	default:
-		log.Errorf("Invalid subcommand: %v", subcmd)
-		return nil, fmt.Errorf("invalid subcommand: %v", subcmd)
+		log.Errorf("Invalid info_type: %v", info_type)
+		return nil, fmt.Errorf("Invalid info_type: %v", info_type)
 	}
 }

@@ -24,7 +24,6 @@ const (
 	showCmdOptionGroupDesc         = "[group=TEXT] Filter by logical counter group (eg RX_DROPS, TX_ERR)"
 	showCmdOptionCounterTypeDesc   = "[counter_type=TEXT] Filter by counter type (eg PORT_INGRESS_DROPS, SWITCH_EGRESS_DROPS)"
 	showCmdOptionIPAddressDesc     = "[ipaddress=TEXT] Filter by single IP address"
-	showCmdOptionSubcommandDesc    = "[subcommand=TEXT] filter by single sub command"
 )
 
 var (
@@ -149,9 +148,12 @@ var (
 		sdc.StringValue,
 	)
 
-	showCmdOptionSubcommand = sdc.NewShowCmdOption(
-		"subcommand",
-		showCmdOptionUnimplementedDesc,
+	showCmdOptionInfoType = sdc.NewEnumShowCmdOption(
+		"info_type",
+		"Optional BGP neighbor subcommand: routes | advertised-routes | received-routes",
 		sdc.StringValue,
+		"routes",
+		"advertised-routes",
+		"received-routes",
 	)
 )

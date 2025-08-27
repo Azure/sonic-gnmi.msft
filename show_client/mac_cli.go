@@ -113,8 +113,7 @@ func getMacTable(options sdc.OptionMap) ([]byte, error) {
 			return nil, err
 		}
 
-		for k, _ := range allPorts {
-			port := k
+		for port, _ := range allPorts {
 			if strings.EqualFold(port, portFilter) {
 				portIsValid = true
 				break

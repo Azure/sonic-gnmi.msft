@@ -124,4 +124,35 @@ func init() {
 		sdc.UnimplementedOption(showCmdOptionNamespace),
 		showCmdOptionDisplay,
 	)
+	sdc.RegisterCliPath(
+		[]string{"SHOW", "lldp", "table"},
+		getLLDPTable,
+		nil,
+	)
+	sdc.RegisterCliPath(
+		[]string{"SHOW", "interface", "alias"},
+		getInterfaceAlias,
+		nil,
+		showCmdOptionInterface,
+	)
+	sdc.RegisterCliPath(
+		[]string{"SHOW", "queue", "counters"},
+		getQueueCounters,
+		nil,
+		showCmdOptionInterfaces,
+		showCmdOptionNonzero,
+		showCmdOptionTrim,
+	)
+	sdc.RegisterCliPath(
+		[]string{"SHOW", "vlan", "brief"},
+		getVlanBrief,
+		nil,
+		showCmdOptionVerbose,
+	)
+	sdc.RegisterCliPath(
+		[]string{"SHOW", "version"},
+		getVersion,
+		nil,
+		showCmdOptionVerbose,
+	)
 }

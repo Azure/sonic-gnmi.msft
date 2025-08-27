@@ -2,15 +2,18 @@ package show_client
 
 import (
 	"fmt"
+	"os"
 	"os/exec"
 	"sort"
 	"strconv"
+	"strings"
 
 	log "github.com/golang/glog"
 	"github.com/google/shlex"
 	natural "github.com/maruel/natural"
 	gnmipb "github.com/openconfig/gnmi/proto/gnmi"
 	sdc "github.com/sonic-net/sonic-gnmi/sonic_data_client"
+	"gopkg.in/yaml.v2"
 )
 
 const ConfigDBPortTable = "PORT"
@@ -18,6 +21,7 @@ const AppDBPortTable = "PORT_TABLE"
 const StateDBPortTable = "PORT_TABLE"
 const ConfigDBPortChannelTable = "PORTCHANNEL"
 const AppDBPortChannelTable = "LAG_TABLE"
+const DefaultEmptyString = ""
 
 const (
 	dbIndex    = 0 // The first index for a query will be the DB
@@ -31,6 +35,17 @@ const (
 	base10                     = 10
 	maxShowCommandPeriod       = 300 // Max time allotted for SHOW commands period argument
 )
+
+var countersDBSeparator string
+
+func init() {
+	var err error
+	countersDBSeparator, err = sdc.GetTableKeySeparator("COUNTERS_DB", "")
+	if err != nil {
+		log.Warningf("Failed to get table key separator for COUNTERS DB: %v\nUsing the default separator ':'.", err)
+		countersDBSeparator = ":"
+	}
+}
 
 func GetDataFromHostCommand(command string) (string, error) {
 	baseArgs := []string{
@@ -120,6 +135,50 @@ func CreateTablePathsFromQueries(queries [][]string) ([]sdc.TablePath, error) {
 	return allPaths, nil
 }
 
+func ReadYamlToMap(filePath string) (map[string]interface{}, error) {
+	yamlFile, err := sdc.ImplIoutilReadFile(filePath)
+	if err != nil {
+		return nil, fmt.Errorf("failed to read YAML file: %w", err)
+	}
+	var data map[string]interface{}
+	err = yaml.Unmarshal(yamlFile, &data)
+	if err != nil {
+		return nil, fmt.Errorf("failed to unmarshal YAML: %w", err)
+	}
+	return data, nil
+}
+
+func ReadConfToMap(filePath string) (map[string]interface{}, error) {
+	dataBytes, err := sdc.ImplIoutilReadFile(filePath)
+
+	if err != nil {
+		return nil, fmt.Errorf("failed to read CONF: %w", err)
+	}
+
+	confData := make(map[string]interface{})
+
+	content := string(dataBytes)
+	lines := strings.Split(content, "\n")
+	for _, line := range lines {
+		if strings.Contains(line, "=") {
+			parts := strings.SplitN(line, "=", 2)
+			key := strings.TrimSpace(parts[0])
+			value := strings.TrimSpace(parts[1])
+			confData[key] = value
+		}
+	}
+
+	return confData, nil
+}
+
+func FileExists(path string) bool {
+	info, err := os.Stat(path)
+	if err != nil {
+		return false
+	}
+	return !info.IsDir()
+}
+
 func RemapAliasToPortName(portData map[string]interface{}) map[string]interface{} {
 	aliasMap := sdc.AliasToPortNameMap()
 	remapped := make(map[string]interface{})
@@ -143,6 +202,42 @@ func RemapAliasToPortName(portData map[string]interface{}) map[string]interface{
 		}
 	}
 	return remapped
+}
+
+func RemapAliasToPortNameForQueues(queueData map[string]interface{}) map[string]interface{} {
+	aliasMap := sdc.AliasToPortNameMap()
+	remapped := make(map[string]interface{})
+
+	for key, val := range queueData {
+		port, queueIdx, found := strings.Cut(key, countersDBSeparator)
+		if !found {
+			log.Warningf("Ignoring the invalid queue '%v'", key)
+			continue
+		}
+		if sonicPortName, ok := aliasMap[port]; ok {
+			remapped[sonicPortName+countersDBSeparator+queueIdx] = val
+		} else {
+			remapped[key] = val
+		}
+	}
+
+	return remapped
+}
+
+func GetValueOrDefault(values map[string]interface{}, key string, defaultValue string) string {
+	if value, ok := values[key]; ok {
+		return fmt.Sprint(value)
+	}
+	return defaultValue
+}
+
+func GetNonZeroValueOrEmpty(values map[string]interface{}, key string) string {
+	if value, ok := values[key]; ok {
+		if intValue, err := strconv.ParseInt(fmt.Sprint(value), base10, 64); err == nil && intValue != 0 {
+			return fmt.Sprint(value)
+		}
+	}
+	return ""
 }
 
 func GetFieldValueString(data map[string]interface{}, key string, defaultValue string, field string) string {
@@ -205,4 +300,28 @@ func toString(v interface{}) string {
 	default:
 		return fmt.Sprint(v)
 	}
+}
+
+func GetSortedKeys(m map[string]interface{}) []string {
+	keys := make([]string, 0, len(m))
+	for k := range m {
+		keys = append(keys, k)
+	}
+	sort.Strings(keys)
+	return keys
+}
+
+func ParseKey(key interface{}, delimiter string) (string, string) {
+	keyStr, ok := key.(string)
+	if !ok {
+		log.Info("parse Key failure to convert key as string.")
+		return "", ""
+	}
+
+	parts := strings.Split(keyStr, delimiter)
+	if len(parts) < 2 {
+		log.Info("Unable to parse the string")
+		return "", ""
+	}
+	return parts[0], parts[1]
 }

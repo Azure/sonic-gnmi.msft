@@ -452,7 +452,6 @@ func portSpeedFmt(inSpeed, opticsType string) string {
 //	"100M"   -> 100
 //	"1G"     -> 1000
 //	"2.5G"   -> 2500
-//	"100000" -> 100000 (assumed already in Mbps)
 //	"N/A" or parse errors -> 0
 func portSpeedParse(speedStr string) int {
 	s := strings.TrimSpace(strings.ToUpper(speedStr))
@@ -478,11 +477,6 @@ func portSpeedParse(speedStr string) int {
 		return int(math.Round(f))
 	}
 
-	// Assume raw number already represents Mbps
-	f, err := strconv.ParseFloat(s, 64)
-	if err != nil {
-		return 0
-	}
 	return int(math.Round(f))
 }
 
@@ -715,13 +709,13 @@ func getSubInterfaceStatus(intf string) ([]byte, error) {
 	interfaceStatus := make([]map[string]string, 0, len(ports))
 	for i := range ports {
 		interfaceStatus = append(interfaceStatus, map[string]string{
-			"Interface":   ports[i],
-			"Speed":       "N/A",
-			"MTU":         "N/A",
-			"Vlan":        "N/A",
-			"Oper":        "N/A",
-			"Admin":       "N/A",
-			"Optics Type": "N/A",
+			"Interface": ports[i],
+			"Speed":     "N/A",
+			"MTU":       "N/A",
+			"Vlan":      "N/A",
+			"Oper":      "N/A",
+			"Admin":     "N/A",
+			"Type":      "N/A",
 		})
 	}
 	return json.Marshal(interfaceStatus)
@@ -926,42 +920,42 @@ func getInterfaceStatus(options sdc.OptionMap) ([]byte, error) {
 }
 
 func getInterfaceAlias(options sdc.OptionMap) ([]byte, error) {
-    intf, _ := options["interface"].String()
+	intf, _ := options["interface"].String()
 
-    // Read CONFIG_DB.PORT
-    queries := [][]string{{"CONFIG_DB", "PORT"}}
-    portEntries, err := GetMapFromQueries(queries)
-    if err != nil {
-        log.Errorf("Failed to get ports from CONFIG_DB: %v", err)
-        return nil, err
-    }
+	// Read CONFIG_DB.PORT
+	queries := [][]string{{"CONFIG_DB", "PORT"}}
+	portEntries, err := GetMapFromQueries(queries)
+	if err != nil {
+		log.Errorf("Failed to get ports from CONFIG_DB: %v", err)
+		return nil, err
+	}
 
 	nameToAlias := make(map[string]string, len(portEntries))
-    for name := range portEntries {
-        alias := GetFieldValueString(portEntries, name, "", "alias")
-        if alias == "" {
-            // fallback to itself if alias field is missing
-            alias = name
-        }
-        nameToAlias[name] = alias
-    }
+	for name := range portEntries {
+		alias := GetFieldValueString(portEntries, name, "", "alias")
+		if alias == "" {
+			// fallback to itself if alias field is missing
+			alias = name
+		}
+		nameToAlias[name] = alias
+	}
 
-    // If a specific interface was requested, accept port name
-    if intf != "" {
-        name := intf
-        if _, ok := nameToAlias[name]; !ok {
-            return nil, fmt.Errorf("Invalid interface name %s", name)
-        }
-        out := map[string]map[string]string{
-            name: {"alias": nameToAlias[name]},
-        }
-        return json.Marshal(out)
-    }
+	// If a specific interface was requested, accept port name
+	if intf != "" {
+		name := intf
+		if _, ok := nameToAlias[name]; !ok {
+			return nil, fmt.Errorf("Invalid interface name %s", name)
+		}
+		out := map[string]map[string]string{
+			name: {"alias": nameToAlias[name]},
+		}
+		return json.Marshal(out)
+	}
 
-    // Build {"Ethernet0":{"alias":"etp0"}, ...} from CONFIG_DB PORT only
-    out := make(map[string]map[string]string, len(nameToAlias))
-    for name, alias := range nameToAlias {
-        out[name] = map[string]string{"alias": alias}
-    }
-    return json.Marshal(out)
+	// Build {"Ethernet0":{"alias":"etp0"}, ...} from CONFIG_DB PORT only
+	out := make(map[string]map[string]string, len(nameToAlias))
+	for name, alias := range nameToAlias {
+		out[name] = map[string]string{"alias": alias}
+	}
+	return json.Marshal(out)
 }

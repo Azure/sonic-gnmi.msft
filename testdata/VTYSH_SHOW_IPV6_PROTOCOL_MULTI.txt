@@ -1,0 +1,20 @@
+VRF: default
+Protocol                  : route-map
+-------------------------------------
+system                    : none
+kernel                    : none
+bgp                       : RM_SET_SRC6
+
+VRF: vrf1
+Protocol                  : route-map
+-------------------------------------
+system                    : none
+kernel                    : none
+bgp                       : RM_CUSTOM_VRF1
+
+VRF: vrf2
+Protocol                  : route-map
+-------------------------------------
+system                    : none
+kernel                    : none
+bgp                       : none

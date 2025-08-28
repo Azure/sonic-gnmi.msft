@@ -11,9 +11,14 @@ const (
 	showCmdOptionInterfacesDesc    = "[interfaces=TEXT] Filter by interfaces name"
 	showCmdOptionInterfaceDesc     = "[interface=TEXT] Filter by single interface name"
 	showCmdOptionPortDesc          = "[port=TEXT] Filter by single port name"
+	showCmdOptionVlanDesc          = "[vlan=INTEGER] Filter by VLAN ID"
+	showCmdOptionAddressDesc       = "[address=TEXT] Filter by MAC address"
+	showCmdOptionTypeDesc          = "[type=TEXT] Filter by MAC type (static/dynamic)"
+	showCmdOptionCountDesc         = "[count=true] Only show the count of MAC addresses"
 	showCmdOptionDomDesc           = "[dom=false] Also display Digital Optical Monitoring (DOM) data"
 	showCmdOptionPeriodDesc        = "[period=INTEGER] Display statistics over a specified period (in seconds)"
 	showCmdOptionJsonDesc          = "[json=true] No-op since response is in json format"
+	showCmdOptionSidDesc           = "[sid=TEXT] Filter by SRv6 SID"
 	showCmdOptionNonzeroDesc       = "[nonzero=true] Display only non-zero values"
 	showCmdOptionTrimDesc          = "[trim=true] Display only trim counters"
 )
@@ -67,6 +72,31 @@ var (
 		sdc.StringValue,
 	)
 
+	// MAC-show specific options
+	showCmdOptionVlan = sdc.NewShowCmdOption(
+		"vlan",
+		showCmdOptionVlanDesc,
+		sdc.IntValue,
+	)
+
+	showCmdOptionAddress = sdc.NewShowCmdOption(
+		"address",
+		showCmdOptionAddressDesc,
+		sdc.StringValue,
+	)
+
+	showCmdOptionType = sdc.NewShowCmdOption(
+		"type",
+		showCmdOptionTypeDesc,
+		sdc.StringValue,
+	)
+
+	showCmdOptionCount = sdc.NewShowCmdOption(
+		"count",
+		showCmdOptionCountDesc,
+		sdc.BoolValue,
+	)
+
 	showCmdOptionDom = sdc.NewShowCmdOption(
 		"dom",
 		showCmdOptionDomDesc,
@@ -78,6 +108,12 @@ var (
 		showCmdOptionUnimplementedDesc,
 		sdc.StringValue,
 	)
+
+	showCmdOptionSid = sdc.NewShowCmdOption(
+		"sid",
+		showCmdOptionSidDesc,
+		sdc.StringValue,
+  )
 
 	showCmdOptionNonzero = sdc.NewShowCmdOption(
 		"nonzero",

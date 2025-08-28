@@ -1,0 +1,74 @@
+{
+  "PORT|Ethernet108": {
+    "admin_status": "up",
+    "alias": "Ethernet7/1",
+    "description": "Servers5:eth0",
+    "fec": "rs",
+    "index": "7",
+    "lanes": "57,58,59,60",
+    "mtu": "9100",
+    "pfc_asym": "off",
+    "speed": "100000",
+    "tpid": "0x8100"
+  },
+  "PORT|Ethernet320": {
+    "admin_status": "up",
+    "alias": "Ethernet7/1",
+    "description": "Servers5:eth0",
+    "fec": "rs",
+    "index": "7",
+    "lanes": "57,58,59,60",
+    "mtu": "9100",
+    "pfc_asym": "off",
+    "speed": "100000",
+    "tpid": "0x8100"
+  },
+  "PORT|Ethernet160": {
+    "admin_status": "up",
+    "alias": "Ethernet7/1",
+    "description": "Servers5:eth0",
+    "fec": "rs",
+    "index": "7",
+    "lanes": "57,58,59,60",
+    "mtu": "9100",
+    "pfc_asym": "off",
+    "speed": "100000",
+    "tpid": "0x8100"
+  },
+  "PORT|Ethernet148": {
+    "admin_status": "up",
+    "alias": "Ethernet7/1",
+    "description": "Servers5:eth0",
+    "fec": "rs",
+    "index": "7",
+    "lanes": "57,58,59,60",
+    "mtu": "9100",
+    "pfc_asym": "off",
+    "speed": "100000",
+    "tpid": "0x8100"
+  },
+  "PORT|Ethernet120": {
+    "admin_status": "up",
+    "alias": "Ethernet7/2",
+    "description": "Servers5:eth0",
+    "fec": "rs",
+    "index": "7",
+    "lanes": "57,58,59,60",
+    "mtu": "9100",
+    "pfc_asym": "off",
+    "speed": "100000",
+    "tpid": "0x8100"
+  },
+  "PORT|Ethernet121": {
+    "admin_status": "up",
+    "alias": "Ethernet7/2",
+    "description": "Servers5:eth0",
+    "fec": "rs",
+    "index": "7",
+    "lanes": "57,58,59,60",
+    "mtu": "9100",
+    "pfc_asym": "off",
+    "speed": "100000",
+    "tpid": "0x8100"
+  }
+}

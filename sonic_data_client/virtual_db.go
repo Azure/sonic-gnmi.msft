@@ -763,6 +763,14 @@ func AliasToPortNameMap() map[string]string {
 	return output
 }
 
+func PortToAliasNameMap() map[string]string {
+	output := make(map[string]string, len(name2aliasMap))
+	for portName, alias := range name2aliasMap {
+		output[portName] = alias
+	}
+	return output
+}
+
 // Populate real data paths from paths like
 // [COUNTERS_DB PERIODIC_WATERMARKS Ethernet* PriorityGroups] or
 // [COUNTERS_DB PERIODIC_WATERMARKS Ethernet64 PriorityGroups]

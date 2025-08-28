@@ -130,6 +130,12 @@ func init() {
 		showCmdOptionInterface,
 	)
 	sdc.RegisterCliPath(
+		[]string{"SHOW", "srv6", "stats"},
+		getSRv6Stats,
+		nil,
+		showCmdOptionSid,
+  )
+  sdc.RegisterCliPath(
 		[]string{"SHOW", "queue", "counters"},
 		getQueueCounters,
 		nil,
@@ -148,6 +154,37 @@ func init() {
 		getVersion,
 		nil,
 		showCmdOptionVerbose,
+	)
+	sdc.RegisterCliPath(
+		[]string{"SHOW", "ipv6", "protocol"},
+		getIPv6Protocol,
+		nil,
+		showCmdOptionVerbose,
+	)
+	sdc.RegisterCliPath(
+		[]string{"SHOW", "mac"},
+		getMacTable,
+		map[string]string{
+			"aging-time": "show/mac/aging-time",
+		},
+		showCmdOptionVlan,
+		showCmdOptionPort,
+		showCmdOptionAddress,
+		showCmdOptionType,
+		showCmdOptionCount,
+		showCmdOptionVerbose,
+	)
+	sdc.RegisterCliPath(
+		[]string{"SHOW", "interface", "switchport", "config"},
+		getInterfaceSwitchportConfig,
+		nil,
+		showCmdOptionInterface,
+	)
+	sdc.RegisterCliPath(
+		[]string{"SHOW", "interface", "switchport", "status"},
+		getInterfaceSwitchportStatus,
+		nil,
+		showCmdOptionInterface,
 	)
 	sdc.RegisterCliPath(
 		[]string{"SHOW", "uptime"},

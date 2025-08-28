@@ -1,0 +1,22 @@
+{
+  "FDB_TABLE|Vlan1000:e8:eb:d3:32:f0:1e": {
+    "port": "Ethernet120",
+    "type": "dynamic"
+  },
+  "FDB_TABLE|Vlan1000:e8:eb:d3:32:f0:25": {
+    "port": "Ethernet148",
+    "type": "static"
+  },
+  "FDB_TABLE|Vlan1001:e8:eb:d3:32:f0:28": {
+    "port": "Ethernet160",
+    "type": "dynamic"
+  },
+  "FDB_TABLE|Vlan1000:e8:eb:d3:32:f0:08": {
+    "port": "Ethernet320",
+    "type": "dynamic"
+  },
+  "FDB_TABLE|Vlan1000:e8:eb:d3:32:f0:1b": {
+    "port": "Ethernet108",
+    "type": "dynamic"
+  }
+}

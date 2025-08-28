@@ -1,0 +1,9 @@
+{
+  "VLAN_MEMBER|Vlan1000|Ethernet0": {"tagging_mode":"untagged"},
+  "VLAN_MEMBER|Vlan1000|Ethernet1": {"tagging_mode":"untagged"},
+  "VLAN_MEMBER|Vlan1000|Ethernet2": {"tagging_mode":"untagged"},
+  "VLAN_MEMBER|Vlan1000|Ethernet3": {"tagging_mode":"untagged"},
+  "VLAN_MEMBER|Vlan1000|Ethernet4": {"tagging_mode":"untagged"},
+  "VLAN_MEMBER|Vlan1000|Ethernet5": {"tagging_mode":"untagged"},
+  "VLAN_MEMBER|Vlan1000:Ethernet6": {"tagging_mode":"tagged"}
+}

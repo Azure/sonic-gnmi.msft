@@ -71,19 +71,19 @@ const (
 //  5. "type"
 //  6. "egress"
 func getMmuConfig(options sdc.OptionMap) ([]byte, error) {
-	lossless, err := getTableAsNestedMap("CONFIG_DB", cfgTableDefaultLossless)
+	lossless, err := getTableAsNestedMap(ConfigDb, cfgTableDefaultLossless)
 	if err != nil {
-		log.Errorf("Failed to read %s: %v", cfgTableDefaultLossless, err)
+		log.Errorf("[show mmu]|Failed to read %s: %v", cfgTableDefaultLossless, err)
 		return nil, err
 	}
-	pools, err := getTableAsNestedMap("CONFIG_DB", cfgTableBufferPool)
+	pools, err := getTableAsNestedMap(ConfigDb, cfgTableBufferPool)
 	if err != nil {
-		log.Errorf("Failed to read %s: %v", cfgTableBufferPool, err)
+		log.Errorf("[show mmu]|Failed to read %s: %v", cfgTableBufferPool, err)
 		return nil, err
 	}
-	profiles, err := getTableAsNestedMap("CONFIG_DB", cfgTableBufferProfile)
+	profiles, err := getTableAsNestedMap(ConfigDb, cfgTableBufferProfile)
 	if err != nil {
-		log.Errorf("Failed to read %s: %v", cfgTableBufferProfile, err)
+		log.Errorf("[show mmu]|Failed to read %s: %v", cfgTableBufferProfile, err)
 		return nil, err
 	}
 
@@ -117,6 +117,8 @@ func getTableAsNestedMap(db string, table string) (map[string]map[string]interfa
 		// The value is also a map, e.g. key is mode, value is static
 		if row, ok := v.(map[string]interface{}); ok {
 			out[k] = row
+		} else {
+			log.Errorf("[show mmu]|Unexpected value for %s: %v", k, v)
 		}
 	}
 	return out, nil

@@ -190,3 +190,79 @@ func TestShowMmu_ErrorOnLossless(t *testing.T) {
 	textPbPath := `elem: <name: "mmu" >`
 	runTestGet(t, ctx, gClient, "SHOW", textPbPath, codes.NotFound, nil, false)
 }
+
+func TestShowMmu_ErrorOnPools(t *testing.T) {
+	s := createServer(t, ServerPort)
+	go runServer(t, s)
+	defer s.ForceStop()
+	defer ResetDataSetsAndMappings(t)
+
+	var calls int
+	patches := gomonkey.ApplyFunc(sc.GetMapFromQueries, func(queries [][]string) (map[string]interface{}, error) {
+		calls++
+		switch calls {
+		case 1:
+			// first call: lossless table succeeds (empty map fine)
+			return map[string]interface{}{}, nil
+		case 2:
+			// second call: pools table error
+			return nil, fmt.Errorf("error when read table BUFFER_POOL")
+		default:
+			return map[string]interface{}{}, nil
+		}
+	})
+	defer patches.Reset()
+
+	tlsConfig := &tls.Config{InsecureSkipVerify: true}
+	opts := []grpc.DialOption{grpc.WithTransportCredentials(credentials.NewTLS(tlsConfig))}
+	conn, err := grpc.Dial(TargetAddr, opts...)
+	if err != nil {
+		t.Fatalf("Dial failed: %v", err)
+	}
+	defer conn.Close()
+
+	gClient := pb.NewGNMIClient(conn)
+	ctx, cancel := context.WithTimeout(context.Background(), QueryTimeout*time.Second)
+	defer cancel()
+
+	textPbPath := `elem: <name: "mmu" >`
+	runTestGet(t, ctx, gClient, "SHOW", textPbPath, codes.NotFound, nil, false)
+}
+
+func TestShowMmu_ErrorOnProfiles(t *testing.T) {
+	s := createServer(t, ServerPort)
+	go runServer(t, s)
+	defer s.ForceStop()
+	defer ResetDataSetsAndMappings(t)
+
+	var calls int
+	patches := gomonkey.ApplyFunc(sc.GetMapFromQueries, func(queries [][]string) (map[string]interface{}, error) {
+		calls++
+		switch calls {
+		case 1: // lossless ok
+			return map[string]interface{}{}, nil
+		case 2: // pools ok
+			return map[string]interface{}{}, nil
+		case 3: // profiles error
+			return nil, fmt.Errorf("error when read table BUFFER_PROFILE")
+		default:
+			return map[string]interface{}{}, nil
+		}
+	})
+	defer patches.Reset()
+
+	tlsConfig := &tls.Config{InsecureSkipVerify: true}
+	opts := []grpc.DialOption{grpc.WithTransportCredentials(credentials.NewTLS(tlsConfig))}
+	conn, err := grpc.Dial(TargetAddr, opts...)
+	if err != nil {
+		t.Fatalf("Dial failed: %v", err)
+	}
+	defer conn.Close()
+
+	gClient := pb.NewGNMIClient(conn)
+	ctx, cancel := context.WithTimeout(context.Background(), QueryTimeout*time.Second)
+	defer cancel()
+
+	textPbPath := `elem: <name: "mmu" >`
+	runTestGet(t, ctx, gClient, "SHOW", textPbPath, codes.NotFound, nil, false)
+}

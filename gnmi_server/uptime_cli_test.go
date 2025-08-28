@@ -80,7 +80,7 @@ func TestGetUptime(t *testing.T) {
 		})
 
 		if patches != nil {
-			patches.Reset()
+			defer patches.Reset()
 		}
 	}
 

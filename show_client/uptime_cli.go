@@ -15,7 +15,6 @@ func getUptime(options sdc.OptionMap) ([]byte, error) {
 	uptimeCommandWithParam := "uptime -p"
 	uptimeData, err := GetDataFromHostCommand(uptimeCommandWithParam)
 	if err != nil {
-		log.Errorf("Unable to get data uptime, got err: %v", err)
 		return nil, err
 	}
 

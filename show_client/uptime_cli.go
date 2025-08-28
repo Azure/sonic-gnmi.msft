@@ -2,7 +2,6 @@ package show_client
 
 import (
 	"encoding/json"
-	log "github.com/golang/glog"
 	sdc "github.com/sonic-net/sonic-gnmi/sonic_data_client"
 	"strings"
 )

@@ -11,11 +11,6 @@ type ShowCmdOption struct {
 	enumValues  []string // valid only when valueType is EnumValue
 }
 
-type EnumShowCmdOption struct {
-	ShowCmdOption
-	enumValues []string
-}
-
 type OptionValue struct {
 	value interface{}
 }

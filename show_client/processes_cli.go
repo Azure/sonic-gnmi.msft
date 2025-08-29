@@ -18,6 +18,10 @@ type processEntry struct {
 	Cmd  string `json:"CMD"`
 	Mem  string `json:"%MEM"`
 	Cpu  string `json:"%CPU"`
+	Stime string `json:"STIME,omitempty"`
+	Time  string `json:"TIME,omitempty"`
+	Tt    string `json:"TT,omitempty"`
+	Uid   string `json:"UID,omitempty"`
 }
 
 // Root help handler: SHOW processes
@@ -67,18 +71,50 @@ func getProcessesSorted(sortKey string) ([]byte, error) {
 
 func buildProcessEntries(processesSummary map[string]interface{}, sortKey string) []processEntry {
 	entries := make([]processEntry, 0, len(processesSummary))
-	for pid, raw := range processesSummary {
+	for key, raw := range processesSummary {
 		rec, _ := raw.(map[string]interface{})
 		if rec == nil {
 			continue
 		}
-		get := func(name string) string { return fmt.Sprint(rec[name]) }
+
+		// Derive PID key: support both "123" and "PROCESS_STATS|123"
+		pid := key
+		if idx := lastIndexByte(key, '|'); idx >= 0 && idx+1 < len(key) {
+			pid = key[idx+1:]
+		}
+		// Skip non-numeric PIDs (e.g. metadata keys like LastUpdateTime)
+		if _, err := strconv.Atoi(pid); err != nil {
+			continue
+		}
+
+		// Some schemas wrap actual values under "value" object
+		if vRaw, ok := rec["value"]; ok {
+			if inner, ok2 := vRaw.(map[string]interface{}); ok2 {
+				rec = inner
+			}
+		}
+
+		// Helper accessor with defaults to avoid "<nil>" strings
+		get := func(name, def string) string {
+			if v, ok := rec[name]; ok && v != nil {
+				s := fmt.Sprint(v)
+				if s != "<nil>" { // defensive
+					return s
+				}
+			}
+			return def
+		}
+
 		entries = append(entries, processEntry{
 			Pid:  pid,
-			Ppid: get("PPID"),
-			Cmd:  get("CMD"),
-			Mem:  get("%MEM"),
-			Cpu:  get("%CPU"),
+			Ppid: get("PPID", ""),
+			Cmd:  get("CMD", ""),
+			Mem:  get("%MEM", "0.0"),
+			Cpu:  get("%CPU", "0.0"),
+			Stime: get("STIME", ""),
+			Time:  get("TIME", ""),
+			Tt:    get("TT", ""),
+			Uid:   get("UID", ""),
 		})
 	}
 	switch sortKey {
@@ -105,13 +141,22 @@ func buildProcessEntries(processesSummary map[string]interface{}, sortKey string
 			return fi > fj
 		})
 	case "pid":
-		fallthrough
-	default:
 		sort.Slice(entries, func(i, j int) bool {
 			pi, _ := strconv.Atoi(entries[i].Pid)
 			pj, _ := strconv.Atoi(entries[j].Pid)
 			return pi < pj
 		})
+	default:
 	}
 	return entries
+}
+
+// lastIndexByte is a tiny helper to avoid importing strings for a single use.
+func lastIndexByte(s string, c byte) int {
+	for i := len(s) - 1; i >= 0; i-- {
+		if s[i] == c {
+			return i
+		}
+	}
+	return -1
 }

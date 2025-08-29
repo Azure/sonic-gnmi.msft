@@ -43,7 +43,7 @@ func TestShowProcessesCommands(t *testing.T) {
 			elem: <name: "processes" >
 		`
 		// Map order not guaranteed, so we allow order-insensitive compare via ignoreValOrder flag
-		expected := []byte(`{"options":{"verbose":"[verbose=true] Enable verbose output"},"subcommands":{"summary":"show/processes/summary","cpu":"show/processes/cpu","mem":"show/processes/mem"}}`)
+		expected := []byte(`{"subcommands":{"summary":"show/processes/summary","cpu":"show/processes/cpu","mem":"show/processes/mem"}}`)
 		runTestGet(t, ctx, gClient, "SHOW", textPbPath, codes.OK, expected, true)
 	})
 

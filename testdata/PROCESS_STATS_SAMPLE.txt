@@ -1,0 +1,20 @@
+{
+    "PROCESS_STATS|123": {
+        "PPID": "1",
+        "CMD": "redis-server",
+        "%MEM": "1.2",
+        "%CPU": "0.5"
+    },
+    "PROCESS_STATS|456": {
+        "PPID": "1",
+        "CMD": "swss",
+        "%MEM": "3.4",
+        "%CPU": "15.0"
+    },
+    "PROCESS_STATS|789": {
+        "PPID": "456",
+        "CMD": "orchagent",
+        "%MEM": "2.0",
+        "%CPU": "7.5"
+    }
+}

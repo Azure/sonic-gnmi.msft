@@ -13,7 +13,7 @@ import (
 // O_RDWR means: Owner can write and read the file, everyone else can't.
 // IPC_CREAT means: Create a shared memory segment if a shared memory identifier does not exist for memKey.
 var (
-	memKey = 7749
+	memKey = 7740
 	memSize = 1024
 	memMode = 0x380
 )

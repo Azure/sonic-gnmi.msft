@@ -31,5 +31,5 @@ func getSystemMemory(options sdc.OptionMap) ([]byte, error) {
 		}
 		systemMemoryResponse[i] = entry
 	}
-	return json.Marshal(systemMemoryResponse), nil
+	return json.Marshal(systemMemoryResponse)
 }

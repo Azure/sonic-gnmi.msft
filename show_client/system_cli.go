@@ -25,7 +25,7 @@ func getSystemMemory(options sdc.OptionMap) ([]byte, error) {
 		entry := make(map[string]string)
 		fields := strings.Fields(line)
 
-		entry["Type"] = fields[0]
+		entry["type"] = strings.ReplaceAll(fields[0], ":", "")
 		for j, field := range fields[1:] {
 			entry[header[j]] = field
 		}

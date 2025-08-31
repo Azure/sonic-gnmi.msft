@@ -20,16 +20,19 @@ func getSystemMemory(options sdc.OptionMap) ([]byte, error) {
 
 	lines := strings.Split(string(output), "\n")
 	header := strings.Fields(lines[0])
-	systemMemoryResponse := make([]map[string]string, len(lines)-1)
-	for i, line := range lines[1:] {
+	systemMemoryResponse := make([]map[string]string, 0)
+	for _, line := range lines[1:] {
 		entry := make(map[string]string)
 		fields := strings.Fields(line)
+		if len(fields) == 0 {
+			continue
+		}
 
 		entry["type"] = strings.ReplaceAll(fields[0], ":", "")
 		for j, field := range fields[1:] {
 			entry[header[j]] = field
 		}
-		systemMemoryResponse[i] = entry
+		systemMemoryResponse = append(systemMemoryResponse, entry)
 	}
 	return json.Marshal(systemMemoryResponse)
 }

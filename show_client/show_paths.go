@@ -168,4 +168,9 @@ func init() {
 		showCmdOptionCount,
 		showCmdOptionVerbose,
 	)
+	sdc.RegisterCliPath(
+		[]string{"SHOW", "lldp", "neighbors"},
+		getLLDPNeighbors,
+		nil,
+	)
 }

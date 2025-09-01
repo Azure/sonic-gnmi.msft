@@ -36,14 +36,26 @@ func TestGetIPv6BGPNetwork(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), QueryTimeout*time.Second)
 	defer cancel()
 
+	// info_type incorrect case
+	t.Run("SHOW ipv6 bgp network 2064:100::1 longer", func(t *testing.T) {
+		textPbPath := `
+				elem: <name: "ipv6" >
+				elem: <name: "bgp" >
+				elem: <name: "network" 
+					key: { key: "ipaddress" value: "2064:100::2" } 
+					key: { key: "info_type" value: "longer" } >
+			`
+		runTestGet(t, ctx, gClient, "SHOW", textPbPath, codes.NotFound, nil, false)
+	})
+
 	// address incorrect case
 	t.Run("SHOW ipv6 bgp network 2064:100::1 longer-prefixes", func(t *testing.T) {
 		textPbPath := `
 				elem: <name: "ipv6" >
 				elem: <name: "bgp" >
-				elem: <name: "network" >
-				elem: <name: "2064:100::1" >
-				elem: <name: "longer-prefixes" >
+				elem: <name: "network" 
+					key: { key: "ipaddress" value: "2064:100::2" } 
+					key: { key: "info_type" value: "longer-prefixes" } >
 			`
 		runTestGet(t, ctx, gClient, "SHOW", textPbPath, codes.NotFound, nil, false)
 	})

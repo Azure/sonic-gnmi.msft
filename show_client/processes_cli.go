@@ -87,20 +87,13 @@ func buildProcessEntries(processesSummary map[string]interface{}, sortKey string
 			continue
 		}
 
-		// Some schemas wrap actual values under "value" object
-		if vRaw, ok := rec["value"]; ok {
-			if inner, ok2 := vRaw.(map[string]interface{}); ok2 {
-				rec = inner
-			}
-		}
-
-		// Helper accessor with defaults to avoid "<nil>" strings
+		// Helper accessor: return string value if present, else default.
 		get := func(name, def string) string {
-			if v, ok := rec[name]; ok && v != nil {
-				s := fmt.Sprint(v)
-				if s != "<nil>" { // defensive
-					return s
+			if v, ok := rec[name]; ok {
+				if v == nil {
+					return def
 				}
+				return fmt.Sprint(v)
 			}
 			return def
 		}

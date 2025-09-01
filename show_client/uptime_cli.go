@@ -12,10 +12,7 @@ type uptimeResponse struct {
 
 func getUptime(options sdc.OptionMap) ([]byte, error) {
 	uptimeParam := []string{"-p"}
-	uptimeData, err := GetUptime(uptimeParam)
-	if err != nil {
-		return nil, err
-	}
+	uptimeData := GetUptime(uptimeParam)
 
 	var uptimeResp uptimeResponse
 	uptimeResp.Uptime = strings.TrimSuffix(uptimeData, "\n")

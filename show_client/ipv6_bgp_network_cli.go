@@ -37,7 +37,7 @@ func getIPv6BGPNetwork(options sdc.OptionMap) ([]byte, error) {
 	}
 
 	// Build vtysh command
-	cmd := "vtysh -c \"show bgp ipv6"
+	cmd := "rvtysh -c \"show bgp ipv6"
 	if ipArg != "" {
 		cmd += " " + ipArg
 		if infoType != "" {

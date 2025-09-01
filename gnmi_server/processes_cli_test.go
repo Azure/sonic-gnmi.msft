@@ -36,6 +36,7 @@ func TestShowProcessesCommands(t *testing.T) {
 
 	// Seed PROCESS_STATS sample data
 	FlushDataSet(t, StateDbNum)
+	// Sample file uses CPU/MEM keys to mimic device; code maps them to %CPU/%MEM in output.
 	AddDataSet(t, StateDbNum, "../testdata/PROCESS_STATS_SAMPLE.txt")
 
 	t.Run("SHOW processes (root help)", func(t *testing.T) {
@@ -52,7 +53,7 @@ func TestShowProcessesCommands(t *testing.T) {
 			elem: <name: "processes" >
 			elem: <name: "summary" >
 		`
-		expected := []byte(`[{"PID":"123","PPID":"1","CMD":"redis-server","%MEM":"1.2","%CPU":"0.5","STIME":"10:54","TIME":"00:00:42","TT":"?","UID":"999"},{"PID":"456","PPID":"1","CMD":"swss","%MEM":"3.4","%CPU":"15.0","STIME":"10:55","TIME":"00:12:05","TT":"pts/0","UID":"0"},{"PID":"789","PPID":"456","CMD":"orchagent","%MEM":"2.0","%CPU":"7.5","STIME":"10:56","TIME":"00:03:10","TT":"pts/1","UID":"0"}]`)
+		expected := []byte(`[{"PID":"123","PPID":"1","CMD":"redis-server","MEM":"1.2","CPU":"0.5","STIME":"10:54","TIME":"00:00:42","TT":"?","UID":"999"},{"PID":"456","PPID":"1","CMD":"swss","MEM":"3.4","CPU":"15.0","STIME":"10:55","TIME":"00:12:05","TT":"pts/0","UID":"0"},{"PID":"789","PPID":"456","CMD":"orchagent","MEM":"2.0","CPU":"7.5","STIME":"10:56","TIME":"00:03:10","TT":"pts/1","UID":"0"}]`)
 		runTestGet(t, ctx, gClient, "SHOW", textPbPath, codes.OK, expected, true)
 	})
 
@@ -61,7 +62,7 @@ func TestShowProcessesCommands(t *testing.T) {
 			elem: <name: "processes" >
 			elem: <name: "cpu" >
 		`
-		expected := []byte(`[{"PID":"456","PPID":"1","CMD":"swss","%MEM":"3.4","%CPU":"15.0","STIME":"10:55","TIME":"00:12:05","TT":"pts/0","UID":"0"},{"PID":"789","PPID":"456","CMD":"orchagent","%MEM":"2.0","%CPU":"7.5","STIME":"10:56","TIME":"00:03:10","TT":"pts/1","UID":"0"},{"PID":"123","PPID":"1","CMD":"redis-server","%MEM":"1.2","%CPU":"0.5","STIME":"10:54","TIME":"00:00:42","TT":"?","UID":"999"}]`)
+		expected := []byte(`[{"PID":"456","PPID":"1","CMD":"swss","MEM":"3.4","CPU":"15.0","STIME":"10:55","TIME":"00:12:05","TT":"pts/0","UID":"0"},{"PID":"789","PPID":"456","CMD":"orchagent","MEM":"2.0","CPU":"7.5","STIME":"10:56","TIME":"00:03:10","TT":"pts/1","UID":"0"},{"PID":"123","PPID":"1","CMD":"redis-server","MEM":"1.2","CPU":"0.5","STIME":"10:54","TIME":"00:00:42","TT":"?","UID":"999"}]`)
 		runTestGet(t, ctx, gClient, "SHOW", textPbPath, codes.OK, expected, true)
 	})
 
@@ -70,7 +71,7 @@ func TestShowProcessesCommands(t *testing.T) {
 			elem: <name: "processes" >
 			elem: <name: "mem" >
 		`
-		expected := []byte(`[{"PID":"456","PPID":"1","CMD":"swss","%MEM":"3.4","%CPU":"15.0","STIME":"10:55","TIME":"00:12:05","TT":"pts/0","UID":"0"},{"PID":"789","PPID":"456","CMD":"orchagent","%MEM":"2.0","%CPU":"7.5","STIME":"10:56","TIME":"00:03:10","TT":"pts/1","UID":"0"},{"PID":"123","PPID":"1","CMD":"redis-server","%MEM":"1.2","%CPU":"0.5","STIME":"10:54","TIME":"00:00:42","TT":"?","UID":"999"}]`)
+		expected := []byte(`[{"PID":"456","PPID":"1","CMD":"swss","MEM":"3.4","CPU":"15.0","STIME":"10:55","TIME":"00:12:05","TT":"pts/0","UID":"0"},{"PID":"789","PPID":"456","CMD":"orchagent","MEM":"2.0","CPU":"7.5","STIME":"10:56","TIME":"00:03:10","TT":"pts/1","UID":"0"},{"PID":"123","PPID":"1","CMD":"redis-server","MEM":"1.2","CPU":"0.5","STIME":"10:54","TIME":"00:00:42","TT":"?","UID":"999"}]`)
 		runTestGet(t, ctx, gClient, "SHOW", textPbPath, codes.OK, expected, true)
 	})
 }

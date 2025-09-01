@@ -57,7 +57,7 @@ func TestGetIPv6BGPNeighbors(t *testing.T) {
 		testInit    func()
 	}{
 		{
-			desc:       "query SHOW ipv6 bgp neighbors read error",
+			desc:       "query SHOW ipv6 bgp neighbors - read error",
 			pathTarget: "SHOW",
 			textPbPath: `
 				elem: <name: "ipv6" >
@@ -65,6 +65,17 @@ func TestGetIPv6BGPNeighbors(t *testing.T) {
 				elem: <name: "neighbors" >
 			`,
 			wantRetCode: codes.NotFound,
+		},
+		{
+			desc:       "query SHOW ipv6 bgp neighbors - invalid vtysh output",
+			pathTarget: "SHOW",
+			textPbPath: `
+				elem: <name: "ipv6" >
+				elem: <name: "bgp" >
+				elem: <name: "neighbors" >
+			`,
+			wantRetCode: codes.NotFound,
+			mockFile:    "../testdata/ipv6_bgp_neighbors/INVALID_VTYSH_JSON.txt",
 		},
 		{
 			desc:       "query SHOW ipv6 bgp neighbors - no ipv6 address specified",

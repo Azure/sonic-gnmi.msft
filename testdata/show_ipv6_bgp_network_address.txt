@@ -1,0 +1,8 @@
+BGP routing table entry for 2064:100::2/128, version 5
+Paths: (1 available, best #1, table default)
+  Advertised to non peer-group peers:
+  fc00::2 fc00::a fc00::12 fc00::1a
+  64802
+    fc00::a from fc00::a (100.1.0.2)
+      Origin IGP, valid, external, best (First path received)
+      Last update: Wed Aug 27 22:46:48 2025

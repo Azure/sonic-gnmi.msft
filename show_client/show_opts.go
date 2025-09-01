@@ -21,6 +21,8 @@ const (
 	showCmdOptionSidDesc           = "[sid=TEXT] Filter by SRv6 SID"
 	showCmdOptionNonzeroDesc       = "[nonzero=true] Display only non-zero values"
 	showCmdOptionTrimDesc          = "[trim=true] Display only trim counters"
+	showCmdOptionIPAddressDesc     = "[ipaddress=TEXT] Filter by IPv6 address"
+	showCmdOptionInfoTypeDesc      = "[info_type=TEXT] Filter by information type"
 )
 
 var (
@@ -113,7 +115,7 @@ var (
 		"sid",
 		showCmdOptionSidDesc,
 		sdc.StringValue,
-  )
+	)
 
 	showCmdOptionNonzero = sdc.NewShowCmdOption(
 		"nonzero",
@@ -125,5 +127,18 @@ var (
 		"trim",
 		showCmdOptionTrimDesc,
 		sdc.BoolValue,
+	)
+
+	// show ipv6 bgp network specific options
+	showCmdOptionIPAddress = sdc.NewShowCmdOption(
+		"ipaddress",
+		showCmdOptionIPAddressDesc,
+		sdc.StringValue,
+	)
+
+	showCmdOptionInfoType = sdc.NewShowCmdOption(
+		"info_type",
+		showCmdOptionInfoTypeDesc,
+		sdc.StringValue,
 	)
 )

@@ -11,13 +11,12 @@ import (
 )
 
 // processEntry represents a single process row from STATE_DB PROCESS_STATS
-// Output JSON keys: PID, PPID, CMD, MEM, CPU (changed from %MEM/%CPU per latest requirement)
 type processEntry struct {
 	Pid  string `json:"PID"`
 	Ppid string `json:"PPID"`
 	Cmd  string `json:"CMD"`
-	Mem  string `json:"MEM"`
-	Cpu  string `json:"CPU"`
+	Mem  string `json:"%MEM"`
+	Cpu  string `json:"%CPU"`
 	Stime string `json:"STIME,omitempty"`
 	Time  string `json:"TIME,omitempty"`
 	Tt    string `json:"TT,omitempty"`
@@ -77,10 +76,6 @@ func buildProcessEntries(processesSummary map[string]interface{}, sortKey string
 			continue
 		}
 
-		// If this is an expanded redis hash with metadata fields and nested 'value', rec will have keys like expireat/ttl/type/value.
-		// We already unwrap 'value' later; nothing special needed here except not to treat metadata as PID entries.
-
-		// Derive PID key: support both "123" and "PROCESS_STATS|123"
 		pid := key
 		if idx := lastIndexByte(key, '|'); idx >= 0 && idx+1 < len(key) {
 			pid = key[idx+1:]
@@ -112,8 +107,8 @@ func buildProcessEntries(processesSummary map[string]interface{}, sortKey string
 			Pid:  pid,
 			Ppid: get("PPID", ""),
 			Cmd:  get("CMD", ""),
-			Mem:  get("MEM", "0.0"),
-			Cpu:  get("CPU", "0.0"),
+			Mem:  get("%MEM", "0.0"),
+			Cpu:  get("%CPU", "0.0"),
 			Stime: get("STIME", ""),
 			Time:  get("TIME", ""),
 			Tt:    get("TT", ""),
@@ -154,7 +149,6 @@ func buildProcessEntries(processesSummary map[string]interface{}, sortKey string
 	return entries
 }
 
-// lastIndexByte is a tiny helper to avoid importing strings for a single use.
 func lastIndexByte(s string, c byte) int {
 	for i := len(s) - 1; i >= 0; i-- {
 		if s[i] == c {

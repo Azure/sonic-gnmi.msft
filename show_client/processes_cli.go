@@ -88,6 +88,12 @@ func buildProcessEntries(processesSummary map[string]interface{}, sortKey string
 		}
 
 		// Helper accessor: return string value if present, else default.
+		// Support records where actual fields are wrapped under a nested "value" map.
+		if vRaw, ok := rec["value"]; ok {
+			if inner, ok2 := vRaw.(map[string]interface{}); ok2 {
+				rec = inner
+			}
+		}
 		get := func(name, def string) string {
 			if v, ok := rec[name]; ok {
 				if v == nil {

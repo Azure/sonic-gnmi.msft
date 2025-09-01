@@ -56,7 +56,7 @@ func GetChassisInfo() (map[string]string, error) {
 func GetUptime(params []string) string {
 	uptimeCommand := "uptime"
 
-	if len(params) > 0 {
+	if params != nil && len(params) > 0 {
 		for _, param := range params {
 			uptimeCommand += (space + param)
 		}

@@ -1,0 +1,171 @@
+{
+	"title": "LLDP neighbors",
+	"interfaces": {
+		"eth0": {
+			"via": "LLDP",
+			"RID": "1",
+			"Time": "17 days, 19:11:02",
+			"Chassis": {
+				"ChassisID": "mac ff:ff:ff:ff:ff:ff",
+				"SysName": "sonic-device",
+				"SysDescr": "Juniper Networks, test , version 12.3R4.6 Build date: 2013-09-13 02:53:16 UTC ",
+				"Capability": [
+					"Bridge, on",
+					"Router, on"
+				]
+			},
+			"Port": {
+				"PortID": "local 508",
+				"PortDescr": "ge-0/0/11.0",
+				"TTL": "90",
+				"MFS": "1514",
+				"PMD-autoneg": {
+					"supported": "yes",
+					"enabled": "yes",
+					"Adv": [
+						{
+							"Type": "10Base-T",
+							"HD": "yes",
+							"FD": "yes"
+						},
+						{
+							"Type": "100Base-TX",
+							"HD": "yes",
+							"FD": "yes"
+						},
+						{
+							"Type": "1000Base-T",
+							"HD": "no",
+							"FD": "yes"
+						}
+					],
+					"MAU-oper-type": "unknown"
+				}
+			},
+			"VLAN": [
+				{
+					"vlan-id": "147",
+					"pvid": "yes",
+					"value": "labuse"
+				}
+			],
+			"LLDP-MED": [
+				{
+					"Device-type": "Network Connectivity Device",
+					"Capability": [
+						"Capabilities, yes",
+						"Policy, yes",
+						"Location, yes",
+						"MDI/PSE, yes"
+					]
+				}
+			],
+			"UnknownTLVs": [
+				{
+					"unknown-tlv": [
+						{
+							"oui": "00,90,69",
+							"subtype": "1",
+							"len": "12",
+							"value": "43,55,30,32,31,33,35,31,30,36,36,33"
+						}
+					]
+				}
+			]
+		},
+		"Ethernet354": {
+			"via": "LLDP",
+			"RID": "2",
+			"Time": "15 days, 03:12:34",
+			"Chassis": {
+				"ChassisID": "mac ff:ff:ff:ff:ff:ff",
+				"SysName": "sonic-device-6",
+				"SysDescr": "SONiC Software Version: SONiC.20250305.10 - HwSku: Arista-7060X6-64PE - Distribution: Debian 12.9 - Kernel: 6.1.0-29-2-amd64",
+				"MgmtIP": "10.10.10.10",
+				"MgmtIface": "2",
+				"Capability": [
+					"Bridge, on",
+					"Router, on",
+					"Wlan, off",
+					"Station, off"
+				]
+			},
+			"Port": {
+				"PortID": "ifname Ethernet45/3",
+				"PortDescr": "Ethernet354",
+				"TTL": "120"
+			},
+			"VLAN": [
+				{
+					"vlan-id": "101",
+					"pvid": "yes"
+				},				
+				{
+					"vlan-id": "201",
+					"pvid": "no",
+					"value": "vlan201"
+				}
+			]
+		},
+		"Ethernet355": {
+			"via": "LLDP",
+			"RID": "2",
+			"Time": "15 days, 03:12:31",
+			"Chassis": {
+				"ChassisID": "mac ff:ff:ff:ff:ff:ff",
+				"SysName": "sonic-device-7",
+				"SysDescr": "SONiC Software Version: SONiC.20250305.10 - HwSku: Arista-7060X6-64PE - Distribution: Debian 12.9 - Kernel: 6.1.0-29-2-amd64",
+				"MgmtIP": "10.10.10.10",
+				"MgmtIface": "2",
+				"Capability": [
+					"Wlan, off",
+					"Station, off"
+				]
+			},
+			"Port": {
+				"PortID": "local Ethernet45/2",
+				"PortDescr": "Ethernet355",
+				"TTL": "120"
+			}
+		},
+		"Ethernet353": {
+			"via": "LLDP",
+			"RID": "2",
+			"Time": "15 days, 03:12:31",
+			"Chassis": {
+				"ChassisID": "mac ff:ff:ff:ff:ff:ff",
+				"SysName": "sonic-device-5",
+				"SysDescr": "SONiC Software Version: SONiC.20250305.10 - HwSku: Arista-7060X6-64PE - Distribution: Debian 12.9 - Kernel: 6.1.0-29-2-amd64",
+				"MgmtIP": "10.10.10.10",
+				"MgmtIface": "2"
+			},
+			"Port": {
+				"PortID": "local Ethernet45/0",
+				"PortDescr": "Ethernet353",
+				"TTL": "120"
+			}
+		},
+		"Ethernet356": {
+			"via": "LLDP",
+			"RID": "2",
+			"Time": "15 days, 03:12:34",
+			"Chassis": {
+				"ChassisID": "mac ff:ff:ff:ff:ff:ff",
+				"SysName": "sonic-device-8",
+				"SysDescr": "SONiC Software Version: SONiC.20250305.10 - HwSku: Arista-7060X6-64PE - Distribution: Debian 12.9 - Kernel: 6.1.0-29-2-amd64",
+				"MgmtIP": "10.10.10.10",
+				"MgmtIface": "2",
+				"Capability": [				
+					"Bridge, off",
+					"Router, off",
+					"Wlan, on"
+				]
+			},
+			"Port": {
+				"PortID": "local Ethernet45/1",
+				"PortDescr": "Ethernet356",
+				"TTL": "120"
+			}
+		}		
+	}
+}

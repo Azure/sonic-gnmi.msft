@@ -11,8 +11,8 @@ type uptimeResponse struct {
 }
 
 func getUptime(options sdc.OptionMap) ([]byte, error) {
-	uptimeCommandWithParam := "uptime -p"
-	uptimeData, err := GetDataFromHostCommand(uptimeCommandWithParam)
+	uptimeParam := []string{"-p"}
+	uptimeData, err := GetUptime(uptimeParam)
 	if err != nil {
 		return nil, err
 	}

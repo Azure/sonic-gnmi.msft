@@ -1,0 +1,10 @@
+{
+  "PORT|Ethernet0": {"alias":"etp0"},
+  "PORT|Ethernet1": {"alias":"etp1"},
+  "PORT|Ethernet2": {"alias":"etp2"},
+  "PORT|Ethernet3": {"alias":"etp3"},
+  "PORT|Ethernet4": {"alias":"etp4"},
+  "PORT|Ethernet5": {"alias":"etp5"},
+  "PORT|Ethernet6": {"alias":"etp6"},
+  "PORT|Ethernet7": {"alias":"etp7"}
+}

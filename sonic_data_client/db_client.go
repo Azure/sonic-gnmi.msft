@@ -11,13 +11,14 @@ import (
 	"strings"
 	"sync"
 	"time"
+
 	log "github.com/golang/glog"
 
-	spb "github.com/sonic-net/sonic-gnmi/proto"
-	sdcfg "github.com/sonic-net/sonic-gnmi/sonic_db_config"
 	"github.com/Workiva/go-datastructures/queue"
 	"github.com/go-redis/redis"
 	gnmipb "github.com/openconfig/gnmi/proto/gnmi"
+	spb "github.com/sonic-net/sonic-gnmi/proto"
+	sdcfg "github.com/sonic-net/sonic-gnmi/sonic_db_config"
 )
 
 const (
@@ -678,6 +679,12 @@ func populateDbtablePath(prefix, path *gnmipb.Path, pathG2S *map[*gnmipb.Path][]
 		}
 	}
 
+	if targetDbName == "CONFIG_DB" {
+		err = initAliasMap()
+		if err != nil {
+			return err
+		}
+	}
 
 	fullPath := path
 	if prefix != nil {

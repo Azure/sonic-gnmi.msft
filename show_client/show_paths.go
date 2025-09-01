@@ -107,6 +107,13 @@ func init() {
 		sdc.UnimplementedOption(showCmdOptionNamespace),
 	)
 	sdc.RegisterCliPath(
+		[]string{"SHOW", "mmu"},
+		getMmuConfig,
+		nil,
+		sdc.UnimplementedOption(showCmdOptionNamespace),
+		showCmdOptionVerbose,
+	)
+	sdc.RegisterCliPath(
 		[]string{"SHOW", "mac", "aging-time"},
 		getMacAgingTime,
 		nil,
@@ -128,6 +135,12 @@ func init() {
 		getInterfaceAlias,
 		nil,
 		showCmdOptionInterface,
+	)
+	sdc.RegisterCliPath(
+		[]string{"SHOW", "srv6", "stats"},
+		getSRv6Stats,
+		nil,
+		showCmdOptionSid,
 	)
 	sdc.RegisterCliPath(
 		[]string{"SHOW", "queue", "counters"},
@@ -167,6 +180,32 @@ func init() {
 		showCmdOptionType,
 		showCmdOptionCount,
 		showCmdOptionVerbose,
+	)
+	sdc.RegisterCliPath(
+		[]string{"SHOW", "interface", "switchport", "config"},
+		getInterfaceSwitchportConfig,
+		nil,
+		showCmdOptionInterface,
+	)
+	sdc.RegisterCliPath(
+		[]string{"SHOW", "interface", "switchport", "status"},
+		getInterfaceSwitchportStatus,
+		nil,
+		showCmdOptionInterface,
+	)
+	sdc.RegisterCliPath(
+		[]string{"SHOW", "dropcounters", "counts"},
+		getDropCounters,
+		nil,
+		showCmdOptionGroup,
+		showCmdOptionCounterType,
+		sdc.UnimplementedOption(showCmdOptionNamespace),
+		showCmdOptionVerbose,
+	)
+	sdc.RegisterCliPath(
+		[]string{"SHOW", "dropcounters", "capabilities"},
+		getDropcountersCapabilities,
+		nil,
 	)
 	sdc.RegisterCliPath(
 		[]string{"SHOW", "lldp", "neighbors"},

@@ -23,6 +23,8 @@ const StateDb = "STATE_DB"
 const ConfigDb = "CONFIG_DB"
 const ConfigDbPort = "PORT"
 const FDBTable = "FDB_TABLE"
+const VlanSubInterfaceSeparator = '.'
+const SonicCliIfaceMode = "SONIC_CLI_IFACE_MODE"
 
 const (
 	dbIndex    = 0 // The first index for a query will be the DB
@@ -325,4 +327,82 @@ func ParseKey(key interface{}, delimiter string) (string, string) {
 		return "", ""
 	}
 	return parts[0], parts[1]
+}
+
+// GetInterfaceNameForDisplay returns alias when SONIC_CLI_IFACE_MODE=alias; otherwise the name.
+// It also preserves VLAN sub-interface suffix like Ethernet0.100.
+func GetInterfaceNameForDisplay(name string) string {
+	if name == "" {
+		return name
+	}
+	if interfaceNamingMode := os.Getenv(SonicCliIfaceMode); interfaceNamingMode != "alias" {
+		return name
+	}
+
+	nameToAlias := sdc.PortToAliasNameMap()
+
+	base, suffix := name, ""
+	if i := strings.IndexByte(name, VlanSubInterfaceSeparator); i >= 0 {
+		base, suffix = name[:i], name[i:] // keep .<vlan>
+	}
+
+	if alias, ok := nameToAlias[base]; ok {
+		return alias + suffix
+	}
+	return name
+}
+
+// GetInterfaceSwitchportMode returns the switchport mode.
+func GetInterfaceSwitchportMode(
+	portTbl, portChannelTbl, vlanMemberTbl map[string]interface{},
+	name string,
+) string {
+	if m := GetFieldValueString(portTbl, name, "", "mode"); m != "" {
+		return m
+	}
+	if m := GetFieldValueString(portChannelTbl, name, "", "mode"); m != "" {
+		return m
+	}
+	for k := range vlanMemberTbl {
+		_, member, ok := SplitCompositeKey(k)
+		if ok && member == name {
+			return "trunk"
+		}
+	}
+	return "routed"
+}
+
+// SplitCompositeKey splits a two-part composite key using '|' or ':' delimiters.
+// Returns left, right, true on success; empty strings and false otherwise.
+// Examples:
+//
+//	"Vlan100|Ethernet0" -> ("Vlan100", "Ethernet0", true)
+//	"PortChannel001:Ethernet4" -> ("PortChannel001", "Ethernet4", true)
+func SplitCompositeKey(k string) (string, string, bool) {
+	if parts := strings.Split(k, "|"); len(parts) == 2 {
+		return parts[0], parts[1], true
+	}
+	if parts := strings.Split(k, ":"); len(parts) == 2 {
+		return parts[0], parts[1], true
+	}
+	return "", "", false
+}
+
+// getOrDefault returns m[key] when present; otherwise returns def.
+// Safe to call with a nil map. Handy for nested map lookups with explicit defaults.
+func getOrDefault[T any](m map[string]T, key string, def T) T {
+	if v, ok := m[key]; ok {
+		return v
+	}
+	return def
+}
+
+// ContainsString returns true if target is present in list.
+func ContainsString(list []string, target string) bool {
+	for _, s := range list {
+		if s == target {
+			return true
+		}
+	}
+	return false
 }

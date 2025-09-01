@@ -46,7 +46,7 @@ func TestGetLLDPNeighbors(t *testing.T) {
 	expectedLLDPNeighborsOnlyOneResponseFileName := "../testdata/lldp/Expected_show_lldp_neighbors_response_only_one.txt"
 	expectedLLDPNeighborsOnlyOneResponse, err := ioutil.ReadFile(expectedLLDPNeighborsOnlyOneResponseFileName)
 	if err != nil {
-		t.Fatalf("Failed to read file %v err: %v", expectedLLDPNeighborsOnlyOneResponse, err)
+		t.Fatalf("Failed to read file %v err: %v", expectedLLDPNeighborsOnlyOneResponseFileName, err)
 	}
 
 	// Expected output for normal device

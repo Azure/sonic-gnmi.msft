@@ -223,16 +223,4 @@ func init() {
 		nil,
 		showCmdOptionVerbose,
 	)
-	sdc.RegisterCliPath(
-		[]string{"SHOW", "processes", "cpu"},
-		getProcessesCpu,
-		nil,
-		showCmdOptionVerbose,
-	)
-	sdc.RegisterCliPath(
-		[]string{"SHOW", "processes", "mem"},
-		getProcessesMem,
-		nil,
-		showCmdOptionVerbose,
-	)
 }

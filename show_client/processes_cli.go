@@ -35,23 +35,7 @@ func getProcessesRoot(options sdc.OptionMap) ([]byte, error) {
 	return json.Marshal(help)
 }
 
-// SHOW processes summary (PID asc)
 func getProcessesSummary(options sdc.OptionMap) ([]byte, error) {
-	return getProcessesSorted("pid")
-}
-
-// SHOW processes cpu (CPU desc)
-func getProcessesCpu(options sdc.OptionMap) ([]byte, error) {
-	return getProcessesSorted("cpu")
-}
-
-// SHOW processes mem (MEM desc)
-func getProcessesMem(options sdc.OptionMap) ([]byte, error) {
-	return getProcessesSorted("mem")
-}
-
-// Shared fetch + sort
-func getProcessesSorted(sortKey string) ([]byte, error) {
 	queries := [][]string{{"STATE_DB", "PROCESS_STATS"}}
 	processesSummary, err := GetMapFromQueries(queries)
 	if err != nil {
@@ -61,14 +45,14 @@ func getProcessesSorted(sortKey string) ([]byte, error) {
 	if len(processesSummary) == 0 {
 		return []byte("[]"), nil
 	}
-	entries := buildProcessEntries(processesSummary, sortKey)
+	entries := buildProcessEntries(processesSummary)
 	if len(entries) == 0 {
 		return []byte("[]"), nil
 	}
 	return json.Marshal(entries)
 }
 
-func buildProcessEntries(processesSummary map[string]interface{}, sortKey string) []processEntry {
+func buildProcessEntries(processesSummary map[string]interface{}) []processEntry {
 	entries := make([]processEntry, 0, len(processesSummary))
 	for key, raw := range processesSummary {
 		rec, _ := raw.(map[string]interface{})
@@ -115,37 +99,11 @@ func buildProcessEntries(processesSummary map[string]interface{}, sortKey string
 			Uid:   get("UID", ""),
 		})
 	}
-	switch sortKey {
-	case "cpu":
-		sort.Slice(entries, func(i, j int) bool {
-			fi, _ := strconv.ParseFloat(entries[i].Cpu, 64)
-			fj, _ := strconv.ParseFloat(entries[j].Cpu, 64)
-			if fi == fj {
-				pi, _ := strconv.Atoi(entries[i].Pid)
-				pj, _ := strconv.Atoi(entries[j].Pid)
-				return pi < pj
-			}
-			return fi > fj
-		})
-	case "mem":
-		sort.Slice(entries, func(i, j int) bool {
-			fi, _ := strconv.ParseFloat(entries[i].Mem, 64)
-			fj, _ := strconv.ParseFloat(entries[j].Mem, 64)
-			if fi == fj {
-				pi, _ := strconv.Atoi(entries[i].Pid)
-				pj, _ := strconv.Atoi(entries[j].Pid)
-				return pi < pj
-			}
-			return fi > fj
-		})
-	case "pid":
-		sort.Slice(entries, func(i, j int) bool {
-			pi, _ := strconv.Atoi(entries[i].Pid)
-			pj, _ := strconv.Atoi(entries[j].Pid)
-			return pi < pj
-		})
-	default:
-	}
+	sort.Slice(entries, func(i, j int) bool {
+		pi, _ := strconv.Atoi(entries[i].Pid)
+		pj, _ := strconv.Atoi(entries[j].Pid)
+		return pi < pj
+	})
 	return entries
 }
 

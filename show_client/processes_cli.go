@@ -11,13 +11,13 @@ import (
 )
 
 // processEntry represents a single process row from STATE_DB PROCESS_STATS
-// Output JSON keys are required to be PID, PPID, CMD, %MEM, %CPU
+// Output JSON keys: PID, PPID, CMD, MEM, CPU (changed from %MEM/%CPU per latest requirement)
 type processEntry struct {
 	Pid  string `json:"PID"`
 	Ppid string `json:"PPID"`
 	Cmd  string `json:"CMD"`
-	Mem  string `json:"%MEM"`
-	Cpu  string `json:"%CPU"`
+	Mem  string `json:"MEM"`
+	Cpu  string `json:"CPU"`
 	Stime string `json:"STIME,omitempty"`
 	Time  string `json:"TIME,omitempty"`
 	Tt    string `json:"TT,omitempty"`
@@ -77,29 +77,33 @@ func buildProcessEntries(processesSummary map[string]interface{}, sortKey string
 			continue
 		}
 
+		// If this is an expanded redis hash with metadata fields and nested 'value', rec will have keys like expireat/ttl/type/value.
+		// We already unwrap 'value' later; nothing special needed here except not to treat metadata as PID entries.
+
 		// Derive PID key: support both "123" and "PROCESS_STATS|123"
 		pid := key
 		if idx := lastIndexByte(key, '|'); idx >= 0 && idx+1 < len(key) {
 			pid = key[idx+1:]
 		}
-		// Skip non-numeric PIDs (e.g. metadata keys like LastUpdateTime)
+
+		// Skip non-numeric keys (e.g. metadata like LastUpdateTime) to ensure only real PIDs emitted
 		if _, err := strconv.Atoi(pid); err != nil {
 			continue
 		}
 
-		// Helper accessor: return string value if present, else default.
-		// Support records where actual fields are wrapped under a nested "value" map.
+		// Support records where actual fields are wrapped under a nested "value" map (as in provided sample).
 		if vRaw, ok := rec["value"]; ok {
-			if inner, ok2 := vRaw.(map[string]interface{}); ok2 {
+			if inner, ok2 := vRaw.(map[string]interface{}); ok2 && inner != nil {
 				rec = inner
 			}
 		}
+		// Helper accessor: return string value if present & non-empty, else default.
 		get := func(name, def string) string {
-			if v, ok := rec[name]; ok {
-				if v == nil {
-					return def
+			if v, ok := rec[name]; ok && v != nil {
+				s := fmt.Sprint(v)
+				if s != "" {
+					return s
 				}
-				return fmt.Sprint(v)
 			}
 			return def
 		}
@@ -108,8 +112,8 @@ func buildProcessEntries(processesSummary map[string]interface{}, sortKey string
 			Pid:  pid,
 			Ppid: get("PPID", ""),
 			Cmd:  get("CMD", ""),
-			Mem:  get("%MEM", "0.0"),
-			Cpu:  get("%CPU", "0.0"),
+			Mem:  get("MEM", "0.0"),
+			Cpu:  get("CPU", "0.0"),
 			Stime: get("STIME", ""),
 			Time:  get("TIME", ""),
 			Tt:    get("TT", ""),

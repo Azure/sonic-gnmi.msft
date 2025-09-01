@@ -194,10 +194,18 @@ func init() {
 		showCmdOptionInterface,
 	)
 	sdc.RegisterCliPath(
-		[]string{"SHOW", "ipv6", "bgp", "network", "address"},
-		getIPv6BGPNetwork,
+		[]string{"SHOW", "dropcounters", "counts"},
+		getDropCounters,
 		nil,
+		showCmdOptionGroup,
+		showCmdOptionCounterType,
 		sdc.UnimplementedOption(showCmdOptionNamespace),
+		showCmdOptionVerbose,
+	)
+	sdc.RegisterCliPath(
+		[]string{"SHOW", "dropcounters", "capabilities"},
+		getDropcountersCapabilities,
+		nil,
 	)
 	sdc.RegisterCliPath(
 		[]string{"SHOW", "ipv6", "bgp", "network"},

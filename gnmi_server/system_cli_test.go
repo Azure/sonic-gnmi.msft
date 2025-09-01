@@ -58,6 +58,24 @@ func TestGetSystemMemory(t *testing.T) {
 			wantRetCode: codes.NotFound,
 		},
 		{
+			desc:       "query SHOW system-memory no cmd output",
+			pathTarget: "SHOW",
+			textPbPath: `
+				elem: <name: "system-memory" >
+			`,
+			wantRetCode:    codes.NotFound,
+			mockOutputFile: "../testdata/SYSTEM_MEMORY_NO_DATA.txt",
+		},
+		{
+			desc:       "query SHOW system-memory malformed cmd output",
+			pathTarget: "SHOW",
+			textPbPath: `
+				elem: <name: "system-memory" >
+			`,
+			wantRetCode:    codes.NotFound,
+			mockOutputFile: "../testdata/SYSTEM_MEMORY_MALFORMED.txt",
+		},
+		{
 			desc:       "query SHOW system-memory",
 			pathTarget: "SHOW",
 			textPbPath: `

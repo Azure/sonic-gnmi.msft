@@ -285,7 +285,7 @@ func getIPv6BGPNeighborsHandler(options sdc.OptionMap) ([]byte, error) {
 	}
 }
 
-// Feteches device ports including physical ports, port channel and vlan's ipv6_use_link_local_only configuration.
+// Gets device ports including physical ports, port channel and vlan's ipv6_use_link_local_only configuration.
 // Returns JSON content consists of port name and link local setting.
 func getPortsIpv6LinkLocalMode(options sdc.OptionMap) ([]byte, error) {
 	type ItfLinkLocalMode struct {

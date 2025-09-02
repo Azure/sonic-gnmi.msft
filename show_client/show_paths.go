@@ -224,5 +224,5 @@ func init() {
 		getUptime,
 		nil,
 		showCmdOptionVerbose,
-  )
+	)
 }

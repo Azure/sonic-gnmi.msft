@@ -176,6 +176,12 @@ func init() {
 		showCmdOptionVerbose,
 	)
 	sdc.RegisterCliPath(
+		[]string{"SHOW", "ipv6", "link-local-mode"},
+		getPortsIpv6LinkLocalMode,
+		nil,
+		showCmdOptionVerbose,
+	)
+	sdc.RegisterCliPath(
 		[]string{"SHOW", "mac"},
 		getMacTable,
 		map[string]string{

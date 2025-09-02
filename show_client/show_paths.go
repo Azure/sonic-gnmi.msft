@@ -201,7 +201,6 @@ func init() {
 		showCmdOptionInterface,
 	)
 	sdc.RegisterCliPath(
-<<<<<<< HEAD
 		[]string{"SHOW", "dropcounters", "counts"},
 		getDropCounters,
 		nil,

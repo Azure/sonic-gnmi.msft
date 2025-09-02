@@ -48,7 +48,7 @@ func getIPv6BGPNetwork(options sdc.OptionMap) ([]byte, error) {
 
 	rawOutput, err := GetDataFromHostCommand(cmd)
 	if err != nil {
-		log.Errorf("Unable to execute command %q, err=%v", cmd, err)
+		log.Errorf("Unable to execute command %q, output=%q err=%v", cmd, rawOutput, err)
 		return nil, err
 	}
 

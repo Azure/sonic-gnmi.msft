@@ -193,4 +193,13 @@ func init() {
 		nil,
 		showCmdOptionInterface,
 	)
+	sdc.RegisterCliPath(
+		[]string{"SHOW", "interfaces", "description"},
+		getInterfacesDescription,
+		nil,
+		sdc.UnimplementedOption(showCmdOptionNamespace),
+		showCmdOptionDisplay,
+		showCmdOptionInterfaces,
+		showCmdOptionVerbose,
+	)
 }

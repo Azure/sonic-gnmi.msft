@@ -257,6 +257,16 @@ var allPortErrors = [][]string{
 	{"no_rx_reachability_count", "no_rx_reachability_time"},
 }
 
+func getInterfacesDescription(options sdc.OptionMap) ([]byte, error) {
+    cmdForInterfaceDesc = "intfutil -c description"
+	intf, ok := options["interface"].String()
+    if ok {
+        cmdForInterfaceDesc += interfaceOption + intf
+    }
+
+    
+}
+
 func getInterfaceErrors(options sdc.OptionMap) ([]byte, error) {
 	intf, ok := options["interface"].String()
 	if !ok {

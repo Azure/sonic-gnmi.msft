@@ -133,6 +133,14 @@ func init() {
 		showCmdOptionDisplay,
 	)
 	sdc.RegisterCliPath(
+		[]string{"SHOW", "ipv6", "route"},
+		getIPv6Route,
+		nil,
+		sdc.UnimplementedOption(showCmdOptionNamespace),
+		showCmdOptionDisplay,
+		showCmdOptionFrrRouteArgs,
+	)
+	sdc.RegisterCliPath(
 		[]string{"SHOW", "lldp", "table"},
 		getLLDPTable,
 		nil,

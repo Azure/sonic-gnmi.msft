@@ -40,6 +40,13 @@ func init() {
 		showCmdOptionDisplay,
 	)
 	sdc.RegisterCliPath(
+		[]string{"SHOW", "ipv6", "bgp", "neighbors"},
+		getIPv6BGPNeighborsHandler,
+		nil,
+		showCmdOptionIPAddress,
+		showCmdOptionInfoType,
+	)
+	sdc.RegisterCliPath(
 		[]string{"SHOW", "interface", "counters"},
 		getInterfaceCounters,
 		nil,
@@ -107,6 +114,13 @@ func init() {
 		sdc.UnimplementedOption(showCmdOptionNamespace),
 	)
 	sdc.RegisterCliPath(
+		[]string{"SHOW", "mmu"},
+		getMmuConfig,
+		nil,
+		sdc.UnimplementedOption(showCmdOptionNamespace),
+		showCmdOptionVerbose,
+	)
+	sdc.RegisterCliPath(
 		[]string{"SHOW", "mac", "aging-time"},
 		getMacAgingTime,
 		nil,
@@ -134,8 +148,8 @@ func init() {
 		getSRv6Stats,
 		nil,
 		showCmdOptionSid,
-  )
-  sdc.RegisterCliPath(
+	)
+	sdc.RegisterCliPath(
 		[]string{"SHOW", "queue", "counters"},
 		getQueueCounters,
 		nil,
@@ -185,6 +199,25 @@ func init() {
 		getInterfaceSwitchportStatus,
 		nil,
 		showCmdOptionInterface,
+	)
+	sdc.RegisterCliPath(
+		[]string{"SHOW", "dropcounters", "counts"},
+		getDropCounters,
+		nil,
+		showCmdOptionGroup,
+		showCmdOptionCounterType,
+		sdc.UnimplementedOption(showCmdOptionNamespace),
+		showCmdOptionVerbose,
+	)
+	sdc.RegisterCliPath(
+		[]string{"SHOW", "dropcounters", "capabilities"},
+		getDropcountersCapabilities,
+		nil,
+	)
+	sdc.RegisterCliPath(
+		[]string{"SHOW", "lldp", "neighbors"},
+		getLLDPNeighbors,
+		nil,
 	)
 	sdc.RegisterCliPath(
 		[]string{"SHOW", "uptime"},

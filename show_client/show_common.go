@@ -375,8 +375,9 @@ func GetInterfaceSwitchportMode(
 // SplitCompositeKey splits a two-part composite key using '|' or ':' delimiters.
 // Returns left, right, true on success; empty strings and false otherwise.
 // Examples:
-//   "Vlan100|Ethernet0" -> ("Vlan100", "Ethernet0", true)
-//   "PortChannel001:Ethernet4" -> ("PortChannel001", "Ethernet4", true)
+//
+//	"Vlan100|Ethernet0" -> ("Vlan100", "Ethernet0", true)
+//	"PortChannel001:Ethernet4" -> ("PortChannel001", "Ethernet4", true)
 func SplitCompositeKey(k string) (string, string, bool) {
 	if parts := strings.Split(k, "|"); len(parts) == 2 {
 		return parts[0], parts[1], true
@@ -385,4 +386,23 @@ func SplitCompositeKey(k string) (string, string, bool) {
 		return parts[0], parts[1], true
 	}
 	return "", "", false
+}
+
+// getOrDefault returns m[key] when present; otherwise returns def.
+// Safe to call with a nil map. Handy for nested map lookups with explicit defaults.
+func getOrDefault[T any](m map[string]T, key string, def T) T {
+	if v, ok := m[key]; ok {
+		return v
+	}
+	return def
+}
+
+// ContainsString returns true if target is present in list.
+func ContainsString(list []string, target string) bool {
+	for _, s := range list {
+		if s == target {
+			return true
+		}
+	}
+	return false
 }

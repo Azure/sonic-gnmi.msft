@@ -1,6 +1,6 @@
 package gnmi
 
-// ipv6_cli_test.go
+// ipv6_bgp_summary_cli_test.go
 
 // Tests SHOW ipv6 bgp summary
 

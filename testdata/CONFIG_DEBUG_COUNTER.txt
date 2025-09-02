@@ -1,0 +1,6 @@
+{
+  "DEBUG_COUNTER|DEBUG_2": {
+    "type": "PORT_INGRESS_DROPS",
+    "group": "BAD"
+  }
+}

@@ -223,8 +223,8 @@ func init() {
 		[]string{"SHOW", "ipv6", "bgp", "network"},
 		getIPv6BGPNetwork,
 		nil,
-		showCmdOptionIPAddress,
-		showCmdOptionInfoType,
+		showCmdOptionIPV6Address,
+		showCmdOptionInfoTypeForBgpNetwork,
 		sdc.UnimplementedOption(showCmdOptionNamespace),
 	)
 }

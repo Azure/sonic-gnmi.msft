@@ -24,7 +24,7 @@ const (
 	showCmdOptionGroupDesc         = "[group=TEXT] Filter by logical counter group (eg RX_DROPS, TX_ERR)"
 	showCmdOptionCounterTypeDesc   = "[counter_type=TEXT] Filter by counter type (eg PORT_INGRESS_DROPS, SWITCH_EGRESS_DROPS)"
 	showCmdOptionIPAddressDesc     = "[ipaddress=TEXT] Filter by single IP address"
-	showCmdOptionIPAddressDesc     = "[ipaddress=TEXT] Filter by IPv6 address"
+	showCmdOptionIPV6AddressDesc   = "[ipaddress=TEXT] Filter by IPv6 address"
 	showCmdOptionInfoTypeDesc      = "[info_type=TEXT] Filter by information type"
 )
 
@@ -160,13 +160,13 @@ var (
 	)
 
 	// show ipv6 bgp network specific options
-	showCmdOptionIPAddress = sdc.NewShowCmdOption(
+	showCmdOptionIPV6Address = sdc.NewShowCmdOption(
 		"ipaddress",
-		showCmdOptionIPAddressDesc,
+		showCmdOptionIPV6AddressDesc,
 		sdc.StringValue,
 	)
 
-	showCmdOptionInfoType = sdc.NewShowCmdOption(
+	showCmdOptionInfoTypeForBgpNetwork = sdc.NewShowCmdOption(
 		"info_type",
 		showCmdOptionInfoTypeDesc,
 		sdc.StringValue,

@@ -119,7 +119,6 @@ var (
 		showCmdOptionSidDesc,
 		sdc.StringValue,
 	)
-	)
 
 	showCmdOptionNonzero = sdc.NewShowCmdOption(
 		"nonzero",

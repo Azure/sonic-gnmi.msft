@@ -192,6 +192,12 @@ func init() {
 		showCmdOptionVerbose,
 	)
 	sdc.RegisterCliPath(
+		[]string{"SHOW", "ipv6", "fib"},
+		getIPv6Fib,
+		nil,
+		showCmdOptionIPV6Address,
+	)
+	sdc.RegisterCliPath(
 		[]string{"SHOW", "mac"},
 		getMacTable,
 		map[string]string{

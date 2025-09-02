@@ -193,4 +193,20 @@ func init() {
 		nil,
 		showCmdOptionInterface,
 	)
+	sdc.RegisterCliPath(
+		[]string{"SHOW", "processes"},
+		getProcessesRoot,
+		map[string]string{
+			"summary": "show/processes/summary",
+			"cpu":     "show/processes/cpu",
+			"mem":     "show/processes/mem",
+		},
+		showCmdOptionVerbose,
+	)
+	sdc.RegisterCliPath(
+		[]string{"SHOW", "processes", "summary"},
+		getProcessesSummary,
+		nil,
+		showCmdOptionVerbose,
+	)
 }

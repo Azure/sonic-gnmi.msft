@@ -29,6 +29,14 @@ type InterfaceCountersResponse struct {
 	TxOvr  string
 }
 
+type interfaceDescription struct {
+	Interface   string `json:"interface"`
+	Operation   string `json:"oper"`
+	Admin       string `json:"admin"`
+	Alias       string `json:"alias"`
+	Description string `json:"description"`
+}
+
 func calculateByteRate(rate string) string {
 	if rate == defaultMissingCounterValue {
 		return defaultMissingCounterValue
@@ -258,13 +266,16 @@ var allPortErrors = [][]string{
 }
 
 func getInterfacesDescription(options sdc.OptionMap) ([]byte, error) {
-    cmdForInterfaceDesc = "intfutil -c description"
+	cmdForInterfaceDesc = "intfutil -c description"
 	intf, ok := options["interface"].String()
-    if ok {
-        cmdForInterfaceDesc += interfaceOption + intf
-    }
+	if ok {
+		cmdForInterfaceDesc += interfaceOption + intf
+	}
 
-    
+	interfaceDesc, err := GetDataFromHostCommand(cmdForInterfaceDesc)
+	if err != nil {
+		return "N/A"
+	}
 }
 
 func getInterfaceErrors(options sdc.OptionMap) ([]byte, error) {
@@ -396,215 +407,219 @@ func getInterfaceFecStatus(options sdc.OptionMap) ([]byte, error) {
 }
 
 func getInterfaceAlias(options sdc.OptionMap) ([]byte, error) {
-    intf, _ := options["interface"].String()
+	intf, _ := options["interface"].String()
 
-    // Read CONFIG_DB.PORT
-    queries := [][]string{{"CONFIG_DB", "PORT"}}
-    portEntries, err := GetMapFromQueries(queries)
-    if err != nil {
-        log.Errorf("Failed to get ports from CONFIG_DB: %v", err)
-        return nil, err
-    }
+	// Read CONFIG_DB.PORT
+	queries := [][]string{{"CONFIG_DB", "PORT"}}
+	portEntries, err := GetMapFromQueries(queries)
+	if err != nil {
+		log.Errorf("Failed to get ports from CONFIG_DB: %v", err)
+		return nil, err
+	}
 
 	nameToAlias := make(map[string]string, len(portEntries))
-    for name := range portEntries {
-        alias := GetFieldValueString(portEntries, name, "", "alias")
-        if alias == "" {
-            // fallback to itself if alias field is missing
-            alias = name
-        }
-        nameToAlias[name] = alias
-    }
+	for name := range portEntries {
+		alias := GetFieldValueString(portEntries, name, "", "alias")
+		if alias == "" {
+			// fallback to itself if alias field is missing
+			alias = name
+		}
+		nameToAlias[name] = alias
+	}
 
-    // If a specific interface was requested, accept port name
-    if intf != "" {
-        name := intf
-        if _, ok := nameToAlias[name]; !ok {
-            return nil, fmt.Errorf("Invalid interface name %s", name)
-        }
-        out := map[string]map[string]string{
-            name: {"alias": nameToAlias[name]},
-        }
-        return json.Marshal(out)
-    }
+	// If a specific interface was requested, accept port name
+	if intf != "" {
+		name := intf
+		if _, ok := nameToAlias[name]; !ok {
+			return nil, fmt.Errorf("Invalid interface name %s", name)
+		}
+		out := map[string]map[string]string{
+			name: {"alias": nameToAlias[name]},
+		}
+		return json.Marshal(out)
+	}
 
-    // Build {"Ethernet0":{"alias":"etp0"}, ...} from CONFIG_DB PORT only
-    out := make(map[string]map[string]string, len(nameToAlias))
-    for name, alias := range nameToAlias {
-        out[name] = map[string]string{"alias": alias}
-    }
-    return json.Marshal(out)
+	// Build {"Ethernet0":{"alias":"etp0"}, ...} from CONFIG_DB PORT only
+	out := make(map[string]map[string]string, len(nameToAlias))
+	for name, alias := range nameToAlias {
+		out[name] = map[string]string{"alias": alias}
+	}
+	return json.Marshal(out)
 }
 func getInterfaceSwitchportConfig(options sdc.OptionMap) ([]byte, error) {
-    intf, _ := options["interface"].String()
+	intf, _ := options["interface"].String()
 
-    // Read CONFIG_DB tables
-    portTbl, err := GetMapFromQueries([][]string{{"CONFIG_DB", "PORT"}})
-    if err != nil {
-        log.Errorf("Failed to get PORT: %v", err)
-        return nil, err
-    }
-    portChannelTbl, err := GetMapFromQueries([][]string{{"CONFIG_DB", "PORTCHANNEL"}})
-    if err != nil {
-        log.Errorf("Failed to get PORTCHANNEL: %v", err)
-        return nil, err
-    }
-    portChannelMemberTbl, err := GetMapFromQueries([][]string{{"CONFIG_DB", "PORTCHANNEL_MEMBER"}})
-    if err != nil {
-        log.Errorf("Failed to get PORTCHANNEL_MEMBER: %v", err)
-        return nil, err
-    }
-    vlanMemberTbl, err := GetMapFromQueries([][]string{{"CONFIG_DB", "VLAN_MEMBER"}})
-    if err != nil {
-        log.Errorf("Failed to get VLAN_MEMBER: %v", err)
-        return nil, err
-    }
+	// Read CONFIG_DB tables
+	portTbl, err := GetMapFromQueries([][]string{{"CONFIG_DB", "PORT"}})
+	if err != nil {
+		log.Errorf("Failed to get PORT: %v", err)
+		return nil, err
+	}
+	portChannelTbl, err := GetMapFromQueries([][]string{{"CONFIG_DB", "PORTCHANNEL"}})
+	if err != nil {
+		log.Errorf("Failed to get PORTCHANNEL: %v", err)
+		return nil, err
+	}
+	portChannelMemberTbl, err := GetMapFromQueries([][]string{{"CONFIG_DB", "PORTCHANNEL_MEMBER"}})
+	if err != nil {
+		log.Errorf("Failed to get PORTCHANNEL_MEMBER: %v", err)
+		return nil, err
+	}
+	vlanMemberTbl, err := GetMapFromQueries([][]string{{"CONFIG_DB", "VLAN_MEMBER"}})
+	if err != nil {
+		log.Errorf("Failed to get VLAN_MEMBER: %v", err)
+		return nil, err
+	}
 
-    // Exclude LAG members from standalone ports
-    var ports []string
-    for port := range portTbl {
-        if !IsInterfaceInPortchannel(portChannelMemberTbl, port) {
-            ports = append(ports, port)
-        }
-    }
-    var portchannels []string
-    for pc := range portChannelTbl {
-        portchannels = append(portchannels, pc)
-    }
-    keys := append(ports, portchannels...)
-    keys = natsortInterfaces(keys)
+	// Exclude LAG members from standalone ports
+	var ports []string
+	for port := range portTbl {
+		if !IsInterfaceInPortchannel(portChannelMemberTbl, port) {
+			ports = append(ports, port)
+		}
+	}
+	var portchannels []string
+	for pc := range portChannelTbl {
+		portchannels = append(portchannels, pc)
+	}
+	keys := append(ports, portchannels...)
+	keys = natsortInterfaces(keys)
 
-    // Optionally filter by interface
-    if intf != "" {
-        found := false
-        for _, k := range keys {
-            if k == intf {
-                found = true
-                keys = []string{intf}
-                break
-            }
-        }
-        if !found {
-            return nil, fmt.Errorf("Got unexpected extra argument %s", intf)
-        }
-    }
+	// Optionally filter by interface
+	if intf != "" {
+		found := false
+		for _, k := range keys {
+			if k == intf {
+				found = true
+				keys = []string{intf}
+				break
+			}
+		}
+		if !found {
+			return nil, fmt.Errorf("Got unexpected extra argument %s", intf)
+		}
+	}
 
-    // Build VLAN membership maps
-    untaggedMap := make(map[string][]string)
-    taggedMap := make(map[string][]string)
-    for k := range vlanMemberTbl {
-        vlan, ifname, ok := SplitCompositeKey(k)
-        if !ok {
-            continue
-        }
-        tagMode := GetFieldValueString(vlanMemberTbl, k, "", "tagging_mode")
-        vlanID := strings.TrimPrefix(vlan, "Vlan")
-        if tagMode == "untagged" {
-            untaggedMap[ifname] = append(untaggedMap[ifname], vlanID)
-        } else if tagMode == "tagged" {
-            taggedMap[ifname] = append(taggedMap[ifname], vlanID)
-        }
-    }
-    for k := range untaggedMap { sort.Strings(untaggedMap[k]) }
-    for k := range taggedMap { sort.Strings(taggedMap[k]) }
+	// Build VLAN membership maps
+	untaggedMap := make(map[string][]string)
+	taggedMap := make(map[string][]string)
+	for k := range vlanMemberTbl {
+		vlan, ifname, ok := SplitCompositeKey(k)
+		if !ok {
+			continue
+		}
+		tagMode := GetFieldValueString(vlanMemberTbl, k, "", "tagging_mode")
+		vlanID := strings.TrimPrefix(vlan, "Vlan")
+		if tagMode == "untagged" {
+			untaggedMap[ifname] = append(untaggedMap[ifname], vlanID)
+		} else if tagMode == "tagged" {
+			taggedMap[ifname] = append(taggedMap[ifname], vlanID)
+		}
+	}
+	for k := range untaggedMap {
+		sort.Strings(untaggedMap[k])
+	}
+	for k := range taggedMap {
+		sort.Strings(taggedMap[k])
+	}
 
-    // Emit switchportConfig
-    switchportConfig := make([]map[string]string, 0, len(keys))
-    for _, k := range keys {
-        untagged := untaggedMap[k]
-        tagged := taggedMap[k]
+	// Emit switchportConfig
+	switchportConfig := make([]map[string]string, 0, len(keys))
+	for _, k := range keys {
+		untagged := untaggedMap[k]
+		tagged := taggedMap[k]
 
-        mode := GetInterfaceSwitchportMode(portTbl, portChannelTbl, vlanMemberTbl, k)
+		mode := GetInterfaceSwitchportMode(portTbl, portChannelTbl, vlanMemberTbl, k)
 
-        switchportConfig = append(switchportConfig, map[string]string{
-            "Interface": GetInterfaceNameForDisplay(k),
-            "Mode":      mode,
-            "Untagged":  strings.Join(untagged, ","),
-            "Tagged":    strings.Join(tagged, ","),
-        })
-    }
+		switchportConfig = append(switchportConfig, map[string]string{
+			"Interface": GetInterfaceNameForDisplay(k),
+			"Mode":      mode,
+			"Untagged":  strings.Join(untagged, ","),
+			"Tagged":    strings.Join(tagged, ","),
+		})
+	}
 
-    return json.Marshal(switchportConfig)
+	return json.Marshal(switchportConfig)
 }
 
 func getInterfaceSwitchportStatus(options sdc.OptionMap) ([]byte, error) {
-    intf, _ := options["interface"].String()
+	intf, _ := options["interface"].String()
 
-    // Read CONFIG_DB tables
-    portTbl, err := GetMapFromQueries([][]string{{"CONFIG_DB", "PORT"}})
-    if err != nil {
-        log.Errorf("Failed to get PORT: %v", err)
-        return nil, err
-    }
-    portChannelTbl, err := GetMapFromQueries([][]string{{"CONFIG_DB", "PORTCHANNEL"}})
-    if err != nil {
-        log.Errorf("Failed to get PORTCHANNEL: %v", err)
-        return nil, err
-    }
-    portChannelMemberTbl, err := GetMapFromQueries([][]string{{"CONFIG_DB", "PORTCHANNEL_MEMBER"}})
-    if err != nil {
-        log.Errorf("Failed to get PORTCHANNEL_MEMBER: %v", err)
-        return nil, err
-    }
-    vlanMemberTbl, err := GetMapFromQueries([][]string{{"CONFIG_DB", "VLAN_MEMBER"}})
-    if err != nil {
-        log.Errorf("Failed to get VLAN_MEMBER: %v", err)
-        return nil, err
-    }
+	// Read CONFIG_DB tables
+	portTbl, err := GetMapFromQueries([][]string{{"CONFIG_DB", "PORT"}})
+	if err != nil {
+		log.Errorf("Failed to get PORT: %v", err)
+		return nil, err
+	}
+	portChannelTbl, err := GetMapFromQueries([][]string{{"CONFIG_DB", "PORTCHANNEL"}})
+	if err != nil {
+		log.Errorf("Failed to get PORTCHANNEL: %v", err)
+		return nil, err
+	}
+	portChannelMemberTbl, err := GetMapFromQueries([][]string{{"CONFIG_DB", "PORTCHANNEL_MEMBER"}})
+	if err != nil {
+		log.Errorf("Failed to get PORTCHANNEL_MEMBER: %v", err)
+		return nil, err
+	}
+	vlanMemberTbl, err := GetMapFromQueries([][]string{{"CONFIG_DB", "VLAN_MEMBER"}})
+	if err != nil {
+		log.Errorf("Failed to get VLAN_MEMBER: %v", err)
+		return nil, err
+	}
 
-    // Exclude LAG members from standalone ports
-    var ports []string
-    for port := range portTbl {
-        if !IsInterfaceInPortchannel(portChannelMemberTbl, port) {
-            ports = append(ports, port)
-        }
-    }
-    var portchannels []string
-    for pc := range portChannelTbl {
-        portchannels = append(portchannels, pc)
-    }
-    keys := append(ports, portchannels...)
-    keys = natsortInterfaces(keys)
+	// Exclude LAG members from standalone ports
+	var ports []string
+	for port := range portTbl {
+		if !IsInterfaceInPortchannel(portChannelMemberTbl, port) {
+			ports = append(ports, port)
+		}
+	}
+	var portchannels []string
+	for pc := range portChannelTbl {
+		portchannels = append(portchannels, pc)
+	}
+	keys := append(ports, portchannels...)
+	keys = natsortInterfaces(keys)
 
-    // Optionally filter by interface
-    if intf != "" {
-        found := false
-        for _, k := range keys {
-            if k == intf {
-                found = true
-                keys = []string{intf}
-                break
-            }
-        }
-        if !found {
-            return nil, fmt.Errorf("Got unexpected extra argument %s", intf)
-        }
-    }
+	// Optionally filter by interface
+	if intf != "" {
+		found := false
+		for _, k := range keys {
+			if k == intf {
+				found = true
+				keys = []string{intf}
+				break
+			}
+		}
+		if !found {
+			return nil, fmt.Errorf("Got unexpected extra argument %s", intf)
+		}
+	}
 
-    // Emit switchportStatus
-    switchportStatus := make([]map[string]string, 0, len(keys))
-    for _, k := range keys {
-        mode := GetInterfaceSwitchportMode(portTbl, portChannelTbl, vlanMemberTbl, k)
+	// Emit switchportStatus
+	switchportStatus := make([]map[string]string, 0, len(keys))
+	for _, k := range keys {
+		mode := GetInterfaceSwitchportMode(portTbl, portChannelTbl, vlanMemberTbl, k)
 
-        switchportStatus = append(switchportStatus, map[string]string{
-            "Interface": GetInterfaceNameForDisplay(k),
-            "Mode":      mode,
-        })
-    }
+		switchportStatus = append(switchportStatus, map[string]string{
+			"Interface": GetInterfaceNameForDisplay(k),
+			"Mode":      mode,
+		})
+	}
 
-    return json.Marshal(switchportStatus)
+	return json.Marshal(switchportStatus)
 }
 
 // IsInterfaceInPortchannel reports whether interfaceName is a member of any portchannel.
 func IsInterfaceInPortchannel(portchannelMemberTable map[string]interface{}, interfaceName string) bool {
-    if portchannelMemberTable == nil || interfaceName == "" {
-        return false
-    }
-    for k := range portchannelMemberTable {
-        _, member, ok := SplitCompositeKey(k)
-    if ok && member == interfaceName {
-            return true
-        }
-    }
-    return false
+	if portchannelMemberTable == nil || interfaceName == "" {
+		return false
+	}
+	for k := range portchannelMemberTable {
+		_, member, ok := SplitCompositeKey(k)
+		if ok && member == interfaceName {
+			return true
+		}
+	}
+	return false
 }

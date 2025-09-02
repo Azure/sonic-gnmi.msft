@@ -208,6 +208,11 @@ func init() {
 		nil,
 	)
 	sdc.RegisterCliPath(
+		[]string{"SHOW", "lldp", "neighbors"},
+		getLLDPNeighbors,
+		nil,
+	)
+	sdc.RegisterCliPath(
 		[]string{"SHOW", "ipv6", "bgp", "network"},
 		getIPv6BGPNetwork,
 		nil,

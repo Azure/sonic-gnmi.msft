@@ -220,6 +220,14 @@ func init() {
 		nil,
 	)
 	sdc.RegisterCliPath(
+		[]string{"SHOW", "ipv6", "bgp", "network"},
+		getIPv6BGPNetwork,
+		nil,
+		showCmdOptionIPV6Address,
+		showCmdOptionInfoTypeForBgpNetwork,
+		sdc.UnimplementedOption(showCmdOptionNamespace),
+	)
+	sdc.RegisterCliPath(
 		[]string{"SHOW", "uptime"},
 		getUptime,
 		nil,

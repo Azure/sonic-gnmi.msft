@@ -3,7 +3,6 @@ package show_client
 import (
 	"encoding/json"
 	"net"
-	"sort"
 	"strings"
 
 	log "github.com/golang/glog"

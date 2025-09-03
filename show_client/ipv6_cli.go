@@ -4,9 +4,13 @@ import (
 	"encoding/json"
 	"fmt"
 	"net"
+	"sort"
+	"strings"
 
 	log "github.com/golang/glog"
 	sdc "github.com/sonic-net/sonic-gnmi/sonic_data_client"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 )
 
 type IPv6BGPSummaryResponse struct {
@@ -279,4 +283,73 @@ func getIPv6BGPNeighborsHandler(options sdc.OptionMap) ([]byte, error) {
 		log.Errorf("Invalid info_type: %v", info_type)
 		return nil, fmt.Errorf("Invalid info_type: %v", info_type)
 	}
+}
+
+// Gets device ports including physical ports, port channel and vlan's ipv6_use_link_local_only configuration.
+// Returns JSON content consists of port name and link local setting.
+func getPortsIpv6LinkLocalMode(options sdc.OptionMap) ([]byte, error) {
+	type ItfLinkLocalMode struct {
+		Port string `json:"port"`
+		Mode string `json:"mode"`
+	}
+	var itfLinkLocalModeData []ItfLinkLocalMode
+
+	// Target config db contains port and link local settings.
+	tableInterfaceTypeMaps := map[string]string{
+		"PORT":        "INTERFACE",
+		"PORTCHANNEL": "PORTCHANNEL_INTERFACE",
+		"VLAN":        "VLAN_INTERFACE",
+	}
+
+	for table, interfaceType := range tableInterfaceTypeMaps {
+		portQueries := [][]string{
+			{ConfigDb, table},
+		}
+		//Gets target port names.
+		ports, err := GetMapFromQueries(portQueries)
+		if err != nil {
+			log.Errorf("Unable to pull data for queries %v, got err %v", portQueries, err)
+			return nil, err
+		}
+
+		//Gets traget port settings.
+		itfQueries := [][]string{
+			{ConfigDb, interfaceType},
+		}
+		itfs, err := GetMapFromQueries(itfQueries)
+		if err != nil {
+			log.Errorf("Unable to pull data for queries %v, got err %v", itfQueries, err)
+			return nil, err
+		}
+		// Gets link local only setting by checking each port's ipv6_use_link_local_only property which is disabled by default.
+		for port, _ := range ports {
+			if itf, ok := itfs[port]; ok {
+				if itfData, ok := itf.(map[string]interface{}); ok {
+					if linkLocal, ok := itfData["ipv6_use_link_local_only"]; ok {
+						if linkLocalStr, ok := linkLocal.(string); ok && strings.Contains(linkLocalStr, "enable") {
+							itfLinkLocalModeData = append(itfLinkLocalModeData, ItfLinkLocalMode{Port: port, Mode: "Enabled"})
+							continue
+						}
+					}
+				}
+			}
+			itfLinkLocalModeData = append(itfLinkLocalModeData, ItfLinkLocalMode{Port: port, Mode: "Disabled"})
+		}
+	}
+	// Sorting to build a stable result.
+	sort.Slice(itfLinkLocalModeData, func(i, j int) bool {
+		return itfLinkLocalModeData[i].Port < itfLinkLocalModeData[j].Port
+	})
+
+	if len(itfLinkLocalModeData) == 0 {
+		log.Errorf("Unable to pull data for PORT table.")
+		return nil, status.Error(codes.NotFound, "PORT table is empty.")
+	}
+
+	jsonResponse, err := json.Marshal(itfLinkLocalModeData)
+	if err != nil {
+		log.Errorf("Unable to create json data from PORT table %v, got err %v", itfLinkLocalModeData, err)
+		return nil, err
+	}
+	return jsonResponse, nil
 }

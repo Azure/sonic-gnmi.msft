@@ -24,6 +24,7 @@ const AppDBPortChannelTable = "LAG_TABLE"
 const DefaultEmptyString = ""
 const StateDb = "STATE_DB"
 const ConfigDb = "CONFIG_DB"
+const ApplDb = "APPL_DB"
 const ConfigDbPort = "PORT"
 const FDBTable = "FDB_TABLE"
 const VlanSubInterfaceSeparator = '.'
@@ -408,4 +409,11 @@ func ContainsString(list []string, target string) bool {
 		}
 	}
 	return false
+}
+
+func Capitalize(s string) string {
+	if len(s) == 0 {
+		return s
+	}
+	return strings.ToUpper(s[:1]) + strings.ToLower(s[1:])
 }

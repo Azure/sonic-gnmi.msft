@@ -164,7 +164,7 @@ func TestGetPortsIpv6LinkLocalMode(t *testing.T) {
 		testInit       func()
 	}{
 		{
-			desc:       "query SHOW ipv6 ink-local-mode read error",
+			desc:       "query SHOW ipv6 link-local-mode no ports",
 			pathTarget: "SHOW",
 			textPbPath: `
 				elem: <name: "ipv6" >

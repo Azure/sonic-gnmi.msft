@@ -311,10 +311,7 @@ func getPortsIpv6LinkLocalMode(options sdc.OptionMap) ([]byte, error) {
 			log.Errorf("Unable to pull data for queries %v, got err %v", portQueries, err)
 			return nil, err
 		}
-		if len(ports) == 0 {
-			log.Errorf("Unable to pull data for queries %v, got err %v", portQueries, err)
-			return nil, status.Error(codes.NotFound, "PORT table is empty.")
-		}
+
 		//Gets traget port settings.
 		itfQueries := [][]string{
 			{ConfigDb, interfaceType},
@@ -343,6 +340,11 @@ func getPortsIpv6LinkLocalMode(options sdc.OptionMap) ([]byte, error) {
 	sort.Slice(itfLinkLocalModeData, func(i, j int) bool {
 		return itfLinkLocalModeData[i].Port < itfLinkLocalModeData[j].Port
 	})
+
+	if len(itfLinkLocalModeData) == 0 {
+		log.Errorf("Unable to pull data for PORT table.")
+		return nil, status.Error(codes.NotFound, "PORT table is empty.")
+	}
 
 	jsonResponse, err := json.Marshal(itfLinkLocalModeData)
 	if err != nil {

@@ -92,6 +92,12 @@ func init() {
 		showCmdOptionInterface,
 	)
 	sdc.RegisterCliPath(
+		[]string{"SHOW", "interface", "transceiver", "lpmode"},
+		getInterfaceTransceiverLpmode,
+		nil,
+		showCmdOptionInterface,
+	)
+	sdc.RegisterCliPath(
 		[]string{"SHOW", "interface", "status"},
 		getInterfaceStatus,
 		nil,

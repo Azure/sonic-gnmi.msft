@@ -2,6 +2,7 @@ package show_client
 
 import (
 	"encoding/json"
+	"strings"
 
 	log "github.com/golang/glog"
 	sdc "github.com/sonic-net/sonic-gnmi/sonic_data_client"
@@ -92,4 +93,62 @@ func getInterfaceTransceiverPresence(options sdc.OptionMap) ([]byte, error) {
 
 	log.V(6).Infof("Transceiver presence status: %v", status)
 	return json.Marshal(status)
+}
+
+// admin@str3-t0-8102-smartswitch-01:~$ show interfaces transceiver lpmode
+// Port         Low-power Mode
+// -----------  ----------------
+// Ethernet0    Off
+// Ethernet8    Off
+// admin@str3-t0-8102-smartswitch-01:~$ sudo sfputil show lpmode -p Ethernet160
+// Port         Low-power Mode
+// -----------  ----------------
+// Ethernet160  Off
+func getInterfaceTransceiverLpmode(options sdc.OptionMap) ([]byte, error) {
+	intf, _ := options["interface"].String()
+
+	cmdStr := "sudo sfputil show lpmode"
+	if intf != "" {
+		cmdStr += " -p " + intf
+	}
+
+	out, err := GetDataFromHostCommand(cmdStr)
+	if err != nil {
+		log.Errorf("Unable to successfully execute command %v, got err %v", cmdStr, err)
+		return nil, err
+	}
+
+	lpmode := make(map[string]string)
+	lines := strings.Split(out, "\n")
+	headerSkipped := false
+	for _, raw := range lines {
+		line := strings.TrimSpace(raw)
+		if line == "" {
+			continue
+		}
+		if !headerSkipped { // header line
+			headerSkipped = true
+			continue
+		}
+		fields := strings.Fields(line)
+		if len(fields) < 2 {
+			continue
+		}
+		// Skip separator line like: "-----------  ----------------"
+		if strings.Trim(fields[0], "-") == "" {
+			continue
+		}
+		port := fields[0]
+		status := fields[len(fields)-1]
+		lpmode[port] = status
+	}
+
+	if intf != "" {
+		if _, ok := lpmode[intf]; !ok {
+			// Need to check
+			lpmode[intf] = "Unknown"
+		}
+	}
+
+	return json.Marshal(lpmode)
 }

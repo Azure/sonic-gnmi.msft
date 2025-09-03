@@ -16,8 +16,11 @@ import (
 	"gopkg.in/yaml.v2"
 )
 
+const ConfigDBPortTable = "PORT"
 const AppDBPortTable = "PORT_TABLE"
 const StateDBPortTable = "PORT_TABLE"
+const ConfigDBPortChannelTable = "PORTCHANNEL"
+const AppDBPortChannelTable = "LAG_TABLE"
 const DefaultEmptyString = ""
 const StateDb = "STATE_DB"
 const ConfigDb = "CONFIG_DB"

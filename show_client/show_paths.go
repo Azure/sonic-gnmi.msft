@@ -68,6 +68,8 @@ func init() {
 		getInterfaceFecStatus,
 		nil,
 		showCmdOptionInterface,
+		sdc.UnimplementedOption(showCmdOptionNamespace),
+		sdc.UnimplementedOption(showCmdOptionDisplay),
 	)
 	sdc.RegisterCliPath(
 		[]string{"SHOW", "watermark", "telemetry", "interval"},
@@ -88,6 +90,14 @@ func init() {
 		getInterfaceTransceiverPresence,
 		nil,
 		showCmdOptionInterface,
+	)
+	sdc.RegisterCliPath(
+		[]string{"SHOW", "interface", "status"},
+		getInterfaceStatus,
+		nil,
+		showCmdOptionInterface,
+		sdc.UnimplementedOption(showCmdOptionNamespace),
+		sdc.UnimplementedOption(showCmdOptionDisplay),
 	)
 	sdc.RegisterCliPath(
 		[]string{"SHOW", "headroom_pool", "watermark"},
@@ -215,6 +225,11 @@ func init() {
 		nil,
 	)
 	sdc.RegisterCliPath(
+		[]string{"SHOW", "system-memory"},
+		getSystemMemory,
+    nil,
+	)
+  sdc.RegisterCliPath(
 		[]string{"SHOW", "lldp", "neighbors"},
 		getLLDPNeighbors,
 		nil,
@@ -232,6 +247,18 @@ func init() {
 	sdc.RegisterCliPath(
 		[]string{"SHOW", "processes", "summary"},
 		getProcessesSummary,
+	)
+	sdc.RegisterCliPath(
+		[]string{"SHOW", "ipv6", "bgp", "network"},
+		getIPv6BGPNetwork,
+		nil,
+		showCmdOptionIPV6Address,
+		showCmdOptionInfoTypeForBgpNetwork,
+		sdc.UnimplementedOption(showCmdOptionNamespace),
+	)
+	sdc.RegisterCliPath(
+		[]string{"SHOW", "uptime"},
+		getUptime,
 		nil,
 		showCmdOptionVerbose,
 	)

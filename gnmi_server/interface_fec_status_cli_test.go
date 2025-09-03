@@ -117,7 +117,9 @@ func TestGetShowInterfaceFecStatus(t *testing.T) {
 				elem: <name: "fec" >
 				elem: <name: "status" key: { key: "interface" value: "Ethernet10" } >
 			`,
-			wantRetCode: codes.NotFound,
+			wantRetCode: codes.OK,
+			wantRespVal: []byte(emptyResp),
+			valTest:     true,
 			testInit: func() {
 				FlushDataSet(t, ConfigDbNum)
 				FlushDataSet(t, ApplDbNum)

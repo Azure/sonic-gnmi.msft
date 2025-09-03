@@ -50,7 +50,7 @@ func getVersion(options sdc.OptionMap) ([]byte, error) {
 		log.Errorf("Failed to get chassis info: %v", errorChassisInfo)
 		return nil, errorChassisInfo
 	}
-	uptime := GetUptime()
+	uptime := GetUptime(nil)
 	sysDate := time.Now()
 	var jsonDockerInfoBuf bytes.Buffer
 	if errDockerInfo := json.Indent(&jsonDockerInfoBuf, []byte(GetDockerInfo()), "", " "); errDockerInfo != nil {

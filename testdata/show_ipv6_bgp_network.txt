@@ -1,0 +1,32 @@
+BGP table version is 6405, local router ID is 10.1.0.32, vrf id 0
+Default local pref 100, local AS 64601
+Status codes:  s suppressed, d damped, h history, * valid, > best, = multipath,
+               i internal, r RIB-failure, S Stale, R Removed
+Nexthop codes: @NNN nexthop's vrf id, < announce-nh-self
+Origin codes:  i - IGP, e - EGP, ? - incomplete
+RPKI validation codes: V valid, I invalid, N Not found
+
+    Network          Next Hop            Metric LocPrf Weight Path
+ *= ::/0             fc00::12                               0 64802 65534 6666 6667 i
+ *>                  fc00::2                                0 64802 65534 6666 6667 i
+ *=                  fc00::1a                               0 64802 65534 6666 6667 i
+ *=                  fc00::a                                0 64802 65534 6666 6667 i
+ *> 2064:100::1/128  fc00::2                                0 64802 i
+ *> 2064:100::2/128  fc00::a                                0 64802 i
+ *> 2064:100::3/128  fc00::12                               0 64802 i
+ *> 2064:100::4/128  fc00::1a                               0 64802 i
+ *= 20c0:a808::/64   fc00::12                               0 64802 64602 i
+ *>                  fc00::2                                0 64802 64602 i
+ *=                  fc00::1a                               0 64802 64602 i
+ *=                  fc00::a                                0 64802 64602 i
+ *= 20c0:a808:0:80::/64
+                    fc00::12                               0 64802 64602 i
+ *>                  fc00::2                                0 64802 64602 i
+ *=                  fc00::1a                               0 64802 64602 i
+ *=                  fc00::a                                0 64802 64602 i
+ *= 20c0:a810::/64   fc00::12                               0 64802 64603 i
+ *>                  fc00::2                                0 64802 64603 i
+ *=                  fc00::1a                               0 64802 64603 i
+ *=                  fc00::a                                0 64802 64603 i
+
+Displayed 8 routes and 20 total paths

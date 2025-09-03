@@ -2,6 +2,7 @@ package show_client
 
 import (
 	"fmt"
+	"net"
 	"os"
 	"os/exec"
 	"sort"
@@ -399,6 +400,20 @@ func getOrDefault[T any](m map[string]T, key string, def T) T {
 		return v
 	}
 	return def
+}
+
+// matchIPFamily checks if prefix belongs to desired family
+func matchIPFamily(prefix string, wantIPv6 bool) bool {
+	host := prefix
+	if i := strings.IndexByte(prefix, '/'); i >= 0 {
+		host = prefix[:i]
+	}
+	ip := net.ParseIP(host)
+	if ip == nil {
+		return false
+	}
+	isV6 := ip.To4() == nil
+	return isV6 == wantIPv6
 }
 
 // ContainsString returns true if target is present in list.

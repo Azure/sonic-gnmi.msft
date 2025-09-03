@@ -2,7 +2,6 @@ package show_client
 
 import (
 	"encoding/json"
-	"fmt"
 	"strings"
 
 	log "github.com/golang/glog"
@@ -28,14 +27,6 @@ func getIPv6Fib(options sdc.OptionMap) ([]byte, error) {
 	if ov, ok := options[OptionKeyIpAddress]; ok {
 		if v, ok2 := ov.String(); ok2 {
 			filter = strings.TrimSpace(v)
-		}
-	}
-
-	// Validate filter is IPv6 when provided
-	if filter != "" {
-		_, prefix := parseFibVrf(filter)
-		if !matchIPFamily(prefix, true) { // true -> IPv6
-			return nil, fmt.Errorf("invalid IPv6 ipaddress filter: %s", filter)
 		}
 	}
 

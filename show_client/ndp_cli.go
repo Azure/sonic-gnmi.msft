@@ -119,6 +119,15 @@ func getNDP(options sdc.OptionMap) ([]byte, error) {
 	intf, _ := options["interface"].String()
 	ip, _ := options["ipaddress"].String()
 
+	queries := [][]string{
+		{"ASIC_DB", "ASIC_STATE", "SAI_OBJECT_TYPE_BRIDGE_PORT"},
+	}
+	brPortStr, err := GetMapFromQueries(queries)
+	if err != nil {
+		log.Errorf("Failed to get SAI_OBJECT_TYPE_BRIDGE_PORT list from ASIC_DB: %v", err)
+		return nil, err
+	}
+	log.Infof("data from query: %v", brPortStr)
 	cmd := baseNdpCmd
 	if ip != "" {
 		cmd += " " + ip
@@ -136,11 +145,13 @@ func getNDP(options sdc.OptionMap) ([]byte, error) {
 
 	// If cmdOutput is empty
 	if strings.TrimSpace(cmdOutput) == "" {
-		return []byte(`{"total_entries":0,"entries":[]}`), nil
+		return []byte(`{"TotalEntries":0,"Entries":[]}`), nil
 	}
 
+	log.Infof("ndp output: %s", cmdOutput)
 	// Parse the output
 	table := parseNDPOutput(cmdOutput)
+	log.Infof("parsed table: %v", table)
 	// Convert to JSON
 	jsonData, err := js.Marshal(table)
 	if err != nil {

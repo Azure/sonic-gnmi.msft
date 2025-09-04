@@ -18,7 +18,7 @@ import (
 const (
 	interfaceOption        = " -i "
 	interfaceDescStartLine = "Interface"
-	descDataSize           = 5
+	descriptionDataSize    = 5
 )
 
 type interfaceDescriptionDetails struct {
@@ -286,7 +286,6 @@ func loadDescriptionFromCmdOutput(data string) interfaceDescription {
 	for scanner.Scan() {
 		line := scanner.Text()
 		if !processStart {
-			// Find the line with the header, e.g., "PID USER..."
 			if strings.HasPrefix(strings.TrimSpace(line), interfaceDescStartLine) {
 				processStart = true
 				scanner.Scan()
@@ -295,7 +294,7 @@ func loadDescriptionFromCmdOutput(data string) interfaceDescription {
 		}
 
 		fields := strings.Fields(line)
-		if len(fields) < descDataSize {
+		if len(fields) < descriptionDataSize {
 			continue
 		}
 
@@ -319,7 +318,7 @@ func getInterfacesDescription(options sdc.OptionMap) ([]byte, error) {
 		} else {
 			cmdForInterfaceDesc += interfaceOption + intf
 		}
-    }
+	}
 
 	interfaceDescStr, err := GetDataFromHostCommand(cmdForInterfaceDesc)
 	if err != nil {

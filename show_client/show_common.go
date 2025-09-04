@@ -234,11 +234,11 @@ func RemapAliasToPortNameForQueues(queueData map[string]interface{}) map[string]
 
 func GetNameForInterfaceAlias(intfAlias string) string {
 	aliasMap := sdc.AliasToPortNameMap()
-    if name, ok := aliasMap[intfAlias]; ok {
-        return name
-    } else {
-        return ""
-    }
+	if name, ok := aliasMap[intfAlias]; ok {
+		return name
+	} else {
+		return ""
+	}
 }
 
 func GetValueOrDefault(values map[string]interface{}, key string, defaultValue string) string {

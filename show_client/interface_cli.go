@@ -1,7 +1,7 @@
 package show_client
 
 import (
-    "bufio"
+	"bufio"
 	"encoding/json"
 	"fmt"
 	"strconv"
@@ -15,7 +15,6 @@ import (
 )
 
 const (
-	jsonFlag               = " -j"
 	interfaceOption        = " -i "
 	interfaceDescStartLine = "Interface"
 	descDataSize           = 5
@@ -302,7 +301,7 @@ func loadDescriptionFromCmdOutput(data string) interfaceDescription {
 			Description: fields[4],
 		}
 	}
-    return description
+	return description
 }
 
 func getInterfacesDescription(options sdc.OptionMap) ([]byte, error) {
@@ -319,13 +318,12 @@ func getInterfacesDescription(options sdc.OptionMap) ([]byte, error) {
 
 	fmt.Println("===== Vijay ===")
 	fmt.Println(cmdForInterfaceDesc)
-	cmdForInterfaceDesc += jsonFlag
 
 	fmt.Println("===== Vijay 2 ===")
 	fmt.Println(cmdForInterfaceDesc)
 	interfaceDescStr, err := GetDataFromHostCommand(cmdForInterfaceDesc)
 	if err != nil {
-		fmt.Println(interfaceDesc)
+		fmt.Println(interfaceDescStr)
 		return []byte(""), err
 	}
 

@@ -44,12 +44,11 @@ func getServices(_ sdc.OptionMap) ([]byte, error) {
 	fmt.Printf("Found docker services: %s", processesStr)
 	dockerServices := make([]dockerService, len(serviceNames))
 	for index, serviceName := range serviceNames {
-		cmd = fmt.Sprintf("sudo docker exec %s ps aux --no-headers", serviceName)
+		cmd = fmt.Sprintf("sudo docker exec %s ps aux --no-headers | sed '$d'", serviceName)
 		processOutput, err := GetDataFromHostCommand(cmd)
 		if err != nil {
-			errorMessage := fmt.Sprintf("Failed to run command %q for service %s: %v", cmd, serviceName, err)
-			log.Errorf(errorMessage)
-			return nil, errors.New(errorMessage)
+			log.Errorf("Failed to run command %q for service %s: %v", cmd, serviceName, err)
+			continue
 		}
 
 		processOutput = strings.ReplaceAll(processOutput, "\r\n", "\n")

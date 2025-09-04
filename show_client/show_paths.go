@@ -298,7 +298,8 @@ func init() {
 		getInterfacesDescription,
 		nil,
 		sdc.UnimplementedOption(showCmdOptionNamespace),
-    sdc.UnimplementedOption(showCmdOptionDisplay),
-		showCmdOptionInterfaces,
+		sdc.UnimplementedOption(showCmdOptionDisplay),
+		showCmdOptionInterface,
+		showCmdOptionVerbose,
 	)
 }

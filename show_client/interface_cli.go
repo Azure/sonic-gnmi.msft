@@ -319,23 +319,14 @@ func getInterfacesDescription(options sdc.OptionMap) ([]byte, error) {
 		} else {
 			cmdForInterfaceDesc += interfaceOption + intf
 		}
-	}
+    }
 
-	fmt.Println("===== Vijay ===")
-	fmt.Println(cmdForInterfaceDesc)
-
-	fmt.Println("===== Vijay 2 ===")
-	fmt.Println(cmdForInterfaceDesc)
 	interfaceDescStr, err := GetDataFromHostCommand(cmdForInterfaceDesc)
 	if err != nil {
-		fmt.Println(interfaceDescStr)
 		return []byte(""), err
 	}
 
 	interfaceDesc := loadDescriptionFromCmdOutput(interfaceDescStr)
-
-	fmt.Println(interfaceDesc)
-	fmt.Println("===== Vijay 3 ===")
 
 	return json.Marshal(interfaceDesc)
 }

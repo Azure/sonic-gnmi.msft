@@ -28,9 +28,15 @@ const (
 	showCmdOptionInfoTypeDesc      = "[info_type=TEXT] Filter by information type"
 )
 
+// Option keys
+const (
+	OptionKeyIpAddress = "ipaddress"
+	OptionKeyVerbose   = "verbose"
+)
+
 var (
 	showCmdOptionVerbose = sdc.NewShowCmdOption(
-		"verbose",
+		OptionKeyVerbose,
 		showCmdOptionVerboseDesc,
 		sdc.BoolValue,
 	)
@@ -159,9 +165,8 @@ var (
 		"received-routes",
 	)
 
-	// show ipv6 bgp network specific options
 	showCmdOptionIPV6Address = sdc.NewShowCmdOption(
-		"ipaddress",
+		OptionKeyIpAddress,
 		showCmdOptionIPV6AddressDesc,
 		sdc.StringValue,
 	)

@@ -93,7 +93,7 @@ func getMmuConfig(options sdc.OptionMap) ([]byte, error) {
 		Profiles:                profiles,
 	}
 
-	if v, ok := options["verbose"].Bool(); ok && v {
+	if v, ok := options[OptionKeyVerbose].Bool(); ok && v {
 		resp.Totals = &MmuTotals{
 			Pools:    len(pools),
 			Profiles: len(profiles),

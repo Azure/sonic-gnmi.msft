@@ -186,6 +186,18 @@ func init() {
 		showCmdOptionVerbose,
 	)
 	sdc.RegisterCliPath(
+		[]string{"SHOW", "ipv6", "link-local-mode"},
+		getPortsIpv6LinkLocalMode,
+		nil,
+		showCmdOptionVerbose,
+	)
+	sdc.RegisterCliPath(
+		[]string{"SHOW", "ipv6", "fib"},
+		getIPv6Fib,
+		nil,
+		showCmdOptionIPV6Address,
+	)
+	sdc.RegisterCliPath(
 		[]string{"SHOW", "mac"},
 		getMacTable,
 		map[string]string{
@@ -235,6 +247,22 @@ func init() {
 		nil,
 	)
 	sdc.RegisterCliPath(
+		[]string{"SHOW", "processes"},
+		getProcessesRoot,
+		map[string]string{
+			"summary": "show/processes/summary",
+			"cpu":     "show/processes/cpu",
+			"mem":     "show/processes/mem",
+		},
+		showCmdOptionVerbose,
+	)
+	sdc.RegisterCliPath(
+		[]string{"SHOW", "processes", "summary"},
+		getProcessesSummary,
+		nil,
+		showCmdOptionVerbose,
+	)
+	sdc.RegisterCliPath(
 		[]string{"SHOW", "ipv6", "bgp", "network"},
 		getIPv6BGPNetwork,
 		nil,
@@ -247,6 +275,17 @@ func init() {
 		getUptime,
 		nil,
 		showCmdOptionVerbose,
+	)
+	sdc.RegisterCliPath(
+		[]string{"SHOW", "interface", "flap"},
+		getInterfaceFlap,
+		nil,
+		showCmdOptionInterface,
+	)
+	sdc.RegisterCliPath(
+		[]string{"SHOW", "interface", "neighbor", "expected"},
+		getInterfaceNeighborExpected,
+		nil,
 	)
 	sdc.RegisterCliPath(
 		[]string{"SHOW", "services"},

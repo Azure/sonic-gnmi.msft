@@ -1,0 +1,6 @@
+{
+  "DEVICE_NEIGHBOR|Ethernet4": {
+    "name": "DEVICE02T1",
+    "port": "Ethernet9"
+  }
+}

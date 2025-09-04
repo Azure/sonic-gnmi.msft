@@ -2,6 +2,7 @@ package show_client
 
 import (
 	"fmt"
+	"net"
 	"os"
 	"os/exec"
 	"sort"
@@ -24,6 +25,7 @@ const AppDBPortChannelTable = "LAG_TABLE"
 const DefaultEmptyString = ""
 const StateDb = "STATE_DB"
 const ConfigDb = "CONFIG_DB"
+const ApplDb = "APPL_DB"
 const ConfigDbPort = "PORT"
 const FDBTable = "FDB_TABLE"
 const VlanSubInterfaceSeparator = '.'
@@ -400,6 +402,20 @@ func getOrDefault[T any](m map[string]T, key string, def T) T {
 	return def
 }
 
+// matchIPFamily checks if prefix belongs to desired family
+func matchIPFamily(prefix string, wantIPv6 bool) bool {
+	host := prefix
+	if i := strings.IndexByte(prefix, '/'); i >= 0 {
+		host = prefix[:i]
+	}
+	ip := net.ParseIP(host)
+	if ip == nil {
+		return false
+	}
+	isV6 := ip.To4() == nil
+	return isV6 == wantIPv6
+}
+
 // ContainsString returns true if target is present in list.
 func ContainsString(list []string, target string) bool {
 	for _, s := range list {
@@ -408,4 +424,11 @@ func ContainsString(list []string, target string) bool {
 		}
 	}
 	return false
+}
+
+func Capitalize(s string) string {
+	if len(s) == 0 {
+		return s
+	}
+	return strings.ToUpper(s[:1]) + strings.ToLower(s[1:])
 }

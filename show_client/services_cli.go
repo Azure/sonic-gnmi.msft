@@ -44,8 +44,10 @@ func getServices(_ sdc.OptionMap) ([]byte, error) {
 	fmt.Printf("Found docker services: %s", processesStr)
 	dockerServices := make([]dockerService, len(serviceNames))
 	for index, serviceName := range serviceNames {
-		cmd = fmt.Sprintf("sudo docker exec %s ps aux --no-headers | sed '$d'", serviceName)
+		log.V(2).Infof("Processing service %s", serviceName)
+		cmd = fmt.Sprintf(`bash -o pipefail -c "sudo docker exec %s ps aux --no-headers | sed '$d'"`, serviceName)
 		processOutput, err := GetDataFromHostCommand(cmd)
+		log.V(2).Infof("Command output: %s", processOutput)
 		if err != nil {
 			log.Errorf("Failed to run command %q for service %s: %v", cmd, serviceName, err)
 			continue
@@ -54,10 +56,11 @@ func getServices(_ sdc.OptionMap) ([]byte, error) {
 		processOutput = strings.ReplaceAll(processOutput, "\r\n", "\n")
 		processLines := strings.Split(strings.TrimSpace(processOutput), "\n")
 
-		processes := make([]serviceProcess, len(processLines))
-		for i, line := range processLines {
+		var processes []serviceProcess
+		for _, line := range processLines {
 			fields := strings.Fields(line)
 			if len(fields) < 11 {
+				log.Errorf("Invalid process line %q for service %s", line, serviceName)
 				continue
 			}
 			process := serviceProcess{
@@ -74,11 +77,13 @@ func getServices(_ sdc.OptionMap) ([]byte, error) {
 				Command:       strings.Join(fields[10:], " "),
 			}
 
-			processes[i] = process
+			processes = append(processes, process)
 		}
 
-		dockerServices[index].DockerProcessName = serviceName
-		dockerServices[index].Processes = processes
+		if len(processes) > 0 {
+			dockerServices[index].DockerProcessName = serviceName
+			dockerServices[index].Processes = processes
+		}
 	}
 
 	return json.Marshal(dockerServices)

@@ -1,6 +1,7 @@
 package show_client
 
 import (
+    "bufio"
 	"encoding/json"
 	"fmt"
 	"strconv"
@@ -12,6 +13,22 @@ import (
 	log "github.com/golang/glog"
 	sdc "github.com/sonic-net/sonic-gnmi/sonic_data_client"
 )
+
+const (
+	jsonFlag               = " -j"
+	interfaceOption        = " -i "
+	interfaceDescStartLine = "Interface"
+	descDataSize           = 5
+)
+
+type interfaceDescriptionDetails struct {
+	Admin       string `json:"Admin"`
+	Alias       string `json:"Alias"`
+	Description string `json:"Description"`
+	Oper        string `json:"Oper"`
+}
+
+type interfaceDescription map[string]interfaceDescriptionDetails
 
 type InterfaceCountersResponse struct {
 	State  string
@@ -27,14 +44,6 @@ type InterfaceCountersResponse struct {
 	TxErr  string
 	TxDrp  string
 	TxOvr  string
-}
-
-type interfaceDescription struct {
-	Interface   string `json:"interface"`
-	Operation   string `json:"oper"`
-	Admin       string `json:"admin"`
-	Alias       string `json:"alias"`
-	Description string `json:"description"`
 }
 
 func calculateByteRate(rate string) string {
@@ -265,17 +274,67 @@ var allPortErrors = [][]string{
 	{"no_rx_reachability_count", "no_rx_reachability_time"},
 }
 
+func loadDescriptionFromCmdOutput(data string) interfaceDescription {
+	scanner := bufio.NewScanner(strings.NewReader(data))
+	var processStart bool
+	description := make(interfaceDescription)
+
+	for scanner.Scan() {
+		line := scanner.Text()
+		if !processStart {
+			// Find the line with the header, e.g., "PID USER..."
+			if strings.HasPrefix(strings.TrimSpace(line), interfaceDescStartLine) {
+				processStart = true
+				scanner.Scan()
+			}
+			continue
+		}
+
+		fields := strings.Fields(line)
+		if len(fields) < descDataSize {
+			continue
+		}
+
+		description[fields[0]] = interfaceDescriptionDetails{
+			Oper:        fields[1],
+			Admin:       fields[2],
+			Alias:       fields[3],
+			Description: fields[4],
+		}
+	}
+    return description
+}
+
 func getInterfacesDescription(options sdc.OptionMap) ([]byte, error) {
-	cmdForInterfaceDesc = "intfutil -c description"
+	cmdForInterfaceDesc := "intfutil -c description"
 	intf, ok := options["interface"].String()
 	if ok {
-		cmdForInterfaceDesc += interfaceOption + intf
+		interfaceName := GetNameForInterfaceAlias(intf)
+		if interfaceName != "" {
+			cmdForInterfaceDesc += interfaceOption + interfaceName
+		} else {
+			cmdForInterfaceDesc += interfaceOption + intf
+		}
 	}
 
-	interfaceDesc, err := GetDataFromHostCommand(cmdForInterfaceDesc)
+	fmt.Println("===== Vijay ===")
+	fmt.Println(cmdForInterfaceDesc)
+	cmdForInterfaceDesc += jsonFlag
+
+	fmt.Println("===== Vijay 2 ===")
+	fmt.Println(cmdForInterfaceDesc)
+	interfaceDescStr, err := GetDataFromHostCommand(cmdForInterfaceDesc)
 	if err != nil {
-		return "N/A"
+		fmt.Println(interfaceDesc)
+		return []byte(""), err
 	}
+
+	interfaceDesc := loadDescriptionFromCmdOutput(interfaceDescStr)
+
+	fmt.Println(interfaceDesc)
+	fmt.Println("===== Vijay 3 ===")
+
+	return json.Marshal(interfaceDesc)
 }
 
 func getInterfaceErrors(options sdc.OptionMap) ([]byte, error) {

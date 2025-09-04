@@ -30,6 +30,10 @@ type InterfaceCountersResponse struct {
 	TxOvr  string
 }
 
+type namingModeResponse struct {
+	NamingMode string `json:"naming_mode"`
+}
+
 func calculateByteRate(rate string) string {
 	if rate == defaultMissingCounterValue {
 		return defaultMissingCounterValue
@@ -1265,4 +1269,10 @@ func getInterfaceNeighborExpected(options sdc.OptionMap) ([]byte, error) {
 	}
 
 	return json.Marshal(out)
+}
+
+func getInterfaceNamingMode(options sdc.OptionMap) ([]byte, error) {
+	mode := GetInterfaceNamingMode()
+	namingModeResp := namingModeResponse{NamingMode: mode}
+	return json.Marshal(namingModeResp)
 }

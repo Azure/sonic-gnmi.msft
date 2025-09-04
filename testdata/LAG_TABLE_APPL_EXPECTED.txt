@@ -1,0 +1,8 @@
+{
+  "PortChannel101": {
+    "oper_status": "up"
+  },
+  "PortChannel102": {
+    "oper_status": "down"
+  }
+}

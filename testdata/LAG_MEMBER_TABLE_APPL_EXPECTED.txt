@@ -1,0 +1,8 @@
+{
+  "PortChannel101:Ethernet0": {
+    "status": "enabled"
+  },
+  "PortChannel102:Ethernet0": {
+    "status": "enabled"
+  }
+}

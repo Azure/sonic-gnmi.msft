@@ -1,0 +1,8 @@
+{
+  "PortChannel101": {
+    "runner.active": "true"
+  },
+  "PortChannel102": {
+    "runner.active": "true"
+  }
+}

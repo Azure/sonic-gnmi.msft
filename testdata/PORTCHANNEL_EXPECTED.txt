@@ -1,0 +1,10 @@
+{
+  "PortChannel101": {
+    "admin_status": "up",
+    "mtu": "9100"
+  },
+  "PortChannel102": {
+    "admin_status": "up",
+    "mtu": "9100"
+  }
+}

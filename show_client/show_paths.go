@@ -565,4 +565,9 @@ func init() {
 		0,
 		nil,
 	)
+	sdc.RegisterCliPath(
+		[]string{"SHOW", "interface", "portchannel"},
+		getInterfacePortchannel,
+		nil,
+	)
 }

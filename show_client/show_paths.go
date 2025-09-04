@@ -193,4 +193,10 @@ func init() {
 		nil,
 		showCmdOptionInterface,
 	)
+	sdc.RegisterCliPath(
+		[]string{"SHOW", "memory-usage"},
+		getTopMemoryUsage,
+		nil,
+		showCmdOptionVerbose,
+	)
 }

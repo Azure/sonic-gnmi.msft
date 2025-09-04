@@ -40,6 +40,13 @@ func init() {
 		showCmdOptionDisplay,
 	)
 	sdc.RegisterCliPath(
+		[]string{"SHOW", "ipv6", "bgp", "neighbors"},
+		getIPv6BGPNeighborsHandler,
+		nil,
+		showCmdOptionIPAddress,
+		showCmdOptionInfoType,
+	)
+	sdc.RegisterCliPath(
 		[]string{"SHOW", "interface", "counters"},
 		getInterfaceCounters,
 		nil,
@@ -61,6 +68,8 @@ func init() {
 		getInterfaceFecStatus,
 		nil,
 		showCmdOptionInterface,
+		sdc.UnimplementedOption(showCmdOptionNamespace),
+		sdc.UnimplementedOption(showCmdOptionDisplay),
 	)
 	sdc.RegisterCliPath(
 		[]string{"SHOW", "watermark", "telemetry", "interval"},
@@ -83,13 +92,21 @@ func init() {
 		showCmdOptionInterface,
 	)
 	sdc.RegisterCliPath(
-		[]string{"SHOW", "headroom_pool", "watermark"},
+		[]string{"SHOW", "interface", "status"},
+		getInterfaceStatus,
+		nil,
+		showCmdOptionInterface,
+		sdc.UnimplementedOption(showCmdOptionNamespace),
+		sdc.UnimplementedOption(showCmdOptionDisplay),
+	)
+	sdc.RegisterCliPath(
+		[]string{"SHOW", "headroom-pool", "watermark"},
 		getHeadroomPoolWatermark,
 		nil,
 		sdc.UnimplementedOption(showCmdOptionNamespace),
 	)
 	sdc.RegisterCliPath(
-		[]string{"SHOW", "headroom_pool", "persistent-watermark"},
+		[]string{"SHOW", "headroom-pool", "persistent-watermark"},
 		getHeadroomPoolPersistentWatermark,
 		nil,
 		sdc.UnimplementedOption(showCmdOptionNamespace),
@@ -141,8 +158,8 @@ func init() {
 		getSRv6Stats,
 		nil,
 		showCmdOptionSid,
-  )
-  sdc.RegisterCliPath(
+	)
+	sdc.RegisterCliPath(
 		[]string{"SHOW", "queue", "counters"},
 		getQueueCounters,
 		nil,
@@ -167,6 +184,18 @@ func init() {
 		getIPv6Protocol,
 		nil,
 		showCmdOptionVerbose,
+	)
+	sdc.RegisterCliPath(
+		[]string{"SHOW", "ipv6", "link-local-mode"},
+		getPortsIpv6LinkLocalMode,
+		nil,
+		showCmdOptionVerbose,
+	)
+	sdc.RegisterCliPath(
+		[]string{"SHOW", "ipv6", "fib"},
+		getIPv6Fib,
+		nil,
+		showCmdOptionIPV6Address,
 	)
 	sdc.RegisterCliPath(
 		[]string{"SHOW", "mac"},
@@ -194,12 +223,82 @@ func init() {
 		showCmdOptionInterface,
 	)
 	sdc.RegisterCliPath(
+		[]string{"SHOW", "dropcounters", "counts"},
+		getDropCounters,
+		nil,
+		showCmdOptionGroup,
+		showCmdOptionCounterType,
+		sdc.UnimplementedOption(showCmdOptionNamespace),
+		showCmdOptionVerbose,
+	)
+	sdc.RegisterCliPath(
+		[]string{"SHOW", "dropcounters", "capabilities"},
+		getDropcountersCapabilities,
+		nil,
+	)
+	sdc.RegisterCliPath(
+		[]string{"SHOW", "system-memory"},
+		getSystemMemory,
+		nil,
+	)
+	sdc.RegisterCliPath(
+		[]string{"SHOW", "lldp", "neighbors"},
+		getLLDPNeighbors,
+		nil,
+	)
+	sdc.RegisterCliPath(
+		[]string{"SHOW", "processes"},
+		getProcessesRoot,
+		map[string]string{
+			"summary": "show/processes/summary",
+			"cpu":     "show/processes/cpu",
+			"mem":     "show/processes/mem",
+		},
+		showCmdOptionVerbose,
+	)
+	sdc.RegisterCliPath(
+		[]string{"SHOW", "processes", "summary"},
+		getProcessesSummary,
+		nil,
+		showCmdOptionVerbose,
+	)
+	sdc.RegisterCliPath(
+		[]string{"SHOW", "ipv6", "bgp", "network"},
+		getIPv6BGPNetwork,
+		nil,
+		showCmdOptionIPV6Address,
+		showCmdOptionInfoTypeForBgpNetwork,
+		sdc.UnimplementedOption(showCmdOptionNamespace),
+	)
+	sdc.RegisterCliPath(
+		[]string{"SHOW", "uptime"},
+		getUptime,
+		nil,
+		showCmdOptionVerbose,
+	)
+	sdc.RegisterCliPath(
+		[]string{"SHOW", "interface", "flap"},
+		getInterfaceFlap,
+		nil,
+		showCmdOptionInterface,
+	)
+	sdc.RegisterCliPath(
+		[]string{"SHOW", "interface", "neighbor", "expected"},
+		getInterfaceNeighborExpected,
+		nil,
+	)
+	sdc.RegisterCliPath(
+		[]string{"SHOW", "interface", "naming_mode"},
+		getInterfaceNamingMode,
+		nil,
+		showCmdOptionVerbose,
+	)
+	sdc.RegisterCliPath(
 		[]string{"SHOW", "interfaces", "description"},
 		getInterfacesDescription,
 		nil,
 		sdc.UnimplementedOption(showCmdOptionNamespace),
-		showCmdOptionDisplay,
+    sdc.UnimplementedOption(showCmdOptionDisplay),
 		showCmdOptionInterfaces,
-		showCmdOptionVerbose,
 	)
 }

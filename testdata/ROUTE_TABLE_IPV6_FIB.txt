@@ -1,0 +1,18 @@
+{
+  "ROUTE_TABLE:fc00:1::/64": {
+    "nexthop": "::",
+    "ifname": "Loopback0"
+  },
+  "ROUTE_TABLE:fc00:1::32": {
+    "nexthop": "::",
+    "ifname": "Loopback0"
+  },
+  "ROUTE_TABLE:VRF-Vrf1000:fc02:1000::/64": {
+    "nexthop": "::",
+    "ifname": "Vlan1000"
+  },
+  "ROUTE_TABLE:10.1.1.0/24": {
+    "nexthop": "10.1.1.1",
+    "ifname": "Ethernet0"
+  }
+}

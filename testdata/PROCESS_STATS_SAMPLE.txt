@@ -1,0 +1,32 @@
+{
+    "PROCESS_STATS|123": {
+        "%CPU": "0.5",
+        "%MEM": "1.2",
+        "CMD": "redis-server",
+        "PPID": "1",
+        "STIME": "10:54",
+        "TIME": "00:00:42",
+        "TT": "?",
+        "UID": "999"
+    },
+    "PROCESS_STATS|456": {
+        "%CPU": "15.0",
+        "%MEM": "3.4",
+        "CMD": "swss",
+        "PPID": "1",
+        "STIME": "10:55",
+        "TIME": "00:12:05",
+        "TT": "pts/0",
+        "UID": "0"
+    },
+    "PROCESS_STATS|789": {
+        "%CPU": "7.5",
+        "%MEM": "2.0",
+        "CMD": "orchagent",
+        "PPID": "456",
+        "STIME": "10:56",
+        "TIME": "00:03:10",
+        "TT": "pts/1",
+        "UID": "0"
+    }
+}

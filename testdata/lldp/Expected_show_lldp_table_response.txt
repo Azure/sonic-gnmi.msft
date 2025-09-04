@@ -3,6 +3,13 @@
 	"neighbors": [
 		{
 			"capability": "BR",
+			"localPort": "eth0",
+			"remoteDevice": "sonic-device",
+			"remotePortDescr": "ge-0/0/11.0",
+			"remotePortId": "508"
+		},
+		{
+			"capability": "BR",
 			"localPort": "Ethernet354",
 			"remoteDevice": "sonic-device-6",
 			"remotePortDescr": "Ethernet354",
@@ -30,5 +37,5 @@
 			"remotePortId": "Ethernet45/1"
 		}
     ],
-	"total":4
+	"total":5
 }

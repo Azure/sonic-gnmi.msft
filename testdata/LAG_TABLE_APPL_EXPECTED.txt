@@ -1,8 +1,5 @@
 {
-  "PortChannel101": {
-    "oper_status": "up"
-  },
-  "PortChannel102": {
-    "oper_status": "down"
-  }
+  "LAG_TABLE:PortChannel101": {"oper_status":"up"},
+  "LAG_TABLE:PortChannel102": {"oper_status":"down"},
+  "LAG_TABLE:PortChannel103": {"oper_status":"up"}
 }

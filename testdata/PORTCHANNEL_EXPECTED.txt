@@ -1,10 +1,17 @@
 {
-  "PortChannel101": {
+  "PORTCHANNEL|PortChannel101": {
     "admin_status": "up",
-    "mtu": "9100"
+    "mtu": "9100",
+    "tpid": "0x8100"
   },
-  "PortChannel102": {
+  "PORTCHANNEL|PortChannel102": {
     "admin_status": "up",
-    "mtu": "9100"
+    "mtu": "9100",
+    "tpid": "0x8100"
+  },
+  "PORTCHANNEL|PortChannel103": {
+    "admin_status": "up",
+    "mtu": "9100",
+    "tpid": "0x8100"
   }
 }

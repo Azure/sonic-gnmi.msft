@@ -1,8 +1,14 @@
 {
-  "PortChannel101|Ethernet0": {
+  "LAG_MEMBER_TABLE|PortChannel101|Ethernet0": {
     "runner.aggregator.selected": "true"
   },
-  "PortChannel102|Ethernet0": {
+  "LAG_MEMBER_TABLE|PortChannel102|Ethernet0": {
+    "runner.aggregator.selected": "false"
+  },
+  "LAG_MEMBER_TABLE|PortChannel103|Ethernet0": {
+    "runner.aggregator.selected": "true"
+  },
+  "LAG_MEMBER_TABLE|PortChannel103|Ethernet8": {
     "runner.aggregator.selected": "false"
   }
 }

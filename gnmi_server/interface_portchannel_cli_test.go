@@ -45,7 +45,7 @@ func TestShowInterfacePortchannel(t *testing.T) {
 		valTest    bool
 	}{
 		{
-			desc: "multiple portchannels with different protocol and member status",
+			desc: "multiple portchannels: active/up vs active/down; selected vs deselected",
 			init: func() {
 				FlushDataSet(t, ConfigDbNum)
 				AddDataSet(t, ConfigDbNum, portchannelFile)
@@ -59,8 +59,8 @@ func TestShowInterfacePortchannel(t *testing.T) {
 				elem: <name: "portchannel">
 			`,
 			wantCode: codes.OK,
-			wantVal:  `{"101":{"Team Dev":"PortChannel101","Protocol":"LACP(A)(Up)","Ports":"Ethernet0(S)"},"102":{"Team Dev":"PortChannel102","Protocol":"LACP(A)(Dw)","Ports":"Ethernet0(D)"}}`,
-			valTest:  false,
+			wantVal:  `{"101":{"Team Dev":"PortChannel101","Protocol":"LACP(A)(Up)","Ports":"Ethernet0(S)"},"102":{"Team Dev":"PortChannel102","Protocol":"LACP(A)(Dw)","Ports":"Ethernet0(D)"},"103":{"Team Dev":"PortChannel103","Protocol":"LACP(I)(Up)","Ports":"Ethernet0(S) Ethernet8(D)"}}`,
+			valTest:  true,
 		},
 	}
 

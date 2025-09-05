@@ -1,8 +1,6 @@
 {
-  "PortChannel101:Ethernet0": {
-    "status": "enabled"
-  },
-  "PortChannel102:Ethernet0": {
-    "status": "enabled"
-  }
+  "LAG_MEMBER_TABLE:PortChannel101:Ethernet0": {"status":"enabled"},
+  "LAG_MEMBER_TABLE:PortChannel102:Ethernet0": {"status":"disabled"},
+  "LAG_MEMBER_TABLE:PortChannel103:Ethernet0": {"status":"enabled"},
+  "LAG_MEMBER_TABLE:PortChannel103:Ethernet8": {"status":"disabled"}
 }

@@ -31,7 +31,7 @@ func getDropcountersCapabilities(options sdc.OptionMap) ([]byte, error) {
 // Get the dropcounters reason configuration from CONFIG_DB
 func getDropCountersReasons(counter_name string) []string {
 	queries := [][]string{
-		{"CONFIG_DB", "DEBUG_COUNTER__DROP_REASON"},
+		{"CONFIG_DB", "DEBUG_COUNTER_DROP_REASON"},
 	}
 	data, err := GetMapFromQueries(queries)
 	if err != nil {
@@ -86,7 +86,7 @@ func getDropCountersConfiguration(options sdc.OptionMap) ([]byte, error) {
 			"alias":                    GetValueOrDefault(counter_attributes, "alias", counter_name),
 			"group":                    GetValueOrDefault(counter_attributes, "group", "N/A"),
 			"type":                     GetValueOrDefault(counter_attributes, "type", "N/A"),
-			"description":              GetValueOrDefault(counter_attributes, "description", "N/A"),
+			"description":              GetValueOrDefault(counter_attributes, "desc", "N/A"),
 			"drop_monitor_status":      GetValueOrDefault(counter_attributes, "drop_monitor_status", "N/A"),
 			"window":                   GetValueOrDefault(counter_attributes, "window", "N/A"),
 			"drop_count_threshold":     GetValueOrDefault(counter_attributes, "drop_count_threshold", "N/A"),

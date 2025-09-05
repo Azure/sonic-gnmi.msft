@@ -439,3 +439,16 @@ func GetInterfaceNamingMode() string {
 	}
 	return "default"
 }
+
+func isValidPhysicalPort(iface string) (bool, error) {
+	queries := [][]string{
+		{"APPL_DB", "PORT_TABLE"},
+	}
+	portTable, err := GetMapFromQueries(queries)
+	if err != nil {
+		log.Errorf("Unable to pull data for queries %v, got err %v", queries, err)
+		return false, err
+	}
+	role := GetFieldValueString(portTable, iface, defaultMissingCounterValue, "role")
+	return isFrontPanelPort(iface, role), nil
+}

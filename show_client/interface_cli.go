@@ -302,7 +302,7 @@ func loadDescriptionFromCmdOutput(data string) interfaceDescription {
 			Oper:        fields[1],
 			Admin:       fields[2],
 			Alias:       fields[3],
-			Description: fields[4],
+			Description: fields[4:],
 		}
 	}
 	return description

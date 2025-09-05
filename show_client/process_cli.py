@@ -3,6 +3,8 @@ package show_client
 import (
 	"encoding/json"
 	"fmt"
+    "show_client/common"
+    "show_client/helpers"
 	"sort"
 	"strconv"
 
@@ -15,14 +17,6 @@ topCommand = "top -bn 1"
 orderByCPU = " -o %CPU"
 )
 
-func loadProcessesDataFromCmdOutput(data string) string {
-    //Store the data in process struct
-    scanner := bufio.NewScanner(strings.NewReader(data))
-    for scanner.Scan() {
-		line := scanner.Text()
-    }
-}
-
 func getProcesesByCPU(options sdc.OptionMap) ([]byte, error) {
 	cmdForProcessByCPU := topCommand + orderByCPU 
 	
@@ -31,7 +25,7 @@ func getProcesesByCPU(options sdc.OptionMap) ([]byte, error) {
 		return []byte(""), err
 	}
 
-	processesOrdered := loadProcessesDataFromCmdOutput(cmdForProcessByCPU)
+	processesOrdered := helpers.LoadProcessesDataFromCmdOutput(cmdForProcessByCPU)
 
 	return json.Marshal(processesOrdered)
 }

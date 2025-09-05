@@ -1,0 +1,34 @@
+{
+    "bgpTableVersion": 6412,
+    "receivedRoutes": {
+            "20c1:9c8::/64": {
+            "origin": "IGP",
+            "network": "20c1:9c8::/64",
+            "weight": 0,
+            "valid": true,
+            "nextHopGlobal": "fc00::72",
+            "addrPrefix": "20c1:9c8::",
+            "prefixLen": 64,
+            "path": "64600 65534 64795 65509",
+            "multipath": true,
+            "best": true
+        },
+        "20c0:df78::/64": {
+            "origin": "IGP",
+            "network": "20c0:df78::/64",
+            "weight": 0,
+            "valid": true,
+            "nextHopGlobal": "fc00::72",
+            "addrPrefix": "20c0:df78::",
+            "prefixLen": 64,
+            "path": "64600 65534 64710 65515",
+            "multipath": true,
+            "best": true
+        }
+    },
+    "filteredPrefixCounter": 0,
+    "totalPrefixCounter": 6400,
+    "localAS": 65100,
+    "bgpLocalRouterId": "10.1.0.32",
+    "defaultLocPrf": 100
+}

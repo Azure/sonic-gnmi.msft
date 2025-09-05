@@ -1,0 +1,77 @@
+{
+	"title": "LLDP neighbors",
+	"interfaces": {
+		"eth0": {
+			"via": "LLDP",
+			"RID": "1",
+			"Time": "17 days, 19:11:02",
+			"Chassis": {
+				"ChassisID": "mac ff:ff:ff:ff:ff:ff",
+				"SysName": "sonic-device",
+				"SysDescr": "Juniper Networks, Inc. ex2200-48t-4g , version 12.3R4.6 Build date: 2013-09-13 02:53:16 UTC ",
+				"Capability": [
+					"Bridge, on",
+					"Router, on"
+				]
+			},
+			"Port": {
+				"PortID": "local 508",
+				"PortDescr": "ge-0/0/11.0",
+				"TTL": "90",
+				"MFS": "1514",
+				"PMD-autoneg": {
+					"supported": "yes",
+					"enabled": "yes",
+					"Adv": [
+						{
+							"Type": "10Base-T",
+							"HD": "yes",
+							"FD": "yes"
+						},
+						{
+							"Type": "100Base-TX",
+							"HD": "yes",
+							"FD": "yes"
+						},
+						{
+							"Type": "1000Base-T",
+							"HD": "no",
+							"FD": "yes"
+						}
+					],
+					"MAU-oper-type": "unknown"
+				}
+			},
+			"VLAN": [
+				{
+					"vlan-id": "147",
+					"pvid": "yes",
+					"value": "labuse"
+				}
+			],
+			"LLDP-MED": [
+				{
+					"Device-type": "Network Connectivity Device",
+					"Capability": [
+						"Capabilities, yes",
+						"Policy, yes",
+						"Location, yes",
+						"MDI/PSE, yes"
+					]
+				}
+			],
+			"UnknownTLVs": [
+				{
+					"unknown-tlv": [
+						{
+							"oui": "00,90,69",
+							"subtype": "1",
+							"len": "12",
+							"value": "43,55,30,32,31,33,35,31,30,36,36,33"
+						}
+					]
+				}
+			]
+		}	
+	}
+}

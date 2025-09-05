@@ -1,0 +1,22 @@
+{
+  "2001:db8:2::/64": [
+    {
+      "prefix": "2001:db8:2::/64",
+      "protocol": "bgp",
+      "distance": 20,
+      "metric": 0,
+      "uptime": "00:00:20",
+      "selected": true,
+      "internalNextHopNum": 1,
+      "internalNextHopActiveNum": 1,
+      "nexthops": [
+        {
+          "ip": "fe80::2e0:ecff:fe3b:c8d0",
+          "interfaceName": "Ethernet4",
+          "active": true,
+          "onLink": true
+        }
+      ]
+    }
+  ]
+}

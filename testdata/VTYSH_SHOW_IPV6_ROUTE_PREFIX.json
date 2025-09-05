@@ -1,0 +1,21 @@
+{
+  "2001:db8::/64": [
+    {
+      "prefix": "2001:db8::/64",
+      "protocol": "static",
+      "distance": 1,
+      "metric": 0,
+      "uptime": "00:01:00",
+      "selected": true,
+      "internalNextHopNum": 1,
+      "internalNextHopActiveNum": 1,
+      "nexthops": [
+        {
+          "ip": "2001:db8:dead:beef::1",
+          "interfaceName": "Null0",
+          "active": true
+        }
+      ]
+    }
+  ]
+}

@@ -2,6 +2,7 @@ package client
 
 import (
 	"encoding/json"
+	"fmt"
 	"strconv"
 	"strings"
 	"time"
@@ -76,6 +77,18 @@ func validateOptions(passedOptions map[string]string, options map[string]ShowCmd
 				return nil, status.Errorf(codes.InvalidArgument, "option %v expects an int (got %v), err: %v", optionName, optionValue, err)
 			}
 			optionMap[optionName] = OptionValue{value: intValue}
+		case EnumValue:
+			valid := false
+			for _, v := range optionCfg.enumValues {
+				if v == optionValue {
+					valid = true
+					break
+				}
+			}
+			if !valid {
+				return nil, status.Errorf(codes.InvalidArgument, "option %v expects one of [%v] (got %v)", optionName, strings.Join(optionCfg.enumValues, ", "), optionValue)
+			}
+			optionMap[optionName] = OptionValue{value: optionValue}
 		default:
 			return nil, status.Errorf(codes.InvalidArgument, "unsupported ValueType for option %v", optionName)
 		}
@@ -100,9 +113,19 @@ func checkOptionsInPath(path *gnmipb.Path, options map[string]ShowCmdOption) (ma
 func constructDescription(subcommandDesc map[string]string, options map[string]ShowCmdOption) map[string]map[string]string {
 	description := make(map[string]map[string]string)
 	description["options"] = make(map[string]string)
+
 	for _, option := range options {
-		description["options"][option.optName] = option.description
+		// Base description
+		desc := option.description
+
+		// If option is EnumValue, append allowed values to the description
+		if option.valueType == EnumValue && len(option.enumValues) > 0 {
+			desc = fmt.Sprintf("%s (Allowed values: %s)", desc, strings.Join(option.enumValues, ", "))
+		}
+
+		description["options"][option.optName] = desc
 	}
+
 	description["subcommands"] = subcommandDesc
 	return description
 }

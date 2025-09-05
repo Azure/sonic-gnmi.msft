@@ -3,7 +3,6 @@ package show_client
 import (
 	"encoding/json"
 	"net"
-	"sort"
 	"strings"
 
 	log "github.com/golang/glog"
@@ -70,9 +69,8 @@ func isIPPrefixInKey(key interface{}) bool {
 }
 
 func getVlanId(cfg vlanConfig, vlan string) interface{} {
-	var ids []string
-	ids = append(ids, strings.TrimPrefix(vlan, vlanKey))
-	return ids
+	id := strings.TrimPrefix(vlan, vlanKey)
+	return id
 }
 
 func getVlanIpAddress(cfg vlanConfig, vlan string) interface{} {
@@ -113,10 +111,6 @@ func getVlanPortsAndTagging(cfg vlanConfig, vlan string) interface{} {
 		vlanPorts = append(vlanPorts, portAndTagging{portsValue, value.(map[string]interface{})["tagging_mode"].(string)})
 	}
 
-	//sort data
-	sort.Slice(vlanPorts, func(i, j int) bool {
-		return vlanPorts[i].Name < vlanPorts[j].Name
-	})
 	return vlanPorts
 }
 

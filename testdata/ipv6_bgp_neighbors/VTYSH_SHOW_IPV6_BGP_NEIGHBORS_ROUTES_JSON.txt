@@ -1,0 +1,58 @@
+{
+    "vrfId": 0,
+    "tableVersion": 6412,
+    "localAS": 65100,
+    "routerId": "10.1.0.32",
+    "routes": {
+        "20c1:9c8::/64": [
+            {
+                "origin": "IGP",
+                "pathFrom": "external",
+                "network": "20c1:9c8::/64",
+                "weight": 0,
+                "bestpath": true,
+                "selectionReason": "Older Path",
+                "prefix": "20c1:9c8::",
+                "valid": true,
+                "peerId": "fc00::72",
+                "version": 6267,
+                "prefixLen": 64,
+                "path": "64600 65534 64795 65509",
+                "nexthops": [
+                    {
+                        "ip": "fc00::72",
+                        "used": true,
+                        "afi": "ipv6",
+                        "scope": "global"
+                    }
+                ]
+            }
+        ],
+        "20c0:df78::/64": [
+            {
+                "origin": "IGP",
+                "pathFrom": "external",
+                "network": "20c0:df78::/64",
+                "weight": 0,
+                "bestpath": true,
+                "selectionReason": "Older Path",
+                "prefix": "20c0:df78::",
+                "valid": true,
+                "peerId": "fc00::72",
+                "version": 3559,
+                "prefixLen": 64,
+                "path": "64600 65534 64710 65515",
+                "nexthops": [
+                    {
+                        "ip": "fc00::72",
+                        "used": true,
+                        "afi": "ipv6",
+                        "scope": "global"
+                    }
+                ]
+            }
+        ]
+    },
+    "vrfName": "default",
+    "defaultLocPrf": 100
+}

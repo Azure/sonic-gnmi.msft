@@ -1,0 +1,455 @@
+{
+	"lldp_loc_chassis": {
+		"local-chassis": {
+			"chassis": {
+				"arc-switch1025": {
+					"mgmt-ip": [
+						"10.10.10.10",
+						"fc00:1::32"
+					],
+					"id": {
+						"type": "mac",
+						"value": "ff:ff:ff:ff:ff:ff"
+					},
+					"capability": [
+						{
+							"type": "Bridge",
+							"enabled": true
+						},
+						{
+							"type": "Router",
+							"enabled": true
+						},
+						{
+							"type": "Wlan",
+							"enabled": false
+						},
+						{
+							"type": "Station",
+							"enabled": false
+						}
+					],
+					"descr": "Debian GNU/Linux 8 (jessie) Linux 3.16.0-5-amd64 #1 SMP Debian 3.16.51-3+deb8u1 (2018-01-08) x86_64",
+					"ttl": "120"
+				}
+			}
+		}
+	},
+	"lldp": [
+		{
+			"interface": [
+				{
+					"name": "eth0",
+					"via": "LLDP",
+					"rid": "1",
+					"age": "17 days, 19:11:02",
+					"chassis": [
+						{
+							"id": [
+								{
+									"type": "mac",
+									"value": "ff:ff:ff:ff:ff:ff"
+								}
+							],
+							"name": [
+								{
+									"value": "sonic-device"
+								}
+							],
+							"descr": [
+								{
+									"value": "Juniper Networks, test , version 12.3R4.6 Build date: 2013-09-13 02:53:16 UTC "
+								}
+							],
+							"capability": [
+								{
+									"type": "Bridge",
+									"enabled": true
+								},
+								{
+									"type": "Router",
+									"enabled": true
+								}
+							]
+						}
+					],
+					"port": [
+						{
+							"id": [
+								{
+									"type": "local",
+									"value": "508"
+								}
+							],
+							"descr": [
+								{
+									"value": "ge-0/0/11.0"
+								}
+							],
+							"ttl": [
+								{
+									"value": "90"
+								}
+							],
+							"mfs": [
+								{
+									"value": "1514"
+								}
+							],
+							"auto-negotiation": [
+								{
+									"supported": true,
+									"enabled": true,
+									"advertised": [
+										{
+											"type": "10Base-T",
+											"hd": true,
+											"fd": true
+										},
+										{
+											"type": "100Base-TX",
+											"hd": true,
+											"fd": true
+										},
+										{
+											"type": "1000Base-T",
+											"hd": false,
+											"fd": true
+										}
+									],
+									"current": [
+										{
+											"value": "unknown"
+										}
+									]
+								}
+							]
+						}
+					],
+					"vlan": [
+						{
+							"vlan-id": "147",
+							"pvid": true,
+							"value": "labuse"
+						}
+					],
+					"lldp-med": [
+						{
+							"device-type": [
+								{
+									"value": "Network Connectivity Device"
+								}
+							],
+							"capability": [
+								{
+									"type": "Capabilities",
+									"available": true
+								},
+								{
+									"type": "Policy",
+									"available": true
+								},
+								{
+									"type": "Location",
+									"available": true
+								},
+								{
+									"type": "MDI/PSE",
+									"available": true
+								}
+							]
+						}
+					],
+					"unknown-tlvs": [
+						{
+							"unknown-tlv": [
+								{
+									"oui": "00,90,69",
+									"subtype": "1",
+									"len": "12",
+									"value": "43,55,30,32,31,33,35,31,30,36,36,33"
+								}
+							]
+						}
+					]
+				},
+				{
+					"name": "Ethernet354",
+					"via": "LLDP",
+					"rid": "2",
+					"age": "15 days, 03:12:34",
+					"chassis": [
+						{
+							"id": [
+								{
+									"type": "mac",
+									"value": "ff:ff:ff:ff:ff:ff"
+								}
+							],
+							"name": [
+								{
+									"value": "sonic-device-6"
+								}
+							],
+							"descr": [
+								{
+									"value": "SONiC Software Version: SONiC.20250305.10 - HwSku: Arista-7060X6-64PE - Distribution: Debian 12.9 - Kernel: 6.1.0-29-2-amd64"
+								}
+							],
+							"mgmt-ip": [
+								{
+									"value": "10.10.10.10"
+								}
+							],
+							"mgmt-iface": [
+								{
+									"value": "2"
+								}
+							],
+							"capability": [
+								{
+									"type": "Bridge",
+									"enabled": true
+								},
+								{
+									"type": "Router",
+									"enabled": true
+								},
+								{
+									"type": "Wlan",
+									"enabled": false
+								},
+								{
+									"type": "Station",
+									"enabled": false
+								}
+							]
+						}
+					],
+					"port": [
+						{
+							"id": [
+								{
+									"type": "ifname",
+									"value": "Ethernet45/3"
+								}
+							],
+							"descr": [
+								{
+									"value": "Ethernet354"
+								}
+							],
+							"ttl": [
+								{
+									"value": "120"
+								}
+							]
+						}
+					],
+					"vlan": [
+						{
+							"vlan-id": "101",
+							"pvid": true
+						},
+						{
+							"vlan-id": "201",
+							"value": "vlan201"
+						}
+					]
+				},
+				{
+					"name": "Ethernet355",
+					"via": "LLDP",
+					"rid": "2",
+					"age": "15 days, 03:12:31",
+					"chassis": [
+						{
+							"id": [
+								{
+									"type": "mac",
+									"value": "ff:ff:ff:ff:ff:ff"
+								}
+							],
+							"name": [
+								{
+									"value": "sonic-device-7"
+								}
+							],
+							"descr": [
+								{
+									"value": "SONiC Software Version: SONiC.20250305.10 - HwSku: Arista-7060X6-64PE - Distribution: Debian 12.9 - Kernel: 6.1.0-29-2-amd64"
+								}
+							],
+							"mgmt-ip": [
+								{
+									"value": "10.10.10.10"
+								}
+							],
+							"mgmt-iface": [
+								{
+									"value": "2"
+								}
+							],
+							"capability": [
+								{
+									"type": "Wlan",
+									"enabled": false
+								},
+								{
+									"type": "Station",
+									"enabled": false
+								}
+							]
+						}
+					],
+					"port": [
+						{
+							"id": [
+								{
+									"type": "local",
+									"value": "Ethernet45/2"
+								}
+							],
+							"descr": [
+								{
+									"value": "Ethernet355"
+								}
+							],
+							"ttl": [
+								{
+									"value": "120"
+								}
+							]
+						}
+					]
+				},
+				{
+					"name": "Ethernet353",
+					"via": "LLDP",
+					"rid": "2",
+					"age": "15 days, 03:12:31",
+					"chassis": [
+						{
+							"id": [
+								{
+									"type": "mac",
+									"value": "ff:ff:ff:ff:ff:ff"
+								}
+							],
+							"name": [
+								{
+									"value": "sonic-device-5"
+								}
+							],
+							"descr": [
+								{
+									"value": "SONiC Software Version: SONiC.20250305.10 - HwSku: Arista-7060X6-64PE - Distribution: Debian 12.9 - Kernel: 6.1.0-29-2-amd64"
+								}
+							],
+							"mgmt-ip": [
+								{
+									"value": "10.10.10.10"
+								}
+							],
+							"mgmt-iface": [
+								{
+									"value": "2"
+								}
+							]
+						}
+					],
+					"port": [
+						{
+							"id": [
+								{
+									"type": "local",
+									"value": "Ethernet45/0"
+								}
+							],
+							"descr": [
+								{
+									"value": "Ethernet353"
+								}
+							],
+							"ttl": [
+								{
+									"value": "120"
+								}
+							]
+						}
+					]
+				},
+				{
+					"name": "Ethernet356",
+					"via": "LLDP",
+					"rid": "2",
+					"age": "15 days, 03:12:34",
+					"chassis": [
+						{
+							"id": [
+								{
+									"type": "mac",
+									"value": "ff:ff:ff:ff:ff:ff"
+								}
+							],
+							"name": [
+								{
+									"value": "sonic-device-8"
+								}
+							],
+							"descr": [
+								{
+									"value": "SONiC Software Version: SONiC.20250305.10 - HwSku: Arista-7060X6-64PE - Distribution: Debian 12.9 - Kernel: 6.1.0-29-2-amd64"
+								}
+							],
+							"mgmt-ip": [
+								{
+									"value": "10.10.10.10"
+								}
+							],
+							"mgmt-iface": [
+								{
+									"value": "2"
+								}
+							],
+							"capability": [
+								{
+									"type": "Bridge",
+									"enabled": false
+								},
+								{
+									"type": "Router",
+									"enabled": false
+								},
+								{
+									"type": "Wlan",
+									"enabled": true
+								}
+							]
+						}
+					],
+					"port": [
+						{
+							"id": [
+								{
+									"type": "local",
+									"value": "Ethernet45/1"
+								}
+							],
+							"descr": [
+								{
+									"value": "Ethernet356"
+								}
+							],
+							"ttl": [
+								{
+									"value": "120"
+								}
+							]
+						}
+					]
+				}
+			]
+		}
+	]
+}

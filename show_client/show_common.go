@@ -2,6 +2,7 @@ package show_client
 
 import (
 	"fmt"
+	"net"
 	"os"
 	"os/exec"
 	"sort"
@@ -16,11 +17,15 @@ import (
 	"gopkg.in/yaml.v2"
 )
 
+const ConfigDBPortTable = "PORT"
 const AppDBPortTable = "PORT_TABLE"
 const StateDBPortTable = "PORT_TABLE"
+const ConfigDBPortChannelTable = "PORTCHANNEL"
+const AppDBPortChannelTable = "LAG_TABLE"
 const DefaultEmptyString = ""
 const StateDb = "STATE_DB"
 const ConfigDb = "CONFIG_DB"
+const ApplDb = "APPL_DB"
 const ConfigDbPort = "PORT"
 const FDBTable = "FDB_TABLE"
 const VlanSubInterfaceSeparator = '.'
@@ -335,7 +340,7 @@ func GetInterfaceNameForDisplay(name string) string {
 	if name == "" {
 		return name
 	}
-	if interfaceNamingMode := os.Getenv(SonicCliIfaceMode); interfaceNamingMode != "alias" {
+	if interfaceNamingMode := GetInterfaceNamingMode(); interfaceNamingMode != "alias" {
 		return name
 	}
 
@@ -375,8 +380,9 @@ func GetInterfaceSwitchportMode(
 // SplitCompositeKey splits a two-part composite key using '|' or ':' delimiters.
 // Returns left, right, true on success; empty strings and false otherwise.
 // Examples:
-//   "Vlan100|Ethernet0" -> ("Vlan100", "Ethernet0", true)
-//   "PortChannel001:Ethernet4" -> ("PortChannel001", "Ethernet4", true)
+//
+//	"Vlan100|Ethernet0" -> ("Vlan100", "Ethernet0", true)
+//	"PortChannel001:Ethernet4" -> ("PortChannel001", "Ethernet4", true)
 func SplitCompositeKey(k string) (string, string, bool) {
 	if parts := strings.Split(k, "|"); len(parts) == 2 {
 		return parts[0], parts[1], true
@@ -385,4 +391,51 @@ func SplitCompositeKey(k string) (string, string, bool) {
 		return parts[0], parts[1], true
 	}
 	return "", "", false
+}
+
+// getOrDefault returns m[key] when present; otherwise returns def.
+// Safe to call with a nil map. Handy for nested map lookups with explicit defaults.
+func getOrDefault[T any](m map[string]T, key string, def T) T {
+	if v, ok := m[key]; ok {
+		return v
+	}
+	return def
+}
+
+// matchIPFamily checks if prefix belongs to desired family
+func matchIPFamily(prefix string, wantIPv6 bool) bool {
+	host := prefix
+	if i := strings.IndexByte(prefix, '/'); i >= 0 {
+		host = prefix[:i]
+	}
+	ip := net.ParseIP(host)
+	if ip == nil {
+		return false
+	}
+	isV6 := ip.To4() == nil
+	return isV6 == wantIPv6
+}
+
+// ContainsString returns true if target is present in list.
+func ContainsString(list []string, target string) bool {
+	for _, s := range list {
+		if s == target {
+			return true
+		}
+	}
+	return false
+}
+
+func Capitalize(s string) string {
+	if len(s) == 0 {
+		return s
+	}
+	return strings.ToUpper(s[:1]) + strings.ToLower(s[1:])
+}
+
+func GetInterfaceNamingMode() string {
+	if mode := os.Getenv(SonicCliIfaceMode); mode != "" {
+		return mode
+	}
+	return "default"
 }

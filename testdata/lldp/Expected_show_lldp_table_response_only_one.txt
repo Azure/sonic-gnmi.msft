@@ -1,0 +1,13 @@
+{   
+	"capability_codes_helper": "Capability codes: (R) Router, (B) Bridge, (O) Other",
+	"neighbors": [
+		{
+			"capability": "BR",
+			"localPort": "eth0",
+			"remoteDevice": "sonic-device",
+			"remotePortDescr": "ge-0/0/11.0",
+			"remotePortId": "508"
+		}
+    ],
+	"total":1
+}    

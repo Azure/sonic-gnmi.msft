@@ -1,0 +1,7 @@
+{
+  "DEVICE_NEIGHBOR_METADATA|DEVICE01T1": {
+    "lo_addr": "10.1.1.1",
+    "mgmt_addr": "192.0.2.10",
+    "type": "BackEndLeafRouter"
+  }
+}

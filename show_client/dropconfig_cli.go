@@ -36,7 +36,7 @@ func getDropCountersReasons(counter_name string) []string {
 	data, err := GetMapFromQueries(queries)
 	if err != nil {
 		log.Errorf("Unable to get drop counters reasons data from queries %v, got err: %v", queries, err)
-		return nil, err
+		return []string{}
 	}
 
 	result := make([]string, 0)
@@ -74,7 +74,7 @@ func getDropCountersConfiguration(options sdc.OptionMap) ([]byte, error) {
 	result := make([]map[string]string, 0)
 	for i := range counter_names {
 		counter_name := counter_names[i]
-		counter_attributes := config_table[counter_name]
+		counter_attributes := config_table[counter_name].(map[string]interface{})
 		if group != "" {
 			if counter_attributes["group"] != group {
 				continue
@@ -94,7 +94,8 @@ func getDropCountersConfiguration(options sdc.OptionMap) ([]byte, error) {
 		}
 
 		// Fill in the drop reason, concat the reasons with ',' when there are more than 1.
-		drop_reasons_keys := sort.Strings(getDropCountersReasons(counter_name))
+		drop_reasons_keys := getDropCountersReasons(counter_name)
+		sort.Strings(drop_reasons_keys)
 		num_reasons := len(drop_reasons_keys)
 		if num_reasons == 0 {
 			counter_metadata["reason"] = "None"

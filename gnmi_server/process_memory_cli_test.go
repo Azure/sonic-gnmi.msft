@@ -1,13 +1,10 @@
 package gnmi
 
 import (
-        "os"
         "crypto/tls"
         "testing"
         "time"
         "fmt"
-        "encoding/json"
-        "strings"
 
         pb "github.com/openconfig/gnmi/proto/gnmi"
         show_client "github.com/sonic-net/sonic-gnmi/show_client"
@@ -37,17 +34,45 @@ func TestGetTopMemoryUsage(t *testing.T) {
         ctx, cancel := context.WithTimeout(context.Background(), QueryTimeout*time.Second)
         defer cancel()
 
-        rawContent, err := os.ReadFile("../testdata/PROCESS_MEMORY.txt")
-        if err != nil {
-                t.Fatalf("Failed to read expected output file: %v", err)
+        expectedTopMemory := `
+        {
+                "uptime": "15:02:01 up 3 days,  4:12,  1 user,  load average: 0.00, 0.01, 0.05",
+                "tasks": "123 total,   1 running, 122 sleeping,   0 stopped,   0 zombie",
+                "cpu_usage": "1.0 us,  0.5 sy,  0.0 ni, 98.0 id,  0.5 wa,  0.0 hi,  0.0 si,  0.0 st",
+                "memory_usage": "7989.3 total,   1234.5 free,   2345.6 used,   3409.2 buff/cache",
+                "swap_usage": "2048.0 total,   2048.0 free,      0.0 used.   4567.8 avail Mem",
+                "processes": [
+                {
+                        "pid": "1234",
+                        "user": "root",
+                        "pr": "20",
+                        "ni": "0",
+                        "virt": "123456",
+                        "res": "65432",
+                        "shr": "1234",
+                        "s": "S",
+                        "cpu": "0.3",
+                        "mem": "5.2",
+                        "time": "0:01.23",
+                        "command": "myapp"
+                },
+                {
+                        "pid": "5678",
+                        "user": "daemon",
+                        "pr": "20",
+                        "ni": "0",
+                        "virt": "234567",
+                        "res": "54321",
+                        "shr": "2345",
+                        "s": "S",
+                        "cpu": "0.1",
+                        "mem": "4.8",
+                        "time": "0:00.98",
+                        "command": "anotherapp"
+                }
+                ]
         }
-
-        expectedTopMemory, err := json.MarshalIndent(map[string]string{
-                "process_memory": strings.TrimSpace(string(rawContent)),
-        }, "", "  ")
-        if err != nil {
-                t.Fatalf("Failed to marshal expected JSON: %v", err)
-        }
+        `
 
         ResetDataSetsAndMappings(t)
 
@@ -65,10 +90,11 @@ func TestGetTopMemoryUsage(t *testing.T) {
                         desc:       "query show memory-usage with success case",
                         pathTarget: "SHOW",
                         textPbPath: `
-                        elem: <name: "process-memory" >
+                        elem: <name: "process" >
+                        elem: <name: "memory" >
                         `,
                         wantRetCode: codes.OK,
-                        wantRespVal: expectedTopMemory,
+                        wantRespVal: []byte(expectedTopMemory),
                         valTest:     true,
                         mockOutputFile: "../testdata/PROCESS_MEMORY.txt",
                 },
@@ -76,7 +102,8 @@ func TestGetTopMemoryUsage(t *testing.T) {
                         desc:       "query show memory-usage with blank output",
                         pathTarget: "SHOW",
                         textPbPath: `
-                        elem: <name: "process-memory" >
+                        elem: <name: "process" >
+                        elem: <name: "memory" >
                         `,
                         wantRetCode: codes.NotFound,
                         wantRespVal: nil,
@@ -91,7 +118,8 @@ func TestGetTopMemoryUsage(t *testing.T) {
                         desc:       "query show memory-usage with error from command",
                         pathTarget: "SHOW",
                         textPbPath: `
-                        elem: <name: "process-memory" >
+                        elem: <name: "process" >
+                        elem: <name: "memory" >
                         `,
                         wantRetCode: codes.NotFound,
                         wantRespVal: nil,

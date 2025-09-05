@@ -95,8 +95,8 @@ func TestShowDropcountersConfiguration(t *testing.T) {
 	defer cancel()
 
 	configDbFile := "../testdata/DEBUG_COUNTER_CONFIGURATION.json"
-	allData := `[{\"alias\":\"GOOD_DROPS\",\"description\":\"More port ingress drops\",\"drop_count_threshold\":\"N/A\",\"drop_monitor_status\":\"N/A\",\"group\":\"GOOD\",\"incident_count_threshold\":\"N/A\",\"name\":\"DEBUG_1\",\"reason\":\"SIP_LINK_LOCAL\",\"type\":\"PORT_INGRESS_DROPS\",\"window\":\"N/A\"},{\"alias\":\"BAD_DROPS\",\"description\":\"More port ingress drops\",\"drop_count_threshold\":\"N/A\",\"drop_monitor_status\":\"N/A\",\"group\":\"BAD\",\"incident_count_threshold\":\"N/A\",\"name\":\"DEBUG_2\",\"reason\":\"ACL_ANY,EXCEEDS_L3_MTU\",\"type\":\"PORT_INGRESS_DROPS\",\"window\":\"N/A\"}]`
-	singleGroupData := `[{\"alias\":\"BAD_DROPS\",\"description\":\"More port ingress drops\",\"drop_count_threshold\":\"N/A\",\"drop_monitor_status\":\"N/A\",\"group\":\"BAD\",\"incident_count_threshold\":\"N/A\",\"name\":\"DEBUG_2\",\"reason\":\"ACL_ANY,EXCEEDS_L3_MTU\",\"type\":\"PORT_INGRESS_DROPS\",\"window\":\"N/A\"}]`
+	allData := `[{"alias":"GOOD_DROPS","description":"More port ingress drops","drop_count_threshold":"N/A","drop_monitor_status":"N/A","group":"GOOD","incident_count_threshold":"N/A","name":"DEBUG_1","reason":"SIP_LINK_LOCAL","type":"PORT_INGRESS_DROPS","window":"N/A"},{"alias":"BAD_DROPS","description":"More port ingress drops","drop_count_threshold":"N/A","drop_monitor_status":"N/A","group":"BAD","incident_count_threshold":"N/A","name":"DEBUG_2","reason":"ACL_ANY,EXCEEDS_L3_MTU","type":"PORT_INGRESS_DROPS","window":"N/A"}]`
+	singleGroupData := `[{"alias":"BAD_DROPS","description":"More port ingress drops","drop_count_threshold":"N/A","drop_monitor_status":"N/A","group":"BAD","incident_count_threshold":"N/A","name":"DEBUG_2","reason":"ACL_ANY,EXCEEDS_L3_MTU","type":"PORT_INGRESS_DROPS","window":"N/A"}]`
 
 	tests := []struct {
 		desc       string
@@ -110,7 +110,7 @@ func TestShowDropcountersConfiguration(t *testing.T) {
 			desc: "show dropcounters configuration -- no data",
 			textPbPath: `
               elem: <name: "dropcounters">
-              elem: <name: "capabilities">
+              elem: <name: "configuration">
             `,
 			wantCode: codes.OK,
 		},
@@ -121,7 +121,7 @@ func TestShowDropcountersConfiguration(t *testing.T) {
 			},
 			textPbPath: `
               elem: <name: "dropcounters">
-              elem: <name: "capabilities">
+              elem: <name: "configuration">
             `,
 			wantCode: codes.OK,
 			wantVal:  []byte(allData),
@@ -134,7 +134,8 @@ func TestShowDropcountersConfiguration(t *testing.T) {
 			},
 			textPbPath: `
               elem: <name: "dropcounters">
-              elem: <name: "capabilities" key: {key: "group" value: "BAD"}  >
+              elem: <name: "configuration"
+			  	key: {key: "group" value: "BAD"}  >
             `,
 			wantCode: codes.OK,
 			wantVal:  []byte(singleGroupData),

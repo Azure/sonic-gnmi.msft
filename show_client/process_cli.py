@@ -17,6 +17,10 @@ orderByCPU = " -o %CPU"
 
 func loadProcessesDataFromCmdOutput(data string) string {
     //Store the data in process struct
+    scanner := bufio.NewScanner(strings.NewReader(data))
+    for scanner.Scan() {
+		line := scanner.Text()
+    }
 }
 
 func getProcesesByCPU(options sdc.OptionMap) ([]byte, error) {

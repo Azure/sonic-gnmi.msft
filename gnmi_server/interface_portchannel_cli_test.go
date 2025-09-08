@@ -55,7 +55,7 @@ func TestShowInterfacePortchannel(t *testing.T) {
 				AddDataSet(t, ApplDbNum, lagMemberTableApplFile)
 			},
 			textPbPath: `
-				elem: <name: "interface">
+				elem: <name: "interfaces">
 				elem: <name: "portchannel">
 			`,
 			wantCode: codes.OK,

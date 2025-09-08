@@ -570,4 +570,9 @@ func init() {
 		getInterfacePortchannel,
 		nil,
 	)
+	sdc.RegisterCliPath(
+		[]string{"SHOW", "ecn"},
+		getEcnProfiles,
+		nil,
+	)
 }

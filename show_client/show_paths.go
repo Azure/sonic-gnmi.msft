@@ -315,4 +315,11 @@ func init() {
 		showCmdOptionInterface,
 		showCmdOptionVerbose,
 	)
+	sdc.RegisterCliPath(
+		[]string{"SHOW", "queue", "wredcounters"},
+		getQueueWredCounters,
+		nil,
+		showCmdOptionInterfaces,
+		showCmdOptionNonzero,
+	)
 }

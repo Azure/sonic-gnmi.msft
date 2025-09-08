@@ -1,6 +1,7 @@
 package show_client
 
 import (
+	"bufio"
 	"encoding/json"
 	"fmt"
 	"math"
@@ -13,6 +14,21 @@ import (
 	log "github.com/golang/glog"
 	sdc "github.com/sonic-net/sonic-gnmi/sonic_data_client"
 )
+
+const (
+	interfaceOption        = " -i "
+	interfaceDescStartLine = "Interface"
+	descriptionDataSize    = 5
+)
+
+type interfaceDescriptionDetails struct {
+	Admin       string `json:"Admin"`
+	Alias       string `json:"Alias"`
+	Description string `json:"Description"`
+	Oper        string `json:"Oper"`
+}
+
+type interfaceDescription map[string]interfaceDescriptionDetails
 
 type InterfaceCountersResponse struct {
 	State  string
@@ -260,6 +276,58 @@ var allPortErrors = [][]string{
 	{"data_unit_size_count", "data_unit_size_time"},
 	{"code_group_error_count", "code_group_error_time"},
 	{"no_rx_reachability_count", "no_rx_reachability_time"},
+}
+
+func loadDescriptionFromCmdOutput(data string) interfaceDescription {
+	scanner := bufio.NewScanner(strings.NewReader(data))
+	var processStart bool
+	description := make(interfaceDescription)
+
+	for scanner.Scan() {
+		line := scanner.Text()
+		if !processStart {
+			if strings.HasPrefix(strings.TrimSpace(line), interfaceDescStartLine) {
+				processStart = true
+				scanner.Scan()
+			}
+			continue
+		}
+
+		fields := strings.Fields(line)
+		if len(fields) < descriptionDataSize {
+			continue
+		}
+
+		description[fields[0]] = interfaceDescriptionDetails{
+			Oper:        fields[1],
+			Admin:       fields[2],
+			Alias:       fields[3],
+			Description: strings.Join(fields[4:], " "),
+		}
+	}
+	return description
+}
+
+func getInterfacesDescription(options sdc.OptionMap) ([]byte, error) {
+	cmdForInterfaceDesc := "intfutil -c description"
+	intf, ok := options["interface"].String()
+	if ok {
+		interfaceName := GetNameForInterfaceAlias(intf)
+		if interfaceName != "" {
+			cmdForInterfaceDesc += interfaceOption + interfaceName
+		} else {
+			cmdForInterfaceDesc += interfaceOption + intf
+		}
+	}
+
+	interfaceDescStr, err := GetDataFromHostCommand(cmdForInterfaceDesc)
+	if err != nil {
+		return []byte(""), err
+	}
+
+	interfaceDesc := loadDescriptionFromCmdOutput(interfaceDescStr)
+
+	return json.Marshal(interfaceDesc)
 }
 
 func getInterfaceErrors(options sdc.OptionMap) ([]byte, error) {

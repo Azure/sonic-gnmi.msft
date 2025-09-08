@@ -307,7 +307,7 @@ func init() {
 		nil,
 	)
 	sdc.RegisterCliPath(
-		[]string{"SHOW", "interface", "transceiver", "eeprom"},
+		[]string{"SHOW", "interfaces", "transceiver", "eeprom"},
 		getTransceiverEEPROM,
 		nil,
 		showCmdOptionPort,
@@ -315,10 +315,25 @@ func init() {
 		sdc.UnimplementedOption(showCmdOptionNamespace),
 	)
 	sdc.RegisterCliPath(
-		[]string{"SHOW", "interface", "transceiver", "info"},
+		[]string{"SHOW", "interfaces", "transceiver", "info"},
 		getTransceiverInfo,
 		nil,
 		showCmdOptionPort,
 		sdc.UnimplementedOption(showCmdOptionNamespace),
+  sdc.RegisterCliPath(
+		[]string{"SHOW", "interfaces", "description"},
+		getInterfacesDescription,
+		nil,
+		sdc.UnimplementedOption(showCmdOptionNamespace),
+		sdc.UnimplementedOption(showCmdOptionDisplay),
+		showCmdOptionInterface,
+		showCmdOptionVerbose,
+	)
+	sdc.RegisterCliPath(
+		[]string{"SHOW", "queue", "watermark"},
+		getQueueUserWatermarks,
+		nil,
+		showCmdOptionInterfaces,
+		sdc.RequiredOption(showCmdOptionQueueType),
 	)
 }

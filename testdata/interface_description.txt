@@ -1,0 +1,4 @@
+  Interface    Oper    Admin    Alias           Description
+-----------  ------  -------  -------  --------------------
+  Ethernet0    down       up     etp0                  etp0
+  Ethernet1    down       up     etp1                  etp1

@@ -316,6 +316,13 @@ func init() {
 		showCmdOptionVerbose,
 	)
 	sdc.RegisterCliPath(
+		[]string{"SHOW", "queue", "watermark"},
+		getQueueUserWatermarks,
+		nil,
+		showCmdOptionInterfaces,
+		sdc.RequiredOption(showCmdOptionQueueType),
+	)
+	sdc.RegisterCliPath(
 		[]string{"SHOW", "queue", "wredcounters"},
 		getQueueWredCounters,
 		nil,

@@ -1,6 +1,7 @@
 package show_client
 
 import (
+	"bufio"
 	"encoding/json"
 	"fmt"
 	"math"
@@ -16,6 +17,21 @@ import (
 	"google.golang.org/grpc/status"
 )
 
+const (
+	interfaceOption        = " -i "
+	interfaceDescStartLine = "Interface"
+	descriptionDataSize    = 5
+)
+
+type interfaceDescriptionDetails struct {
+	Admin       string `json:"Admin"`
+	Alias       string `json:"Alias"`
+	Description string `json:"Description"`
+	Oper        string `json:"Oper"`
+}
+
+type interfaceDescription map[string]interfaceDescriptionDetails
+
 type InterfaceCountersResponse struct {
 	State  string
 	RxOk   string
@@ -30,6 +46,10 @@ type InterfaceCountersResponse struct {
 	TxErr  string
 	TxDrp  string
 	TxOvr  string
+}
+
+type namingModeResponse struct {
+	NamingMode string `json:"naming_mode"`
 }
 
 func calculateByteRate(rate string) string {
@@ -260,13 +280,65 @@ var allPortErrors = [][]string{
 	{"no_rx_reachability_count", "no_rx_reachability_time"},
 }
 
+func loadDescriptionFromCmdOutput(data string) interfaceDescription {
+	scanner := bufio.NewScanner(strings.NewReader(data))
+	var processStart bool
+	description := make(interfaceDescription)
+
+	for scanner.Scan() {
+		line := scanner.Text()
+		if !processStart {
+			if strings.HasPrefix(strings.TrimSpace(line), interfaceDescStartLine) {
+				processStart = true
+				scanner.Scan()
+			}
+			continue
+		}
+
+		fields := strings.Fields(line)
+		if len(fields) < descriptionDataSize {
+			continue
+		}
+
+		description[fields[0]] = interfaceDescriptionDetails{
+			Oper:        fields[1],
+			Admin:       fields[2],
+			Alias:       fields[3],
+			Description: strings.Join(fields[4:], " "),
+		}
+	}
+	return description
+}
+
+func getInterfacesDescription(args sdc.CmdArgs, options sdc.OptionMap) ([]byte, error) {
+	cmdForInterfaceDesc := "intfutil -c description"
+	// TODO
+	intf, ok := options["interface"].String()
+	if ok {
+		interfaceName := GetNameForInterfaceAlias(intf)
+		if interfaceName != "" {
+			cmdForInterfaceDesc += interfaceOption + interfaceName
+		} else {
+			cmdForInterfaceDesc += interfaceOption + intf
+		}
+	}
+
+	interfaceDescStr, err := GetDataFromHostCommand(cmdForInterfaceDesc)
+	if err != nil {
+		return []byte(""), err
+	}
+
+	interfaceDesc := loadDescriptionFromCmdOutput(interfaceDescStr)
+
+	return json.Marshal(interfaceDesc)
+}
+
 func getInterfaceErrors(args sdc.CmdArgs, options sdc.OptionMap) ([]byte, error) {
 	intf := args.At(0)
 	if intf == "" {
 		return nil, status.Errorf(codes.InvalidArgument, "No interface name passed in as option")
-	}
 
-	// Query Port Operational Errors Table from STATE_DB
+		// Query Port Operational Errors Table from STATE_DB
 	queries := [][]string{
 		{"STATE_DB", "PORT_OPERR_TABLE", intf},
 	}
@@ -327,7 +399,8 @@ func getIntfsFromConfigDB(intf string) ([]string, error) {
 }
 
 func getInterfaceFecStatus(args sdc.CmdArgs, options sdc.OptionMap) ([]byte, error) {
-	intf := args.At(0)
+	// TODO
+	intf, _ := options["interface"].String()
 
 	ports, err := getIntfsFromConfigDB(intf)
 	if err != nil {
@@ -731,7 +804,8 @@ func getSubInterfaceStatus(intf string) ([]byte, error) {
 
 func getInterfaceStatus(args sdc.CmdArgs, options sdc.OptionMap) ([]byte, error) {
 	isSubIntf := false
-	intf := args.At(0)
+	// TODO
+	intf, _ := options["interface"].String()
 	if intf != "" {
 		if intf == "subport" {
 			isSubIntf = true
@@ -928,7 +1002,8 @@ func getInterfaceStatus(args sdc.CmdArgs, options sdc.OptionMap) ([]byte, error)
 }
 
 func getInterfaceAlias(args sdc.CmdArgs, options sdc.OptionMap) ([]byte, error) {
-	intf := args.At(0)
+	// TODO
+	intf, _ := options["interface"].String()
 
 	// Read CONFIG_DB.PORT
 	queries := [][]string{{"CONFIG_DB", "PORT"}}
@@ -969,8 +1044,8 @@ func getInterfaceAlias(args sdc.CmdArgs, options sdc.OptionMap) ([]byte, error) 
 }
 
 func getInterfaceSwitchportConfig(args sdc.CmdArgs, options sdc.OptionMap) ([]byte, error) {
-	// TODO: Need revirw as show cli doesnt support this....
-	intf := args.At(0)
+	// TODO: Need revirw as show cli doesnt support any arguments
+	intf, _ := options["interface"].String()
 
 	// Read CONFIG_DB tables
 	portTbl, err := GetMapFromQueries([][]string{{"CONFIG_DB", "PORT"}})
@@ -1066,8 +1141,8 @@ func getInterfaceSwitchportConfig(args sdc.CmdArgs, options sdc.OptionMap) ([]by
 }
 
 func getInterfaceSwitchportStatus(args sdc.CmdArgs, options sdc.OptionMap) ([]byte, error) {
-	// TODO: CLI discrepancy
-	intf := args.At(0)
+	// TODO: CLI discrepancy same as other switchport cmd
+	intf, _ := options["interface"].String()
 
 	// Read CONFIG_DB tables
 	portTbl, err := GetMapFromQueries([][]string{{"CONFIG_DB", "PORT"}})
@@ -1149,7 +1224,8 @@ func IsInterfaceInPortchannel(portchannelMemberTable map[string]interface{}, int
 }
 
 func getInterfaceFlap(args sdc.CmdArgs, options sdc.OptionMap) ([]byte, error) {
-	intf := args.At(0)
+	// TODO
+	intf, _ := options["interface"].String()
 
 	// Query APPL_DB PORT_TABLE
 	queries := [][]string{
@@ -1202,4 +1278,78 @@ func getInterfaceFlap(args sdc.CmdArgs, options sdc.OptionMap) ([]byte, error) {
 	}
 
 	return json.Marshal(rows)
+}
+
+// 'expected' subcommand ("show interface neighbor expected")
+// admin@sonic: redis-cli -n 4 HGETALL 'DEVICE_NEIGHBOR|Ethernet2'
+// 1) "name"
+// 2) "DEVICE01T1"
+// 3) "port"
+// 4) "Ethernet1"
+//
+// admin@sonic: redis-cli -n 4 HGETALL "DEVICE_NEIGHBOR_METADATA|DEVICE01T1"
+// 1) "hwsku"
+// 2) "Arista-VM"
+// 3) "mgmt_addr"
+// 4) "0.0.0.0"
+// 5) "type"
+// 6) "BackEndLeafRouter"
+func getInterfaceNeighborExpected(args sdc.CmdArgs, options sdc.OptionMap) ([]byte, error) {
+	// TODO: Supports an interfacename as arg
+	// Fetch DEVICE_NEIGHBOR
+	neighborTbl, err := GetMapFromQueries([][]string{{"CONFIG_DB", "DEVICE_NEIGHBOR"}})
+	if err != nil {
+		log.Errorf("Failed to get DEVICE_NEIGHBOR: %v", err)
+		return nil, err
+	}
+
+	// Fetch DEVICE_NEIGHBOR_METADATA
+	metaTbl, err := GetMapFromQueries([][]string{{"CONFIG_DB", "DEVICE_NEIGHBOR_METADATA"}})
+	if err != nil {
+		log.Errorf("Failed to get DEVICE_NEIGHBOR_METADATA: %v", err)
+		return nil, err
+	}
+
+	out := make(map[string]map[string]string)
+	for localIf := range neighborTbl {
+		device := GetFieldValueString(neighborTbl, localIf, "", "name")
+		if device == "" {
+			continue
+		}
+		remotePort := GetFieldValueString(neighborTbl, localIf, "None", "port")
+		if remotePort == "" {
+			remotePort = "None"
+		}
+
+		loopback := GetFieldValueString(metaTbl, device, "None", "lo_addr")
+		if loopback == "" {
+			loopback = "None"
+		}
+		mgmt := GetFieldValueString(metaTbl, device, "None", "mgmt_addr")
+		if mgmt == "" {
+			mgmt = "None"
+		}
+		ntype := GetFieldValueString(metaTbl, device, "None", "type")
+		if ntype == "" {
+			ntype = "None"
+		}
+
+		displayIf := GetInterfaceNameForDisplay(localIf)
+
+		out[displayIf] = map[string]string{
+			"Neighbor":         device,
+			"NeighborPort":     remotePort,
+			"NeighborLoopback": loopback,
+			"NeighborMgmt":     mgmt,
+			"NeighborType":     ntype,
+		}
+	}
+
+	return json.Marshal(out)
+}
+
+func getInterfaceNamingMode(args sdc.CmdArgs, options sdc.OptionMap) ([]byte, error) {
+	mode := GetInterfaceNamingMode()
+	namingModeResp := namingModeResponse{NamingMode: mode}
+	return json.Marshal(namingModeResp)
 }

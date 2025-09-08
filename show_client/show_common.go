@@ -232,6 +232,15 @@ func RemapAliasToPortNameForQueues(queueData map[string]interface{}) map[string]
 	return remapped
 }
 
+func GetNameForInterfaceAlias(intfAlias string) string {
+	aliasMap := sdc.AliasToPortNameMap()
+	if name, ok := aliasMap[intfAlias]; ok {
+		return name
+	} else {
+		return ""
+	}
+}
+
 func GetValueOrDefault(values map[string]interface{}, key string, defaultValue string) string {
 	if value, ok := values[key]; ok {
 		return fmt.Sprint(value)
@@ -340,7 +349,7 @@ func GetInterfaceNameForDisplay(name string) string {
 	if name == "" {
 		return name
 	}
-	if interfaceNamingMode := os.Getenv(SonicCliIfaceMode); interfaceNamingMode != "alias" {
+	if interfaceNamingMode := GetInterfaceNamingMode(); interfaceNamingMode != "alias" {
 		return name
 	}
 
@@ -431,4 +440,11 @@ func Capitalize(s string) string {
 		return s
 	}
 	return strings.ToUpper(s[:1]) + strings.ToLower(s[1:])
+}
+
+func GetInterfaceNamingMode() string {
+	if mode := os.Getenv(SonicCliIfaceMode); mode != "" {
+		return mode
+	}
+	return "default"
 }

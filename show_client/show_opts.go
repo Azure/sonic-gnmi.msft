@@ -26,6 +26,8 @@ const (
 	showCmdOptionIPAddressDesc     = "[ipaddress=TEXT] Filter by single IP address"
 	showCmdOptionIPV6AddressDesc   = "[ipaddress=TEXT] Filter by IPv6 address"
 	showCmdOptionInfoTypeDesc      = "[info_type=TEXT] Filter by information type"
+	showCmdOptionFrrRouteArgsDesc  = "[args=TEXT] Filter by FRR route arguments"
+	showCmdOptionQueueTypeDesc     = "[queue-type=TEXT] Filter by queue type (unicast/multicast/all)"
 )
 
 // Option keys
@@ -174,6 +176,18 @@ var (
 	showCmdOptionInfoTypeForBgpNetwork = sdc.NewShowCmdOption(
 		"info_type",
 		showCmdOptionInfoTypeDesc,
+		sdc.StringValue,
+	)
+
+	showCmdOptionFrrRouteArgs = sdc.NewShowCmdOption(
+		"args",
+		showCmdOptionFrrRouteArgsDesc,
+		sdc.StringValue,
+	)
+
+	showCmdOptionQueueType = sdc.NewShowCmdOption(
+		"queue-type",
+		showCmdOptionQueueTypeDesc,
 		sdc.StringValue,
 	)
 )

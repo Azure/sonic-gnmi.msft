@@ -6,6 +6,7 @@ import (
 
 // All SHOW path and getters are defined here
 func init() {
+	// SHOW/buffer_pool
 	sdc.RegisterCliPath(
 		[]string{"SHOW", "buffer_pool", "persistent-watermark"},
 		getBufferPoolPersistentWatermark,
@@ -23,6 +24,7 @@ func init() {
 		sdc.UnimplementedOption(showCmdOptionNamespace),
 	)
 
+	// SHOW/clock
 	sdc.RegisterCliPath(
 		[]string{"SHOW", "clock"},
 		getDate,
@@ -41,6 +43,8 @@ func init() {
 		nil,
 		showCmdOptionVerbose,
 	)
+
+	// SHOW/dropcounters
 	sdc.RegisterCliPath(
 		[]string{"SHOW", "dropcounters", "capabilities"},
 		getDropcountersCapabilities,
@@ -60,6 +64,8 @@ func init() {
 		sdc.UnimplementedOption(showCmdOptionNamespace),
 		showCmdOptionVerbose,
 	)
+
+	// SHOW/headroom-pool
 	sdc.RegisterCliPath(
 		[]string{"SHOW", "headroom-pool", "persistent-watermark"},
 		getHeadroomPoolPersistentWatermark,
@@ -76,6 +82,8 @@ func init() {
 		nil,
 		sdc.UnimplementedOption(showCmdOptionNamespace),
 	)
+
+	// SHOW/interfaces
 	sdc.RegisterCliPath(
 		[]string{"SHOW", "interfaces", "alias"},
 		getInterfaceAlias,
@@ -107,9 +115,20 @@ func init() {
 		showCmdOptionVerbose,
 	)
 	sdc.RegisterCliPath(
+		[]string{"SHOW", "interfaces", "description"},
+		getInterfacesDescription,
+		"SHOW/interfaces/description/{INTERFACENAME}[OPTIONS]: Show interface status, protocol and description",
+		1,
+		nil,
+		sdc.UnimplementedOption(showCmdOptionNamespace),
+		sdc.UnimplementedOption(showCmdOptionDisplay),
+		showCmdOptionInterface,
+		showCmdOptionVerbose,
+	)
+	sdc.RegisterCliPath(
 		[]string{"SHOW", "interfaces", "errors"},
 		getInterfaceErrors,
-		"SHOW/interfaces/errors/INTERFACENAME[OPTIONS]: Show Interface Errors <interfacename>",
+		"SHOW/interfaces/errors/{INTERFACENAME}[OPTIONS]: Show Interface Errors <interfacename>",
 		1,
 		nil,
 	)
@@ -129,6 +148,21 @@ func init() {
 		"SHOW/interfaces/flap/{INTERFACENAME}[OPTIONS]: Show Interface Flap Information",
 		1,
 		nil,
+	)
+	sdc.RegisterCliPath(
+		[]string{"SHOW", "interfaces", "neighbor", "expected"},
+		getInterfaceNeighborExpected,
+		"SHOW/interfaces/neighbor/expected/{INTERFACENAME}[OPTIONS]: Show expected neighbor information by interfaces",
+		0,
+		nil,
+	)
+	sdc.RegisterCliPath(
+		[]string{"SHOW", "interfaces", "naming_mode"},
+		getInterfaceNamingMode,
+		"SHOW/interfaces/naming_mode[OPTIONS]: Show interface naming_mode status",
+		0,
+		nil,
+		showCmdOptionVerbose,
 	)
 	sdc.RegisterCliPath(
 		[]string{"SHOW", "interfaces", "status"},
@@ -171,9 +205,10 @@ func init() {
 		"SHOW/interfaces/transceiver/presence/{INTERFACENAME}[OPTIONS]: Show interface transceiver presence",
 		1,
 		nil,
-		showCmdOptionVerbose,
-		sdc.UnimplementedOption(showCmdOptionNamespace),
+		showCmdOptionInterface,
 	)
+
+	// SHOW/ipv6
 	sdc.RegisterCliPath(
 		[]string{"SHOW", "ipv6", "bgp", "neighbors"},
 		getIPv6BGPNeighborsHandler,
@@ -199,7 +234,6 @@ func init() {
 		sdc.UnimplementedOption(showCmdOptionNamespace),
 		showCmdOptionDisplay,
 	)
-
 	sdc.RegisterCliPath(
 		[]string{"SHOW", "ipv6", "fib"},
 		getIPv6Fib,
@@ -223,7 +257,6 @@ func init() {
 		"SHOW/ipv6/link-local-mode[OPTIONS]: Show ipv6 link-local-mode",
 		0,
 		nil,
-		showCmdOptionVerbose,
 	)
 	sdc.RegisterCliPath(
 		[]string{"SHOW", "ipv6", "protocol"},
@@ -233,7 +266,18 @@ func init() {
 		nil,
 		showCmdOptionVerbose,
 	)
+	sdc.RegisterCliPath(
+		[]string{"SHOW", "ipv6", "route"},
+		getIPv6Route,
+		"SHOW/ipv6/route/{IPADDRESS}/{VRF NAME}{...}[OPTIONS]: Show IPv6 routing table",
+		-1,
+		nil,
+		sdc.UnimplementedOption(showCmdOptionNamespace),
+		showCmdOptionDisplay,
+		showCmdOptionFrrRouteArgs,
+	)
 
+	// SHOW/lldp
 	sdc.RegisterCliPath(
 		[]string{"SHOW", "lldp", "neighbors"},
 		getLLDPNeighbors,
@@ -250,6 +294,8 @@ func init() {
 		nil,
 		showCmdOptionVerbose,
 	)
+
+	// SHOW/mac
 	sdc.RegisterCliPath(
 		[]string{"SHOW", "mac"},
 		getMacTable,
@@ -272,6 +318,8 @@ func init() {
 		0,
 		nil,
 	)
+
+	// SHOW/mmu
 	sdc.RegisterCliPath(
 		[]string{"SHOW", "mmu"},
 		getMmuConfig,
@@ -281,6 +329,8 @@ func init() {
 		sdc.UnimplementedOption(showCmdOptionNamespace),
 		showCmdOptionVerbose,
 	)
+
+	// SHOW/processes
 	sdc.RegisterCliPath(
 		[]string{"SHOW", "processes"},
 		getProcessesRoot,
@@ -300,6 +350,8 @@ func init() {
 		nil,
 		showCmdOptionVerbose,
 	)
+
+	// SHOW/queue
 	sdc.RegisterCliPath(
 		[]string{"SHOW", "queue", "counters"},
 		getQueueCounters,
@@ -311,8 +363,18 @@ func init() {
 		showCmdOptionTrim,
 		sdc.UnimplementedOption(showCmdOptionNamespace),
 		showCmdOptionVerbose,
-		// Add all opton, voq unimplemeneted, json, 
 	)
+	sdc.RegisterCliPath(
+		[]string{"SHOW", "queue", "watermark"},
+		getQueueUserWatermarks,
+		"SHOW/queue/watermark/COMMAND[OPTIONS]: Show user WM for queues",
+		0,
+		nil,
+		showCmdOptionInterfaces,
+		sdc.RequiredOption(showCmdOptionQueueType),
+	)
+
+	// SHOW/reboot-cause
 	sdc.RegisterCliPath(
 		[]string{"SHOW", "reboot-cause"},
 		getPreviousRebootCause,
@@ -329,6 +391,17 @@ func init() {
 		0,
 		nil,
 	)
+
+	// SHOW/services
+	sdc.RegisterCliPath(
+		[]string{"SHOW", "services"},
+		getServices,
+		"SHOW/services[OPTIONS]: Show all daemon services",
+		0,
+		nil,
+	)
+
+	// SHOW/srv6
 	sdc.RegisterCliPath(
 		[]string{"SHOW", "srv6", "stats"},
 		getSRv6Stats,
@@ -337,6 +410,8 @@ func init() {
 		nil,
 		showCmdOptionVerbose,
 	)
+
+	// SHOW/system-memory
 	sdc.RegisterCliPath(
 		[]string{"SHOW", "system-memory"},
 		getSystemMemory,
@@ -345,6 +420,8 @@ func init() {
 		nil,
 		showCmdOptionVerbose,
 	)
+
+	// SHOW/uptime
 	sdc.RegisterCliPath(
 		[]string{"SHOW", "uptime"},
 		getUptime,
@@ -353,6 +430,8 @@ func init() {
 		nil,
 		showCmdOptionVerbose,
 	)
+
+	// SHOW/version
 	sdc.RegisterCliPath(
 		[]string{"SHOW", "version"},
 		getVersion,
@@ -361,6 +440,8 @@ func init() {
 		nil,
 		showCmdOptionVerbose,
 	)
+
+	// SHOW/vlan
 	sdc.RegisterCliPath(
 		[]string{"SHOW", "vlan", "brief"},
 		getVlanBrief,
@@ -369,6 +450,8 @@ func init() {
 		nil,
 		showCmdOptionVerbose,
 	)
+
+	// SHOW/watermark
 	sdc.RegisterCliPath(
 		[]string{"SHOW", "watermark", "telemetry", "interval"},
 		getWatermarkTelemetryInterval,

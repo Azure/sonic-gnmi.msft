@@ -43,25 +43,25 @@ func TestShowHeadroomPoolWatermarks(t *testing.T) {
 	AddDataSet(t, CountersDbNum, userWatermarksFile)
 	AddDataSet(t, CountersDbNum, persistentWatermarksFile)
 
-	// SHOW headroom_pool watermark
-	t.Run("query SHOW headroom_pool watermark", func(t *testing.T) {
+	// SHOW headroom-pool watermark
+	t.Run("query SHOW headroom-pool watermark", func(t *testing.T) {
 		textPbPath := `
-            elem: <name: "headroom_pool" >
+            elem: <name: "headroom-pool" >
             elem: <name: "watermark" >
         `
-		t.Log("Sending GET for SHOW/headroom_pool/watermark (user watermarks)")
+		t.Log("Sending GET for SHOW/headroom-pool/watermark (user watermarks)")
 		// Only ingress_lossless_pool should be included
 		expectedJSON := `{"ingress_lossless_pool":{"Bytes":"3333"}}`
 		runTestGet(t, ctx, gClient, "SHOW", textPbPath, codes.OK, []byte(expectedJSON), true)
 	})
 
-	// SHOW headroom_pool persistent-watermark
-	t.Run("query SHOW headroom_pool persistent-watermark", func(t *testing.T) {
+	// SHOW headroom-pool persistent-watermark
+	t.Run("query SHOW headroom-pool persistent-watermark", func(t *testing.T) {
 		textPbPath := `
-            elem: <name: "headroom_pool" >
+            elem: <name: "headroom-pool" >
             elem: <name: "persistent-watermark" >
         `
-		t.Log("Sending GET for SHOW/headroom_pool/persistent-watermark (persistent watermarks)")
+		t.Log("Sending GET for SHOW/headroom-pool/persistent-watermark (persistent watermarks)")
 		expectedJSON := `{"ingress_lossless_pool":{"Bytes":"9999"}}`
 		runTestGet(t, ctx, gClient, "SHOW", textPbPath, codes.OK, []byte(expectedJSON), true)
 	})

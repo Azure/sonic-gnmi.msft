@@ -248,8 +248,9 @@ func getIPv6BGPNeighborsReceivedRoutes(ip string) ([]byte, error) {
 // show ipv6 bgp neighbors <ipaddress> -> show neighbor info
 // show ipv6 bgp neighbors <ipaddress> routes|advertised-routes|received-routes → show specific option
 func getIPv6BGPNeighborsHandler(args sdc.CmdArgs, options sdc.OptionMap) ([]byte, error) {
-	ip := args.At(0)
-	info_type := args.At(1)
+	// TODO
+	ip, _ := options["ipaddress"].String()
+	info_type, _ := options["info_type"].String()
 
 	// Validate IPv6 address if provided
 	if ip != "" && !isIPv6Address(ip) {

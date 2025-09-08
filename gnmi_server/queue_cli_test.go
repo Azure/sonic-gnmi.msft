@@ -72,7 +72,7 @@ func TestGetQueueCounters(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Failed to read expected query results for WRED counters of Ethernet40 and Ethernet80: %v", err)
 	}
-	wredCountersEth0NonZero := []byte(`{"Ethernet0:2": {"WredDrp/pkts": "2", "WredDrp/bytes": "512"}}`)
+	wredCountersEth0NonZero := []byte(`{"Ethernet0:0": {}, "Ethernet0:1": {}, "Ethernet0:2": {"WredDrp/pkts": "2", "WredDrp/bytes": "512"}}`)
 
 	ResetDataSetsAndMappings(t)
 

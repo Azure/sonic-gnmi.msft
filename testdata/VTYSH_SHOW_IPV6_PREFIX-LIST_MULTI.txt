@@ -1,0 +1,10 @@
+ZEBRA: ipv6 prefix-list DEFAULT_IPV6: 2 entries
+   seq 5 permit any
+   seq 10 permit any
+BGP: ipv6 prefix-list DEFAULT_IPV6: 2 entries
+   seq 5 permit any
+   seq 10 permit any
+BGP: ipv6 prefix-list LOCAL_VLAN_IPV6_PREFIX: 1 entries
+   seq 5 permit ffff:1000::/64
+BGP: ipv6 prefix-list PL_LoopbackV6: 1 entries
+   seq 5 permit cccc:1::/64

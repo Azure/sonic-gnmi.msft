@@ -321,5 +321,11 @@ func init() {
 		nil,
 		showCmdOptionInterfaces,
 		sdc.RequiredOption(showCmdOptionQueueType),
+	)	
+	sdc.RegisterCliPath(
+		[]string{"SHOW", "ipv6", "prefix-list"},
+		getIPv6PrefixList,
+		nil,
+		showCmdOptionVerbose,
 	)
 }

@@ -1,0 +1,17 @@
+[
+	{
+		"source": "BGP",
+		"prefix_lists": [
+			{
+				"name": "LOCAL_VLAN_IPV6_PREFIX",
+				"entries": [
+					{
+						"seq": 10,
+						"action": "permit",
+						"prefix": "ffff:1000::/64"
+					}
+				]
+			}
+		]
+	}
+]

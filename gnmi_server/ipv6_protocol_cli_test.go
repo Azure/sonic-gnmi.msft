@@ -107,7 +107,7 @@ func TestGetIPv6Protocol(t *testing.T) {
 			wantRetCode: codes.OK,
 			wantRespVal: emptyExpected,
 			valTest:     true,
-			mockFile:    "../testdata/VTYSH_SHOW_IPV6_PROTOCOL_EMPTY.txt",
+			mockFile:    "../testdata/VTYSH_SHOW_EMPTY.txt",
 		},
 	}
 

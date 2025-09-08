@@ -1,0 +1,2 @@
+BGP: ipv6 prefix-list LOCAL_VLAN_IPV6_PREFIX: 1 entries
+   seq 10 permit ffff:1000::/64

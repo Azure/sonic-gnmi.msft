@@ -26,6 +26,7 @@ const DefaultEmptyString = ""
 const StateDb = "STATE_DB"
 const ConfigDb = "CONFIG_DB"
 const ApplDb = "APPL_DB"
+const CountersDb = "COUNTERS_DB"
 const ConfigDbPort = "PORT"
 const FDBTable = "FDB_TABLE"
 const VlanSubInterfaceSeparator = '.'

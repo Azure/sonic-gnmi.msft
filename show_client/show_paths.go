@@ -322,4 +322,11 @@ func init() {
 		showCmdOptionInterfaces,
 		sdc.RequiredOption(showCmdOptionQueueType),
 	)
+	sdc.RegisterCliPath(
+		[]string{"SHOW", "interfaces", "counters", "rif"},
+		getInterfaceRifCounters,
+		nil,
+		showCmdOptionPeriod,
+		showCmdOptionJson,
+	)
 }

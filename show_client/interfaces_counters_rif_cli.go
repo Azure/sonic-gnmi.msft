@@ -1,0 +1,192 @@
+package show_client
+
+import (
+	"encoding/json"
+	"fmt"
+	"strconv"
+	"time"
+
+	log "github.com/golang/glog"
+	sdc "github.com/sonic-net/sonic-gnmi/sonic_data_client"
+)
+
+var rifCounterNames = []string{
+	"SAI_ROUTER_INTERFACE_STAT_IN_OCTETS",
+	"SAI_ROUTER_INTERFACE_STAT_IN_PACKETS",
+	"SAI_ROUTER_INTERFACE_STAT_OUT_OCTETS",
+	"SAI_ROUTER_INTERFACE_STAT_OUT_PACKETS",
+	"SAI_ROUTER_INTERFACE_STAT_IN_ERROR_OCTETS",
+	"SAI_ROUTER_INTERFACE_STAT_IN_ERROR_PACKETS",
+	"SAI_ROUTER_INTERFACE_STAT_OUT_ERROR_OCTETS",
+	"SAI_ROUTER_INTERFACE_STAT_OUT_ERROR_PACKETS",
+}
+
+type interfaceRifCounters struct {
+	RxOk  string `json:"RxOk"`
+	RxBps string `json:"RxBps"`
+	RxPps string `json:"RxPps"`
+	RxErr string `json:"RxErr"`
+	TxOk  string `json:"TxOk"`
+	TxBps string `json:"TxBps"`
+	TxPps string `json:"TxPps"`
+	TxErr string `json:"TxErr"`
+}
+
+func getInterfaceRifCounters(options sdc.OptionMap) ([]byte, error) {
+	period := 0
+	interfaceName, _ := options["interface"].String()
+	takeDiffSnapshot := false
+	if periodValue, ok := options["period"].Int(); ok {
+		takeDiffSnapshot = true
+		period = periodValue
+	}
+
+	queries := [][]string{
+		{CountersDb, "COUNTERS_RIF_NAME_MAP"},
+	}
+
+	rifNameMap, err := GetMapFromQueries(queries)
+	if err != nil {
+		log.Errorf("Failed to get COUNTERS_RIF_NAME_MAP from %s: %v", CountersDb, err)
+		return nil, err
+	}
+
+	if len(rifNameMap) == 0 {
+		return nil, fmt.Errorf("No COUNTERS_RIF_NAME_MAP in DB")
+	}
+
+	if interfaceName != "" {
+		if _, ok := rifNameMap[interfaceName]; !ok {
+			return nil, fmt.Errorf("Interface %s not found in COUNTERS_RIF_NAME_MAP, Make sure it exists", interfaceName)
+		}
+	}
+
+	oldInterfaceRifCountersMap, err := getInterfaceCountersRifSnapshot(interfaceName)
+	if err != nil {
+		log.Errorf("Failed to get old interface RIF counters: %v", err)
+		return nil, err
+	}
+
+	if !takeDiffSnapshot {
+		return json.Marshal(oldInterfaceRifCountersMap)
+	}
+
+	time.Sleep(time.Duration(period) * time.Second)
+
+	newInterfaceRifCountersMap, err := getInterfaceCountersRifSnapshot(interfaceName)
+	if err != nil {
+		log.Errorf("Failed to get new interface RIF counters: %v", err)
+		return nil, err
+	}
+
+	diffInterfaceRifCountersMap := make(map[string]interfaceRifCounters, len(newInterfaceRifCountersMap))
+	for interfaceName, newInterfaceRifCounters := range newInterfaceRifCountersMap {
+		if _, ok := oldInterfaceRifCountersMap[interfaceName]; !ok {
+			diffInterfaceRifCountersMap[interfaceName] = newInterfaceRifCounters
+			continue
+		}
+
+		newInterfaceRifCounters := interfaceRifCounters{
+			RxOk:  calculateDiff(oldInterfaceRifCountersMap[interfaceName].RxOk, newInterfaceRifCounters.RxOk),
+			RxBps: newInterfaceRifCounters.RxBps,
+			RxPps: newInterfaceRifCounters.RxPps,
+			RxErr: calculateDiff(oldInterfaceRifCountersMap[interfaceName].RxErr, newInterfaceRifCounters.RxErr),
+			TxOk:  calculateDiff(oldInterfaceRifCountersMap[interfaceName].TxOk, newInterfaceRifCounters.TxOk),
+			TxBps: newInterfaceRifCounters.TxBps,
+			TxPps: newInterfaceRifCounters.TxPps,
+			TxErr: calculateDiff(oldInterfaceRifCountersMap[interfaceName].TxErr, newInterfaceRifCounters.TxErr),
+		}
+
+		diffInterfaceRifCountersMap[interfaceName] = newInterfaceRifCounters
+	}
+
+	return json.MarshalIndent(diffInterfaceRifCountersMap, "", "  ")
+}
+
+func getInterfaceCountersRifSnapshot(interfaceName string) (map[string]interfaceRifCounters, error) {
+	queries := [][]string{
+		{CountersDb, "COUNTERS_RIF_NAME_MAP"},
+	}
+	rifNameMap, err := GetMapFromQueries(queries)
+	if err != nil {
+		log.Errorf("Failed to get COUNTERS_RIF_NAME_MAP from %s: %v", CountersDb, err)
+		return nil, err
+	}
+
+	queries = [][]string{
+		{CountersDb, "COUNTERS"},
+	}
+
+	rifCountersMap, err := GetMapFromQueries(queries)
+	if err != nil {
+		log.Errorf("Unable to pull data for queries %v, got err %v", queries, err)
+		return nil, err
+	}
+
+	queries = [][]string{
+		{CountersDb, "RATES"},
+	}
+
+	rifRatesMap, err := GetMapFromQueries(queries)
+	if err != nil {
+		log.Errorf("Unable to pull data for queries %v, got err %v", queries, err)
+		return nil, err
+	}
+
+	if len(rifNameMap) == 0 {
+		return nil, fmt.Errorf("No COUNTERS_RIF_NAME_MAP in DB")
+	}
+
+	interfaceRifCountersMap := make(map[string]interfaceRifCounters, len(rifNameMap))
+	for rifName, oid := range rifNameMap {
+		if interfaceName != "" && rifName != interfaceName {
+			continue
+		}
+
+		oidStr, ok := oid.(string)
+		if !ok {
+			log.Warningf("Invalid OID for RIF %s: %v", rifName, oid)
+			continue
+		}
+
+		interfaceRifCounter := interfaceRifCounters{
+			RxOk:  GetFieldValueString(rifCountersMap, oidStr, defaultMissingCounterValue, "SAI_ROUTER_INTERFACE_STAT_IN_PACKETS"),
+			RxBps: GetFieldValueString(rifRatesMap, oidStr, defaultMissingCounterValue, "RX_BPS"),
+			RxPps: GetFieldValueString(rifRatesMap, oidStr, defaultMissingCounterValue, "RX_PPS"),
+			RxErr: GetFieldValueString(rifCountersMap, oidStr, defaultMissingCounterValue, "SAI_ROUTER_INTERFACE_STAT_IN_ERROR_PACKETS"),
+			TxOk:  GetFieldValueString(rifCountersMap, oidStr, defaultMissingCounterValue, "SAI_ROUTER_INTERFACE_STAT_OUT_PACKETS"),
+			TxBps: GetFieldValueString(rifRatesMap, oidStr, defaultMissingCounterValue, "TX_BPS"),
+			TxPps: GetFieldValueString(rifRatesMap, oidStr, defaultMissingCounterValue, "TX_PPS"),
+			TxErr: GetFieldValueString(rifCountersMap, oidStr, defaultMissingCounterValue, "SAI_ROUTER_INTERFACE_STAT_OUT_ERROR_PACKETS"),
+		}
+
+		interfaceRifCountersMap[rifName] = interfaceRifCounter
+	}
+
+	return interfaceRifCountersMap, nil
+}
+
+func calculateDiff(oldValue, newValue string) string {
+	if newValue == defaultMissingCounterValue {
+		return defaultMissingCounterValue
+	}
+
+	if oldValue == defaultMissingCounterValue {
+		oldValue = "0"
+	}
+
+	oldCounterValue, err := strconv.ParseInt(oldValue, base10, 64)
+	if err != nil {
+		log.Warningf("Invalid old counter value %s: %v", oldValue, err)
+		return defaultMissingCounterValue
+	}
+
+	newCounterValue, err := strconv.ParseInt(newValue, base10, 64)
+	if err != nil {
+		log.Warningf("Invalid new counter value %s: %v", newValue, err)
+		return defaultMissingCounterValue
+	}
+
+	diff := newCounterValue - oldCounterValue
+	return strconv.FormatInt(diff, base10)
+}

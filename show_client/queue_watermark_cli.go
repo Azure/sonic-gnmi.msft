@@ -57,7 +57,7 @@ func getQueueUserWatermarksSnapshot(ifaces []string, requestedQueueType int) (ma
 	return response, nil
 }
 
-func getQueueUserWatermarks(options sdc.OptionMap) ([]byte, error) {
+func getQueueUserWatermarks(args sdc.CmdArgs, options sdc.OptionMap) ([]byte, error) {
 	if len(countersQueueTypeMap) == 0 {
 		var err error
 		countersQueueTypeMap, err = sdc.GetCountersQueueTypeMap()

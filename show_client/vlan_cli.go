@@ -43,7 +43,7 @@ type portAndTagging struct {
 	Port_tagging string `json:"port_tagging"`
 }
 
-//Function to check if given key is having valid IP, IP CIDR
+// Function to check if given key is having valid IP, IP CIDR
 func isIPPrefixInKey(key interface{}) bool {
 	if keyStr, ok := key.(string); ok {
 		vlanId, ip := ParseKey(keyStr, pipeDelimiter)

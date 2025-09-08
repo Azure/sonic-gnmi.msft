@@ -337,8 +337,8 @@ func getInterfaceErrors(args sdc.CmdArgs, options sdc.OptionMap) ([]byte, error)
 	intf := args.At(0)
 	if intf == "" {
 		return nil, status.Errorf(codes.InvalidArgument, "No interface name passed in as option")
-
-		// Query Port Operational Errors Table from STATE_DB
+	}
+	// Query Port Operational Errors Table from STATE_DB
 	queries := [][]string{
 		{"STATE_DB", "PORT_OPERR_TABLE", intf},
 	}

@@ -13,11 +13,11 @@ import (
 
 // processEntry for STATE_DB PROCESS_STATS
 type processEntry struct {
-	Pid  string `json:"PID"`
-	Ppid string `json:"PPID"`
-	Cmd  string `json:"CMD"`
-	Mem  string `json:"%MEM"`
-	Cpu  string `json:"%CPU"`
+	Pid   string `json:"PID"`
+	Ppid  string `json:"PPID"`
+	Cmd   string `json:"CMD"`
+	Mem   string `json:"%MEM"`
+	Cpu   string `json:"%CPU"`
 	Stime string `json:"STIME,omitempty"`
 	Time  string `json:"TIME,omitempty"`
 	Tt    string `json:"TT,omitempty"`

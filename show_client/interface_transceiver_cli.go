@@ -105,11 +105,33 @@ func getInterfaceTransceiverPresence(options sdc.OptionMap) ([]byte, error) {
 // -----------  ----------------
 // Ethernet160  Off
 func getInterfaceTransceiverLpmode(options sdc.OptionMap) ([]byte, error) {
-	intf, _ := options["interface"].String()
+	portNameToAlias, err := getLogicalToPhysicalPortMap()
+	if err != nil {
+		log.Errorf("Unable to get logical to physical port map, %v", err)
+		return nil, err
+	}
 
+	v, ok := options["interface"].String()
+	if !ok || v == "" {
+		lpmode := getInterfaceTransceiverLpmode()
+	} else {
+		_, exist := portNameToAlias[v]
+		if !exist {
+			err = fmt.Errorf("Interface %s not found in CONFIG_DB PORT", v)
+			log.Errorf(err.Error())
+			return nil, err
+		} else {
+			lpmode := getInterfaceTransceiverLpmode(portNameToAlias[v])
+		}
+	}
+
+	return json.Marshal(lpmode)
+}
+
+func getInterfaceTransceiverLpmode(physicalItfName string) ([]byte, error) {
 	cmdStr := "sudo sfputil show lpmode"
-	if intf != "" {
-		cmdStr += " -p " + intf
+	if physicalItfName != "" {
+		cmdStr += " -p " + physicalItfName
 	}
 
 	out, err := GetDataFromHostCommand(cmdStr)
@@ -126,7 +148,7 @@ func getInterfaceTransceiverLpmode(options sdc.OptionMap) ([]byte, error) {
 		if line == "" {
 			continue
 		}
-		if !headerSkipped { // header line
+		if !headerSkipped {
 			headerSkipped = true
 			continue
 		}
@@ -143,12 +165,34 @@ func getInterfaceTransceiverLpmode(options sdc.OptionMap) ([]byte, error) {
 		lpmode[port] = status
 	}
 
-	if intf != "" {
-		if _, ok := lpmode[intf]; !ok {
-			// Need to check
-			lpmode[intf] = "Unknown"
-		}
+	_, exist := lpmode[logicalItfName]
+	if !exist {
+		lpmode[logicalItfName] = "N/A"
 	}
 
 	return json.Marshal(lpmode)
+}
+
+func getLogicalToPhysicalPortMap() (map[string]string, error) {
+	portMap := make(map[string]string)
+
+	queries := [][]string{
+		{"CONFIG_DB", "PORT"},
+	}
+	portEntries, err := GetMapFromQueries(queries)
+	if err != nil {
+		log.Errorf("Unable to get data from CONFIG_DB PORT with queries %v, got err: %v", queries, err)
+		return nil, err
+	}
+	log.V(6).Infof("Data from CONFIG_DB.PORT: %v", portEntries)
+
+	for name := range portEntries {
+		alias := GetFieldValueString(portEntries, name, "", "alias")
+		if alias == "" {
+			alias = name
+		}
+		portMap[name] = alias
+	}
+
+	return portMap, nil
 }

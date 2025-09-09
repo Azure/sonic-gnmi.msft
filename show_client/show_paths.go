@@ -327,6 +327,6 @@ func init() {
 		getInterfaceRifCounters,
 		nil,
 		showCmdOptionPeriod,
-		showCmdOptionJson,
+		showCmdOptionInterface,
 	)
 }

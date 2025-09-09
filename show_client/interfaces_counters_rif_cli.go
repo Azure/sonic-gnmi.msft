@@ -100,7 +100,7 @@ func getInterfaceRifCounters(options sdc.OptionMap) ([]byte, error) {
 		diffInterfaceRifCountersMap[interfaceName] = newInterfaceRifCounters
 	}
 
-	return json.MarshalIndent(diffInterfaceRifCountersMap, "", "  ")
+	return json.Marshal(diffInterfaceRifCountersMap)
 }
 
 func getInterfaceCountersRifSnapshot(interfaceName string) (map[string]interfaceRifCounters, error) {
@@ -111,6 +111,10 @@ func getInterfaceCountersRifSnapshot(interfaceName string) (map[string]interface
 	if err != nil {
 		log.Errorf("Failed to get COUNTERS_RIF_NAME_MAP from %s: %v", CountersDb, err)
 		return nil, err
+	}
+
+	if len(rifNameMap) == 0 {
+		return nil, fmt.Errorf("No COUNTERS_RIF_NAME_MAP in DB")
 	}
 
 	queries = [][]string{
@@ -124,17 +128,13 @@ func getInterfaceCountersRifSnapshot(interfaceName string) (map[string]interface
 	}
 
 	queries = [][]string{
-		{CountersDb, "RATES"},
+		{CountersDb, "RATES:*"},
 	}
 
 	rifRatesMap, err := GetMapFromQueries(queries)
 	if err != nil {
 		log.Errorf("Unable to pull data for queries %v, got err %v", queries, err)
 		return nil, err
-	}
-
-	if len(rifNameMap) == 0 {
-		return nil, fmt.Errorf("No COUNTERS_RIF_NAME_MAP in DB")
 	}
 
 	interfaceRifCountersMap := make(map[string]interfaceRifCounters, len(rifNameMap))

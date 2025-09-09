@@ -57,7 +57,12 @@ func getInterfaceRifCounters(options sdc.OptionMap) ([]byte, error) {
 		return json.Marshal(oldInterfaceRifCountersMap)
 	}
 
-	time.Sleep(time.Duration(period) * time.Second)
+	if period > 0 {
+		if period > maxShowCommandPeriod {
+			return nil, fmt.Errorf("period value must be <= %v", maxShowCommandPeriod)
+		}
+		time.Sleep(time.Duration(period) * time.Second)
+	}
 
 	newInterfaceRifCountersMap, err := getInterfaceCountersRifSnapshot(interfaceName)
 	if err != nil {

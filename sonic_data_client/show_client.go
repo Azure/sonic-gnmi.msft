@@ -24,9 +24,14 @@ func RegisterCliPath(path []string, getter DataGetter, usageDesc string, minArgs
 		maxArgs:     maxArgs,
 		regLen:      len(path),
 	}
+	err := validateRegisteredArgs(config)
+	if err != nil {
+		log.Errorf("Failed to add trie node for %v with %v due to arg validation: %v", path, config, err)
+		return
+	}
 	n := showTrie.Add(path, config)
 	if _, ok := n.meta.(ShowPathConfig); !ok {
-		log.V(1).Infof("Failed to add trie node for %v with %v", path, config)
+		log.Errorf("Failed to add trie node for %v with %v", path, config)
 	} else {
 		log.V(2).Infof("Add trie node for %v with %v", path, config)
 	}
@@ -97,7 +102,7 @@ func (c *ShowClient) Get(w *sync.WaitGroup) ([]*spb.Value, error) {
 		getter := config.dataGetter
 		description := config.description
 		// Validate arguments in path
-		validatedArgs, err := config.ParseArgs(gnmiPath)
+		validatedArgs, err := config.ParseArgs(c.prefix, gnmiPath)
 		if err != nil {
 			return nil, err
 		}

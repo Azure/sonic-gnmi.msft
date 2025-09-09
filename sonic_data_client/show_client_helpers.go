@@ -41,21 +41,9 @@ func (spcfg ShowPathConfig) ParseOptions(path *gnmipb.Path) (OptionMap, error) {
 	return validateOptions(passedOptions, spcfg.options)
 }
 
-func (spcfg ShowPathConfig) ParseArgs(path *gnmipb.Path) (CmdArgs, error) {
-	pathArr := pathToArr(path)
-	if spcfg.maxArgs < -1 {
-		return nil, status.Errorf(codes.Internal, "invalid number of max args: must be greater or equal to -1 (any # of args): %d", spcfg.maxArgs)
-	}
-	if spcfg.minArgs < 0 {
-		return nil, status.Errorf(codes.Internal, "invalid number of min args: must be greater or equal to 0: %d", spcfg.minArgs)
-	}
-	if spcfg.maxArgs > -1 && spcfg.minArgs > spcfg.maxArgs {
-		return nil, status.Errorf(codes.Internal, "invalid number of min/max args: min args: %d must be less than or equal to max args: %d", spcfg.minArgs, spcfg.maxArgs)
-	}
-	if spcfg.regLen <= 0 {
-		return nil, status.Errorf(codes.Internal, "invalid config: registered prefix length: %d", spcfg.regLen)
-	}
-	argStartIndex := spcfg.regLen - 1 // args start after registered prefix
+func (spcfg ShowPathConfig) ParseArgs(prefix, path *gnmipb.Path) (CmdArgs, error) {
+	pathArr := pathToArr(prefix, path)
+	argStartIndex := spcfg.regLen // args start after registered prefix
 	if argStartIndex < 0 || argStartIndex > len(pathArr) {
 		return nil, status.Errorf(codes.InvalidArgument, "invalid path: expected atleast %d elements after target, got: %d", spcfg.regLen-1, len(pathArr))
 	}
@@ -69,15 +57,33 @@ func (spcfg ShowPathConfig) ParseArgs(path *gnmipb.Path) (CmdArgs, error) {
 	return CmdArgs(pathArr[argStartIndex:]), nil
 }
 
-func pathToArr(path *gnmipb.Path) []string {
+func pathToArr(prefix, path *gnmipb.Path) []string {
 	out := make([]string, 0)
-	if path != nil {
-		elems := path.GetElem()
-		for _, elem := range elems {
-			out = append(out, elem.GetName())
-		}
+	if prefix == nil || path == nil {
+		return out
+	}
+	out = append(out, prefix.GetTarget())
+	elems := path.GetElem()
+	for _, elem := range elems {
+		out = append(out, elem.GetName())
 	}
 	return out
+}
+
+func validateRegisteredArgs(config ShowPathConfig) error {
+	if config.maxArgs < -1 {
+		return status.Errorf(codes.Internal, "invalid number of max args: must be greater or equal to -1 (any # of args): %d", config.maxArgs)
+	}
+	if config.minArgs < 0 {
+		return status.Errorf(codes.Internal, "invalid number of min args: must be greater or equal to 0: %d", config.minArgs)
+	}
+	if config.maxArgs > -1 && config.minArgs > config.maxArgs {
+		return status.Errorf(codes.Internal, "invalid number of min/max args: min args: %d must be less than or equal to max args: %d", config.minArgs, config.maxArgs)
+	}
+	if config.regLen <= 0 {
+		return status.Errorf(codes.Internal, "invalid config: registered prefix length: %d", config.regLen)
+	}
+	return nil
 }
 
 func validateOptions(passedOptions map[string]string, options map[string]ShowCmdOption) (OptionMap, error) {

@@ -46,18 +46,18 @@ func TestGetInterfaceRifCounters(t *testing.T) {
 		`
 		wantRespVal := []byte(`{
   "PortChannel101": {
-    "RxBps": "19.431878785629241",
-    "RxErrBits": "0",
-    "RxErrPackets": "100",
-    "RxOkPackets": "5940",
-    "RxOkBits": "1048449",
-    "RxPps": "0.21111450848388191",
-    "TxBps": "0.5",
-    "TxErrBits": "0",
-    "TxErrPackets": "10",
-    "TxOkBits": "0",
-    "TxOkPackets": "650",
-    "TxPps": "12.21"
+    "RxBps": "4214812716.943851",
+    "RxErrBits": "17866494",
+    "RxErrPackets": "172078",
+    "RxOkPackets": "43864767060035",
+    "RxOkBits": "4561966927266923",
+    "RxPps": "40527122.163856164",
+    "TxBps": "4214792810.2678127",
+    "TxErrBits": "52942226547142352",
+    "TxErrPackets": "509056042421691",
+    "TxOkBits": "4561964553298733",
+    "TxOkPackets": "43864743789853",
+    "TxPps": "40526901.803920366"
   },
   "PortChannel102": {
     "RxBps": "1.2202977000824049",
@@ -127,18 +127,18 @@ func TestGetInterfaceRifCounters(t *testing.T) {
 		`
 		wantRespVal := []byte(`{
 			"PortChannel101": {
-				"RxBps": "19.431878785629241",
-				"RxErrBits": "0",
-				"RxErrPackets": "100",
-				"RxOkPackets": "5940",
-				"RxOkBits": "1048449",
-				"RxPps": "0.21111450848388191",
-				"TxBps": "0.5",
-				"TxErrBits": "0",
-				"TxErrPackets": "10",
-				"TxOkBits": "0",
-				"TxOkPackets": "650",
-				"TxPps": "12.21"
+				"RxBps": "4214812716.943851",
+				"RxErrBits": "17866494",
+				"RxErrPackets": "172078",
+				"RxOkPackets": "43864767060035",
+				"RxOkBits": "4561966927266923",
+				"RxPps": "40527122.163856164",
+				"TxBps": "4214792810.2678127",
+				"TxErrBits": "52942226547142352",
+				"TxErrPackets": "509056042421691",
+				"TxOkBits": "4561964553298733",
+				"TxOkPackets": "43864743789853",
+				"TxPps": "40526901.803920366"
 			}
 	  }`)
 		runTestGet(t, ctx, gClient, "SHOW", textPbPath, codes.OK, wantRespVal, true)
@@ -153,18 +153,18 @@ func TestGetInterfaceRifCounters(t *testing.T) {
 		`
 		wantRespVal := []byte(`{
 			"PortChannel101": {
-				"RxBps": "19.431878785629241",
+				"RxBps": "4214812716.943851",
 				"RxErrBits": "0",
 				"RxErrPackets": "0",
 				"RxOkPackets": "0",
 				"RxOkBits": "0",
-				"RxPps": "0.21111450848388191",
-				"TxBps": "0.5",
+				"RxPps": "40527122.163856164",
+				"TxBps": "4214792810.2678127",
 				"TxErrBits": "0",
 				"TxErrPackets": "0",
 				"TxOkBits": "0",
 				"TxOkPackets": "0",
-				"TxPps": "12.21"
+				"TxPps": "40526901.803920366"
 			}
 	  }`)
 		runTestGet(t, ctx, gClient, "SHOW", textPbPath, codes.OK, wantRespVal, true)

@@ -90,6 +90,7 @@ func init() {
 		"SHOW/interfaces/alias/{INTERFACENAME}[OPTIONS]: Show Interface Name/Alias Mapping",
 		1,
 		nil,
+		showCmdOptionInterface, // TODO: Take as arg not option
 		sdc.UnimplementedOption(showCmdOptionNamespace),
 		showCmdOptionDisplay,
 	)
@@ -122,7 +123,7 @@ func init() {
 		nil,
 		sdc.UnimplementedOption(showCmdOptionNamespace),
 		sdc.UnimplementedOption(showCmdOptionDisplay),
-		showCmdOptionInterface,
+		showCmdOptionInterface, // TODO
 		showCmdOptionVerbose,
 	)
 	sdc.RegisterCliPath(
@@ -138,7 +139,7 @@ func init() {
 		"SHOW/interfaces/fec/status/{INTERFACENAME}[OPTIONS]: Show interface fec status",
 		1,
 		nil,
-		showCmdOptionInterface,
+		showCmdOptionInterface, // TODO
 		sdc.UnimplementedOption(showCmdOptionNamespace),
 		showCmdOptionDisplay,
 	)
@@ -148,13 +149,15 @@ func init() {
 		"SHOW/interfaces/flap/{INTERFACENAME}[OPTIONS]: Show Interface Flap Information",
 		1,
 		nil,
+		showCmdOptionInterface, // TODO: Take as arg not option
 	)
 	sdc.RegisterCliPath(
 		[]string{"SHOW", "interfaces", "neighbor", "expected"},
 		getInterfaceNeighborExpected,
 		"SHOW/interfaces/neighbor/expected/{INTERFACENAME}[OPTIONS]: Show expected neighbor information by interfaces",
-		0,
+		1,
 		nil,
+		showCmdOptionInterface, // TODO: Take as arg not option
 	)
 	sdc.RegisterCliPath(
 		[]string{"SHOW", "interfaces", "naming_mode"},
@@ -170,7 +173,7 @@ func init() {
 		"SHOW/interfaces/status/{INTERFACENAME}[OPTIONS]: Show Interface status information",
 		1,
 		nil,
-		showCmdOptionInterface,
+		showCmdOptionInterface, // TODO
 		sdc.UnimplementedOption(showCmdOptionNamespace),
 		showCmdOptionDisplay,
 		showCmdOptionVerbose,
@@ -181,6 +184,7 @@ func init() {
 		"SHOW/interfaces/switchport/config[OPTIONS]: Show interface switchport config information",
 		0,
 		nil,
+		showCmdOptionInterface, // TODO: CLI doesnt support
 	)
 	sdc.RegisterCliPath(
 		[]string{"SHOW", "interfaces", "switchport", "status"},
@@ -188,6 +192,7 @@ func init() {
 		"SHOW/interfaces/switchport/status[OPTIONS]: Show interface switchport status information",
 		0,
 		nil,
+		showCmdOptionInterface, // CLI doesnt support
 	)
 	sdc.RegisterCliPath(
 		[]string{"SHOW", "interfaces", "transceiver", "error-status"},
@@ -195,6 +200,7 @@ func init() {
 		"SHOW/interfaces/transceiver/error-status/{INTERFACENAME}[OPTIONS]: Show transceiver error-status",
 		1,
 		nil,
+		showCmdOptionInterface, // TODO: Take as arg not option
 		showCmdOptionVerbose,
 		sdc.UnimplementedOption(showCmdOptionNamespace),
 		sdc.UnimplementedOption(showCmdOptionFetchFromHW),
@@ -205,7 +211,7 @@ func init() {
 		"SHOW/interfaces/transceiver/presence/{INTERFACENAME}[OPTIONS]: Show interface transceiver presence",
 		1,
 		nil,
-		showCmdOptionInterface,
+		showCmdOptionInterface, // TODO
 	)
 
 	// SHOW/ipv6
@@ -215,6 +221,8 @@ func init() {
 		"SHOW/ipv6/bgp/neighbors/{IPADDRESS}/{routes|advertised-routes|received-routes}[OPTIONS]: Show IPv6 BGP neighbors",
 		2,
 		nil,
+		showCmdOptionIPAddress, // TODO
+		showCmdOptionInfoType,  // TODO
 		sdc.UnimplementedOption(showCmdOptionNamespace),
 	)
 	sdc.RegisterCliPath(
@@ -223,6 +231,8 @@ func init() {
 		"SHOW/ipv6/bgp/network/{ipv6-address|ipv6-prefix}/{bestpath|json|longer-prefixes|multipath}[OPTIONS]: Show BGP ipv6 network",
 		2,
 		nil,
+		showCmdOptionIPV6Address,           // TODO
+		showCmdOptionInfoTypeForBgpNetwork, // TODO
 		sdc.UnimplementedOption(showCmdOptionNamespace),
 	)
 	sdc.RegisterCliPath(
@@ -240,6 +250,7 @@ func init() {
 		"SHOW/ipv6/fib/{IPADDRESS}[OPTIONS]: Show IP FIB table",
 		1,
 		nil,
+		showCmdOptionIPV6Address, // TODO
 		showCmdOptionVerbose,
 	)
 	sdc.RegisterCliPath(
@@ -358,6 +369,7 @@ func init() {
 		"SHOW/queue/counters/{INTERFACENAME}[OPTIONS]: Show queue counters",
 		1,
 		nil,
+		showCmdOptionInterfaces, // TODO: Should be arg
 		showCmdOptionDisplay,
 		showCmdOptionNonzero,
 		showCmdOptionTrim,
@@ -370,7 +382,7 @@ func init() {
 		"SHOW/queue/watermark/COMMAND[OPTIONS]: Show user WM for queues",
 		0,
 		nil,
-		showCmdOptionInterfaces,
+		showCmdOptionInterfaces, // TODO: Should be arg
 		sdc.RequiredOption(showCmdOptionQueueType),
 	)
 
@@ -408,6 +420,7 @@ func init() {
 		"SHOW/srv6/stats/{SID}[OPTIONS]: Show SRv6 counters statistics",
 		1,
 		nil,
+		showCmdOptionSid, // TODO
 		showCmdOptionVerbose,
 	)
 

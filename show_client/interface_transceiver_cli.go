@@ -105,38 +105,42 @@ func getInterfaceTransceiverPresence(options sdc.OptionMap) ([]byte, error) {
 // -----------  ----------------
 // Ethernet160  Off
 func getInterfaceTransceiverLpmode(options sdc.OptionMap) ([]byte, error) {
-	portNameToAlias, err := getLogicalToPhysicalPortMap()
+	logicalToPhysicalPortMap, err := getLogicalToPhysicalPortMap()
 	if err != nil {
 		log.Errorf("Unable to get logical to physical port map, %v", err)
 		return nil, err
 	}
 
-	v, ok := options["interface"].String()
-	if !ok || v == "" {
-		lpmode := getInterfaceTransceiverLpmode()
-	} else {
-		_, exist := portNameToAlias[v]
+	logicalPortName, ok := options["interface"].String()
+	queriedMap := make(map[string]string)
+	if ok && logicalPortName != "" {
+		physicalPort, exist := logicalToPhysicalPortMap[logicalPortName]
 		if !exist {
-			err = fmt.Errorf("Interface %s not found in CONFIG_DB PORT", v)
+			err = fmt.Errorf("Error: No physical ports found for logical port %s in CONFIG_DB PORT", logicalPortName)
 			log.Errorf(err.Error())
 			return nil, err
-		} else {
-			lpmode := getInterfaceTransceiverLpmode(portNameToAlias[v])
 		}
+
+		lpmode, err := getInterfaceTransceiverLpmode(physicalPort)
+	} else {
+		lpmode, err := getInterfaceTransceiverLpmode(portNameToAlias[v])
 	}
 
+	if err != nil {
+		return nil, err
+	}
 	return json.Marshal(lpmode)
 }
 
-func getInterfaceTransceiverLpmode(physicalItfName string) ([]byte, error) {
+func getInterfaceTransceiverLpmode(portName string) ([]byte, error) {
 	cmdStr := "sudo sfputil show lpmode"
-	if physicalItfName != "" {
-		cmdStr += " -p " + physicalItfName
+	if portName != "" {
+		cmdStr += " -p " + portName
 	}
 
 	out, err := GetDataFromHostCommand(cmdStr)
 	if err != nil {
-		log.Errorf("Unable to successfully execute command %v, got err %v", cmdStr, err)
+		log.Errorf("This functionality is currently not implemented for this platform, got err %v", err)
 		return nil, err
 	}
 
@@ -156,7 +160,7 @@ func getInterfaceTransceiverLpmode(physicalItfName string) ([]byte, error) {
 		if len(fields) < 2 {
 			continue
 		}
-		// Skip separator line like: "-----------  ----------------"
+
 		if strings.Trim(fields[0], "-") == "" {
 			continue
 		}
@@ -165,9 +169,9 @@ func getInterfaceTransceiverLpmode(physicalItfName string) ([]byte, error) {
 		lpmode[port] = status
 	}
 
-	_, exist := lpmode[logicalItfName]
+	_, exist := lpmode[portName]
 	if !exist {
-		lpmode[logicalItfName] = "N/A"
+		lpmode[portName] = "N/A"
 	}
 
 	return json.Marshal(lpmode)
@@ -184,14 +188,14 @@ func getLogicalToPhysicalPortMap() (map[string]string, error) {
 		log.Errorf("Unable to get data from CONFIG_DB PORT with queries %v, got err: %v", queries, err)
 		return nil, err
 	}
-	log.V(6).Infof("Data from CONFIG_DB.PORT: %v", portEntries)
 
 	for name := range portEntries {
 		alias := GetFieldValueString(portEntries, name, "", "alias")
 		if alias == "" {
 			alias = name
 		}
-		portMap[name] = alias
+
+		portMap[alias] = name
 	}
 
 	return portMap, nil

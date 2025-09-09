@@ -309,16 +309,6 @@ func natsortInterfaces(interfaces []string) []string {
 	return interfaces
 }
 
-// toString converts any value to string, returning the value directly if it is already a string.
-func toString(v interface{}) string {
-	switch x := v.(type) {
-	case string:
-		return x
-	default:
-		return fmt.Sprint(v)
-	}
-}
-
 func GetSortedKeys(m map[string]interface{}) []string {
 	keys := make([]string, 0, len(m))
 	for k := range m {

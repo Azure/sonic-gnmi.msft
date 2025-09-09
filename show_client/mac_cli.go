@@ -180,7 +180,7 @@ func processFDBData(data map[string]interface{}, addIfMatch func(int, string, st
 		if !ok {
 			continue
 		}
-		addIfMatch(vlan, mac, toString(fv["port"]), toString(fv["type"]))
+		addIfMatch(vlan, mac, fmt.Sprint(fv["port"]), fmt.Sprint(fv["type"]))
 	}
 }
 

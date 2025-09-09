@@ -12,7 +12,7 @@ import (
 )
 
 type interfaceRifCounters struct {
-	RxOkPackets  string `json:"RxOk"`
+	RxOkPackets  string `json:"RxOkPackets"`
 	RxBps        string `json:"RxBps"`
 	RxPps        string `json:"RxPps"`
 	RxErrPackets string `json:"RxErrPackets"`

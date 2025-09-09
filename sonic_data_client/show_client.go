@@ -13,13 +13,14 @@ import (
 
 var showTrie *Trie = NewTrie()
 
-func RegisterCliPath(path []string, getter DataGetter, usageDesc string, maxArgs int, subcommandDesc map[string]string, options ...ShowCmdOption) {
+func RegisterCliPath(path []string, getter DataGetter, usageDesc string, minArgs int, maxArgs int, subcommandDesc map[string]string, options ...ShowCmdOption) {
 	pathOptions := constructOptions(options)
 	pathDescription := constructDescription(usageDesc, subcommandDesc, pathOptions)
 	config := ShowPathConfig{
 		dataGetter:  getter,
 		options:     pathOptions,
 		description: pathDescription,
+		minArgs:     minArgs,
 		maxArgs:     maxArgs,
 		regLen:      len(path),
 	}

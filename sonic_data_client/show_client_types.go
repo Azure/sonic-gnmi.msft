@@ -27,7 +27,8 @@ type ShowPathConfig struct {
 	dataGetter  DataGetter
 	options     map[string]ShowCmdOption
 	description map[string]map[string]string
-	maxArgs     int // 0 means no args expected, -1 means any number of args
+	minArgs     int // 0 means no args required, all numbers greater are required
+	maxArgs     int // 0 means no args allowed, -1 means any number of args
 	regLen      int // length of registered prefix
 }
 

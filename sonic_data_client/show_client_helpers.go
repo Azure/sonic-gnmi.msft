@@ -46,17 +46,25 @@ func (spcfg ShowPathConfig) ParseArgs(path *gnmipb.Path) (CmdArgs, error) {
 	if spcfg.maxArgs < -1 {
 		return nil, status.Errorf(codes.Internal, "invalid number of max args: must be greater or equal to -1 (any # of args): %d", spcfg.maxArgs)
 	}
+	if spcfg.minArgs < 0 {
+		return nil, status.Errorf(codes.Internal, "invalid number of min args: must be greater or equal to 0: %d", spcfg.minArgs)
+	}
+	if spcfg.maxArgs > -1 && spcfg.minArgs > spcfg.maxArgs {
+		return nil, status.Errorf(codes.Internal, "invalid number of min/max args: min args: %d must be less than or equal to max args: %d", spcfg.minArgs, spcfg.maxArgs)
+	}
 	if spcfg.regLen <= 0 {
 		return nil, status.Errorf(codes.Internal, "invalid config: registered prefix length: %d", spcfg.regLen)
 	}
 	argStartIndex := spcfg.regLen - 1 // args start after registered prefix
 	if argStartIndex < 0 || argStartIndex > len(pathArr) {
-		return nil, status.Errorf(codes.InvalidArgument, "invalid path: expected atleast %d elements after target, got: %d", spcfg.regLen - 1, len(pathArr))
+		return nil, status.Errorf(codes.InvalidArgument, "invalid path: expected atleast %d elements after target, got: %d", spcfg.regLen-1, len(pathArr))
 	}
 	numArgs := len(pathArr) - argStartIndex
 	if spcfg.maxArgs >= 0 && numArgs > spcfg.maxArgs {
-
 		return nil, status.Errorf(codes.InvalidArgument, "invalid number of arguments provided: must be less than or equal to %d", spcfg.maxArgs)
+	}
+	if numArgs < spcfg.minArgs {
+		return nil, status.Errorf(codes.InvalidArgument, "required number of arguments is atleast %d, got %d", spcfg.minArgs, numArgs)
 	}
 	return CmdArgs(pathArr[argStartIndex:]), nil
 }

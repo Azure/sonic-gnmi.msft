@@ -12,6 +12,7 @@ func init() {
 		getBufferPoolPersistentWatermark,
 		"SHOW/buffer_pool/persistent-watermark[OPTIONS]: Show persistent WM for buffer pools",
 		0,
+		0,
 		nil,
 		sdc.UnimplementedOption(showCmdOptionNamespace),
 	)
@@ -19,6 +20,7 @@ func init() {
 		[]string{"SHOW", "buffer_pool", "watermark"},
 		getBufferPoolWatermark,
 		"SHOW/buffer_pool/watermark[OPTIONS]: Show user WM for buffer pools",
+		0,
 		0,
 		nil,
 		sdc.UnimplementedOption(showCmdOptionNamespace),
@@ -30,6 +32,7 @@ func init() {
 		getDate,
 		"SHOW/clock[OPTIONS]: Show date and time",
 		0,
+		0,
 		map[string]string{
 			"timezones": "show/clock/timezones: List of available timezones",
 		},
@@ -39,6 +42,7 @@ func init() {
 		[]string{"SHOW", "clock", "timezones"},
 		getDateTimezone,
 		"SHOW/clock/timezones[OPTIONS]: List of available timezones",
+		0,
 		0,
 		nil,
 		showCmdOptionVerbose,
@@ -50,6 +54,7 @@ func init() {
 		getDropcountersCapabilities,
 		"SHOW/dropcounters/capabilities[OPTIONS]: Show device drop counters capabilities",
 		0,
+		0,
 		nil,
 		showCmdOptionVerbose,
 	)
@@ -57,6 +62,7 @@ func init() {
 		[]string{"SHOW", "dropcounters", "counts"},
 		getDropCounters,
 		"SHOW/dropcounters/counts[OPTIONS]: Show drop counts",
+		0,
 		0,
 		nil,
 		showCmdOptionGroup,
@@ -71,6 +77,7 @@ func init() {
 		getHeadroomPoolPersistentWatermark,
 		"SHOW/headroom-pool/persistent-watermark[OPTIONS]: Show persistent WM for headroom pool",
 		0,
+		0,
 		nil,
 		sdc.UnimplementedOption(showCmdOptionNamespace),
 	)
@@ -78,6 +85,7 @@ func init() {
 		[]string{"SHOW", "headroom-pool", "watermark"},
 		getHeadroomPoolWatermark,
 		"SHOW/headroom-pool/watermark[OPTIONS]: Show user WM for headroom pool",
+		0,
 		0,
 		nil,
 		sdc.UnimplementedOption(showCmdOptionNamespace),
@@ -88,6 +96,7 @@ func init() {
 		[]string{"SHOW", "interfaces", "alias"},
 		getInterfaceAlias,
 		"SHOW/interfaces/alias/{INTERFACENAME}[OPTIONS]: Show Interface Name/Alias Mapping",
+		0,
 		1,
 		nil,
 		showCmdOptionInterface, // TODO: Take as arg not option
@@ -98,6 +107,7 @@ func init() {
 		[]string{"SHOW", "interfaces", "counters"},
 		getInterfaceCounters,
 		"SHOW/interfaces/counters[OPTIONS]: Show interface counters",
+		0,
 		0,
 		map[string]string{
 			"detailed":      "show/interfaces/counters/detailed: Show interface counters detailed",
@@ -119,6 +129,7 @@ func init() {
 		[]string{"SHOW", "interfaces", "description"},
 		getInterfacesDescription,
 		"SHOW/interfaces/description/{INTERFACENAME}[OPTIONS]: Show interface status, protocol and description",
+		0,
 		1,
 		nil,
 		sdc.UnimplementedOption(showCmdOptionNamespace),
@@ -131,12 +142,14 @@ func init() {
 		getInterfaceErrors,
 		"SHOW/interfaces/errors/{INTERFACENAME}[OPTIONS]: Show Interface Errors <interfacename>",
 		1,
+		1,
 		nil,
 	)
 	sdc.RegisterCliPath(
 		[]string{"SHOW", "interfaces", "fec", "status"},
 		getInterfaceFecStatus,
 		"SHOW/interfaces/fec/status/{INTERFACENAME}[OPTIONS]: Show interface fec status",
+		0,
 		1,
 		nil,
 		showCmdOptionInterface, // TODO
@@ -147,6 +160,7 @@ func init() {
 		[]string{"SHOW", "interfaces", "flap"},
 		getInterfaceFlap,
 		"SHOW/interfaces/flap/{INTERFACENAME}[OPTIONS]: Show Interface Flap Information",
+		0,
 		1,
 		nil,
 		showCmdOptionInterface, // TODO: Take as arg not option
@@ -155,6 +169,7 @@ func init() {
 		[]string{"SHOW", "interfaces", "neighbor", "expected"},
 		getInterfaceNeighborExpected,
 		"SHOW/interfaces/neighbor/expected/{INTERFACENAME}[OPTIONS]: Show expected neighbor information by interfaces",
+		0,
 		1,
 		nil,
 		showCmdOptionInterface, // TODO: Take as arg not option
@@ -164,6 +179,7 @@ func init() {
 		getInterfaceNamingMode,
 		"SHOW/interfaces/naming_mode[OPTIONS]: Show interface naming_mode status",
 		0,
+		0,
 		nil,
 		showCmdOptionVerbose,
 	)
@@ -171,6 +187,7 @@ func init() {
 		[]string{"SHOW", "interfaces", "status"},
 		getInterfaceStatus,
 		"SHOW/interfaces/status/{INTERFACENAME}[OPTIONS]: Show Interface status information",
+		0,
 		1,
 		nil,
 		showCmdOptionInterface, // TODO
@@ -183,6 +200,7 @@ func init() {
 		getInterfaceSwitchportConfig,
 		"SHOW/interfaces/switchport/config[OPTIONS]: Show interface switchport config information",
 		0,
+		0,
 		nil,
 		showCmdOptionInterface, // TODO: CLI doesnt support
 	)
@@ -191,6 +209,7 @@ func init() {
 		getInterfaceSwitchportStatus,
 		"SHOW/interfaces/switchport/status[OPTIONS]: Show interface switchport status information",
 		0,
+		0,
 		nil,
 		showCmdOptionInterface, // CLI doesnt support
 	)
@@ -198,6 +217,7 @@ func init() {
 		[]string{"SHOW", "interfaces", "transceiver", "error-status"},
 		getTransceiverErrorStatus,
 		"SHOW/interfaces/transceiver/error-status/{INTERFACENAME}[OPTIONS]: Show transceiver error-status",
+		0,
 		1,
 		nil,
 		showCmdOptionInterface, // TODO: Take as arg not option
@@ -209,6 +229,7 @@ func init() {
 		[]string{"SHOW", "interfaces", "transceiver", "presence"},
 		getInterfaceTransceiverPresence,
 		"SHOW/interfaces/transceiver/presence/{INTERFACENAME}[OPTIONS]: Show interface transceiver presence",
+		0,
 		1,
 		nil,
 		showCmdOptionInterface, // TODO
@@ -219,6 +240,7 @@ func init() {
 		[]string{"SHOW", "ipv6", "bgp", "neighbors"},
 		getIPv6BGPNeighborsHandler,
 		"SHOW/ipv6/bgp/neighbors/{IPADDRESS}/{routes|advertised-routes|received-routes}[OPTIONS]: Show IPv6 BGP neighbors",
+		0,
 		2,
 		nil,
 		showCmdOptionIPAddress, // TODO
@@ -229,6 +251,7 @@ func init() {
 		[]string{"SHOW", "ipv6", "bgp", "network"},
 		getIPv6BGPNetwork,
 		"SHOW/ipv6/bgp/network/{ipv6-address|ipv6-prefix}/{bestpath|json|longer-prefixes|multipath}[OPTIONS]: Show BGP ipv6 network",
+		0,
 		2,
 		nil,
 		showCmdOptionIPV6Address,           // TODO
@@ -240,6 +263,7 @@ func init() {
 		getIPv6BGPSummary,
 		"SHOW/ipv6/bgp/summary[OPTIONS]: Show summarized information of IPv6 BGP state",
 		0,
+		0,
 		nil,
 		sdc.UnimplementedOption(showCmdOptionNamespace),
 		showCmdOptionDisplay,
@@ -248,6 +272,7 @@ func init() {
 		[]string{"SHOW", "ipv6", "fib"},
 		getIPv6Fib,
 		"SHOW/ipv6/fib/{IPADDRESS}[OPTIONS]: Show IP FIB table",
+		0,
 		1,
 		nil,
 		showCmdOptionIPV6Address, // TODO
@@ -258,6 +283,7 @@ func init() {
 		getIPv6Interfaces,
 		"SHOW/ipv6/interfaces[OPTIONS]: Show ipv6 interfaces",
 		0,
+		0,
 		nil,
 		sdc.UnimplementedOption(showCmdOptionNamespace),
 		showCmdOptionDisplay,
@@ -267,12 +293,14 @@ func init() {
 		getPortsIpv6LinkLocalMode,
 		"SHOW/ipv6/link-local-mode[OPTIONS]: Show ipv6 link-local-mode",
 		0,
+		0,
 		nil,
 	)
 	sdc.RegisterCliPath(
 		[]string{"SHOW", "ipv6", "protocol"},
 		getIPv6Protocol,
 		"SHOW/ipv6/protocol[OPTIONS]: Show IPv6 protocol information",
+		0,
 		0,
 		nil,
 		showCmdOptionVerbose,
@@ -281,6 +309,7 @@ func init() {
 		[]string{"SHOW", "ipv6", "route"},
 		getIPv6Route,
 		"SHOW/ipv6/route/{IPADDRESS}/{VRF NAME}{...}[OPTIONS]: Show IPv6 routing table",
+		0,
 		-1,
 		nil,
 		sdc.UnimplementedOption(showCmdOptionNamespace),
@@ -293,6 +322,7 @@ func init() {
 		[]string{"SHOW", "lldp", "neighbors"},
 		getLLDPNeighbors,
 		"SHOW/lldp/neighbors/{INTERFACENAME}[OPTIONS]: Show LLDP neighbors",
+		0,
 		1,
 		nil,
 		showCmdOptionVerbose,
@@ -301,6 +331,7 @@ func init() {
 		[]string{"SHOW", "lldp", "table"},
 		getLLDPTable,
 		"SHOW/lldp/table[OPTIONS]: Show LLDP neighbors in a tabular format",
+		0,
 		0,
 		nil,
 		showCmdOptionVerbose,
@@ -311,6 +342,7 @@ func init() {
 		[]string{"SHOW", "mac"},
 		getMacTable,
 		"SHOW/mac[OPTIONS]: Show MAC (FDB) entries",
+		0,
 		0,
 		map[string]string{
 			"aging-time": "show/mac/aging-time",
@@ -327,6 +359,7 @@ func init() {
 		getMacAgingTime,
 		"SHOW/mac/aging-time[OPTIONS]: Show mac aging-time",
 		0,
+		0,
 		nil,
 	)
 
@@ -335,6 +368,7 @@ func init() {
 		[]string{"SHOW", "mmu"},
 		getMmuConfig,
 		"SHOW/mmu[OPTIONS]: Show mmu configuration",
+		0,
 		0,
 		nil,
 		sdc.UnimplementedOption(showCmdOptionNamespace),
@@ -347,6 +381,7 @@ func init() {
 		getProcessesRoot,
 		"SHOW/processes/COMMAND[OPTIONS]: Show process information",
 		0,
+		0,
 		map[string]string{
 			"summary": "show/processes/summary: Show processses info",
 			"cpu":     "show/processes/cpu: Show processes CPU info",
@@ -358,6 +393,7 @@ func init() {
 		getProcessesSummary,
 		"SHOW/processes/summary[OPTIONS]: Show processes info",
 		0,
+		0,
 		nil,
 		showCmdOptionVerbose,
 	)
@@ -367,6 +403,7 @@ func init() {
 		[]string{"SHOW", "queue", "counters"},
 		getQueueCounters,
 		"SHOW/queue/counters/{INTERFACENAME}[OPTIONS]: Show queue counters",
+		0,
 		1,
 		nil,
 		showCmdOptionInterfaces, // TODO: Should be arg
@@ -381,6 +418,7 @@ func init() {
 		getQueueUserWatermarks,
 		"SHOW/queue/watermark/COMMAND[OPTIONS]: Show user WM for queues",
 		0,
+		0,
 		nil,
 		showCmdOptionInterfaces, // TODO: Should be arg
 		sdc.RequiredOption(showCmdOptionQueueType),
@@ -392,6 +430,7 @@ func init() {
 		getPreviousRebootCause,
 		"SHOW/reboot-cause[OPTIONS]: Show cause of most recent reboot",
 		0,
+		0,
 		map[string]string{
 			"history": "show/reboot-cause/history: Show history of reboot-cause",
 		},
@@ -400,6 +439,7 @@ func init() {
 		[]string{"SHOW", "reboot-cause", "history"},
 		getRebootCauseHistory,
 		"SHOW/reboot-cause/history[OPTIONS]: Show history of reboot-cause",
+		0,
 		0,
 		nil,
 	)
@@ -410,6 +450,7 @@ func init() {
 		getServices,
 		"SHOW/services[OPTIONS]: Show all daemon services",
 		0,
+		0,
 		nil,
 	)
 
@@ -418,6 +459,7 @@ func init() {
 		[]string{"SHOW", "srv6", "stats"},
 		getSRv6Stats,
 		"SHOW/srv6/stats/{SID}[OPTIONS]: Show SRv6 counters statistics",
+		0,
 		1,
 		nil,
 		showCmdOptionSid, // TODO
@@ -430,6 +472,7 @@ func init() {
 		getSystemMemory,
 		"SHOW/system-memory[OPTIONS]: Show memory information",
 		0,
+		0,
 		nil,
 		showCmdOptionVerbose,
 	)
@@ -439,6 +482,7 @@ func init() {
 		[]string{"SHOW", "uptime"},
 		getUptime,
 		"SHOW/uptime[OPTIONS]: Show system uptime",
+		0,
 		0,
 		nil,
 		showCmdOptionVerbose,
@@ -450,6 +494,7 @@ func init() {
 		getVersion,
 		"SHOW/version[OPTIONS]: Show version information",
 		0,
+		0,
 		nil,
 		showCmdOptionVerbose,
 	)
@@ -460,6 +505,7 @@ func init() {
 		getVlanBrief,
 		"SHOW/vlan/brief[OPTIONS]: Show all bridge information",
 		0,
+		0,
 		nil,
 		showCmdOptionVerbose,
 	)
@@ -469,6 +515,7 @@ func init() {
 		[]string{"SHOW", "watermark", "telemetry", "interval"},
 		getWatermarkTelemetryInterval,
 		"SHOW/watermark/telemetry/interval[OPTIONS]: Show telemetry interval",
+		0,
 		0,
 		nil,
 	)

@@ -569,10 +569,12 @@ func init() {
 		[]string{"SHOW", "interfaces", "portchannel"},
 		getInterfacePortchannel,
 		nil,
+		showCmdOptionVerbose,
 	)
 	sdc.RegisterCliPath(
 		[]string{"SHOW", "ecn"},
 		getEcnProfiles,
 		nil,
+		showCmdOptionVerbose,
 	)
 }

@@ -21,28 +21,48 @@ No.  Team Dev         Protocol     Ports
 102  PortChannel102   LACP(A)(Dw)  Ethernet0(D) Ethernet8(D)
 104  PortChannel104   LACP(A)(Dw)  Ethernet24(D) Ethernet16(D)
 106  PortChannel106   LACP(A)(Dw)  Ethernet32(D) Ethernet40(D)
+
+'show interfaces portchannel' (structured JSON output)
+
+New JSON schema per PortChannel (key = numeric ID without 'PortChannel' prefix):
+
+	{
+	  "101": {
+	    "Team Dev": "PortChannel101",
+	    "Protocol": {
+	      "name": "LACP",
+	      "active": true,
+	      "oper_status": "up",        // "up" | "down" | ""
+	      "status_valid": true        // false if oper_status unavailable, meant 'N/A' before
+	    },
+	    "Ports": [
+	      {
+	        "name": "Ethernet0",
+	        "selected": true,
+	        "status": "enabled",       // "enabled" | "disabled" | ""
+	        "in_sync": true            // false meant '*' before
+	      }
+	    ]
+	  }
+	}
 */
 func getInterfacePortchannel(options sdc.OptionMap) ([]byte, error) {
 	cfgPC, err := GetMapFromQueries([][]string{{"CONFIG_DB", "PORTCHANNEL"}})
 	if err != nil {
 		return nil, err
 	}
-
 	stateLag, err := GetMapFromQueries([][]string{{"STATE_DB", "LAG_TABLE"}})
 	if err != nil {
 		return nil, err
 	}
-
 	applLag, err := GetMapFromQueries([][]string{{"APPL_DB", "LAG_TABLE"}})
 	if err != nil {
 		return nil, err
 	}
-
 	stateLagMember, err := GetMapFromQueries([][]string{{"STATE_DB", "LAG_MEMBER_TABLE"}})
 	if err != nil {
 		return nil, err
 	}
-
 	applLagMember, err := GetMapFromQueries([][]string{{"APPL_DB", "LAG_MEMBER_TABLE"}})
 	if err != nil {
 		return nil, err
@@ -72,25 +92,23 @@ type teamShow struct {
 	aliasMode   bool
 }
 
-/*
-Get the portchannel names from database.
-admin@sonic:~$ redis-cli -n 4 KEYS 'PORTCHANNEL|*'
-1) "PORTCHANNEL|PortChannel102"
-2) "PORTCHANNEL|PortChannel113"
-3) "PORTCHANNEL|PortChannel101"
-*/
+// Collect PortChannel names
 func (t *teamShow) getPortchannelNames() []string {
 	var list []string
 	for k := range t.cfgPC {
-		if strings.HasPrefix(k, "PortChannel") {
-			list = append(list, k)
+		name := k
+		if i := strings.Index(k, "|"); i >= 0 { // handle "PORTCHANNEL|PortChannel101"
+			name = k[i+1:]
+		}
+		if strings.HasPrefix(name, "PortChannel") {
+			list = append(list, name)
 		}
 	}
 	return list
 }
 
 /*
-Get port channel status from database.
+Get port channel structured protocol status from database.
 admin@sonic:~$ redis-cli -n 6 HGETALL 'LAG_TABLE|PortChannel102'
 3) "oper_status"
 4) "up"
@@ -107,32 +125,24 @@ admin@sonic:~$ redis-cli -n 0 HGETALL "LAG_TABLE:PortChannel102"
 7) "oper_status"
 8) "up"
 */
-func (t *teamShow) getPortchannelStatus(pc string) string {
+func (t *teamShow) getPortchannelStatus(pc string) map[string]interface{} {
 	active := GetFieldValueString(t.stateLag, pc, "", "runner.active") == "true"
-	proto := "LACP"
-	if active {
-		proto += "(A)"
-	} else {
-		proto += "(I)"
-	}
-
-	suffix := "(N/A)"
 	oper := strings.ToLower(GetFieldValueString(t.applLag, pc, "", "oper_status"))
-	switch oper {
-	case "up":
-		suffix = "(Up)"
-	case "down":
-		suffix = "(Dw)"
+	statusValid := oper == "up" || oper == "down"
+	return map[string]interface{}{
+		"name":         "LACP",
+		"active":       active,
+		"oper_status":  oper,
+		"status_valid": statusValid,
 	}
-
-	return proto + suffix
 }
 
 /*
+Get member selected / status
+
 admin@sonic:~$ redis-cli -n 6 HGETALL "LAG_MEMBER_TABLE|PortChannel102|Ethernet332"
 27) "runner.aggregator.selected"
 28) "true"
-
 admin@sonic:~$ redis-cli -n 0 HGETALL "LAG_MEMBER_TABLE:PortChannel102:Ethernet332"
 1) "status"
 2) "enabled"
@@ -143,9 +153,8 @@ func (t *teamShow) getPortchannelMemberStatus(pc, member string) (bool, string) 
 	return selected, status
 }
 
-// Get teams raw data from teamdctl.
-func (t *teamShow) getTeamdctl(pc string) []string {
-	// Collect raw member names (STATE_DB key pattern PortChannelX|EthernetY)
+// Structured members list
+func (t *teamShow) getPortchannelMembers(pc string) []map[string]interface{} {
 	prefix := pc + "|"
 	var members []string
 	for k := range t.stateLagMem {
@@ -155,7 +164,7 @@ func (t *teamShow) getTeamdctl(pc string) []string {
 	}
 	sort.Strings(members)
 
-	var out []string
+	out := make([]map[string]interface{}, 0, len(members))
 	for _, mem := range members {
 		selected, status := t.getPortchannelMemberStatus(pc, mem)
 		unsynced := status == "" ||
@@ -166,25 +175,17 @@ func (t *teamShow) getTeamdctl(pc string) []string {
 		if t.aliasMode {
 			display = GetInterfaceNameForDisplay(mem)
 		}
-
-		var sb strings.Builder
-		sb.WriteString(display)
-		sb.WriteString("(")
-		if selected {
-			sb.WriteString("S")
-		} else {
-			sb.WriteString("D")
-		}
-		if unsynced {
-			sb.WriteString("*")
-		}
-		sb.WriteString(")")
-		out = append(out, sb.String())
+		out = append(out, map[string]interface{}{
+			"name":     display,
+			"selected": selected,
+			"status":   status,
+			"in_sync":  !unsynced,
+		})
 	}
 	return out
 }
 
-// Skip the 'PortChannel' prefix and extract the team id.
+// Strip "PortChannel" prefix
 func getTeamID(team string) string {
 	const prefix = "PortChannel"
 	if strings.HasPrefix(team, prefix) && len(team) > len(prefix) {
@@ -193,17 +194,16 @@ func getTeamID(team string) string {
 	return team
 }
 
-// Get teamshow results by parsing the output of teamdctl and combining port channel status.
+// Build final structured result
 func (t *teamShow) getTeamshowResult() map[string]map[string]interface{} {
 	names := t.getPortchannelNames()
 	res := make(map[string]map[string]interface{}, len(names))
 	for _, pc := range names {
-		ports := t.getTeamdctl(pc)
 		teamID := getTeamID(pc)
 		res[teamID] = map[string]interface{}{
 			"Team Dev": pc,
 			"Protocol": t.getPortchannelStatus(pc),
-			"Ports":    strings.Join(ports, " "),
+			"Ports":    t.getPortchannelMembers(pc),
 		}
 	}
 	return res

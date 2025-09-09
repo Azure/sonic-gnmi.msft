@@ -8,8 +8,6 @@ import (
 	"testing"
 	"time"
 
-	// added import
-
 	pb "github.com/openconfig/gnmi/proto/gnmi"
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"

@@ -59,7 +59,7 @@ func TestShowInterfacePortchannel(t *testing.T) {
 				elem: <name: "portchannel">
 			`,
 			wantCode: codes.OK,
-			wantVal:  `{"101":{"Team Dev":"PortChannel101","Protocol":"LACP(A)(Up)","Ports":"Ethernet0(S)"},"102":{"Team Dev":"PortChannel102","Protocol":"LACP(A)(Dw)","Ports":"Ethernet0(D)"},"103":{"Team Dev":"PortChannel103","Protocol":"LACP(I)(Up)","Ports":"Ethernet0(S) Ethernet8(D)"}}`,
+			wantVal:  `{"101":{"Team Dev":"PortChannel101","Protocol":{"name":"LACP","active":true,"oper_status":"up","status_valid":true},"Ports":[{"name":"Ethernet0","selected":true,"status":"enabled","in_sync":true}]},"102":{"Team Dev":"PortChannel102","Protocol":{"name":"LACP","active":true,"oper_status":"down","status_valid":true},"Ports":[{"name":"Ethernet0","selected":false,"status":"disabled","in_sync":true}]},"103":{"Team Dev":"PortChannel103","Protocol":{"name":"LACP","active":false,"oper_status":"up","status_valid":true},"Ports":[{"name":"Ethernet0","selected":true,"status":"enabled","in_sync":true},{"name":"Ethernet8","selected":false,"status":"disabled","in_sync":true}]}}`,
 			valTest:  true,
 		},
 	}

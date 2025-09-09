@@ -2,6 +2,7 @@ package show_client
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"strconv"
 	"time"
@@ -9,17 +10,6 @@ import (
 	log "github.com/golang/glog"
 	sdc "github.com/sonic-net/sonic-gnmi/sonic_data_client"
 )
-
-var rifCounterNames = []string{
-	"SAI_ROUTER_INTERFACE_STAT_IN_OCTETS",
-	"SAI_ROUTER_INTERFACE_STAT_IN_PACKETS",
-	"SAI_ROUTER_INTERFACE_STAT_OUT_OCTETS",
-	"SAI_ROUTER_INTERFACE_STAT_OUT_PACKETS",
-	"SAI_ROUTER_INTERFACE_STAT_IN_ERROR_OCTETS",
-	"SAI_ROUTER_INTERFACE_STAT_IN_ERROR_PACKETS",
-	"SAI_ROUTER_INTERFACE_STAT_OUT_ERROR_OCTETS",
-	"SAI_ROUTER_INTERFACE_STAT_OUT_ERROR_PACKETS",
-}
 
 type interfaceRifCounters struct {
 	RxOk  string `json:"RxOk"`
@@ -41,23 +31,15 @@ func getInterfaceRifCounters(options sdc.OptionMap) ([]byte, error) {
 		period = periodValue
 	}
 
-	queries := [][]string{
-		{CountersDb, "COUNTERS_RIF_NAME_MAP"},
-	}
-
-	rifNameMap, err := GetMapFromQueries(queries)
+	rifNameMap, err := getRifNameMapping()
 	if err != nil {
-		log.Errorf("Failed to get COUNTERS_RIF_NAME_MAP from %s: %v", CountersDb, err)
+		log.Errorf("Failed to get COUNTERS_RIF_NAME_MAP: %v", err)
 		return nil, err
-	}
-
-	if len(rifNameMap) == 0 {
-		return nil, fmt.Errorf("No COUNTERS_RIF_NAME_MAP in DB")
 	}
 
 	if interfaceName != "" {
 		if _, ok := rifNameMap[interfaceName]; !ok {
-			return nil, fmt.Errorf("Interface %s not found in COUNTERS_RIF_NAME_MAP, Make sure it exists", interfaceName)
+			return nil, errors.New(fmt.Sprintf("Interface %s not found in COUNTERS_RIF_NAME_MAP, Make sure it exists", interfaceName))
 		}
 	}
 
@@ -104,20 +86,13 @@ func getInterfaceRifCounters(options sdc.OptionMap) ([]byte, error) {
 }
 
 func getInterfaceCountersRifSnapshot(interfaceName string) (map[string]interfaceRifCounters, error) {
-	queries := [][]string{
-		{CountersDb, "COUNTERS_RIF_NAME_MAP"},
-	}
-	rifNameMap, err := GetMapFromQueries(queries)
+	rifNameMap, err := getRifNameMapping()
 	if err != nil {
-		log.Errorf("Failed to get COUNTERS_RIF_NAME_MAP from %s: %v", CountersDb, err)
+		log.Errorf("Failed to get COUNTERS_RIF_NAME_MAP: %v", err)
 		return nil, err
 	}
 
-	if len(rifNameMap) == 0 {
-		return nil, fmt.Errorf("No COUNTERS_RIF_NAME_MAP in DB")
-	}
-
-	queries = [][]string{
+	queries := [][]string{
 		{CountersDb, "COUNTERS"},
 	}
 
@@ -188,5 +163,27 @@ func calculateDiff(oldValue, newValue string) string {
 	}
 
 	diff := newCounterValue - oldCounterValue
+	if diff < 0 {
+		diff = 0
+	}
+
 	return strconv.FormatInt(diff, base10)
+}
+
+func getRifNameMapping() (map[string]interface{}, error) {
+	queries := [][]string{
+		{CountersDb, "COUNTERS_RIF_NAME_MAP"},
+	}
+
+	rifNameMap, err := GetMapFromQueries(queries)
+	if err != nil {
+		log.Errorf("Failed to get COUNTERS_RIF_NAME_MAP from %s: %v", CountersDb, err)
+		return nil, err
+	}
+
+	if len(rifNameMap) == 0 {
+		return nil, errors.New("No COUNTERS_RIF_NAME_MAP in DB")
+	}
+
+	return rifNameMap, nil
 }

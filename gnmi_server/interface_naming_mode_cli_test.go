@@ -49,10 +49,10 @@ func TestGetShowInterfaceNamingMode(t *testing.T) {
 		envVal      string
 	}{
 		{
-			desc:       "query SHOW interface naming_mode (default)",
+			desc:       "query SHOW interfaces naming_mode (default)",
 			pathTarget: "SHOW",
 			textPbPath: `
-                elem: <name: "interface" >
+                elem: <name: "interfaces" >
                 elem: <name: "naming_mode" >
             `,
 			wantRetCode: codes.OK,
@@ -62,10 +62,10 @@ func TestGetShowInterfaceNamingMode(t *testing.T) {
 			envVal:      "",
 		},
 		{
-			desc:       "query SHOW interface naming_mode (alias)",
+			desc:       "query SHOW interfaces naming_mode (alias)",
 			pathTarget: "SHOW",
 			textPbPath: `
-                elem: <name: "interface" >
+                elem: <name: "interfaces" >
                 elem: <name: "naming_mode" >
             `,
 			wantRetCode: codes.OK,

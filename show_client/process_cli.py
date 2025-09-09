@@ -3,8 +3,8 @@ package show_client
 import (
 	"encoding/json"
 	"fmt"
-    "show_client/common"
-    "show_client/helpers"
+	"show_client/common"
+	"show_client/helpers"
 	"sort"
 	"strconv"
 
@@ -13,14 +13,14 @@ import (
 )
 
 const (
-topCommand = "top -bn 1"
-orderByCPU = " -o %CPU"
+	topCommand = "top -bn 1"
+	orderByCPU = " -o %CPU"
 )
 
 func getProcesesByCPU(options sdc.OptionMap) ([]byte, error) {
-	cmdForProcessByCPU := topCommand + orderByCPU 
-	
-    processDetails, err := GetDataFromHostCommand(cmdForProcessByCPU)
+	cmdForProcessByCPU := topCommand + orderByCPU
+
+	processDetails, err := GetDataFromHostCommand(cmdForProcessByCPU)
 	if err != nil {
 		return []byte(""), err
 	}

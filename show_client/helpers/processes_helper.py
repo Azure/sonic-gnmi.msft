@@ -1,12 +1,11 @@
-package helpers 
+package helpers
 
 import (
 	"encoding/json"
 	"fmt"
-    "show_client/common"
 	"sort"
 	"strconv"
-    "time"
+	"time"
 
 	log "github.com/golang/glog"
 	sdc "github.com/sonic-net/sonic-gnmi/sonic_data_client"
@@ -14,79 +13,80 @@ import (
 
 // TopOutput holds the complete parsed output of the `top` command.
 type TopOutput struct {
-    Summary   TopSummary
-    Processes []Process
+	Summary   TopSummary
+	Processes []Process
 }
 
 // TopSummary holds the system-wide information from the top of the `top` output.
 type TopSummary struct {
-    Timestamp      time.Time
-    Uptime         string // e.g., "up 14:31"
-    TotalUsers     int
-    LoadAverage    []float64 // Last 1, 5, and 15 minutes
-    TaskSummary    TaskSummary
-    CPUSummary     CPUSummary
-    MemorySummary  MemorySummary
-    SwapSummary    SwapSummary
+	Timestamp     time.Time
+	Uptime        string // e.g., "up 14:31"
+	TotalUsers    int
+	LoadAverage   []float64 // Last 1, 5, and 15 minutes
+	TaskSummary   TaskSummary
+	CPUSummary    CPUSummary
+	MemorySummary MemorySummary
+	SwapSummary   SwapSummary
 }
 
 // TaskSummary holds statistics on the system tasks (processes).
 type TaskSummary struct {
-    Total   int
-    Running int
-    Sleeping int
-    Stopped int
-    Zombie  int
+	Total    int
+	Running  int
+	Sleeping int
+	Stopped  int
+	Zombie   int
 }
 
 // CPUSummary holds detailed CPU usage statistics.
 type CPUSummary struct {
-    User float64
-    System float64
-    Nice float64
-    Idle float64
-    IOWait float64
-    HardwareInterrupt float64
-    SoftwareInterrupt float64
-    Steal float64
+	User              float64
+	System            float64
+	Nice              float64
+	Idle              float64
+	IOWait            float64
+	HardwareInterrupt float64
+	SoftwareInterrupt float64
+	Steal             float64
 }
 
 // MemorySummary holds system memory usage statistics.
 type MemorySummary struct {
-    Total int64
-    Free int64
-    Used int64
-    BuffCache int64
+	Total     int64
+	Free      int64
+	Used      int64
+	BuffCache int64
 }
 
 // SwapSummary holds system swap space usage statistics.
 type SwapSummary struct {
-    Total int64
-    Free int64
-    Used int64
-    Avail int64
+	Total int64
+	Free  int64
+	Used  int64
+	Avail int64
 }
 
 // Process holds the information for a single process entry from the `top` output.
 type Process struct {
-    PID         int
-    User        string
-    Priority    int
-    Nice        int
-    Virt        int64 // Virtual Memory
-    Res         int64 // Resident Memory
-    Shr         int64 // Shared Memory
-    State       string // e.g., "S" for sleep
-    CPU         float64
-    Memory      float64
-    Time        string // e.g., "00:00.12"
-    Command     string
+	PID      int
+	User     string
+	Priority int
+	Nice     int
+	Virt     int64  // Virtual Memory
+	Res      int64  // Resident Memory
+	Shr      int64  // Shared Memory
+	State    string // e.g., "S" for sleep
+	CPU      float64
+	Memory   float64
+	Time     string // e.g., "00:00.12"
+	Command  string
 }
-func LoadProcessesDataFromCmdOutput(data string) string {
-    //Store the data in process struct
-    scanner := bufio.NewScanner(strings.NewReader(data))
 
-    for i := 0; i < 7 && scanner.Scan(); i++ {
+func LoadProcessesDataFromCmdOutput(data string) string {
+	//Store the data in process struct
+	scanner := bufio.NewScanner(strings.NewReader(data))
+
+	for i := 0; i < 7 && scanner.Scan(); i++ {
 		line := scanner.Text()
 		if strings.Contains(line, "top -") {
 			// Extract uptime and load average
@@ -109,14 +109,13 @@ func LoadProcessesDataFromCmdOutput(data string) string {
 			output.Summary.SwapSummary = parseSwapSummary(line)
 		}
 
-
 		if strings.Contains(line, "PID") && strigns.Contains(line, "COMMAND") {
 			//Headers
-            break
+			break
 		}
 	}
 
-    for scanner.Scan() {
+	for scanner.Scan() {
 		line := scanner.Text()
 		if strings.TrimSpace(line) == "" {
 			continue
@@ -253,4 +252,3 @@ func parseProcessLine(s string) (Process, error) {
 
 	return proc, nil
 }
-

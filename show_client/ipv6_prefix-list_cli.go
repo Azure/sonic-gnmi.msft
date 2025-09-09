@@ -111,11 +111,37 @@ func parsePrefixLists(raw string) []sourcePrefixLists {
 }
 
 func getIPv6PrefixList(options sdc.OptionMap) ([]byte, error) {
+	// Filter by prefix-list-name if provided
+	prefixListName := ""
+	if option, ok := options["prefix_list_name"].String(); ok {
+		prefixListName = option
+	}
+
 	rawOutput, err := GetDataFromHostCommand(vtyshIPv6PrefixListCommand)
 	if err != nil {
 		log.Errorf("Unable to execute command %q, err=%v", vtyshIPv6PrefixListCommand, err)
 		return nil, err
 	}
 	prefixLists := parsePrefixLists(rawOutput)
+	// If a prefix-list-name filter is provided, apply it to each source's prefix lists
+	if prefixListName != "" {
+		filtered := make([]sourcePrefixLists, 0)
+		for _, srcList := range prefixLists {
+			filteredLists := make([]prefixList, 0)
+			for _, pl := range srcList.PrefixLists {
+				if pl.Name == prefixListName {
+					filteredLists = append(filteredLists, pl)
+				}
+			}
+			if len(filteredLists) > 0 {
+				filtered = append(filtered, sourcePrefixLists{
+					Source:      srcList.Source,
+					PrefixLists: filteredLists,
+				})
+			}
+		}
+		prefixLists = filtered
+	}
+
 	return json.Marshal(prefixLists)
 }

@@ -46,6 +46,12 @@ func TestGetIPv6PrefixList(t *testing.T) {
 		t.Fatalf("Failed to read expected result file %q: %v", expectedFileNameMulti, err)
 	}
 
+	var expectedFileNameFilteredMulti = "../testdata/Expected_show_ipv6_prefix-list_filtered_multi_response.txt"
+	filteredMultiExpectedResponse, err := ioutil.ReadFile(expectedFileNameFilteredMulti)
+	if err != nil {
+		t.Fatalf("Failed to read expected result file %q: %v", expectedFileNameFilteredMulti, err)
+	}
+
 	// expected empty response
 	emptyExpected, err := json.Marshal([]interface{}{})
 	if err != nil {
@@ -82,6 +88,30 @@ func TestGetIPv6PrefixList(t *testing.T) {
 			`,
 			wantRetCode: codes.OK,
 			wantRespVal:    []byte(multiExpectedResponse),
+			valTest:     true,
+			mockFile:    "../testdata/VTYSH_SHOW_IPV6_PREFIX-LIST_MULTI.txt",
+		},
+		{
+			desc:       "multi Prefix list output-filter by prefix_list_name",
+			pathTarget: "SHOW",
+			textPbPath: `
+				elem: <name: "ipv6" >
+				elem: <name: "prefix-list" key: { key: "prefix_list_name" value: "DEFAULT_IPV6" } >
+			`,
+			wantRetCode: codes.OK,
+			wantRespVal:    []byte(filteredMultiExpectedResponse),
+			valTest:     true,
+			mockFile:    "../testdata/VTYSH_SHOW_IPV6_PREFIX-LIST_MULTI.txt",
+		},
+		{
+			desc:       "multi Prefix list output-filter by not exist prefix_list_name",
+			pathTarget: "SHOW",
+			textPbPath: `
+				elem: <name: "ipv6" >
+				elem: <name: "prefix-list" key: { key: "prefix_list_name" value: "NON_EXISTENT" } >
+			`,
+			wantRetCode: codes.OK,
+			wantRespVal:    []byte(emptyExpected),
 			valTest:     true,
 			mockFile:    "../testdata/VTYSH_SHOW_IPV6_PREFIX-LIST_MULTI.txt",
 		},

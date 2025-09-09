@@ -28,6 +28,7 @@ const (
 	showCmdOptionInfoTypeDesc      = "[info_type=TEXT] Filter by information type"
 	showCmdOptionFrrRouteArgsDesc  = "[args=TEXT] Filter by FRR route arguments"
 	showCmdOptionQueueTypeDesc     = "[queue-type=TEXT] Filter by queue type (unicast/multicast/all)"
+	showCmdOptionPrefixListNameDesc = "[prefix-list-name=TEXT] Filter by prefix list name"
 )
 
 // Option keys
@@ -188,6 +189,12 @@ var (
 	showCmdOptionQueueType = sdc.NewShowCmdOption(
 		"queue-type",
 		showCmdOptionQueueTypeDesc,
+		sdc.StringValue,
+	)
+
+	showCmdOptionPrefixListName = sdc.NewShowCmdOption(
+		"prefix_list_name",
+		showCmdOptionPrefixListNameDesc,
 		sdc.StringValue,
 	)
 )

@@ -1,0 +1,42 @@
+[
+	{
+		"source": "ZEBRA",
+		"prefix_lists": [
+			{
+				"name": "DEFAULT_IPV6",
+				"entries": [
+					{
+						"seq": 5,
+						"action": "permit",
+						"prefix": "any"
+					},
+					{
+						"seq": 10,
+						"action": "permit",
+						"prefix": "any"
+					}
+				]
+			}
+		]
+	},
+	{
+		"source": "BGP",
+		"prefix_lists": [
+			{
+				"name": "DEFAULT_IPV6",
+				"entries": [
+					{
+						"seq": 5,
+						"action": "permit",
+						"prefix": "any"
+					},
+					{
+						"seq": 10,
+						"action": "permit",
+						"prefix": "any"
+					}
+				]
+			}
+		]
+	}
+]

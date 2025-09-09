@@ -326,6 +326,7 @@ func init() {
 		[]string{"SHOW", "ipv6", "prefix-list"},
 		getIPv6PrefixList,
 		nil,
+		showCmdOptionPrefixListName,
 		showCmdOptionVerbose,
 	)
 }

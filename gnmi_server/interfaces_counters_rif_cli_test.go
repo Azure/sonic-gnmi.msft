@@ -50,11 +50,13 @@ func TestGetInterfaceRifCounters(t *testing.T) {
     "RxErrBits": "0",
     "RxErrPackets": "100",
     "RxOk": "5940",
+    "RxOkBits": "1048449",
     "RxPps": "0.21111450848388191",
     "TxBps": "0.5",
     "TxErrBits": "0",
     "TxErrPackets": "10",
-    "TxOk": "650",
+    "TxOkBits": "0",
+    "TxOkPackets": "650",
     "TxPps": "12.21"
   },
   "PortChannel102": {
@@ -62,11 +64,13 @@ func TestGetInterfaceRifCounters(t *testing.T) {
     "RxErrBits": "0",
     "RxErrPackets": "0",
     "RxOk": "5937",
+    "RxOkBits": "1048207",
     "RxPps": "0.013699805079217392",
     "TxBps": "0",
     "TxErrBits": "0",
     "TxErrPackets": "0",
-    "TxOk": "0",
+    "TxOkBits": "0",
+    "TxOkPackets": "0",
     "TxPps": "0"
   },
   "PortChannel103": {
@@ -74,11 +78,13 @@ func TestGetInterfaceRifCounters(t *testing.T) {
     "RxErrBits": "0",
     "RxErrPackets": "0",
     "RxOk": "5943",
+    "RxOkBits": "1048821",
     "RxPps": "0.058547265917178126",
     "TxBps": "0",
     "TxErrBits": "0",
     "TxErrPackets": "0",
-    "TxOk": "0",
+    "TxOkBits": "0",
+    "TxOkPackets": "0",
     "TxPps": "0"
   },
   "PortChannel104": {
@@ -86,11 +92,13 @@ func TestGetInterfaceRifCounters(t *testing.T) {
     "RxErrBits": "0",
     "RxErrPackets": "0",
     "RxOk": "5950",
+    "RxOkBits": "1049477",
     "RxPps": "0.24715843207997978",
     "TxBps": "0",
     "TxErrBits": "N/A",
     "TxErrPackets": "0",
-    "TxOk": "0",
+    "TxOkBits": "0",
+    "TxOkPackets": "0",
     "TxPps": "0"
   },
   "Vlan1000": {
@@ -98,11 +106,13 @@ func TestGetInterfaceRifCounters(t *testing.T) {
     "RxErrBits": "0",
     "RxErrPackets": "0",
     "RxOk": "17856",
+    "RxOkBits": "1865088",
     "RxPps": "3.2330838487270913e-06",
     "TxBps": "0",
     "TxErrBits": "0",
     "TxErrPackets": "0",
-    "TxOk": "0",
+    "TxOkBits": "0",
+    "TxOkPackets": "0",
     "TxPps": "0"
   }
 }`)
@@ -121,11 +131,13 @@ func TestGetInterfaceRifCounters(t *testing.T) {
 				"RxErrBits": "0",
 				"RxErrPackets": "100",
 				"RxOk": "5940",
+				"RxOkBits": "1048449",
 				"RxPps": "0.21111450848388191",
 				"TxBps": "0.5",
 				"TxErrBits": "0",
 				"TxErrPackets": "10",
-				"TxOk": "650",
+				"TxOkBits": "0",
+				"TxOkPackets": "650",
 				"TxPps": "12.21"
 			}
 	  }`)
@@ -145,11 +157,13 @@ func TestGetInterfaceRifCounters(t *testing.T) {
 				"RxErrBits": "0",
 				"RxErrPackets": "0",
 				"RxOk": "0",
+				"RxOkBits": "0",
 				"RxPps": "0.21111450848388191",
 				"TxBps": "0.5",
 				"TxErrBits": "0",
 				"TxErrPackets": "0",
-				"TxOk": "0",
+				"TxOkBits": "0",
+				"TxOkPackets": "0",
 				"TxPps": "12.21"
 			}
 	  }`)

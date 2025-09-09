@@ -12,16 +12,18 @@ import (
 )
 
 type interfaceRifCounters struct {
-	RxOk         string `json:"RxOk"`
+	RxOkPackets  string `json:"RxOk"`
 	RxBps        string `json:"RxBps"`
 	RxPps        string `json:"RxPps"`
 	RxErrPackets string `json:"RxErrPackets"`
-	TxOk         string `json:"TxOk"`
+	TxOkPackets  string `json:"TxOkPackets"`
 	TxBps        string `json:"TxBps"`
 	TxPps        string `json:"TxPps"`
 	TxErrPackets string `json:"TxErrPackets"`
 	RxErrBits    string `json:"RxErrBits"`
 	TxErrBits    string `json:"TxErrBits"`
+	RxOkBits     string `json:"RxOkBits"`
+	TxOkBits     string `json:"TxOkBits"`
 }
 
 func getInterfaceRifCounters(options sdc.OptionMap) ([]byte, error) {
@@ -71,16 +73,18 @@ func getInterfaceRifCounters(options sdc.OptionMap) ([]byte, error) {
 		}
 
 		diffInterfaceRifCounters := interfaceRifCounters{
-			RxOk:         calculateDiff(oldInterfaceRifCountersMap[interfaceName].RxOk, newInterfaceRifCounters.RxOk),
+			RxOkPackets:  calculateDiff(oldInterfaceRifCountersMap[interfaceName].RxOkPackets, newInterfaceRifCounters.RxOkPackets),
 			RxBps:        newInterfaceRifCounters.RxBps,
 			RxPps:        newInterfaceRifCounters.RxPps,
 			RxErrPackets: calculateDiff(oldInterfaceRifCountersMap[interfaceName].RxErrPackets, newInterfaceRifCounters.RxErrPackets),
-			TxOk:         calculateDiff(oldInterfaceRifCountersMap[interfaceName].TxOk, newInterfaceRifCounters.TxOk),
+			TxOkPackets:  calculateDiff(oldInterfaceRifCountersMap[interfaceName].TxOkPackets, newInterfaceRifCounters.TxOkPackets),
 			TxBps:        newInterfaceRifCounters.TxBps,
 			TxPps:        newInterfaceRifCounters.TxPps,
 			TxErrPackets: calculateDiff(oldInterfaceRifCountersMap[interfaceName].TxErrPackets, newInterfaceRifCounters.TxErrPackets),
 			RxErrBits:    calculateDiff(oldInterfaceRifCountersMap[interfaceName].RxErrBits, newInterfaceRifCounters.RxErrBits),
 			TxErrBits:    calculateDiff(oldInterfaceRifCountersMap[interfaceName].TxErrBits, newInterfaceRifCounters.TxErrBits),
+			RxOkBits:     calculateDiff(oldInterfaceRifCountersMap[interfaceName].RxOkBits, newInterfaceRifCounters.RxOkBits),
+			TxOkBits:     calculateDiff(oldInterfaceRifCountersMap[interfaceName].TxOkBits, newInterfaceRifCounters.TxOkBits),
 		}
 
 		diffInterfaceRifCountersMap[interfaceName] = diffInterfaceRifCounters
@@ -129,16 +133,18 @@ func getInterfaceCountersRifSnapshot(interfaceName string) (map[string]interface
 		}
 
 		interfaceRifCounter := interfaceRifCounters{
-			RxOk:         GetFieldValueString(rifCountersMap, oidStr, defaultMissingCounterValue, "SAI_ROUTER_INTERFACE_STAT_IN_PACKETS"),
+			RxOkPackets:  GetFieldValueString(rifCountersMap, oidStr, defaultMissingCounterValue, "SAI_ROUTER_INTERFACE_STAT_IN_PACKETS"),
 			RxBps:        GetFieldValueString(rifRatesMap, oidStr, defaultMissingCounterValue, "RX_BPS"),
 			RxPps:        GetFieldValueString(rifRatesMap, oidStr, defaultMissingCounterValue, "RX_PPS"),
 			RxErrPackets: GetFieldValueString(rifCountersMap, oidStr, defaultMissingCounterValue, "SAI_ROUTER_INTERFACE_STAT_IN_ERROR_PACKETS"),
-			TxOk:         GetFieldValueString(rifCountersMap, oidStr, defaultMissingCounterValue, "SAI_ROUTER_INTERFACE_STAT_OUT_PACKETS"),
+			TxOkPackets:  GetFieldValueString(rifCountersMap, oidStr, defaultMissingCounterValue, "SAI_ROUTER_INTERFACE_STAT_OUT_PACKETS"),
 			TxBps:        GetFieldValueString(rifRatesMap, oidStr, defaultMissingCounterValue, "TX_BPS"),
 			TxPps:        GetFieldValueString(rifRatesMap, oidStr, defaultMissingCounterValue, "TX_PPS"),
 			TxErrPackets: GetFieldValueString(rifCountersMap, oidStr, defaultMissingCounterValue, "SAI_ROUTER_INTERFACE_STAT_OUT_ERROR_PACKETS"),
 			RxErrBits:    GetFieldValueString(rifCountersMap, oidStr, defaultMissingCounterValue, "SAI_ROUTER_INTERFACE_STAT_IN_ERROR_OCTETS"),
 			TxErrBits:    GetFieldValueString(rifCountersMap, oidStr, defaultMissingCounterValue, "SAI_ROUTER_INTERFACE_STAT_OUT_ERROR_OCTETS"),
+			RxOkBits:     GetFieldValueString(rifCountersMap, oidStr, defaultMissingCounterValue, "SAI_ROUTER_INTERFACE_STAT_IN_OCTETS"),
+			TxOkBits:     GetFieldValueString(rifCountersMap, oidStr, defaultMissingCounterValue, "SAI_ROUTER_INTERFACE_STAT_OUT_OCTETS"),
 		}
 
 		interfaceRifCountersMap[rifName] = interfaceRifCounter

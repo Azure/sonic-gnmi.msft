@@ -47,51 +47,61 @@ func TestGetInterfaceRifCounters(t *testing.T) {
 		wantRespVal := []byte(`{
   "PortChannel101": {
     "RxBps": "19.431878785629241",
-    "RxErr": "100",
+    "RxErrBits": "0",
+    "RxErrPackets": "100",
     "RxOk": "5940",
     "RxPps": "0.21111450848388191",
     "TxBps": "0.5",
-    "TxErr": "10",
+    "TxErrBits": "0",
+    "TxErrPackets": "10",
     "TxOk": "650",
     "TxPps": "12.21"
   },
   "PortChannel102": {
     "RxBps": "1.2202977000824049",
-    "RxErr": "0",
+    "RxErrBits": "0",
+    "RxErrPackets": "0",
     "RxOk": "5937",
     "RxPps": "0.013699805079217392",
     "TxBps": "0",
-    "TxErr": "0",
+    "TxErrBits": "0",
+    "TxErrPackets": "0",
     "TxOk": "0",
     "TxPps": "0"
   },
   "PortChannel103": {
     "RxBps": "6.0568048649819142",
-    "RxErr": "0",
+    "RxErrBits": "0",
+    "RxErrPackets": "0",
     "RxOk": "5943",
     "RxPps": "0.058547265917178126",
     "TxBps": "0",
-    "TxErr": "0",
+    "TxErrBits": "0",
+    "TxErrPackets": "0",
     "TxOk": "0",
     "TxPps": "0"
   },
   "PortChannel104": {
     "RxBps": "20.260496891870496",
-    "RxErr": "0",
+    "RxErrBits": "0",
+    "RxErrPackets": "0",
     "RxOk": "5950",
     "RxPps": "0.24715843207997978",
     "TxBps": "0",
-    "TxErr": "0",
+    "TxErrBits": "N/A",
+    "TxErrPackets": "0",
     "TxOk": "0",
     "TxPps": "0"
   },
   "Vlan1000": {
     "RxBps": "0.0003231896674387374",
-    "RxErr": "0",
+    "RxErrBits": "0",
+    "RxErrPackets": "0",
     "RxOk": "17856",
     "RxPps": "3.2330838487270913e-06",
     "TxBps": "0",
-    "TxErr": "0",
+    "TxErrBits": "0",
+    "TxErrPackets": "0",
     "TxOk": "0",
     "TxPps": "0"
   }
@@ -108,11 +118,13 @@ func TestGetInterfaceRifCounters(t *testing.T) {
 		wantRespVal := []byte(`{
 			"PortChannel101": {
 				"RxBps": "19.431878785629241",
-				"RxErr": "100",
+				"RxErrBits": "0",
+				"RxErrPackets": "100",
 				"RxOk": "5940",
 				"RxPps": "0.21111450848388191",
 				"TxBps": "0.5",
-				"TxErr": "10",
+				"TxErrBits": "0",
+				"TxErrPackets": "10",
 				"TxOk": "650",
 				"TxPps": "12.21"
 			}
@@ -130,11 +142,13 @@ func TestGetInterfaceRifCounters(t *testing.T) {
 		wantRespVal := []byte(`{
 			"PortChannel101": {
 				"RxBps": "19.431878785629241",
-				"RxErr": "0",
+				"RxErrBits": "0",
+				"RxErrPackets": "0",
 				"RxOk": "0",
 				"RxPps": "0.21111450848388191",
 				"TxBps": "0.5",
-				"TxErr": "0",
+				"TxErrBits": "0",
+				"TxErrPackets": "0",
 				"TxOk": "0",
 				"TxPps": "12.21"
 			}

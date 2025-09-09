@@ -59,6 +59,16 @@ func init() {
 		showCmdOptionVerbose,
 	)
 	sdc.RegisterCliPath(
+		[]string{"SHOW", "dropcounters", "configuration"},
+		getDropCountersConfiguration,
+		"SHOW/dropcounters/configuration[OPTIONS]: Show current drop counter configuration",
+		0,
+		0,
+		nil,
+		sdc.UnimplementedOption(showCmdOptionNamespace),
+		showCmdOptionGroup,
+	)
+	sdc.RegisterCliPath(
 		[]string{"SHOW", "dropcounters", "counts"},
 		getDropCounters,
 		"SHOW/dropcounters/counts[OPTIONS]: Show drop counts",

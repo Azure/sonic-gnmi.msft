@@ -1,0 +1,7 @@
+{
+    "DEBUG_COUNTER|DEBUG_1": {"alias": "GOOD_DROPS", "desc": "More port ingress drops", "group": "GOOD", "type": "PORT_INGRESS_DROPS"},
+    "DEBUG_COUNTER|DEBUG_2": {"alias": "BAD_DROPS", "desc": "More port ingress drops", "group": "BAD", "type": "PORT_INGRESS_DROPS"},
+    "DEBUG_COUNTER_DROP_REASON|DEBUG_1|SIP_LINK_LOCAL": { "NULL": "NULL" },
+    "DEBUG_COUNTER_DROP_REASON|DEBUG_2|ACL_ANY": { "NULL": "NULL" },
+    "DEBUG_COUNTER_DROP_REASON|DEBUG_2|EXCEEDS_L3_MTU": { "NULL": "NULL" }
+}

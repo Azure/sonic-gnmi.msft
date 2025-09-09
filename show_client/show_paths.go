@@ -322,4 +322,11 @@ func init() {
 		showCmdOptionInterfaces,
 		sdc.RequiredOption(showCmdOptionQueueType),
 	)
+	sdc.RegisterCliPath(
+		[]string{"SHOW", "queue", "persistent-watermark"},
+		getQueuePersistentWatermarks,
+		nil,
+		showCmdOptionInterfaces,
+		sdc.RequiredOption(showCmdOptionQueueType),
+	)
 }

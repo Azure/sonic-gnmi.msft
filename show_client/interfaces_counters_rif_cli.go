@@ -9,6 +9,8 @@ import (
 
 	log "github.com/golang/glog"
 	sdc "github.com/sonic-net/sonic-gnmi/sonic_data_client"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 )
 
 type interfaceRifCounters struct {
@@ -43,7 +45,7 @@ func getInterfaceRifCounters(args sdc.CmdArgs, options sdc.OptionMap) ([]byte, e
 
 	if interfaceName != "" {
 		if _, ok := rifNameMap[interfaceName]; !ok {
-			return nil, errors.New(fmt.Sprintf("Interface %s not found in COUNTERS_RIF_NAME_MAP, Make sure it exists", interfaceName))
+			return nil, status.Errorf(codes.InvalidArgument, fmt.Sprintf("Interface %s not found in COUNTERS_RIF_NAME_MAP, Make sure it exists", interfaceName))
 		}
 	}
 

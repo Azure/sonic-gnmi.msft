@@ -1,8 +1,0 @@
-{
-    "TRANSCEIVER_DOM_INFO|Ethernet0": {
-        "lp_mode": "false"
-    },
-    "TRANSCEIVER_DOM_INFO|Ethernet4": {
-        "lp_mode": "true"
-    }
-}

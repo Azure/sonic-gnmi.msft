@@ -1,0 +1,8 @@
+Port         Low-power Mode
+-----------  ----------------
+Ethernet0   Off
+Ethernet2   Off
+Ethernet40   Off
+Ethernet80   On
+Ethernet120   Off
+Ethernet160   Off

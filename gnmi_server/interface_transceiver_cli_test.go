@@ -137,8 +137,9 @@ func TestGetInterfaceTransceiverLpmode(t *testing.T) {
 	defer cancel()
 
 	// send CONFIG_DB sample data
-	portDbDataFilename = "../testdata/CONFIG_DB_PORT.txt"
-	portLpmodeDefault = `Port         Low-power Mode\n-----------  ----------------\nEthernet0   Off\nEthernet2   Off\nEthernet40   Off\nEthernet80   On\nEthernet120   Off\nEthernet160   Off\n`
+	portDbDataFilename := "../testdata/CONFIG_DB_PORT.txt"
+	portLpmodeDefault := "../testdata/LPMODE_DEFAULT.txt"
+	portLpmodeError := "../testdata/LPMODE_ERROR.txt"
 	ResetDataSetsAndMappings(t)
 	
 	tests := []struct {
@@ -159,6 +160,7 @@ func TestGetInterfaceTransceiverLpmode(t *testing.T) {
 				elem: <name: "lpmode" >
 			`,
 			wantRetCode: codes.OK,
+			mockOutputFile: portLpmodeDefault,
 			valTest:     true,
 			wantRespVal: `{"Ethernet0":"Off","Ethernet2":"Off","Ethernet40":"Off","Ethernet80":"On","Ethernet120":"Off"}`,
 			testInit: func() {
@@ -175,6 +177,7 @@ func TestGetInterfaceTransceiverLpmode(t *testing.T) {
 				elem: <name: "lpmode" key: { key: "interface" value: "Ethernet80" }>
 			`,
 			wantRetCode: codes.OK,
+			mockOutputFile: "Port         Low-power Mode\n-----------  ----------------\nEthernet80   On\n",
 			valTest:     true,
 			wantRespVal: `{"Ethernet80":"On"}`,
 			testInit: func() {
@@ -188,11 +191,12 @@ func TestGetInterfaceTransceiverLpmode(t *testing.T) {
 			textPbPath: `
 				elem: <name: "interface" >
 				elem: <name: "transceiver" >
-				elem: <name: "lpmode" key: { key: "interface" value: "Ethernet200" }>
+				elem: <name: "lpmode" key: { key: "interface" value: "Ethernet120" }>
 			`,
 			wantRetCode: codes.OK,
+			mockOutputFile: "Port         Low-power Mode\n-----------  ----------------\n",
 			valTest:     true,
-			wantRespVal: `{"Ethernet200":"N/A"}`,
+			wantRespVal: `{"Ethernet120":"N/A"}`,
 			testInit: func() {
 				FlushDataSet(t, ConfigDbNum)
 				AddDataSet(t, ConfigDbNum, portDbDataFilename)
@@ -207,6 +211,7 @@ func TestGetInterfaceTransceiverLpmode(t *testing.T) {
 				elem: <name: "lpmode" key: { key: "interface" value: "InvalidPort" }>
 			`,
 			wantRetCode: codes.NotFound,
+			mockOutputFile: portLpmodeError,
 			valTest:     false,
 			testInit: func() {
 				FlushDataSet(t, ConfigDbNum)
@@ -219,8 +224,16 @@ func TestGetInterfaceTransceiverLpmode(t *testing.T) {
 		if test.testInit != nil {
 			test.testInit()
 		}
+		var patches *gomonkey.Patches
+		if test.mockOutputFile != "" {
+			patches = MockNSEnterOutput(t, test.mockOutputFile)
+		}
+
 		t.Run(test.desc, func(t *testing.T) {
 			runTestGet(t, ctx, gClient, test.pathTarget, test.textPbPath, test.wantRetCode, test.wantRespVal, test.valTest)
 		})
+		if patches != nil {
+			patches.Reset()
+		}
 	}
 }

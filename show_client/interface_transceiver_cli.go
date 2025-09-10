@@ -109,16 +109,21 @@ func getInterfaceTransceiverLpmode(options sdc.OptionMap) ([]byte, error) {
 	}
 
 	logicalPortName, ok := options["interface"].String()
-	physicalPort := ""
-	if ok && logicalPortName != "" {
+	if ok && logicalPortName != ""  {
 		physicalPort, exist := logicalToPhysicalPortMap[logicalPortName]
 		if !exist {
-			err = fmt.Errorf("Error: No physical ports found for logical port %s in CONFIG_DB PORT", logicalPortName)
+			err := fmt.Errorf("Error: No physical ports found for logical port %s in CONFIG_DB PORT", logicalPortName)
 			log.Errorf(err.Error())
 			return nil, err
 		}
-	}
 
+		return getInterfaceTransceiverLpmodeJsonData(logicalToPhysicalPortMap, physicalPort)
+	} else {
+		return getInterfaceTransceiverLpmodeJsonData(logicalToPhysicalPortMap, "")
+	}
+}
+
+func getInterfaceTransceiverLpmodeJsonData(logicalToPhysicalPortMap map[string]string, physicalPort string) ([]byte, error) {
 	lpmode, err := runCommandToGetLpmode(physicalPort)
 	if err != nil {
 		return nil, err

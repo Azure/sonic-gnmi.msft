@@ -244,6 +244,15 @@ func init() {
 		nil,
 		showCmdOptionInterface, // TODO
 	)
+	sdc.RegisterCliPath(
+		[]string{"SHOW", "interfaces", "transceiver", "lpmode"},
+		getInterfaceTransceiverLpMode,
+		"SHOW/interfaces/transceiver/lpmode/{INTERFACENAME}[OPTIONS]: Show interface transceiver low-power mode",
+		0,
+		1,
+		nil,
+		showCmdOptionInterface, // TODO
+	)
 
 	// SHOW/ipv6
 	sdc.RegisterCliPath(

@@ -8,7 +8,7 @@ const (
 	showCmdOptionUnimplementedDesc = "UNIMPLEMENTED"
 	showCmdOptionDisplayDesc       = "[display=all] No-op since no-multi-asic support"
 	showCmdOptionVerboseDesc       = "[verbose=true] Enable verbose output"
-	showCmdOptionInterfacesDesc    = "[interfaces=TEXT] Filter by interfaces name"
+	showCmdOptionInterfacesDesc    = "[interfaces=TEXT] Filter by interfaces name" // TODO: Change from interfaces to interface
 	showCmdOptionInterfaceDesc     = "[interface=TEXT] Filter by single interface name"
 	showCmdOptionPortDesc          = "[port=TEXT] Filter by single port name"
 	showCmdOptionVlanDesc          = "[vlan=INTEGER] Filter by VLAN ID"
@@ -56,7 +56,7 @@ var (
 	)
 
 	showCmdOptionInterfaces = sdc.NewShowCmdOption(
-		"interfaces",
+		"interfaces", // TODO: Change to interface
 		showCmdOptionInterfacesDesc,
 		sdc.StringSliceValue,
 	)

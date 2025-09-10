@@ -57,7 +57,7 @@ func getQueueUserWatermarksSnapshot(ifaces []string, requestedQueueType int) (ma
 	return response, nil
 }
 
-func getQueueUserWatermarks(options sdc.OptionMap) ([]byte, error) {
+func getQueueUserWatermarks(args sdc.CmdArgs, options sdc.OptionMap) ([]byte, error) {
 	if len(countersQueueTypeMap) == 0 {
 		var err error
 		countersQueueTypeMap, err = sdc.GetCountersQueueTypeMap()
@@ -67,6 +67,7 @@ func getQueueUserWatermarks(options sdc.OptionMap) ([]byte, error) {
 		}
 	}
 
+	// TODO: Check this option
 	var ifaces []string
 	if interfaces, ok := options["interfaces"].Strings(); ok {
 		ifaces = interfaces

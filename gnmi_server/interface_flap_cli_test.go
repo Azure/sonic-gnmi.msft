@@ -55,10 +55,10 @@ func TestGetShowInterfaceFlap(t *testing.T) {
 		teardown    func()
 	}{
 		{
-			desc:       "query SHOW interface flap NO DATA",
+			desc:       "query SHOW interfaces flap NO DATA",
 			pathTarget: "SHOW",
 			textPbPath: `
-                elem: <name: "interface" >
+                elem: <name: "interfaces" >
                 elem: <name: "flap" >
             `,
 			wantRetCode: codes.OK,
@@ -69,10 +69,10 @@ func TestGetShowInterfaceFlap(t *testing.T) {
 			},
 		},
 		{
-			desc:       "query SHOW interface flap (load appl port_table - all)",
+			desc:       "query SHOW interfaces flap (load appl port_table - all)",
 			pathTarget: "SHOW",
 			textPbPath: `
-                elem: <name: "interface" >
+                elem: <name: "interfaces" >
                 elem: <name: "flap" >
             `,
 			wantRetCode: codes.OK,
@@ -84,10 +84,10 @@ func TestGetShowInterfaceFlap(t *testing.T) {
 			},
 		},
 		{
-			desc:       "query SHOW interface flap (load appl port_table - single interface)",
+			desc:       "query SHOW interfaces flap (load appl port_table - single interface)",
 			pathTarget: "SHOW",
 			textPbPath: `
-                elem: <name: "interface" >
+                elem: <name: "interfaces" >
                 elem: <name: "flap" key: { key: "interface" value: "Ethernet0" } >
             `,
 			wantRetCode: codes.OK,
@@ -99,10 +99,10 @@ func TestGetShowInterfaceFlap(t *testing.T) {
 			},
 		},
 		{
-			desc:       "query SHOW interface flap (alias display)",
+			desc:       "query SHOW interfaces flap (alias display)",
 			pathTarget: "SHOW",
 			textPbPath: `
-                elem: <name: "interface" >
+                elem: <name: "interfaces" >
                 elem: <name: "flap" >
             `,
 			wantRetCode: codes.OK,
@@ -124,10 +124,10 @@ func TestGetShowInterfaceFlap(t *testing.T) {
 			},
 		},
 		{
-			desc:       "query SHOW interface flap - invalid interface",
+			desc:       "query SHOW interfaces flap - invalid interface",
 			pathTarget: "SHOW",
 			textPbPath: `
-                elem: <name: "interface" >
+                elem: <name: "interfaces" >
                 elem: <name: "flap" key: { key: "interface" value: "Ethernet999" } >
             `,
 			wantRetCode: codes.NotFound,
@@ -139,10 +139,10 @@ func TestGetShowInterfaceFlap(t *testing.T) {
 			},
 		},
 		{
-			desc:       "query SHOW interface flap - GetMapFromQueries error",
+			desc:       "query SHOW interfaces flap - GetMapFromQueries error",
 			pathTarget: "SHOW",
 			textPbPath: `
-                elem: <name: "interface" >
+                elem: <name: "interfaces" >
                 elem: <name: "flap" >
             `,
 			wantRetCode: codes.NotFound,

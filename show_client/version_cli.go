@@ -34,7 +34,7 @@ type VersionOutput struct {
 	DockerInfo           json.RawMessage `json:"docker_images"`
 }
 
-func getVersion(options sdc.OptionMap) ([]byte, error) {
+func getVersion(args sdc.CmdArgs, options sdc.OptionMap) ([]byte, error) {
 	versionInfo, errorInVersionInfo := ReadYamlToMap(SonicVersionYamlPath)
 	if errorInVersionInfo != nil {
 		log.Errorf("Failed to read version info from %s: %v", SonicVersionYamlPath, errorInVersionInfo)

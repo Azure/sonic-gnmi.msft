@@ -58,10 +58,10 @@ func TestGetShowInterfaceFecStatus(t *testing.T) {
 		testInit    func()
 	}{
 		{
-			desc:       "query SHOW interface fec status - no data",
+			desc:       "query SHOW interfaces fec status - no data",
 			pathTarget: "SHOW",
 			textPbPath: `
-				elem: <name: "interface" >
+				elem: <name: "interfaces" >
 				elem: <name: "fec" >
 				elem: <name: "status" >
 			`,
@@ -70,10 +70,10 @@ func TestGetShowInterfaceFecStatus(t *testing.T) {
 			valTest:     true,
 		},
 		{
-			desc:       "query SHOW interface fec status - all ports",
+			desc:       "query SHOW interfaces fec status - all ports",
 			pathTarget: "SHOW",
 			textPbPath: `
-				elem: <name: "interface" >
+				elem: <name: "interfaces" >
 				elem: <name: "fec" >
 				elem: <name: "status" >
 			`,
@@ -90,10 +90,10 @@ func TestGetShowInterfaceFecStatus(t *testing.T) {
 			},
 		},
 		{
-			desc:       "query SHOW interface fec status - single interface",
+			desc:       "query SHOW interfaces fec status - single interface",
 			pathTarget: "SHOW",
 			textPbPath: `
-				elem: <name: "interface" >
+				elem: <name: "interfaces" >
 				elem: <name: "fec" >
 				elem: <name: "status" key: { key: "interface" value: "Ethernet0" } >
 			`,
@@ -110,10 +110,10 @@ func TestGetShowInterfaceFecStatus(t *testing.T) {
 			},
 		},
 		{
-			desc:       "query SHOW interface fec status - single non-existent interface",
+			desc:       "query SHOW interfaces fec status - single non-existent interface",
 			pathTarget: "SHOW",
 			textPbPath: `
-				elem: <name: "interface" >
+				elem: <name: "interfaces" >
 				elem: <name: "fec" >
 				elem: <name: "status" key: { key: "interface" value: "Ethernet10" } >
 			`,
@@ -130,10 +130,10 @@ func TestGetShowInterfaceFecStatus(t *testing.T) {
 			},
 		},
 		{
-			desc:       "query SHOW interface fec status - all ports oper down",
+			desc:       "query SHOW interfaces fec status - all ports oper down",
 			pathTarget: "SHOW",
 			textPbPath: `
-				elem: <name: "interface" >
+				elem: <name: "interfaces" >
 				elem: <name: "fec" >
 				elem: <name: "status" >
 			`,

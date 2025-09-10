@@ -57,10 +57,10 @@ func TestGetShowInterfaceStatus(t *testing.T) {
 		testInit    func()
 	}{
 		{
-			desc:       "query SHOW interface status - no data",
+			desc:       "query SHOW interfaces status - no data",
 			pathTarget: "SHOW",
 			textPbPath: `
-				elem: <name: "interface" >
+				elem: <name: "interfaces" >
 				elem: <name: "status" >
 			`,
 			wantRetCode: codes.OK,
@@ -68,10 +68,10 @@ func TestGetShowInterfaceStatus(t *testing.T) {
 			valTest:     true,
 		},
 		{
-			desc:       "query SHOW interface status - config db only",
+			desc:       "query SHOW interfaces status - config db only",
 			pathTarget: "SHOW",
 			textPbPath: `
-				elem: <name: "interface" >
+				elem: <name: "interfaces" >
 				elem: <name: "status" >
 			`,
 			wantRetCode: codes.OK,
@@ -83,10 +83,10 @@ func TestGetShowInterfaceStatus(t *testing.T) {
 			},
 		},
 		{
-			desc:       "query SHOW interface status - appl db only",
+			desc:       "query SHOW interfaces status - appl db only",
 			pathTarget: "SHOW",
 			textPbPath: `
-				elem: <name: "interface" >
+				elem: <name: "interfaces" >
 				elem: <name: "status" >
 			`,
 			wantRetCode: codes.OK,
@@ -100,10 +100,10 @@ func TestGetShowInterfaceStatus(t *testing.T) {
 			},
 		},
 		{
-			desc:       "query SHOW interface status - appl db + state db",
+			desc:       "query SHOW interfaces status - appl db + state db",
 			pathTarget: "SHOW",
 			textPbPath: `
-				elem: <name: "interface" >
+				elem: <name: "interfaces" >
 				elem: <name: "status" >
 			`,
 			wantRetCode: codes.OK,
@@ -117,10 +117,10 @@ func TestGetShowInterfaceStatus(t *testing.T) {
 			},
 		},
 		{
-			desc:       "query SHOW interface status - single interface",
+			desc:       "query SHOW interfaces status - single interface",
 			pathTarget: "SHOW",
 			textPbPath: `
-				elem: <name: "interface" >
+				elem: <name: "interfaces" >
 				elem: <name: "status" key: { key: "interface" value: "Ethernet0" } >
 			`,
 			wantRetCode: codes.OK,
@@ -136,7 +136,7 @@ func TestGetShowInterfaceStatus(t *testing.T) {
 			desc:       "query SHOW interface status - single portchannel",
 			pathTarget: "SHOW",
 			textPbPath: `
-				elem: <name: "interface" >
+				elem: <name: "interfaces" >
 				elem: <name: "status" key: { key: "interface" value: "PortChannel1" } >
 			`,
 			wantRetCode: codes.OK,
@@ -149,10 +149,10 @@ func TestGetShowInterfaceStatus(t *testing.T) {
 			},
 		},
 		{
-			desc:       "query SHOW interface status - abnormal data",
+			desc:       "query SHOW interfaces status - abnormal data",
 			pathTarget: "SHOW",
 			textPbPath: `
-				elem: <name: "interface" >
+				elem: <name: "interfaces" >
 				elem: <name: "status" >
 			`,
 			wantRetCode: codes.OK,
@@ -166,10 +166,10 @@ func TestGetShowInterfaceStatus(t *testing.T) {
 			},
 		},
 		{
-			desc:       "query SHOW interface status - subinterfaces",
+			desc:       "query SHOW interfaces status - subinterfaces",
 			pathTarget: "SHOW",
 			textPbPath: `
-				elem: <name: "interface" >
+				elem: <name: "interfaces" >
 				elem: <name: "status" key: { key: "interface" value: "subport" } >
 			`,
 			wantRetCode: codes.OK,

@@ -32,7 +32,7 @@ func TestShowMacCommand(t *testing.T) {
 	defer conn.Close()
 
 	gClient := pb.NewGNMIClient(conn)
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second * 3)
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second*3)
 	defer cancel()
 
 	stateDbContentFileNameForShowMac := "../testdata/ShowMacStateDb.txt"

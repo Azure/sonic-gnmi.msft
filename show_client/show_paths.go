@@ -540,7 +540,7 @@ func init() {
 		getInterfaceRifCounters,
 		"SHOW/interfaces/counters/rif/{INTERFACENAME}[OPTIONS]",
 		0,
-		0,
+		1,
 		nil,
 		showCmdOptionPeriod,
 		showCmdOptionInterface,

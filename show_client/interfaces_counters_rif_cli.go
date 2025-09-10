@@ -28,7 +28,7 @@ type interfaceRifCounters struct {
 
 func getInterfaceRifCounters(args sdc.CmdArgs, options sdc.OptionMap) ([]byte, error) {
 	period := 0
-	interfaceName, _ := options["interface"].String()
+	interfaceName := args.At(0)
 	takeDiffSnapshot := false
 	if periodValue, ok := options["period"].Int(); ok {
 		takeDiffSnapshot = true

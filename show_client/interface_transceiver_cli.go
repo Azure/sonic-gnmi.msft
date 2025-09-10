@@ -3,6 +3,7 @@ package show_client
 import (
 	"encoding/json"
 	"strings"
+	"fmt"
 
 	log "github.com/golang/glog"
 	sdc "github.com/sonic-net/sonic-gnmi/sonic_data_client"
@@ -151,12 +152,12 @@ func getPortNameForLpmode(logicalPortName string, physicalPortName string) strin
 	return logicalPortName + ":" + physicalPortName + " (ganged)"
 }
 
-// admin@str3-t0-8102-smartswitch-01:~$ show interfaces transceiver lpmode
+// show interfaces transceiver lpmode
 // Port         Low-power Mode
 // -----------  ----------------
 // Ethernet0    Off
 // Ethernet8    Off
-// admin@str3-t0-8102-smartswitch-01:~$ sudo sfputil show lpmode -p Ethernet160
+// sudo sfputil show lpmode -p Ethernet160
 // Port         Low-power Mode
 // -----------  ----------------
 // Ethernet160  Off
@@ -198,12 +199,12 @@ func runCommandToGetLpmode(portName string) (map[string]string, error) {
 		lpmode[port] = status
 	}
 
-	return lpmode
+	return lpmode, nil
 }
 
 // Get Map which key is Logical Port Name and value is Physical Port Name
 // If port does not have alias, key and value will be same, both Physical Port Name
-func getPhysicalToLogicalPortMap() (map[string]string, error) {
+func getLogicalToPhysicalPortMap() (map[string]string, error) {
 	portMap := make(map[string]string)
 
 	queries := [][]string{

@@ -1,6 +1,6 @@
 package gnmi
 
-// Tests SHOW interface neighbor expected (JSON output)
+// Enriched tests for SHOW/interfaces/neighbor/expected
 
 import (
 	"crypto/tls"
@@ -8,7 +8,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/agiledragon/gomonkey/v2"
 	pb "github.com/openconfig/gnmi/proto/gnmi"
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
@@ -19,16 +18,16 @@ import (
 )
 
 // getInterfaceNeighborExpected returns JSON like:
-// {
-//   "Ethernet2": {
-//     "neighbor":"DEVICE01T1",
-//     "neighbor_port":"Ethernet1",
-//     "neighbor_loopback":"10.1.1.1",
-//     "neighbor_mgmt":"192.0.2.10",
-//     "neighbor_type":"BackEndLeafRouter"
-//   }
-// }
-
+//
+//	{
+//	  "Ethernet2": {
+//	    "neighbor":"DEVICE01T1",
+//	    "neighbor_port":"Ethernet1",
+//	    "neighbor_loopback":"10.1.1.1",
+//	    "neighbor_mgmt":"192.0.2.10",
+//	    "neighbor_type":"BackEndLeafRouter"
+//	  }
+//	}
 func TestShowInterfaceNeighborExpected(t *testing.T) {
 	s := createServer(t, ServerPort)
 	go runServer(t, s)
@@ -47,96 +46,133 @@ func TestShowInterfaceNeighborExpected(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), QueryTimeout*time.Second)
 	defer cancel()
 
-	neighborFile := "../testdata/DEVICE_NEIGHBOR_EXPECTED.txt"
-	neighborMetaFile := "../testdata/DEVICE_NEIGHBOR_METADATA_EXPECTED.txt"
-	neighborOnlyFile := "../testdata/DEVICE_NEIGHBOR_EXPECTED_NO_META.txt"
+	basePath := `
+      elem: <name:"interfaces">
+      elem: <name:"neighbor">
+      elem: <name:"expected">
+    `
 
-	const (
-		expectedEmpty       = `{}`
-		expectedSingle      = `{"Ethernet2":{"Neighbor":"DEVICE01T1","NeighborPort":"Ethernet1","NeighborLoopback":"10.1.1.1","NeighborMgmt":"192.0.2.10","NeighborType":"BackEndLeafRouter"}}`
-		expectedMissingMeta = `{"Ethernet4":{"Neighbor":"DEVICE02T1","NeighborPort":"Ethernet9","NeighborLoopback":"None","NeighborMgmt":"None","NeighborType":"None"}}`
-	)
+	fullDataFile := "../testdata/NEIGHBOR_EXPECTED_FULL.txt"
+	minDataFile := "../testdata/NEIGHBOR_EXPECTED_MIN.txt"
 
-	tests := []struct {
-		desc       string
-		init       func()
-		textPbPath string
-		wantCode   codes.Code
-		wantVal    []byte
-		valTest    bool
-	}{
+	const expectedEmpty = `{}`
+
+	type tc struct {
+		desc     string
+		envMode  string
+		init     func()
+		addArg   string // optional single interface argument (alias or canonical)
+		wantCode codes.Code
+		wantVal  []byte
+		valTest  bool
+	}
+
+	tests := []tc{
 		{
-			desc: "no data",
+			desc:    "empty tables default mode -> {}",
+			envMode: "",
 			init: func() {
-				FlushDataSet(t, ConfigDbNum)
+				// no data loaded
 			},
-			textPbPath: `
-              elem: <name: "interfaces">
-              elem: <name: "neighbor">
-              elem: <name: "expected">
-            `,
 			wantCode: codes.OK,
-			wantVal:  []byte(expectedEmpty),
+			wantVal:  []byte(`{}`),
 			valTest:  true,
 		},
 		{
-			desc: "single neighbor (datasets)",
+			desc:    "all neighbors default mode (canonical keys)",
+			envMode: "",
 			init: func() {
-				FlushDataSet(t, ConfigDbNum)
-				AddDataSet(t, ConfigDbNum, neighborFile)
-				AddDataSet(t, ConfigDbNum, neighborMetaFile)
+				AddDataSet(t, ConfigDbNum, fullDataFile)
 			},
-			textPbPath: `
-              elem: <name: "interfaces">
-              elem: <name: "neighbor">
-              elem: <name: "expected">
-            `,
 			wantCode: codes.OK,
-			wantVal:  []byte(expectedSingle),
+			// Keys are canonical (Ethernet0, Ethernet2)
+			wantVal: []byte(`{"Ethernet0":{"Neighbor":"DeviceA","NeighborPort":"Ethernet10","NeighborLoopback":"10.0.0.1","NeighborMgmt":"192.168.0.1","NeighborType":"Leaf"},"Ethernet2":{"Neighbor":"DeviceB","NeighborPort":"Ethernet11","NeighborLoopback":"10.0.0.2","NeighborMgmt":"192.168.0.2","NeighborType":"Spine"}}`),
+			valTest: true,
+		},
+		{
+			desc:    "all neighbors alias mode (alias keys)",
+			envMode: "alias",
+			init: func() {
+				AddDataSet(t, ConfigDbNum, fullDataFile)
+			},
+			wantCode: codes.OK,
+			wantVal:  []byte(`{"etp1":{"Neighbor":"DeviceA","NeighborPort":"Ethernet10","NeighborLoopback":"10.0.0.1","NeighborMgmt":"192.168.0.1","NeighborType":"Leaf"},"etp2":{"Neighbor":"DeviceB","NeighborPort":"Ethernet11","NeighborLoopback":"10.0.0.2","NeighborMgmt":"192.168.0.2","NeighborType":"Spine"}}`),
 			valTest:  true,
 		},
 		{
-			desc: "missing metadata defaults (datasets)",
+			desc:    "single interface alias mode valid alias",
+			envMode: "alias",
 			init: func() {
-				FlushDataSet(t, ConfigDbNum)
-				AddDataSet(t, ConfigDbNum, neighborOnlyFile)
+				AddDataSet(t, ConfigDbNum, fullDataFile)
 			},
-			textPbPath: `
-              elem: <name: "interfaces">
-              elem: <name: "neighbor">
-              elem: <name: "expected">
-            `,
+			addArg:   "etp1",
 			wantCode: codes.OK,
-			wantVal:  []byte(expectedMissingMeta),
+			wantVal:  []byte(`{"etp1":{"Neighbor":"DeviceA","NeighborPort":"Ethernet10","NeighborLoopback":"10.0.0.1","NeighborMgmt":"192.168.0.1","NeighborType":"Leaf"}}`),
 			valTest:  true,
 		},
 		{
-			desc: "GetMapFromQueries error (neighbor)",
+			desc:    "single interface default mode canonical",
+			envMode: "",
 			init: func() {
-				FlushDataSet(t, ConfigDbNum)
-				patch := gomonkey.ApplyFunc(show_client.GetMapFromQueries,
-					func(q [][]string) (map[string]interface{}, error) {
-						return nil, fmt.Errorf("injected neighbor error")
-					})
-				t.Cleanup(func() { patch.Reset() })
+				AddDataSet(t, ConfigDbNum, fullDataFile)
 			},
-			textPbPath: `
-              elem: <name: "interfaces">
-              elem: <name: "neighbor">
-              elem: <name: "expected">
-            `,
-			wantCode: codes.NotFound,
+			addArg:   "Ethernet2",
+			wantCode: codes.OK,
+			wantVal:  []byte(`{"Ethernet2":{"Neighbor":"DeviceB","NeighborPort":"Ethernet11","NeighborLoopback":"10.0.0.2","NeighborMgmt":"192.168.0.2","NeighborType":"Spine"}}`),
+			valTest:  true,
+		},
+		{
+			desc:    "alias mode invalid canonical should error",
+			envMode: "alias",
+			init: func() {
+				AddDataSet(t, ConfigDbNum, fullDataFile)
+			},
+			addArg:   "Ethernet0",
+			wantCode: codes.InvalidArgument,
 			valTest:  false,
+		},
+		{
+			desc:    "alias mode invalid alias",
+			envMode: "alias",
+			init: func() {
+				AddDataSet(t, ConfigDbNum, fullDataFile)
+			},
+			addArg:   "etp9",
+			wantCode: codes.InvalidArgument,
+			valTest:  false,
+		},
+		{
+			desc:    "missing metadata fields -> None defaults",
+			envMode: "alias",
+			init: func() {
+				AddDataSet(t, ConfigDbNum, minDataFile)
+			},
+			wantCode: codes.OK,
+			wantVal:  []byte(`{"etp3":{"Neighbor":"DeviceC","NeighborPort":"Ethernet12","NeighborLoopback":"None","NeighborMgmt":"None","NeighborType":"None"}}`),
+			valTest:  true,
 		},
 	}
 
 	for _, tc := range tests {
 		tc := tc
 		t.Run(tc.desc, func(t *testing.T) {
+			ResetDataSetsAndMappings(t)
+			if tc.envMode != "" {
+				t.Setenv(show_client.SonicCliIfaceMode, tc.envMode)
+			} else {
+				t.Setenv(show_client.SonicCliIfaceMode, "")
+			}
 			if tc.init != nil {
 				tc.init()
 			}
-			runTestGet(t, ctx, gClient, "SHOW", tc.textPbPath, tc.wantCode, tc.wantVal, tc.valTest)
+
+			// Build path (append interface arg element if needed)
+			path := basePath
+			if tc.addArg != "" {
+				path += fmt.Sprintf(`elem: <name:"%s">`, tc.addArg)
+			}
+
+			runTestGet(t, ctx, gClient, "SHOW", path, tc.wantCode, tc.wantVal, tc.valTest)
 		})
 	}
 }

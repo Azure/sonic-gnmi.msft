@@ -1315,25 +1315,21 @@ func getInterfaceNeighborExpected(args sdc.CmdArgs, options sdc.OptionMap) ([]by
 		log.Errorf("Failed to get DEVICE_NEIGHBOR: %v", err)
 		return nil, err
 	}
-
-	// Fetch DEVICE_NEIGHBOR_METADATA
 	metaTbl, err := GetMapFromQueries([][]string{{"CONFIG_DB", "DEVICE_NEIGHBOR_METADATA"}})
 	if err != nil {
 		log.Errorf("Failed to get DEVICE_NEIGHBOR_METADATA: %v", err)
 		return nil, err
 	}
 
-	out := make(map[string]map[string]string)
-	for localIf := range neighborTbl {
-		device := GetFieldValueString(neighborTbl, localIf, "", "name")
+	buildEntry := func(canonIf string) (map[string]string, bool) {
+		device := GetFieldValueString(neighborTbl, canonIf, "", "name")
 		if device == "" {
-			continue
+			return nil, false
 		}
-		remotePort := GetFieldValueString(neighborTbl, localIf, "None", "port")
+		remotePort := GetFieldValueString(neighborTbl, canonIf, "None", "port")
 		if remotePort == "" {
 			remotePort = "None"
 		}
-
 		loopback := GetFieldValueString(metaTbl, device, "None", "lo_addr")
 		if loopback == "" {
 			loopback = "None"
@@ -1355,10 +1351,40 @@ func getInterfaceNeighborExpected(args sdc.CmdArgs, options sdc.OptionMap) ([]by
 			"NeighborLoopback": loopback,
 			"NeighborMgmt":     mgmt,
 			"NeighborType":     ntype,
+		}, true
+	}
+
+	aliasMode := GetInterfaceNamingMode() == "alias"
+
+	// Collect and sort canonical keys
+	canonicalKeys := make([]string, 0, len(neighborTbl))
+	for k := range neighborTbl {
+		canonicalKeys = append(canonicalKeys, k)
+	}
+	canonicalKeys = natsortInterfaces(canonicalKeys)
+
+	// Build final map directly (alias or canonical keys depending on mode)
+	finalMap := make(map[string]map[string]string, len(canonicalKeys))
+	for _, c := range canonicalKeys {
+		if entry, ok := buildEntry(c); ok {
+			key := c
+			if aliasMode {
+				key = GetInterfaceNameForDisplay(c) // alias
+			}
+			finalMap[key] = entry
 		}
 	}
 
-	return json.Marshal(out)
+	// Filter single interface
+	if intf != "" {
+		entry, ok := finalMap[intf]
+		if !ok {
+			return nil, status.Errorf(codes.InvalidArgument, "Invalid interface name %s", intf)
+		}
+		return json.Marshal(map[string]map[string]string{intf: entry})
+	}
+
+	return json.Marshal(finalMap)
 }
 
 func getInterfaceNamingMode(args sdc.CmdArgs, options sdc.OptionMap) ([]byte, error) {

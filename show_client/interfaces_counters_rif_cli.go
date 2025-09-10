@@ -26,7 +26,7 @@ type interfaceRifCounters struct {
 	TxOkBits     string `json:"TxOkBits"`
 }
 
-func getInterfaceRifCounters(options sdc.OptionMap) ([]byte, error) {
+func getInterfaceRifCounters(args sdc.CmdArgs, options sdc.OptionMap) ([]byte, error) {
 	period := 0
 	interfaceName, _ := options["interface"].String()
 	takeDiffSnapshot := false

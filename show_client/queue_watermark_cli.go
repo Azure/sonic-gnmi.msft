@@ -81,7 +81,7 @@ func getQueueUserWatermarksCommon(options sdc.OptionMap, requestedQueueType int)
 	return json.Marshal(snapshot)
 }
 
-func getQueueUserWatermarks(options sdc.OptionMap) ([]byte, error) {
+func getQueueUserWatermarks(args sdc.CmdArgs, options sdc.OptionMap) ([]byte, error) {
 	help := map[string]interface{}{
 		"subcommands": map[string]string{
 			"all":       "show/queue/watermark/all",

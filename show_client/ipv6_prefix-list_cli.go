@@ -46,12 +46,9 @@ type prefixList struct {
 // Top-level structure: map of protocol -> map of list name -> prefixList
 type prefixListData map[string]map[string]prefixList
 
-func getIPv6PrefixList(options sdc.OptionMap) ([]byte, error) {
-	// Filter by prefix-list-name if provided
-	prefixListName := ""
-	if option, ok := options["prefix_list_name"].String(); ok {
-		prefixListName = option
-	}
+func getIPv6PrefixList(args sdc.CmdArgs, options sdc.OptionMap) ([]byte, error) {
+	// Get prefix-list_namefrom args, if provided, default to ""
+	prefixListName := args.At(0)
 
 	// get raw Json output from vtysh command
 	rawOutput, err := GetDataFromHostCommand(vtyshIPv6PrefixListCommand)

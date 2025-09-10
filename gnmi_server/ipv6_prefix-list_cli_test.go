@@ -96,7 +96,8 @@ func TestGetIPv6PrefixList(t *testing.T) {
 			pathTarget: "SHOW",
 			textPbPath: `
 				elem: <name: "ipv6" >
-				elem: <name: "prefix-list" key: { key: "prefix_list_name" value: "DEFAULT_IPV6" } >
+				elem: <name: "prefix-list" >
+				elem: <name: "DEFAULT_IPV6" >
 			`,
 			wantRetCode: codes.OK,
 			wantRespVal:    []byte(filteredMultiExpectedResponse),
@@ -108,7 +109,8 @@ func TestGetIPv6PrefixList(t *testing.T) {
 			pathTarget: "SHOW",
 			textPbPath: `
 				elem: <name: "ipv6" >
-				elem: <name: "prefix-list" key: { key: "prefix_list_name" value: "NON_EXISTENT" } >
+				elem: <name: "prefix-list">
+				elem: <name: "NON_EXISTENT" >
 			`,
 			wantRetCode: codes.OK,
 			wantRespVal:    []byte(emptyExpected),

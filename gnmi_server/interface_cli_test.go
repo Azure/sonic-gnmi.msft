@@ -290,4 +290,15 @@ func TestGetInterfaceRifCounters(t *testing.T) {
 	  }`)
 		runTestGet(t, ctx, gClient, "SHOW", textPbPath, codes.OK, wantRespVal, true)
 	})
+
+	// invalid interface name
+	t.Run("query SHOW interfaces counters rif PortChannel11 -p 1", func(t *testing.T) {
+		textPbPath := `
+			elem: <name: "interfaces" >
+			elem: <name: "counters" >
+			elem: <name: "rif" >
+			elem: <name: "PortChannel11"  key: {key: "period" value: "1"} >
+		`
+		runTestGet(t, ctx, gClient, "SHOW", textPbPath, codes.InvalidArgument, nil, false)
+	})
 }

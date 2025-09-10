@@ -398,8 +398,6 @@ func init() {
 			"mem":     "show/processes/mem: Show processes memory info",
 		},
 	)
-
-	// SHOW/system-memory
 	sdc.RegisterCliPath(
 		[]string{"SHOW", "processes", "summary"},
 		getProcessesSummary,
@@ -447,8 +445,6 @@ func init() {
 			"history": "show/reboot-cause/history: Show history of reboot-cause",
 		},
 	)
-
-	// SHOW/version
 	sdc.RegisterCliPath(
 		[]string{"SHOW", "reboot-cause", "history"},
 		getRebootCauseHistory,

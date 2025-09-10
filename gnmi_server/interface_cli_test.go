@@ -184,7 +184,7 @@ func TestGetInterfaceRifCounters(t *testing.T) {
     "RxErrBits": "0",
     "RxErrPackets": "0",
     "RxOkPackets": "5937",
-    "RxOkBits": "1048207",
+    "RxOkBits": "N/A",
     "RxPps": "0.013699805079217392",
     "TxBps": "0",
     "TxErrBits": "0",
@@ -312,6 +312,32 @@ func TestGetInterfaceRifCounters(t *testing.T) {
 				"TxOkBits": "0",
 				"TxOkPackets": "0",
 				"TxPps": "40526901.803920366"
+			}
+	  }`)
+		runTestGet(t, ctx, gClient, "SHOW", textPbPath, codes.OK, wantRespVal, true)
+	})
+
+	t.Run("query SHOW interfaces counters rif PortChannel102 -p 1", func(t *testing.T) {
+		textPbPath := `
+			elem: <name: "interfaces" >
+			elem: <name: "counters" >
+			elem: <name: "rif" >
+			elem: <name: "PortChannel102"  key: {key: "period" value: "1"} >
+		`
+		wantRespVal := []byte(`{
+			"PortChannel102": {
+				"RxBps": "1.2202977000824049",
+				"RxErrBits": "0",
+				"RxErrPackets": "0",
+				"RxOkPackets": "0",
+				"RxOkBits": "N/A",
+				"RxPps": "0.013699805079217392",
+				"TxBps": "0",
+				"TxErrBits": "0",
+				"TxErrPackets": "0",
+				"TxOkBits": "0",
+				"TxOkPackets": "0",
+				"TxPps": "0"
 			}
 	  }`)
 		runTestGet(t, ctx, gClient, "SHOW", textPbPath, codes.OK, wantRespVal, true)

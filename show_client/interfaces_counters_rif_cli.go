@@ -140,18 +140,18 @@ func getInterfaceCountersRifSnapshot(interfaceName string) (map[string]interface
 		}
 
 		interfaceRifCounter := interfaceRifCounters{
-			RxOkPackets:  GetFieldValueString(rifCountersMap, oidStr, defaultMissingCounterValue, "SAI_ROUTER_INTERFACE_STAT_IN_PACKETS"),
+			RxOkPackets:  validateAndGetIntValue(GetFieldValueString(rifCountersMap, oidStr, defaultMissingCounterValue, "SAI_ROUTER_INTERFACE_STAT_IN_PACKETS")),
 			RxBps:        GetFieldValueString(rifRatesMap, oidStr, defaultMissingCounterValue, "RX_BPS"),
 			RxPps:        GetFieldValueString(rifRatesMap, oidStr, defaultMissingCounterValue, "RX_PPS"),
-			RxErrPackets: GetFieldValueString(rifCountersMap, oidStr, defaultMissingCounterValue, "SAI_ROUTER_INTERFACE_STAT_IN_ERROR_PACKETS"),
-			TxOkPackets:  GetFieldValueString(rifCountersMap, oidStr, defaultMissingCounterValue, "SAI_ROUTER_INTERFACE_STAT_OUT_PACKETS"),
+			RxErrPackets: validateAndGetIntValue(GetFieldValueString(rifCountersMap, oidStr, defaultMissingCounterValue, "SAI_ROUTER_INTERFACE_STAT_IN_ERROR_PACKETS")),
+			TxOkPackets:  validateAndGetIntValue(GetFieldValueString(rifCountersMap, oidStr, defaultMissingCounterValue, "SAI_ROUTER_INTERFACE_STAT_OUT_PACKETS")),
 			TxBps:        GetFieldValueString(rifRatesMap, oidStr, defaultMissingCounterValue, "TX_BPS"),
 			TxPps:        GetFieldValueString(rifRatesMap, oidStr, defaultMissingCounterValue, "TX_PPS"),
-			TxErrPackets: GetFieldValueString(rifCountersMap, oidStr, defaultMissingCounterValue, "SAI_ROUTER_INTERFACE_STAT_OUT_ERROR_PACKETS"),
-			RxErrBits:    GetFieldValueString(rifCountersMap, oidStr, defaultMissingCounterValue, "SAI_ROUTER_INTERFACE_STAT_IN_ERROR_OCTETS"),
-			TxErrBits:    GetFieldValueString(rifCountersMap, oidStr, defaultMissingCounterValue, "SAI_ROUTER_INTERFACE_STAT_OUT_ERROR_OCTETS"),
-			RxOkBits:     GetFieldValueString(rifCountersMap, oidStr, defaultMissingCounterValue, "SAI_ROUTER_INTERFACE_STAT_IN_OCTETS"),
-			TxOkBits:     GetFieldValueString(rifCountersMap, oidStr, defaultMissingCounterValue, "SAI_ROUTER_INTERFACE_STAT_OUT_OCTETS"),
+			TxErrPackets: validateAndGetIntValue(GetFieldValueString(rifCountersMap, oidStr, defaultMissingCounterValue, "SAI_ROUTER_INTERFACE_STAT_OUT_ERROR_PACKETS")),
+			RxErrBits:    validateAndGetIntValue(GetFieldValueString(rifCountersMap, oidStr, defaultMissingCounterValue, "SAI_ROUTER_INTERFACE_STAT_IN_ERROR_OCTETS")),
+			TxErrBits:    validateAndGetIntValue(GetFieldValueString(rifCountersMap, oidStr, defaultMissingCounterValue, "SAI_ROUTER_INTERFACE_STAT_OUT_ERROR_OCTETS")),
+			RxOkBits:     validateAndGetIntValue(GetFieldValueString(rifCountersMap, oidStr, defaultMissingCounterValue, "SAI_ROUTER_INTERFACE_STAT_IN_OCTETS")),
+			TxOkBits:     validateAndGetIntValue(GetFieldValueString(rifCountersMap, oidStr, defaultMissingCounterValue, "SAI_ROUTER_INTERFACE_STAT_OUT_OCTETS")),
 		}
 
 		interfaceRifCountersMap[rifName] = interfaceRifCounter
@@ -169,17 +169,8 @@ func calculateDiff(oldValue, newValue string) string {
 		oldValue = "0"
 	}
 
-	oldCounterValue, err := strconv.ParseInt(oldValue, base10, 64)
-	if err != nil {
-		log.Warningf("Invalid old counter value %s: %v", oldValue, err)
-		return defaultMissingCounterValue
-	}
-
-	newCounterValue, err := strconv.ParseInt(newValue, base10, 64)
-	if err != nil {
-		log.Warningf("Invalid new counter value %s: %v", newValue, err)
-		return defaultMissingCounterValue
-	}
+	oldCounterValue, _ := strconv.ParseInt(oldValue, base10, 64)
+	newCounterValue, _ := strconv.ParseInt(newValue, base10, 64)
 
 	diff := newCounterValue - oldCounterValue
 	if diff < 0 {
@@ -187,6 +178,17 @@ func calculateDiff(oldValue, newValue string) string {
 	}
 
 	return strconv.FormatInt(diff, base10)
+}
+
+// Validate counter value is an integer, return defaultMissingCounterValue if not
+func validateAndGetIntValue(value string) string {
+	_, valueParseErr := strconv.ParseInt(value, base10, 64)
+	if valueParseErr != nil {
+		log.Warningf("Invalid counter value %s: %v", value, valueParseErr)
+		return defaultMissingCounterValue
+	}
+
+	return value
 }
 
 func getRifNameMapping() (map[string]interface{}, error) {

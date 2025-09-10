@@ -112,7 +112,7 @@ func getInterfaceTransceiverLpMode(args sdc.CmdArgs, options sdc.OptionMap) ([]b
 		intf = v
 	}
 
-	cmd := "sfputil show lpmode"
+	cmd := "sudo sfputil show lpmode"
 	if intf != "" {
 		cmd += " -p " + intf
 	}
@@ -128,6 +128,7 @@ func getInterfaceTransceiverLpMode(args sdc.CmdArgs, options sdc.OptionMap) ([]b
 
 	for _, line := range lines {
 		line = strings.TrimSpace(line)
+		log.Infof("Processing line: '%s'", line)
 		if line == "" || strings.HasPrefix(line, "Port") || strings.HasPrefix(line, "---") {
 			continue
 		}
@@ -141,11 +142,13 @@ func getInterfaceTransceiverLpMode(args sdc.CmdArgs, options sdc.OptionMap) ([]b
 		if ml == "on" || ml == "off" {
 			mode = strings.Title(ml)
 		}
+		log.Infof("Parsed port: '%s', lpmode: '%s'", port, mode)
 		entries = append(entries, portLpmode{Port: port, Lpmode: mode})
 	}
 
 	if intf != "" && len(entries) == 0 {
 		entries = append(entries, portLpmode{Port: intf, Lpmode: "N/A"})
+		log.Infof("No lpmode entry found for port '%s', returning N/A", intf)
 	}
 
 	return json.Marshal(entries)

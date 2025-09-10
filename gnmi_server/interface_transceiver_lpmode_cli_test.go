@@ -34,10 +34,6 @@ func TestShowInterfaceTransceiverLpMode(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), QueryTimeout*time.Second)
 	defer cancel()
 
-	// Mock nsenter exec of: sfputil show lpmode
-	patches := MockNSEnterOutput(t, "../testdata/SFPUTIL_SHOW_LPMODE_ALL.txt")
-	defer patches.Reset()
-
 	expectedAll := `[{"Port":"Ethernet0","Low-power Mode":"Off"},{"Port":"Ethernet8","Low-power Mode":"Off"},{"Port":"Ethernet16","Low-power Mode":"On"}]`
 	expectedOne := `[{"Port":"Ethernet8","Low-power Mode":"Off"}]`
 	expectedMissing := `[{"Port":"Ethernet24","Low-power Mode":"N/A"}]`
@@ -45,39 +41,43 @@ func TestShowInterfaceTransceiverLpMode(t *testing.T) {
 	tests := []struct {
 		desc        string
 		path        string
+		mockFile    string
 		wantRetCode codes.Code
 		wantRespVal []byte
 		valTest     bool
 	}{
 		{
-			desc: "all ports",
+			desc:     "all ports",
 			path: `
 				elem: <name: "interfaces" >
 				elem: <name: "transceiver" >
 				elem: <name: "lpmode" >
 			`,
+			mockFile:    "../testdata/SFPUTIL_SHOW_LPMODE_ALL.txt",
 			wantRetCode: codes.OK,
 			wantRespVal: []byte(expectedAll),
 			valTest:     true,
 		},
 		{
-			desc: "single existing port",
+			desc:     "single existing port",
 			path: `
 				elem: <name: "interfaces" >
 				elem: <name: "transceiver" >
 				elem: <name: "lpmode" key: { key: "interface" value: "Ethernet8" } >
 			`,
+			mockFile:    "../testdata/SFPUTIL_SHOW_LPMODE_Ethernet8.txt",
 			wantRetCode: codes.OK,
 			wantRespVal: []byte(expectedOne),
 			valTest:     true,
 		},
 		{
-			desc: "single missing port",
+			desc:     "single missing port",
 			path: `
 				elem: <name: "interfaces" >
 				elem: <name: "transceiver" >
 				elem: <name: "lpmode" key: { key: "interface" value: "Ethernet24" } >
 			`,
+			mockFile:    "../testdata/SFPUTIL_SHOW_LPMODE_Ethernet24_EMPTY.txt",
 			wantRetCode: codes.OK,
 			wantRespVal: []byte(expectedMissing),
 			valTest:     true,
@@ -85,8 +85,11 @@ func TestShowInterfaceTransceiverLpMode(t *testing.T) {
 	}
 
 	for _, tc := range tests {
+		// Apply per-test mock so command output matches scenario
+		patch := MockNSEnterOutput(t, tc.mockFile)
 		t.Run(tc.desc, func(t *testing.T) {
 			runTestGet(t, ctx, gClient, "SHOW", tc.path, tc.wantRetCode, tc.wantRespVal, tc.valTest)
 		})
+		patch.Reset()
 	}
 }

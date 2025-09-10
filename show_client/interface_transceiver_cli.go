@@ -109,6 +109,7 @@ func getInterfaceTransceiverLpmode(options sdc.OptionMap) ([]byte, error) {
 	}
 
 	logicalPortName, ok := options["interface"].String()
+	log.Infof("logical interface = %v", logicalPortName)
 	if ok && logicalPortName != ""  {
 		physicalPort, exist := logicalToPhysicalPortMap[logicalPortName]
 		if !exist {
@@ -117,6 +118,7 @@ func getInterfaceTransceiverLpmode(options sdc.OptionMap) ([]byte, error) {
 			return nil, err
 		}
 
+		log.Infof("physical interface = %v", physicalPort)
 		return getInterfaceTransceiverLpmodeJsonData(logicalToPhysicalPortMap, physicalPort)
 	} else {
 		return getInterfaceTransceiverLpmodeJsonData(logicalToPhysicalPortMap, "")
@@ -170,7 +172,7 @@ func getPortNameForLpmode(logicalPortName string, physicalPortName string) strin
 func runCommandToGetLpmode(portName string) (map[string]string, error) {
 	cmdStr := "sudo sfputil show lpmode"
 	if portName != "" {
-		cmdStr += " -p " + portName
+		cmdStr += " " + portName
 	}
 
 	out, err := GetDataFromHostCommand(cmdStr)
@@ -229,6 +231,7 @@ func getLogicalToPhysicalPortMap() (map[string]string, error) {
 
 		portMap[alias] = name
 	}
+	log.Infof("portMap: %v", portMap)
 
 	return portMap, nil
 }

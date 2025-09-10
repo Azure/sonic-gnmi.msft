@@ -162,7 +162,6 @@ func init() {
 		0,
 		1,
 		nil,
-		showCmdOptionInterface, // TODO
 		sdc.UnimplementedOption(showCmdOptionNamespace),
 		showCmdOptionDisplay,
 	)
@@ -200,7 +199,6 @@ func init() {
 		0,
 		1,
 		nil,
-		showCmdOptionInterface, // TODO
 		sdc.UnimplementedOption(showCmdOptionNamespace),
 		showCmdOptionDisplay,
 		showCmdOptionVerbose,
@@ -472,7 +470,6 @@ func init() {
 		0,
 		1,
 		nil,
-		showCmdOptionSid, // TODO
 		showCmdOptionVerbose,
 	)
 

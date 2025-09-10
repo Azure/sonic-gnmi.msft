@@ -8,6 +8,11 @@ import (
 	sdc "github.com/sonic-net/sonic-gnmi/sonic_data_client"
 )
 
+type portLpmode struct {
+	Port   string `json:"Port"`
+	Lpmode string `json:"Low-power Mode"`
+}
+
 func getAllPortsFromConfigDB() ([]string, error) {
 	queries := [][]string{
 		{"CONFIG_DB", "PORT"},
@@ -95,6 +100,57 @@ func getInterfaceTransceiverPresence(options sdc.OptionMap) ([]byte, error) {
 	return json.Marshal(status)
 }
 
+func getInterfaceTransceiverLpmode(options sdc.OptionMap) ([]byte, error) {
+	logicalToPhysicalPortMap, err := getLogicalToPhysicalPortMap()
+	if err != nil {
+		log.Errorf("Unable to get logical to physical port map, %v", err)
+		return nil, err
+	}
+
+	logicalPortName, ok := options["interface"].String()
+	physicalPort := ""
+	if ok && logicalPortName != "" {
+		physicalPort, exist := logicalToPhysicalPortMap[logicalPortName]
+		if !exist {
+			err = fmt.Errorf("Error: No physical ports found for logical port %s in CONFIG_DB PORT", logicalPortName)
+			log.Errorf(err.Error())
+			return nil, err
+		}
+	}
+
+	lpmode, err := runCommandToGetLpmode(physicalPort)
+	if err != nil {
+		return nil, err
+	}
+
+	lpmodeMap := make([]portLpmode, 0)
+	for logicalPortName, physicalPortName := range logicalToPhysicalPortMap {
+		lpMode, exist := lpmode[physicalPortName]
+		port := getPortNameForLpmode(logicalPortName, physicalPortName)
+		if !exist {
+			lpmodeMap = append(lpmodeMap, portLpmode{
+				Port:   port,
+				Lpmode: "N/A",
+			})
+		} else {
+			lpmodeMap = append(lpmodeMap, portLpmode{
+				Port:   port,
+				Lpmode: lpMode,
+			})
+		}
+	}
+
+	return json.Marshal(lpmodeMap)
+}
+
+func getPortNameForLpmode(logicalPortName string, physicalPortName string) string {
+	if logicalPortName == physicalPortName {
+		return logicalPortName
+	}
+
+	return logicalPortName + ":" + physicalPortName + " (ganged)"
+}
+
 // admin@str3-t0-8102-smartswitch-01:~$ show interfaces transceiver lpmode
 // Port         Low-power Mode
 // -----------  ----------------
@@ -104,35 +160,8 @@ func getInterfaceTransceiverPresence(options sdc.OptionMap) ([]byte, error) {
 // Port         Low-power Mode
 // -----------  ----------------
 // Ethernet160  Off
-func getInterfaceTransceiverLpmode(options sdc.OptionMap) ([]byte, error) {
-	logicalToPhysicalPortMap, err := getLogicalToPhysicalPortMap()
-	if err != nil {
-		log.Errorf("Unable to get logical to physical port map, %v", err)
-		return nil, err
-	}
-
-	logicalPortName, ok := options["interface"].String()
-	queriedMap := make(map[string]string)
-	if ok && logicalPortName != "" {
-		physicalPort, exist := logicalToPhysicalPortMap[logicalPortName]
-		if !exist {
-			err = fmt.Errorf("Error: No physical ports found for logical port %s in CONFIG_DB PORT", logicalPortName)
-			log.Errorf(err.Error())
-			return nil, err
-		}
-
-		lpmode, err := getInterfaceTransceiverLpmode(physicalPort)
-	} else {
-		lpmode, err := getInterfaceTransceiverLpmode(portNameToAlias[v])
-	}
-
-	if err != nil {
-		return nil, err
-	}
-	return json.Marshal(lpmode)
-}
-
-func getInterfaceTransceiverLpmode(portName string) ([]byte, error) {
+// Port is physical port name
+func runCommandToGetLpmode(portName string) (map[string]string, error) {
 	cmdStr := "sudo sfputil show lpmode"
 	if portName != "" {
 		cmdStr += " -p " + portName
@@ -169,15 +198,12 @@ func getInterfaceTransceiverLpmode(portName string) ([]byte, error) {
 		lpmode[port] = status
 	}
 
-	_, exist := lpmode[portName]
-	if !exist {
-		lpmode[portName] = "N/A"
-	}
-
-	return json.Marshal(lpmode)
+	return lpmode
 }
 
-func getLogicalToPhysicalPortMap() (map[string]string, error) {
+// Get Map which key is Logical Port Name and value is Physical Port Name
+// If port does not have alias, key and value will be same, both Physical Port Name
+func getPhysicalToLogicalPortMap() (map[string]string, error) {
 	portMap := make(map[string]string)
 
 	queries := [][]string{

@@ -115,3 +115,112 @@ func TestGetTransceiverErrorStatus(t *testing.T) {
 
 	}
 }
+
+
+func TestGetInterfaceTransceiverLpmode(t *testing.T) {
+	s := createServer(t, ServerPort)
+	go runServer(t, s)
+	defer s.ForceStop()
+	defer ResetDataSetsAndMappings(t)
+	
+	tlsConfig := &tls.Config{InsecureSkipVerify: true}
+	opts := []grpc.DialOption{grpc.WithTransportCredentials(credentials.NewTLS(tlsConfig))}
+
+	conn, err := grpc.Dial(TargetAddr, opts...)
+	if err != nil {
+		t.Fatalf("Dialing to %q failed: %v", TargetAddr, err)
+	}
+	defer conn.Close()
+	
+	gClient := pb.NewGNMIClient(conn)
+	ctx, cancel := context.WithTimeout(context.Background(), QueryTimeout*time.Second)
+	defer cancel()
+
+	// send CONFIG_DB sample data
+	portDbDataFilename = "../testdata/CONFIG_DB_PORT.txt"
+	portLpmodeDefault = `Port         Low-power Mode\n-----------  ----------------\nEthernet0   Off\nEthernet2   Off\nEthernet40   Off\nEthernet80   On\nEthernet120   Off\nEthernet160   Off\n`
+	ResetDataSetsAndMappings(t)
+	
+	tests := []struct {
+		desc        string
+		pathTarget  string
+		textPbPath  string
+		wantRetCode codes.Code
+		wantRespVal interface{}
+		valTest     bool
+		testInit    func()
+	}{
+		{
+			desc:       "query SHOW interface transceiver lpmode no interface option",
+			pathTarget: "SHOW",
+			textPbPath: `
+				elem: <name: "interface" >
+				elem: <name: "transceiver" >
+				elem: <name: "lpmode" >
+			`,
+			wantRetCode: codes.OK,
+			valTest:     true,
+			wantRespVal: `{"Ethernet0":"Off","Ethernet2":"Off","Ethernet40":"Off","Ethernet80":"On","Ethernet120":"Off"}`,
+			testInit: func() {
+				FlushDataSet(t, ConfigDbNum)
+				AddDataSet(t, ConfigDbNum, portDbDataFilename)
+			},
+		},
+		{
+			desc: 		"query SHOW interface transceiver lpmode with valid interface option",
+			pathTarget: "SHOW",
+			textPbPath: `
+				elem: <name: "interface" >
+				elem: <name: "transceiver" >
+				elem: <name: "lpmode" key: { key: "interface" value: "Ethernet80" }>
+			`,
+			wantRetCode: codes.OK,
+			valTest:     true,
+			wantRespVal: `{"Ethernet80":"On"}`,
+			testInit: func() {
+				FlushDataSet(t, ConfigDbNum)
+				AddDataSet(t, ConfigDbNum, portDbDataFilename)
+			},
+		},
+		{
+			desc:       "query SHOW interface transceiver lpmode with valid interface but no lpmode option",
+			pathTarget: "SHOW",
+			textPbPath: `
+				elem: <name: "interface" >
+				elem: <name: "transceiver" >
+				elem: <name: "lpmode" key: { key: "interface" value: "Ethernet200" }>
+			`,
+			wantRetCode: codes.OK,
+			valTest:     true,
+			wantRespVal: `{"Ethernet200":"N/A"}`,
+			testInit: func() {
+				FlushDataSet(t, ConfigDbNum)
+				AddDataSet(t, ConfigDbNum, portDbDataFilename)
+			},
+		},
+		{
+			desc:       "query SHOW interface transceiver lpmode with invalid interface option",
+			pathTarget: "SHOW",
+			textPbPath: `
+				elem: <name: "interface" >
+				elem: <name: "transceiver" >
+				elem: <name: "lpmode" key: { key: "interface" value: "InvalidPort" }>
+			`,
+			wantRetCode: codes.NotFound,
+			valTest:     false,
+			testInit: func() {
+				FlushDataSet(t, ConfigDbNum)
+				AddDataSet(t, ConfigDbNum, portDbDataFilename)
+			},
+		},
+	}
+
+	for _, test := range tests {
+		if test.testInit != nil {
+			test.testInit()
+		}
+		t.Run(test.desc, func(t *testing.T) {
+			runTestGet(t, ctx, gClient, test.pathTarget, test.textPbPath, test.wantRetCode, test.wantRespVal, test.valTest)
+		})
+	}
+}

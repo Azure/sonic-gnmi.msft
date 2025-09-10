@@ -265,6 +265,32 @@ func TestGetInterfaceRifCounters(t *testing.T) {
 		runTestGet(t, ctx, gClient, "SHOW", textPbPath, codes.OK, wantRespVal, true)
 	})
 
+	t.Run("query SHOW interfaces counters rif PortChannel104 -p 2", func(t *testing.T) {
+		textPbPath := `
+			elem: <name: "interfaces" >
+			elem: <name: "counters" >
+			elem: <name: "rif" >
+			elem: <name: "PortChannel104" key: {key: "period" value: "1"} >
+		`
+		wantRespVal := []byte(`{
+			"PortChannel104": {
+				"RxBps": "20.260496891870496",
+				"RxErrBits": "0",
+				"RxErrPackets": "0",
+				"RxOkPackets": "0",
+				"RxOkBits": "0",
+				"RxPps": "0.24715843207997978",
+				"TxBps": "0",
+				"TxErrBits": "N/A",
+				"TxErrPackets": "0",
+				"TxOkBits": "0",
+				"TxOkPackets": "0",
+				"TxPps": "0"
+			}
+	  }`)
+		runTestGet(t, ctx, gClient, "SHOW", textPbPath, codes.OK, wantRespVal, true)
+	})
+
 	t.Run("query SHOW interfaces counters rif PortChannel101 -p 1", func(t *testing.T) {
 		textPbPath := `
 			elem: <name: "interfaces" >

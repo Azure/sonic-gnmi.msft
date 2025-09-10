@@ -38,13 +38,12 @@ func getInterfaceRifCounters(args sdc.CmdArgs, options sdc.OptionMap) ([]byte, e
 	}
 
 	if period > maxShowCommandPeriod {
-		return nil, fmt.Errorf("period value must be <= %v", maxShowCommandPeriod)
+		return nil, status.Errorf(codes.InvalidArgument, "period value must be <= %v", maxShowCommandPeriod)
 	}
 
 	rifNameMap, err := getRifNameMapping()
 	if err != nil {
-		log.Errorf("Failed to get COUNTERS_RIF_NAME_MAP: %v", err)
-		return nil, err
+		return nil, fmt.Errorf("Failed to get COUNTERS_RIF_NAME_MAP: %v", err)
 	}
 
 	if interfaceName != "" {
@@ -55,8 +54,7 @@ func getInterfaceRifCounters(args sdc.CmdArgs, options sdc.OptionMap) ([]byte, e
 
 	oldInterfaceRifCountersMap, err := getInterfaceCountersRifSnapshot(interfaceName)
 	if err != nil {
-		log.Errorf("Failed to get old interface RIF counters: %v", err)
-		return nil, err
+		return nil, fmt.Errorf("Failed to get old interface RIF counters: %v", err)
 	}
 
 	if !takeDiffSnapshot {
@@ -69,8 +67,7 @@ func getInterfaceRifCounters(args sdc.CmdArgs, options sdc.OptionMap) ([]byte, e
 
 	newInterfaceRifCountersMap, err := getInterfaceCountersRifSnapshot(interfaceName)
 	if err != nil {
-		log.Errorf("Failed to get new interface RIF counters: %v", err)
-		return nil, err
+		return nil, fmt.Errorf("Failed to get new interface RIF counters: %v", err)
 	}
 
 	diffInterfaceRifCountersMap := make(map[string]interfaceRifCounters, len(newInterfaceRifCountersMap))
@@ -104,8 +101,7 @@ func getInterfaceRifCounters(args sdc.CmdArgs, options sdc.OptionMap) ([]byte, e
 func getInterfaceCountersRifSnapshot(interfaceName string) (map[string]interfaceRifCounters, error) {
 	rifNameMap, err := getRifNameMapping()
 	if err != nil {
-		log.Errorf("Failed to get COUNTERS_RIF_NAME_MAP: %v", err)
-		return nil, err
+		return nil, fmt.Errorf("Failed to get COUNTERS_RIF_NAME_MAP: %v", err)
 	}
 
 	queries := [][]string{
@@ -114,8 +110,7 @@ func getInterfaceCountersRifSnapshot(interfaceName string) (map[string]interface
 
 	rifCountersMap, err := GetMapFromQueries(queries)
 	if err != nil {
-		log.Errorf("Unable to pull data for queries %v, got err %v", queries, err)
-		return nil, err
+		return nil, fmt.Errorf("Unable to pull data for queries %v, got err %v", queries, err)
 	}
 
 	queries = [][]string{
@@ -124,8 +119,7 @@ func getInterfaceCountersRifSnapshot(interfaceName string) (map[string]interface
 
 	rifRatesMap, err := GetMapFromQueries(queries)
 	if err != nil {
-		log.Errorf("Unable to pull data for queries %v, got err %v", queries, err)
-		return nil, err
+		return nil, fmt.Errorf("Unable to pull data for queries %v, got err %v", queries, err)
 	}
 
 	interfaceRifCountersMap := make(map[string]interfaceRifCounters, len(rifNameMap))
@@ -202,8 +196,7 @@ func getRifNameMapping() (map[string]interface{}, error) {
 
 	rifNameMap, err := GetMapFromQueries(queries)
 	if err != nil {
-		log.Errorf("Failed to get COUNTERS_RIF_NAME_MAP from %s: %v", CountersDb, err)
-		return nil, err
+		return nil, fmt.Errorf("Failed to get COUNTERS_RIF_NAME_MAP from %s: %v", CountersDb, err)
 	}
 
 	if len(rifNameMap) == 0 {

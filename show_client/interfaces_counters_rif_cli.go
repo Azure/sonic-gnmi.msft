@@ -37,6 +37,10 @@ func getInterfaceRifCounters(args sdc.CmdArgs, options sdc.OptionMap) ([]byte, e
 		period = periodValue
 	}
 
+	if period > maxShowCommandPeriod {
+		return nil, fmt.Errorf("period value must be <= %v", maxShowCommandPeriod)
+	}
+
 	rifNameMap, err := getRifNameMapping()
 	if err != nil {
 		log.Errorf("Failed to get COUNTERS_RIF_NAME_MAP: %v", err)
@@ -60,9 +64,6 @@ func getInterfaceRifCounters(args sdc.CmdArgs, options sdc.OptionMap) ([]byte, e
 	}
 
 	if period > 0 {
-		if period > maxShowCommandPeriod {
-			return nil, fmt.Errorf("period value must be <= %v", maxShowCommandPeriod)
-		}
 		time.Sleep(time.Duration(period) * time.Second)
 	}
 
@@ -136,6 +137,11 @@ func getInterfaceCountersRifSnapshot(interfaceName string) (map[string]interface
 		oidStr, ok := oid.(string)
 		if !ok {
 			log.Warningf("Invalid OID for RIF %s: %v", rifName, oid)
+			continue
+		}
+
+		if (oidStr == "") {
+			log.Warningf("Empty OID for RIF %s", rifName)
 			continue
 		}
 

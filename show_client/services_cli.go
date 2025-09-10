@@ -30,7 +30,7 @@ type serviceProcess struct {
 	Command       string `json:"command"`
 }
 
-func getServices(_ sdc.OptionMap) ([]byte, error) {
+func getServices(args sdc.CmdArgs, options sdc.OptionMap) ([]byte, error) {
 	cmd := "sudo docker ps --format '{{.Names}}'"
 	processesStr, err := GetDataFromHostCommand(cmd)
 	if err != nil {

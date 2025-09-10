@@ -45,7 +45,7 @@ var stdPortHeadersMap = map[string]string{
 // Currently, only port-level drop counts are supported and switch-level drop counts are not supported
 // Most VOQ and fabric platforms are multi‑ASIC. Because the current implementation doesn't perform per‑ASIC aggregation, switch‑level counters are not supported yet.
 // The switch_type field is empty on FW-backend T0/T1 devices, so implementing switch-level counters isn’t necessary now.
-func getDropCounters(options sdc.OptionMap) ([]byte, error) {
+func getDropCounters(args sdc.CmdArgs, options sdc.OptionMap) ([]byte, error) {
 	var group string
 	var counterType string
 	if g, ok := options["group"].String(); ok {

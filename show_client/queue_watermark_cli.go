@@ -66,6 +66,7 @@ func getQueueUserWatermarksCommon(options sdc.OptionMap, requestedQueueType int)
 		}
 	}
 
+	// TODO: Check this option
 	var ifaces []string
 	if interfaces, ok := options["interfaces"].Strings(); ok {
 		ifaces = interfaces
@@ -91,14 +92,14 @@ func getQueueUserWatermarks(options sdc.OptionMap) ([]byte, error) {
 	return json.Marshal(help)
 }
 
-func getQueueUserWatermarksAll(options sdc.OptionMap) ([]byte, error) {
+func getQueueUserWatermarksAll(args sdc.CmdArgs, options sdc.OptionMap) ([]byte, error) {
 	return getQueueUserWatermarksCommon(options, ALL)
 }
 
-func getQueueUserWatermarksUnicast(options sdc.OptionMap) ([]byte, error) {
+func getQueueUserWatermarksUnicast(args sdc.CmdArgs, options sdc.OptionMap) ([]byte, error) {
 	return getQueueUserWatermarksCommon(options, UNICAST)
 }
 
-func getQueueUserWatermarksMulticast(options sdc.OptionMap) ([]byte, error) {
+func getQueueUserWatermarksMulticast(args sdc.CmdArgs, options sdc.OptionMap) ([]byte, error) {
 	return getQueueUserWatermarksCommon(options, MULTICAST)
 }

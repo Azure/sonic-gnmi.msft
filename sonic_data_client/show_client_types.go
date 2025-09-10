@@ -15,9 +15,11 @@ type OptionValue struct {
 	value interface{}
 }
 
+type CmdArgs []string
+
 type OptionMap map[string]OptionValue
 
-type DataGetter func(options OptionMap) ([]byte, error)
+type DataGetter func(args CmdArgs, options OptionMap) ([]byte, error)
 
 type TablePath = tablePath
 
@@ -25,6 +27,9 @@ type ShowPathConfig struct {
 	dataGetter  DataGetter
 	options     map[string]ShowCmdOption
 	description map[string]map[string]string
+	minArgs     int // 0 means no args required, all numbers greater are required
+	maxArgs     int // 0 means no args allowed, -1 means any number of args
+	regLen      int // length of registered prefix
 }
 
 var (
@@ -48,6 +53,14 @@ const (
 
 	showCmdOptionHelpDesc = "[help=true]Show this message"
 )
+
+func (args CmdArgs) At(index int) string {
+	val := ""
+	if len(args) > index {
+		val = args[index]
+	}
+	return val
+}
 
 func (ov OptionValue) String() (string, bool) {
 	s, ok := ov.value.(string)

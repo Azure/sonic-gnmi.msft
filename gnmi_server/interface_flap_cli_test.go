@@ -6,7 +6,6 @@ package gnmi
 import (
 	"crypto/tls"
 	"fmt"
-	"os"
 	"testing"
 	"time"
 
@@ -41,7 +40,7 @@ func TestGetShowInterfaceFlap(t *testing.T) {
 
 	expectedAll := `[{"Interface":"Ethernet0","Flap Count":"3","Admin":"Up","Oper":"Down","Link Down TimeStamp(UTC)":"2000","Link Up TimeStamp(UTC)":"1000"},{"Interface":"Ethernet1","Flap Count":"0","Admin":"Down","Oper":"Down","Link Down TimeStamp(UTC)":"1234","Link Up TimeStamp(UTC)":"Never"}]`
 	expectedSingle := `[{"Interface":"Ethernet0","Flap Count":"3","Admin":"Up","Oper":"Down","Link Down TimeStamp(UTC)":"2000","Link Up TimeStamp(UTC)":"1000"}]`
-	expectedAlias := `[{"Interface":"etp0","Flap Count":"3","Admin":"Up","Oper":"Down","Link Down TimeStamp(UTC)":"2000","Link Up TimeStamp(UTC)":"1000"},{"Interface":"Ethernet1","Flap Count":"0","Admin":"Down","Oper":"Down","Link Down TimeStamp(UTC)":"1234","Link Up TimeStamp(UTC)":"Never"}]`
+	expectedNamingModeAliasWithInterface := `[{"Interface":"Ethernet0","Flap Count":"3","Admin":"Up","Oper":"Down","Link Down TimeStamp(UTC)":"2000","Link Up TimeStamp(UTC)":"1000"}]`
 
 	tests := []struct {
 		desc        string
@@ -51,7 +50,7 @@ func TestGetShowInterfaceFlap(t *testing.T) {
 		wantRespVal interface{}
 		valTest     bool
 		testInit    func()
-		mockPatch   func() *gomonkey.Patches
+		mockPatch   func() []*gomonkey.Patches
 		teardown    func()
 	}{
 		{
@@ -99,31 +98,6 @@ func TestGetShowInterfaceFlap(t *testing.T) {
 			},
 		},
 		{
-			desc:       "query SHOW interfaces flap (alias display)",
-			pathTarget: "SHOW",
-			textPbPath: `
-                elem: <name: "interfaces" >
-                elem: <name: "flap" >
-            `,
-			wantRetCode: codes.OK,
-			wantRespVal: []byte(expectedAlias),
-			valTest:     true,
-			testInit: func() {
-				FlushDataSet(t, ApplDbNum)
-				AddDataSet(t, ApplDbNum, "../testdata/APPL_PORT_TABLE_FLAP.txt")
-			},
-			mockPatch: func() *gomonkey.Patches {
-				p := gomonkey.ApplyFunc(sdc.PortToAliasNameMap, func() map[string]string {
-					return map[string]string{"Ethernet0": "etp0"}
-				})
-				os.Setenv(show_client.SonicCliIfaceMode, "alias")
-				return p
-			},
-			teardown: func() {
-				os.Setenv(show_client.SonicCliIfaceMode, "")
-			},
-		},
-		{
 			desc:       "query SHOW interfaces flap - invalid interface",
 			pathTarget: "SHOW",
 			textPbPath: `
@@ -147,13 +121,38 @@ func TestGetShowInterfaceFlap(t *testing.T) {
             `,
 			wantRetCode: codes.NotFound,
 			valTest:     false,
-			mockPatch: func() *gomonkey.Patches {
-				return gomonkey.ApplyFunc(show_client.GetMapFromQueries, func(queries [][]string) (map[string]interface{}, error) {
+			mockPatch: func() []*gomonkey.Patches {
+				p := gomonkey.ApplyFunc(show_client.GetMapFromQueries, func(queries [][]string) (map[string]interface{}, error) {
 					if len(queries) > 0 && len(queries[0]) > 1 && queries[0][0] == "APPL_DB" && queries[0][1] == show_client.AppDBPortTable {
 						return nil, fmt.Errorf("injected failure")
 					}
 					return map[string]interface{}{}, nil
 				})
+				return []*gomonkey.Patches{p}
+			},
+		},
+		{
+			desc:       "query SHOW interfaces flap with interface=etp0 and SONIC_CLI_IFACE_MODE=alias",
+			pathTarget: "SHOW",
+			textPbPath: `
+                elem: <name: "interfaces" >
+                elem: <name: "flap" key: { key: "interface" value: "etp0" } key: { key: "SONIC_CLI_IFACE_MODE" value: "alias" } >
+            `,
+			wantRetCode: codes.OK,
+			wantRespVal: []byte(expectedNamingModeAliasWithInterface),
+			valTest:     true,
+			testInit: func() {
+				FlushDataSet(t, ApplDbNum)
+				AddDataSet(t, ApplDbNum, "../testdata/APPL_PORT_TABLE_FLAP.txt")
+			},
+			mockPatch: func() []*gomonkey.Patches {
+				p1 := gomonkey.ApplyFunc(sdc.AliasToPortNameMap, func() map[string]string {
+					return map[string]string{"etp0": "Ethernet0"}
+				})
+				p2 := gomonkey.ApplyFunc(sdc.PortToAliasNameMap, func() map[string]string {
+					return map[string]string{"Ethernet0": "etp0"}
+				})
+				return []*gomonkey.Patches{p1, p2}
 			},
 		},
 	}
@@ -164,7 +163,7 @@ func TestGetShowInterfaceFlap(t *testing.T) {
 			test.testInit()
 		}
 
-		var patches *gomonkey.Patches
+		var patches []*gomonkey.Patches
 		if test.mockPatch != nil {
 			patches = test.mockPatch()
 		}
@@ -173,8 +172,10 @@ func TestGetShowInterfaceFlap(t *testing.T) {
 			runTestGet(t, ctx, gClient, test.pathTarget, test.textPbPath, test.wantRetCode, test.wantRespVal, test.valTest)
 		})
 
-		if patches != nil {
-			patches.Reset()
+		for _, p := range patches {
+			if p != nil {
+				p.Reset()
+			}
 		}
 		if test.teardown != nil {
 			test.teardown()

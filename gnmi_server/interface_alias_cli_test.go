@@ -90,6 +90,21 @@ func TestGetShowInterfaceAlias(t *testing.T) {
 			wantRespVal: []byte(aliasSingleEthernet0),
 			valTest:     true,
 		},
+		{
+			desc:       "query SHOW interfaces alias with interface=etp0 and SONIC_CLI_IFACE_MODE=alias",
+			pathTarget: "SHOW",
+			textPbPath: `
+                elem: <name: "interfaces" >
+                elem: <name: "alias" key: { key: "interface" value: "etp0" } key: { key: "SONIC_CLI_IFACE_MODE" value: "alias" } >
+            `,
+			wantRetCode: codes.OK,
+			wantRespVal: []byte(`{"Ethernet0":{"alias":"etp0"}}`),
+			valTest:     true,
+			testInit: func() {
+				FlushDataSet(t, ConfigDbNum)
+				AddDataSet(t, ConfigDbNum, portsFileName)
+			},
+		},
 	}
 
 	for _, test := range tests {

@@ -18,9 +18,7 @@
 package show_client
 
 import (
-	"bufio"
 	"encoding/json"
-	"strconv"
 	"strings"
 
 	log "github.com/golang/glog"
@@ -30,85 +28,23 @@ import (
 // vtysh command used by the legacy Python CLI: sudo vtysh -c "show ipv6 prefix-list"
 // We run it in the host namespace (PID 1) via nsenter using existing helper.
 var (
-	vtyshIPv6PrefixListCommand = "vtysh -c \"show ipv6 prefix-list\""
+	vtyshIPv6PrefixListCommand = "vtysh -c \"show ipv6 prefix-list json\""
 )
 
 type prefixListEntry struct {
-	Seq    int    `json:"seq"`
-	Action string `json:"action"`
-	Prefix string `json:"prefix,omitempty"`
+    SequenceNumber      int    `json:"sequenceNumber"`
+    Type                string `json:"type"`
+    Prefix              string `json:"prefix"`
+    MaximumPrefixLength int    `json:"maximumPrefixLength,omitempty"`
 }
 
 type prefixList struct {
-	Name    string            `json:"name"`
-	Entries []prefixListEntry `json:"entries"`
+    AddressFamily string            `json:"addressFamily"`
+    Entries       []prefixListEntry `json:"entries"`
 }
 
-type sourcePrefixLists struct {
-	Source      string       `json:"source"`
-	PrefixLists []prefixList `json:"prefix_lists"`
-}
-
-func parsePrefixLists(raw string) []sourcePrefixLists {
-	scanner := bufio.NewScanner(strings.NewReader(raw))
-	results := make([]sourcePrefixLists, 0)
-	var currentSource string
-	var currentList *prefixList
-	sourceMap := make(map[string][]prefixList)
-
-	for scanner.Scan() {
-		line := scanner.Text()
-		line = strings.TrimSpace(line)
-
-		if line == "" {
-			continue
-		}
-
-		// Detect source and list name
-		if strings.Contains(line, ": ipv6 prefix-list") {
-			parts := strings.Split(line, ": ipv6 prefix-list ")
-			if len(parts) == 2 {
-				currentSource = parts[0]
-				listParts := strings.Split(parts[1], ":")
-				listName := strings.TrimSpace(listParts[0])
-				currentList = &prefixList{Name: listName}
-				sourceMap[currentSource] = append(sourceMap[currentSource], *currentList)
-			} else {
-				log.Errorf("Unexpected format in line: %q", line)
-			}
-		} else if strings.HasPrefix(line, "seq") {
-			// Parse entry line
-			fields := strings.Fields(line)
-			if len(fields) >= 3 {
-				seq, err := strconv.Atoi(fields[1])
-				if err != nil {
-					log.Errorf("Failed to convert string:%s to int, error: %v", fields[1], err)
-					continue
-				}
-
-				action := fields[2]
-				prefix := ""
-				if len(fields) > 3 {
-					prefix = fields[3]
-				}
-				entry := prefixListEntry{Seq: seq, Action: action, Prefix: prefix}
-				lastIndex := len(sourceMap[currentSource]) - 1
-				sourceMap[currentSource][lastIndex].Entries = append(sourceMap[currentSource][lastIndex].Entries, entry)
-			} else {
-				log.Errorf("Unexpected format in line: %q", line)
-			}
-		}
-	}
-
-	for source, lists := range sourceMap {
-		results = append(results, sourcePrefixLists{
-			Source:      source,
-			PrefixLists: lists,
-		})
-	}
-
-	return results
-}
+// Top-level structure: map of protocol -> map of list name -> prefixList
+type prefixListData map[string]map[string]prefixList
 
 func getIPv6PrefixList(options sdc.OptionMap) ([]byte, error) {
 	// Filter by prefix-list-name if provided
@@ -117,31 +53,70 @@ func getIPv6PrefixList(options sdc.OptionMap) ([]byte, error) {
 		prefixListName = option
 	}
 
+	// get raw Json output from vtysh command
 	rawOutput, err := GetDataFromHostCommand(vtyshIPv6PrefixListCommand)
 	if err != nil {
 		log.Errorf("Unable to execute command %q, err=%v", vtyshIPv6PrefixListCommand, err)
 		return nil, err
 	}
-	prefixLists := parsePrefixLists(rawOutput)
-	// If a prefix-list-name filter is provided, apply it to each source's prefix lists
-	if prefixListName != "" {
-		filtered := make([]sourcePrefixLists, 0)
-		for _, srcList := range prefixLists {
-			filteredLists := make([]prefixList, 0)
-			for _, pl := range srcList.PrefixLists {
-				if pl.Name == prefixListName {
-					filteredLists = append(filteredLists, pl)
-				}
-			}
-			if len(filteredLists) > 0 {
-				filtered = append(filtered, sourcePrefixLists{
-					Source:      srcList.Source,
-					PrefixLists: filteredLists,
-				})
-			}
+
+	decoder := json.NewDecoder(strings.NewReader(rawOutput))
+
+	// Decode JSON output into prefixListData
+	var blocks []prefixListData
+	for {
+		var pl prefixListData
+		if err := decoder.Decode(&pl); err != nil {
+			break // End of input or error
 		}
-		prefixLists = filtered
+		blocks = append(blocks, pl)
 	}
 
-	return json.Marshal(prefixLists)
+	// merge parsed blocks
+	merged := make(prefixListData)
+	for _, block := range blocks {
+		for proto, lists := range block {
+			if _, exists := merged[proto]; !exists {
+				merged[proto] = make(map[string]prefixList)
+			}
+			for name, pl := range lists {
+				merged[proto][name] = pl
+			}
+		}
+	}
+
+	// If a specific prefix-list name is requested, filter the results
+	if prefixListName != "" {
+		filtered := make(prefixListData)
+		for proto, lists := range merged {
+			for name, pl := range lists {
+				if name == prefixListName {
+					if _, exists := filtered[proto]; !exists {
+						filtered[proto] = make(map[string]prefixList)
+					}
+					filtered[proto][name] = pl
+				}
+			}
+		}
+		merged = filtered
+	}
+
+	// If no data found after filtering, return empty JSON array
+	if len(merged) == 0 {
+		empty, err := json.Marshal([]interface{}{})
+		if err != nil {
+			log.Errorf("Failed to marshal empty result: %v", err)
+			return nil, err
+		}
+		return empty, nil
+	}
+
+	// marshal merged data back to JSON for downstream parsing
+	mergedJSON, err := json.Marshal(merged)
+	if err != nil {
+		log.Errorf("Failed to marshal merged IPv6 prefix-list data: %v", err)
+		return nil, err
+	}
+
+	return mergedJSON, nil
 }

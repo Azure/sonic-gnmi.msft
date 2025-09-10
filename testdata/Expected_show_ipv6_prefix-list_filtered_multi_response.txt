@@ -1,42 +1,40 @@
-[
-	{
-		"source": "ZEBRA",
-		"prefix_lists": [
-			{
-				"name": "DEFAULT_IPV6",
-				"entries": [
-					{
-						"seq": 5,
-						"action": "permit",
-						"prefix": "any"
-					},
-					{
-						"seq": 10,
-						"action": "permit",
-						"prefix": "any"
-					}
-				]
-			}
-		]
-	},
-	{
-		"source": "BGP",
-		"prefix_lists": [
-			{
-				"name": "DEFAULT_IPV6",
-				"entries": [
-					{
-						"seq": 5,
-						"action": "permit",
-						"prefix": "any"
-					},
-					{
-						"seq": 10,
-						"action": "permit",
-						"prefix": "any"
-					}
-				]
-			}
-		]
-	}
-]
+{
+    "BGP": {
+        "DEFAULT_IPV6": {
+            "addressFamily": "IPv6",
+            "entries": [
+                {
+                    "sequenceNumber": 5,
+                    "type": "permit",
+                    "prefix": "::/0",
+                    "maximumPrefixLength": 128
+                },
+                {
+                    "sequenceNumber": 10,
+                    "type": "permit",
+                    "prefix": "::/0",
+                    "maximumPrefixLength": 128
+                }
+            ]
+        }
+    },
+    "ZEBRA": {
+        "DEFAULT_IPV6": {
+            "addressFamily": "IPv6",
+            "entries": [
+                {
+                    "sequenceNumber": 5,
+                    "type": "permit",
+                    "prefix": "::/0",
+                    "maximumPrefixLength": 128
+                },
+                {
+                    "sequenceNumber": 10,
+                    "type": "permit",
+                    "prefix": "::/0",
+                    "maximumPrefixLength": 128
+                }
+            ]
+        }
+    }
+}

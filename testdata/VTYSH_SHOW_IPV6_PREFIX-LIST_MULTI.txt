@@ -1,10 +1,62 @@
-ZEBRA: ipv6 prefix-list DEFAULT_IPV6: 2 entries
-   seq 5 permit any
-   seq 10 permit any
-BGP: ipv6 prefix-list DEFAULT_IPV6: 2 entries
-   seq 5 permit any
-   seq 10 permit any
-BGP: ipv6 prefix-list LOCAL_VLAN_IPV6_PREFIX: 1 entries
-   seq 5 permit ffff:1000::/64
-BGP: ipv6 prefix-list PL_LoopbackV6: 1 entries
-   seq 5 permit cccc:1::/64
+{
+    "ZEBRA": {
+        "DEFAULT_IPV6": {
+            "addressFamily": "IPv6",
+            "entries": [
+                {
+                    "sequenceNumber": 5,
+                    "type": "permit",
+                    "prefix": "::/0",
+                    "maximumPrefixLength": 128
+                },
+                {
+                    "sequenceNumber": 10,
+                    "type": "permit",
+                    "prefix": "::/0",
+                    "maximumPrefixLength": 128
+                }
+            ]
+        }
+    }
+}
+{
+    "BGP": {
+        "DEFAULT_IPV6": {
+            "addressFamily": "IPv6",
+            "entries": [
+                {
+                    "sequenceNumber": 5,
+                    "type": "permit",
+                    "prefix": "::/0",
+                    "maximumPrefixLength": 128
+                },
+                {
+                    "sequenceNumber": 10,
+                    "type": "permit",
+                    "prefix": "::/0",
+                    "maximumPrefixLength": 128
+                }
+            ]
+        },
+        "LOCAL_VLAN_IPV6_PREFIX": {
+            "addressFamily": "IPv6",
+            "entries": [
+                {
+                    "sequenceNumber": 5,
+                    "type": "permit",
+                    "prefix": "ffff:1000::/64"
+                }
+            ]
+        },
+        "PL_LoopbackV6": {
+            "addressFamily": "IPv6",
+            "entries": [
+                {
+                    "sequenceNumber": 5,
+                    "type": "permit",
+                    "prefix": "cccc:1::/64"
+                }
+            ]
+        }
+    }
+}

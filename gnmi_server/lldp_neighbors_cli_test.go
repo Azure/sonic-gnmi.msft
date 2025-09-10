@@ -56,6 +56,13 @@ func TestGetLLDPNeighbors(t *testing.T) {
 		t.Fatalf("Failed to read file %v err: %v", expectedLLDPNeighborsResponseFileName, err)
 	}
 
+	// Expected output for normal device with specified interface name
+	expectedLLDPNeighborsWithIfNameResponseFileName := "../testdata/lldp/Expected_show_lldp_neighbors_filtered_response.txt"
+	expectedLLDPNeighborsWithIfNameResponse, err := ioutil.ReadFile(expectedLLDPNeighborsWithIfNameResponseFileName)
+	if err != nil {
+		t.Fatalf("Failed to read file %v err: %v", expectedLLDPNeighborsWithIfNameResponseFileName, err)
+	}
+
 	tests := []struct {
 		desc           string
 		pathTarget     string
@@ -104,6 +111,38 @@ func TestGetLLDPNeighbors(t *testing.T) {
 			`,
 			wantRetCode: codes.OK,
 			wantRespVal: []byte(expectedLLDPNeighborsResponse),
+			valTest:     true,
+			mockOutputFile: map[string]string{
+				"docker": "../testdata/lldp/lldpctl_json.txt",
+			},
+			ignoreValOrder: true,
+		},
+		{
+			desc:       "query SHOW lldp neighbors - normal device with specified interface name",
+			pathTarget: "SHOW",
+			textPbPath: `
+				elem: <name: "lldp" >
+				elem: <name: "neighbors" >
+				elem: <name: "Ethernet354" >
+			`,
+			wantRetCode: codes.OK,
+			wantRespVal: []byte(expectedLLDPNeighborsWithIfNameResponse),
+			valTest:     true,
+			mockOutputFile: map[string]string{
+				"docker": "../testdata/lldp/lldpctl_json.txt",
+			},
+			ignoreValOrder: true,
+		},
+		{
+			desc:       "query SHOW lldp neighbors - normal device with non-existing interface name",
+			pathTarget: "SHOW",
+			textPbPath: `
+				elem: <name: "lldp" >
+				elem: <name: "neighbors" >
+				elem: <name: "nonexist0" >
+			`,
+			wantRetCode: codes.OK,
+			wantRespVal: []byte(expectedEmptyDBResponse),
 			valTest:     true,
 			mockOutputFile: map[string]string{
 				"docker": "../testdata/lldp/lldpctl_json.txt",

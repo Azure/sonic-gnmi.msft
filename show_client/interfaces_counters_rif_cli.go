@@ -49,7 +49,7 @@ func getInterfaceRifCounters(args sdc.CmdArgs, options sdc.OptionMap) ([]byte, e
 
 	if interfaceName != "" {
 		if _, ok := rifNameMap[interfaceName]; !ok {
-			return nil, status.Errorf(codes.InvalidArgument, fmt.Sprintf("Interface %s not found in COUNTERS_RIF_NAME_MAP, Make sure it exists", interfaceName))
+			return nil, status.Errorf(codes.InvalidArgument, "Interface %s not found in COUNTERS_RIF_NAME_MAP, Make sure it exists", interfaceName)
 		}
 	}
 
@@ -140,7 +140,7 @@ func getInterfaceCountersRifSnapshot(interfaceName string) (map[string]interface
 			continue
 		}
 
-		if (oidStr == "") {
+		if oidStr == "" {
 			log.Warningf("Empty OID for RIF %s", rifName)
 			continue
 		}

@@ -325,8 +325,28 @@ func init() {
 	sdc.RegisterCliPath(
 		[]string{"SHOW", "queue", "watermark"},
 		getQueueUserWatermarks,
+		map[string]string{
+			"all":       "show/queue/watermark/all",
+			"unicast":   "show/queue/watermark/unicast",
+			"multicast": "show/queue/watermark/multicast",
+		},
+	)
+	sdc.RegisterCliPath(
+		[]string{"SHOW", "queue", "watermark", "all"},
+		getQueueUserWatermarksAll,
 		nil,
 		showCmdOptionInterfaces,
-		sdc.RequiredOption(showCmdOptionQueueType),
+	)
+	sdc.RegisterCliPath(
+		[]string{"SHOW", "queue", "watermark", "unicast"},
+		getQueueUserWatermarksUnicast,
+		nil,
+		showCmdOptionInterfaces,
+	)
+	sdc.RegisterCliPath(
+		[]string{"SHOW", "queue", "watermark", "multicast"},
+		getQueueUserWatermarksMulticast,
+		nil,
+		showCmdOptionInterfaces,
 	)
 }

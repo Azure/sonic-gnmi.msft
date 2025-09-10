@@ -37,6 +37,7 @@ func TestGetQueueUserWatermarks(t *testing.T) {
 	queueOidMappingFileName := "../testdata/QUEUE_OID_MAPPING.txt"
 	queueTypeMappingFileName := "../testdata/QUEUE_TYPE_MAPPING.txt"
 	queueUserWatermarksFileName := "../testdata/QUEUE_USER_WATERMARKS.txt"
+	rootQueueUserWatermarksHelp := []byte(`{"subcommands": {"all": "show/queue/watermark/all", "unicast": "show/queue/watermark/unicast", "multicast": "show/queue/watermark/multicast"}}`)
 	allQueueUserWatermarksAllPorts, err := os.ReadFile("../testdata/QUEUE_USER_WATERMARKS_RESULTS_ALL.txt")
 	if err != nil {
 		t.Fatalf("Failed to read expected query results for queue user watermarks of all interfaces: %v", err)
@@ -66,11 +67,43 @@ func TestGetQueueUserWatermarks(t *testing.T) {
 		testInit    func()
 	}{
 		{
-			desc:       "query SHOW queue watermark NO DATA",
+			desc:       "query SHOW queue watermark (root help)",
 			pathTarget: "SHOW",
 			textPbPath: `
 				elem: <name: "queue" >
-				elem: <name: "watermark" key: { key: "queue-type" value: "all" }>
+				elem: <name: "watermark" >
+			`,
+			wantRetCode: codes.OK,
+			wantRespVal: rootQueueUserWatermarksHelp,
+			valTest:     true,
+		},
+		{
+			desc:       "query SHOW queue watermark all NO DATA",
+			pathTarget: "SHOW",
+			textPbPath: `
+				elem: <name: "queue" >
+				elem: <name: "watermark" >
+				elem: <name: "all" >
+			`,
+			wantRetCode: codes.OK,
+		},
+		{
+			desc:       "query SHOW queue watermark unicast NO DATA",
+			pathTarget: "SHOW",
+			textPbPath: `
+				elem: <name: "queue" >
+				elem: <name: "watermark" >
+				elem: <name: "unicast" >
+			`,
+			wantRetCode: codes.OK,
+		},
+		{
+			desc:       "query SHOW queue watermark multicast NO DATA",
+			pathTarget: "SHOW",
+			textPbPath: `
+				elem: <name: "queue" >
+				elem: <name: "watermark" >
+				elem: <name: "multicast" >
 			`,
 			wantRetCode: codes.OK,
 		},
@@ -79,7 +112,8 @@ func TestGetQueueUserWatermarks(t *testing.T) {
 			pathTarget: "SHOW",
 			textPbPath: `
 				elem: <name: "queue" >
-				elem: <name: "watermark" key: { key: "queue-type" value: "all" }>
+				elem: <name: "watermark" >
+				elem: <name: "all" >
 			`,
 			wantRetCode: codes.OK,
 			wantRespVal: allQueueUserWatermarksAllPorts,
@@ -93,66 +127,72 @@ func TestGetQueueUserWatermarks(t *testing.T) {
 			},
 		},
 		{
-			desc:       "query SHOW queue watermark unicast queues for all interfaces",
+			desc:       "query SHOW queue watermark unicast for all interfaces",
 			pathTarget: "SHOW",
 			textPbPath: `
 				elem: <name: "queue" >
-				elem: <name: "watermark" key: { key: "queue-type" value: "unicast" }>
+				elem: <name: "watermark" >
+				elem: <name: "unicast" >
 			`,
 			wantRetCode: codes.OK,
 			wantRespVal: unicastQueueUserWatermarksAllPorts,
 			valTest:     true,
 		},
 		{
-			desc:       "query SHOW queue watermark multicast queues for all interfaces",
+			desc:       "query SHOW queue watermark multicast for all interfaces",
 			pathTarget: "SHOW",
 			textPbPath: `
 				elem: <name: "queue" >
-				elem: <name: "watermark" key: { key: "queue-type" value: "multicast" }>
+				elem: <name: "watermark" >
+				elem: <name: "multicast" >
 			`,
 			wantRetCode: codes.OK,
 			wantRespVal: multicastQueueUserWatermarksAllPorts,
 			valTest:     true,
 		},
 		{
-			desc:       "query SHOW queue watermark all queue types for Ethernet0",
+			desc:       "query SHOW queue watermark all for Ethernet0",
 			pathTarget: "SHOW",
 			textPbPath: `
 				elem: <name: "queue" >
-				elem: <name: "watermark" key: { key: "interfaces" value: "Ethernet0" } key: { key: "queue-type" value: "all" }>
+				elem: <name: "watermark" >
+				elem: <name: "all" key: { key: "interfaces" value: "Ethernet0" } >
 			`,
 			wantRetCode: codes.OK,
 			wantRespVal: allQueueUserWatermarksEth0,
 			valTest:     true,
 		},
 		{
-			desc:       "query SHOW queue watermark unicast queues for Ethernet40",
+			desc:       "query SHOW queue watermark unicast for Ethernet40",
 			pathTarget: "SHOW",
 			textPbPath: `
 				elem: <name: "queue" >
-				elem: <name: "watermark" key: { key: "interfaces" value: "Ethernet40" } key: { key: "queue-type" value: "unicast" }>
+				elem: <name: "watermark" >
+				elem: <name: "unicast" key: { key: "interfaces" value: "Ethernet40" } >
 			`,
 			wantRetCode: codes.OK,
 			wantRespVal: unicastQueueUserWatermarksEth40,
 			valTest:     true,
 		},
 		{
-			desc:       "query SHOW queue watermark multicast queues for Ethernet80",
+			desc:       "query SHOW queue watermark multicast for Ethernet80",
 			pathTarget: "SHOW",
 			textPbPath: `
 				elem: <name: "queue" >
-				elem: <name: "watermark" key: { key: "interfaces" value: "Ethernet80" } key: { key: "queue-type" value: "multicast" }>
+				elem: <name: "watermark" >
+				elem: <name: "multicast" key: { key: "interfaces" value: "Ethernet80" } >
 			`,
 			wantRetCode: codes.OK,
 			wantRespVal: multicastQueueUserWatermarksEth80,
 			valTest:     true,
 		},
 		{
-			desc:       "query SHOW queue watermark all queue types for Ethernet0 and Ethernet40",
+			desc:       "query SHOW queue watermark all for Ethernet0 and Ethernet40",
 			pathTarget: "SHOW",
 			textPbPath: `
 				elem: <name: "queue" >
-				elem: <name: "watermark" key: { key: "interfaces" value: "Ethernet0,Ethernet40" } key: { key: "queue-type" value: "all" }>
+				elem: <name: "watermark" >
+				elem: <name: "all" key: { key: "interfaces" value: "Ethernet0,Ethernet40" } >
 			`,
 			wantRetCode: codes.OK,
 			wantRespVal: allQueueUserWatermarksEth0And40,
@@ -160,29 +200,12 @@ func TestGetQueueUserWatermarks(t *testing.T) {
 		},
 		// Test cases for invalid requests
 		{
-			desc:       "query SHOW queue watermark interfaces option (invalid interface)",
+			desc:       "query SHOW queue watermark all for an invalid interface",
 			pathTarget: "SHOW",
 			textPbPath: `
 				elem: <name: "queue" >
-				elem: <name: "watermark" key: { key: "interfaces" value: "Ethernet7" } key: { key: "queue-type" value: "all" }>
-			`,
-			wantRetCode: codes.NotFound,
-		},
-		{
-			desc:       "query SHOW queue watermark no queue-type option",
-			pathTarget: "SHOW",
-			textPbPath: `
-				elem: <name: "queue" >
-				elem: <name: "watermark">
-			`,
-			wantRetCode: codes.InvalidArgument,
-		},
-		{
-			desc:       "query SHOW queue watermark invalid queue-type option",
-			pathTarget: "SHOW",
-			textPbPath: `
-				elem: <name: "queue" >
-				elem: <name: "watermark" key: { key: "interfaces" value: "Ethernet0" } key: { key: "queue-type" value: "dummy" }>
+				elem: <name: "watermark" >
+				elem: <name: "all" key: { key: "interfaces" value: "Ethernet7" } >
 			`,
 			wantRetCode: codes.NotFound,
 		},

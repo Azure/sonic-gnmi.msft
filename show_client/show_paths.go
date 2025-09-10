@@ -543,6 +543,5 @@ func init() {
 		1,
 		nil,
 		showCmdOptionPeriod,
-		showCmdOptionInterface,
 	)
 }

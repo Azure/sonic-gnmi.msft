@@ -8,7 +8,7 @@ const (
 	showCmdOptionUnimplementedDesc = "UNIMPLEMENTED"
 	showCmdOptionDisplayDesc       = "[display=all] No-op since no-multi-asic support"
 	showCmdOptionVerboseDesc       = "[verbose=true] Enable verbose output"
-	showCmdOptionInterfacesDesc    = "[interfaces=TEXT] Filter by interfaces name" // TODO: Change from interfaces to interface
+	showCmdOptionInterfacesDesc    = "[interfaces=TEXT] Filter by interfaces name"
 	showCmdOptionInterfaceDesc     = "[interface=TEXT] Filter by single interface name"
 	showCmdOptionPortDesc          = "[port=TEXT] Filter by single port name"
 	showCmdOptionVlanDesc          = "[vlan=INTEGER] Filter by VLAN ID"
@@ -21,24 +21,11 @@ const (
 	showCmdOptionSidDesc           = "[sid=TEXT] Filter by SRv6 SID"
 	showCmdOptionNonzeroDesc       = "[nonzero=true] Display only non-zero values"
 	showCmdOptionTrimDesc          = "[trim=true] Display only trim counters"
-	showCmdOptionGroupDesc         = "[group=TEXT] Filter by logical counter group (eg RX_DROPS, TX_ERR)"
-	showCmdOptionCounterTypeDesc   = "[counter_type=TEXT] Filter by counter type (eg PORT_INGRESS_DROPS, SWITCH_EGRESS_DROPS)"
-	showCmdOptionIPAddressDesc     = "[ipaddress=TEXT] Filter by single IP address"
-	showCmdOptionIPV6AddressDesc   = "[ipaddress=TEXT] Filter by IPv6 address"
-	showCmdOptionInfoTypeDesc      = "[info_type=TEXT] Filter by information type"
-	showCmdOptionFrrRouteArgsDesc  = "[args=TEXT] Filter by FRR route arguments"
-	showCmdOptionQueueTypeDesc     = "[queue-type=TEXT] Filter by queue type (unicast/multicast/all)"
-)
-
-// Option keys
-const (
-	OptionKeyIpAddress = "ipaddress"
-	OptionKeyVerbose   = "verbose"
 )
 
 var (
 	showCmdOptionVerbose = sdc.NewShowCmdOption(
-		OptionKeyVerbose,
+		"verbose",
 		showCmdOptionVerboseDesc,
 		sdc.BoolValue,
 	)
@@ -56,7 +43,7 @@ var (
 	)
 
 	showCmdOptionInterfaces = sdc.NewShowCmdOption(
-		"interfaces", // TODO: Change to interface
+		"interfaces",
 		showCmdOptionInterfacesDesc,
 		sdc.StringSliceValue,
 	)
@@ -126,7 +113,7 @@ var (
 		"sid",
 		showCmdOptionSidDesc,
 		sdc.StringValue,
-	)
+  )
 
 	showCmdOptionNonzero = sdc.NewShowCmdOption(
 		"nonzero",
@@ -138,56 +125,5 @@ var (
 		"trim",
 		showCmdOptionTrimDesc,
 		sdc.BoolValue,
-	)
-
-	showCmdOptionGroup = sdc.NewShowCmdOption(
-		"group",
-		showCmdOptionGroupDesc,
-		sdc.StringValue,
-	)
-
-	showCmdOptionCounterType = sdc.NewShowCmdOption(
-		"counter_type",
-		showCmdOptionCounterTypeDesc,
-		sdc.StringValue,
-	)
-
-	showCmdOptionIPAddress = sdc.NewShowCmdOption(
-		"ipaddress",
-		showCmdOptionIPAddressDesc,
-		sdc.StringValue,
-	)
-
-	showCmdOptionInfoType = sdc.NewShowCmdOption(
-		"info_type",
-		"Additional information to display: routes | advertised-routes | received-routes",
-		sdc.EnumValue,
-		"routes",
-		"advertised-routes",
-		"received-routes",
-	)
-
-	showCmdOptionIPV6Address = sdc.NewShowCmdOption(
-		OptionKeyIpAddress,
-		showCmdOptionIPV6AddressDesc,
-		sdc.StringValue,
-	)
-
-	showCmdOptionInfoTypeForBgpNetwork = sdc.NewShowCmdOption(
-		"info_type",
-		showCmdOptionInfoTypeDesc,
-		sdc.StringValue,
-	)
-
-	showCmdOptionFrrRouteArgs = sdc.NewShowCmdOption(
-		"args",
-		showCmdOptionFrrRouteArgsDesc,
-		sdc.StringValue,
-	)
-
-	showCmdOptionQueueType = sdc.NewShowCmdOption(
-		"queue-type",
-		showCmdOptionQueueTypeDesc,
-		sdc.StringValue,
 	)
 )

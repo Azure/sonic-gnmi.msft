@@ -7,7 +7,7 @@ import (
 
 const PreviousRebootCauseFilePath = "/host/reboot-cause/previous-reboot-cause.json"
 
-func getPreviousRebootCause(args sdc.CmdArgs, options sdc.OptionMap) ([]byte, error) {
+func getPreviousRebootCause(options sdc.OptionMap) ([]byte, error) {
 	data, err := GetDataFromFile(PreviousRebootCauseFilePath)
 	if err != nil {
 		log.Errorf("Unable to get data from file %v, got err: %v", PreviousRebootCauseFilePath, err)
@@ -16,7 +16,7 @@ func getPreviousRebootCause(args sdc.CmdArgs, options sdc.OptionMap) ([]byte, er
 	return data, nil
 }
 
-func getRebootCauseHistory(args sdc.CmdArgs, options sdc.OptionMap) ([]byte, error) {
+func getRebootCauseHistory(options sdc.OptionMap) ([]byte, error) {
 	queries := [][]string{
 		{"STATE_DB", "REBOOT_CAUSE"},
 	}

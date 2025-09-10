@@ -51,24 +51,22 @@ func TestGetShowInterfaceErrors(t *testing.T) {
 		testInit    func()
 	}{
 		{
-			desc:       "query SHOW interfaces errors - no data",
+			desc:       "query SHOW interface errors - no data",
 			pathTarget: "SHOW",
 			textPbPath: `
-				elem: <name: "interfaces" >
-				elem: <name: "errors" >
-				elem: <name: "Ethernet0" >
+				elem: <name: "interface" >
+				elem: <name: "errors" key: { key: "interface" value: "Ethernet0" } >
 			`,
 			wantRetCode: codes.OK,
 			wantRespVal: []byte(intfErrorsEmpty),
 			valTest:     true,
 		},
 		{
-			desc:       "query SHOW interfaces errors - with error data",
+			desc:       "query SHOW interface errors - with error data",
 			pathTarget: "SHOW",
 			textPbPath: `
-				elem: <name: "interfaces" >
-				elem: <name: "errors" >
-				elem: <name: "Ethernet0" >
+				elem: <name: "interface" >
+				elem: <name: "errors" key: { key: "interface" value: "Ethernet0" } >
 			`,
 			wantRetCode: codes.OK,
 			wantRespVal: []byte(intfErrorsWithData),

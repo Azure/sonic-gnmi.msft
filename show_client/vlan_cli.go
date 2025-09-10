@@ -3,6 +3,7 @@ package show_client
 import (
 	"encoding/json"
 	"net"
+	"sort"
 	"strings"
 
 	log "github.com/golang/glog"
@@ -43,7 +44,7 @@ type portAndTagging struct {
 	Port_tagging string `json:"port_tagging"`
 }
 
-// Function to check if given key is having valid IP, IP CIDR
+//Function to check if given key is having valid IP, IP CIDR
 func isIPPrefixInKey(key interface{}) bool {
 	if keyStr, ok := key.(string); ok {
 		vlanId, ip := ParseKey(keyStr, pipeDelimiter)
@@ -69,8 +70,9 @@ func isIPPrefixInKey(key interface{}) bool {
 }
 
 func getVlanId(cfg vlanConfig, vlan string) interface{} {
-	id := strings.TrimPrefix(vlan, vlanKey)
-	return id
+	var ids []string
+	ids = append(ids, strings.TrimPrefix(vlan, vlanKey))
+	return ids
 }
 
 func getVlanIpAddress(cfg vlanConfig, vlan string) interface{} {
@@ -111,6 +113,10 @@ func getVlanPortsAndTagging(cfg vlanConfig, vlan string) interface{} {
 		vlanPorts = append(vlanPorts, portAndTagging{portsValue, value.(map[string]interface{})["tagging_mode"].(string)})
 	}
 
+	//sort data
+	sort.Slice(vlanPorts, func(i, j int) bool {
+		return vlanPorts[i].Name < vlanPorts[j].Name
+	})
 	return vlanPorts
 }
 
@@ -127,7 +133,7 @@ func getProxyArp(cfg vlanConfig, vlan string) interface{} {
 	return proxyArp
 }
 
-func getVlanBrief(args sdc.CmdArgs, options sdc.OptionMap) ([]byte, error) {
+func getVlanBrief(options sdc.OptionMap) ([]byte, error) {
 	queriesVlan := [][]string{
 		{"CONFIG_DB", vlanTable},
 	}

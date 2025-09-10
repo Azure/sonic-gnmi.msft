@@ -24,7 +24,6 @@ const (
 	hwsku                 = "hwsku"
 	platformEnvVar        = "PLATFORM"
 	chassisInfoKey        = "chassis 1"
-	space                 = " "
 )
 
 var hwInfoDict map[string]interface{}
@@ -53,14 +52,8 @@ func GetChassisInfo() (map[string]string, error) {
 	return chassisDict, nil
 }
 
-func GetUptime(params []string) string {
+func GetUptime() string {
 	uptimeCommand := "uptime"
-
-	if params != nil && len(params) > 0 {
-		for _, param := range params {
-			uptimeCommand += (space + param)
-		}
-	}
 	uptime, err := GetDataFromHostCommand(uptimeCommand)
 	if err != nil {
 		return "N/A"

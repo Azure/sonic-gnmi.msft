@@ -25,8 +25,7 @@ func getAllPortsFromConfigDB() ([]string, error) {
 	return ports, nil
 }
 
-func getTransceiverErrorStatus(args sdc.CmdArgs, options sdc.OptionMap) ([]byte, error) {
-	// TODO
+func getTransceiverErrorStatus(options sdc.OptionMap) ([]byte, error) {
 	var intf string
 	if v, ok := options["interface"].String(); ok {
 		intf = v
@@ -51,12 +50,8 @@ func getTransceiverErrorStatus(args sdc.CmdArgs, options sdc.OptionMap) ([]byte,
 	return data, nil
 }
 
-func getInterfaceTransceiverPresence(args sdc.CmdArgs, options sdc.OptionMap) ([]byte, error) {
-	// TODO
-	var intf string
-	if v, ok := options["interface"].String(); ok {
-		intf = v
-	}
+func getInterfaceTransceiverPresence(options sdc.OptionMap) ([]byte, error) {
+	intf, _ := options["interface"].String()
 
 	// Get STATE_DB transceiver info
 	queries := [][]string{

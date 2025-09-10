@@ -61,19 +61,19 @@ func TestGetInterfaceCounters(t *testing.T) {
 		testInit    func()
 	}{
 		{
-			desc:       "query SHOW interfaces counters NO DATA",
+			desc:       "query SHOW interface counters NO DATA",
 			pathTarget: "SHOW",
 			textPbPath: `
-				elem: <name: "interfaces" >
+				elem: <name: "interface" >
 				elem: <name: "counters" >
 			`,
 			wantRetCode: codes.OK,
 		},
 		{
-			desc:       "query SHOW interfaces counters",
+			desc:       "query SHOW interface counters",
 			pathTarget: "SHOW",
 			textPbPath: `
-				elem: <name: "interfaces" >
+				elem: <name: "interface" >
 				elem: <name: "counters" >
 			`,
 			wantRetCode: codes.OK,
@@ -88,10 +88,10 @@ func TestGetInterfaceCounters(t *testing.T) {
 			},
 		},
 		{
-			desc:       "query SHOW interfaces counters interfaces option",
+			desc:       "query SHOW interface counters interfaces option",
 			pathTarget: "SHOW",
 			textPbPath: `
-				elem: <name: "interfaces" >
+				elem: <name: "interface" >
 				elem: <name: "counters" key: { key: "interfaces" value: "Ethernet0" }>
 			`,
 			wantRetCode: codes.OK,
@@ -99,10 +99,10 @@ func TestGetInterfaceCounters(t *testing.T) {
 			valTest:     true,
 		},
 		{
-			desc:       "query SHOW interfaces counters period option",
+			desc:       "query SHOW interface counters period option",
 			pathTarget: "SHOW",
 			textPbPath: `
-				elem: <name: "interfaces" >
+				elem: <name: "interface" >
 				elem: <name: "counters"
 				      key: { key: "interfaces" value: "Ethernet0" }
 				      key: { key: "period" value: "5" }>

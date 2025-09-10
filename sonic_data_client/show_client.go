@@ -13,25 +13,17 @@ import (
 
 var showTrie *Trie = NewTrie()
 
-func RegisterCliPath(path []string, getter DataGetter, usageDesc string, minArgs int, maxArgs int, subcommandDesc map[string]string, options ...ShowCmdOption) {
+func RegisterCliPath(path []string, getter DataGetter, subcommandDesc map[string]string, options ...ShowCmdOption) {
 	pathOptions := constructOptions(options)
-	pathDescription := constructDescription(usageDesc, subcommandDesc, pathOptions)
+	pathDescription := constructDescription(subcommandDesc, pathOptions)
 	config := ShowPathConfig{
 		dataGetter:  getter,
 		options:     pathOptions,
 		description: pathDescription,
-		minArgs:     minArgs,
-		maxArgs:     maxArgs,
-		regLen:      len(path),
-	}
-	err := validateRegisteredArgs(config)
-	if err != nil {
-		log.Errorf("Failed to add trie node for %v with %v due to arg validation: %v", path, config, err)
-		return
 	}
 	n := showTrie.Add(path, config)
 	if _, ok := n.meta.(ShowPathConfig); !ok {
-		log.Errorf("Failed to add trie node for %v with %v", path, config)
+		log.V(1).Infof("Failed to add trie node for %v with %v", path, config)
 	} else {
 		log.V(2).Infof("Add trie node for %v with %v", path, config)
 	}
@@ -64,7 +56,7 @@ func lookupPathConfig(prefix, path *gnmipb.Path) (ShowPathConfig, error) {
 			stringSlice = append(stringSlice, elem.GetName())
 		}
 	}
-	n, ok := showTrie.FindLongestPrefix(stringSlice)
+	n, ok := showTrie.Find(stringSlice)
 	if ok {
 		config := n.meta.(ShowPathConfig)
 		return config, nil
@@ -101,11 +93,6 @@ func (c *ShowClient) Get(w *sync.WaitGroup) ([]*spb.Value, error) {
 	for gnmiPath, config := range c.path2Config {
 		getter := config.dataGetter
 		description := config.description
-		// Validate arguments in path
-		validatedArgs, err := config.ParseArgs(c.prefix, gnmiPath)
-		if err != nil {
-			return nil, err
-		}
 		// Validate and verify all passed options
 		validatedOptions, err := config.ParseOptions(gnmiPath)
 		if err != nil {
@@ -115,7 +102,7 @@ func (c *ShowClient) Get(w *sync.WaitGroup) ([]*spb.Value, error) {
 		if needHelp, ok := validatedOptions["help"].Bool(); ok && needHelp {
 			return showHelp(c.prefix, gnmiPath, description)
 		}
-		v, err := getter(validatedArgs, validatedOptions)
+		v, err := getter(validatedOptions)
 		if err != nil {
 			log.V(3).Infof("GetData error %v for %v", err, v)
 			return nil, err

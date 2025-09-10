@@ -121,7 +121,8 @@ func TestGetShowInterfaceStatus(t *testing.T) {
 			pathTarget: "SHOW",
 			textPbPath: `
 				elem: <name: "interfaces" >
-				elem: <name: "status" key: { key: "interface" value: "Ethernet0" } >
+				elem: <name: "status" >
+				elem: <name: "Ethernet0" >
 			`,
 			wantRetCode: codes.OK,
 			wantRespVal: []byte(singleInterfaceDataWithStateDB),
@@ -137,7 +138,8 @@ func TestGetShowInterfaceStatus(t *testing.T) {
 			pathTarget: "SHOW",
 			textPbPath: `
 				elem: <name: "interfaces" >
-				elem: <name: "status" key: { key: "interface" value: "PortChannel1" } >
+				elem: <name: "status" >
+				elem: <name: "PortChannel1" >
 			`,
 			wantRetCode: codes.OK,
 			wantRespVal: []byte(singlePortchannelDataWithStateDB),
@@ -170,7 +172,8 @@ func TestGetShowInterfaceStatus(t *testing.T) {
 			pathTarget: "SHOW",
 			textPbPath: `
 				elem: <name: "interfaces" >
-				elem: <name: "status" key: { key: "interface" value: "subport" } >
+				elem: <name: "status" >
+				elem: <name: "subport" >
 			`,
 			wantRetCode: codes.OK,
 			wantRespVal: []byte(subintfsData),

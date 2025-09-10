@@ -82,7 +82,7 @@ func TestGetSRv6Stats(t *testing.T) {
 			textPbPath: `
 				elem: <name: "srv6" >
 				elem: <name: "stats" >
-				elem: < "2001:db8:1::/48" >
+				elem: <name: "2001:db8:1::/48" >
 			`,
 			wantRetCode: codes.OK,
 			wantRespVal: []byte(singleSrv6Counter),

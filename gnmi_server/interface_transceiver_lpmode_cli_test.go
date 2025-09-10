@@ -85,7 +85,6 @@ func TestShowInterfaceTransceiverLpMode(t *testing.T) {
 	}
 
 	for _, tc := range tests {
-		// Apply per-test mock so command output matches scenario
 		patch := MockNSEnterOutput(t, tc.mockFile)
 		t.Run(tc.desc, func(t *testing.T) {
 			runTestGet(t, ctx, gClient, "SHOW", tc.path, tc.wantRetCode, tc.wantRespVal, tc.valTest)

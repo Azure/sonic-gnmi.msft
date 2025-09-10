@@ -106,7 +106,6 @@ type portLpmode struct {
 }
 
 func getInterfaceTransceiverLpMode(args sdc.CmdArgs, options sdc.OptionMap) ([]byte, error) {
-	// Interface is provided as an option (not positional arg)
 	var intf string
 	if v, ok := options["interface"].String(); ok {
 		intf = v
@@ -128,7 +127,6 @@ func getInterfaceTransceiverLpMode(args sdc.CmdArgs, options sdc.OptionMap) ([]b
 
 	for _, line := range lines {
 		line = strings.TrimSpace(line)
-		log.Infof("Processing line: '%s'", line)
 		if line == "" || strings.HasPrefix(line, "Port") || strings.HasPrefix(line, "---") {
 			continue
 		}
@@ -143,12 +141,10 @@ func getInterfaceTransceiverLpMode(args sdc.CmdArgs, options sdc.OptionMap) ([]b
 			mode = strings.Title(ml)
 		}
 		log.Infof("Parsed port: '%s', lpmode: '%s'", port, mode)
-		entries = append(entries, portLpmode{Port: port, Lpmode: mode})
 	}
 
 	if intf != "" && len(entries) == 0 {
 		entries = append(entries, portLpmode{Port: intf, Lpmode: "N/A"})
-		log.Infof("No lpmode entry found for port '%s', returning N/A", intf)
 	}
 
 	return json.Marshal(entries)

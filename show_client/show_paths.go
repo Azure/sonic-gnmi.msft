@@ -442,7 +442,9 @@ func init() {
 		0,
 		0,
 		nil,
-		showCmdOptionInterfaces,  // TODO: Should be arg
+		showCmdOptionInterfaces,
+		sdc.UnimplementedOption(showCmdOptionNamespace),
+		showCmdOptionJson,
 	)
 	sdc.RegisterCliPath(
 		[]string{"SHOW", "queue", "watermark", "unicast"},
@@ -451,7 +453,9 @@ func init() {
 		0,
 		0,
 		nil,
-		showCmdOptionInterfaces,  // TODO: Should be arg
+		showCmdOptionInterfaces,
+		sdc.UnimplementedOption(showCmdOptionNamespace),
+		showCmdOptionJson,
 	)
 	sdc.RegisterCliPath(
 		[]string{"SHOW", "queue", "watermark", "multicast"},
@@ -460,7 +464,9 @@ func init() {
 		0,
 		0,
 		nil,
-		showCmdOptionInterfaces, // TODO: Should be arg
+		showCmdOptionInterfaces,
+		sdc.UnimplementedOption(showCmdOptionNamespace),
+		showCmdOptionJson,
 	)
 
 	// SHOW/reboot-cause

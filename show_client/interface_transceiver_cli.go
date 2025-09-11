@@ -106,18 +106,16 @@ type portLpmode struct {
 	Lpmode string `json:"Low-power Mode"`
 }
 
-var (
-	sfputilShowLpmodeCommand = "sudo sfputil show lpmode"
-)
-
 func getInterfaceTransceiverLpMode(args sdc.CmdArgs, options sdc.OptionMap) ([]byte, error) {
 	intf := args.At(0)
-	cmd := sfputilShowLpmodeCommand
+	// Build command from discrete parts to avoid fragile string concatenation.
+	cmdParts := []string{"sfputil", "show", "lpmode"}
 	if intf != "" {
-		cmd += " -p " + intf
+		cmdParts = append(cmdParts, "-p", intf)
 	}
+	cmdStr := strings.Join(cmdParts, " ")
 
-	output, err := GetDataFromHostCommand(cmd)
+	output, err := GetDataFromHostCommand(cmdStr)
 	if err != nil {
 		return nil, err
 	}

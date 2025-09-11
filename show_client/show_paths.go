@@ -412,6 +412,18 @@ func init() {
 		showCmdOptionVerbose,
 	)
 
+	// SHOW/ndp
+	sdc.RegisterCliPath(
+		[]string{"SHOW", "ndp"},
+		getNDP,
+		"SHOW/ndp/{IP6ADDRESS}[OPTIONS]: Show IPv6 Neighbour table",
+		0,
+		1,
+		nil,
+		showCmdOptionInterface, // TODO: Take as arg not option
+		showCmdOptionVerbose,
+	)
+
 	// SHOW/processes
 	sdc.RegisterCliPath(
 		[]string{"SHOW", "processes"},

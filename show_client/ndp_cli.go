@@ -464,9 +464,9 @@ func fetchFdbData() ([]BridgeMacEntry, error) {
 	return bridgeMacList, nil
 }
 
-func getNDP(options sdc.OptionMap) ([]byte, error) {
+func getNDP(args sdc.CmdArgs, options sdc.OptionMap) ([]byte, error) {
 	intf, _ := options["interface"].String()
-	ip, _ := options["ipaddress"].String()
+	ip := args.At(0)
 
 	cmd := baseNdpCmd
 	if ip != "" {

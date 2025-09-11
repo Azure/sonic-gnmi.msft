@@ -3,13 +3,13 @@ package show_client
 import (
 	"encoding/json"
 	"fmt"
-	"show_client/helpers"
 	"sort"
 	"strconv"
 	"strings"
 
 	log "github.com/golang/glog"
 	sdc "github.com/sonic-net/sonic-gnmi/sonic_data_client"
+    "github.com/sonic-net/sonic-gnmi/show_client/helpers"
 )
 
 const (
@@ -57,14 +57,12 @@ func getProcessesSummary(args sdc.CmdArgs, options sdc.OptionMap) ([]byte, error
 func getProcessesCPU(args sdc.CmdArgs, options sdc.OptionMap) ([]byte, error) {
 	cmdForProcessByCPU := topCommand + orderByCPU
 
-	processDetails, err := GetDataFromHostCommand(cmdForProcessByCPU)
+	processDetails, err := helpers.GetDataFromHostCommand(cmdForProcessByCPU)
 	if err != nil {
 		return []byte(""), err
 	}
 
-	processesOrdered := helpers.LoadProcessesDataFromCmdOutput(cmdForProcessByCPU)
-
-	return json.Marshal(processesOrdered)
+	return helpers.LoadProcessesDataFromCmdOutput(cmdForProcessByCPU)
 }
 
 func buildProcessEntries(processesSummary map[string]interface{}) []processEntry {

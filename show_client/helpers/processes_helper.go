@@ -1,10 +1,12 @@
 package helpers
 
 import (
+    "bufio"
 	"encoding/json"
 	"fmt"
 	"sort"
 	"strconv"
+    "strings"
 	"time"
 
 	log "github.com/golang/glog"
@@ -82,8 +84,9 @@ type Process struct {
 	Command  string
 }
 
-func LoadProcessesDataFromCmdOutput(data string) string {
+func LoadProcessesDataFromCmdOutput(data string) ([]byte, error) {
 	//Store the data in process struct
+    var output TopOutput
 	scanner := bufio.NewScanner(strings.NewReader(data))
 
 	for i := 0; i < 7 && scanner.Scan(); i++ {
@@ -109,7 +112,7 @@ func LoadProcessesDataFromCmdOutput(data string) string {
 			output.Summary.SwapSummary = parseSwapSummary(line)
 		}
 
-		if strings.Contains(line, "PID") && strigns.Contains(line, "COMMAND") {
+		if strings.Contains(line, "PID") && strings.Contains(line, "COMMAND") {
 			//Headers
 			break
 		}
@@ -125,6 +128,7 @@ func LoadProcessesDataFromCmdOutput(data string) string {
 			output.Processes = append(output.Processes, process)
 		}
 	}
+    return json.Marshal(output)
 }
 
 // Helper functions for parsing

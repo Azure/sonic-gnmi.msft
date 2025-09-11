@@ -12,7 +12,7 @@ import (
 // getIPv6Route is the getter function for the "show ipv6 route" command.
 // This command is only supported on single-ASIC devices. It directly
 // returns the JSON output from vtysh.
-func getIPv6Route(options sdc.OptionMap) ([]byte, error) {
+func getIPv6Route(args sdc.CmdArgs, options sdc.OptionMap) ([]byte, error) {
 	if IsMultiAsic() {
 		log.Errorf("Attempted to execute 'show ipv6 route' on a multi-ASIC platform")
 		return nil, fmt.Errorf("'show ipv6 route' is not supported on multi-ASIC platforms")
@@ -21,6 +21,7 @@ func getIPv6Route(options sdc.OptionMap) ([]byte, error) {
 	cmdArgs := []string{"show", "ipv6", "route"}
 	jsonArgPresent := false
 
+	// TODO: Change this to use args map
 	if val, ok := options["args"]; ok {
 		if frrArgs, ok := val.String(); ok {
 			userArgs := strings.Fields(frrArgs)

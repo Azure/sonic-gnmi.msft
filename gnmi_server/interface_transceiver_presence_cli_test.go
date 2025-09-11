@@ -53,20 +53,20 @@ func TestShowInterfaceTransceiverPresence(t *testing.T) {
 		testInit    func()
 	}{
 		{
-			desc:       "query SHOW interface transceiver presence - no data",
+			desc:       "query SHOW interfaces transceiver presence - no data",
 			pathTarget: "SHOW",
 			textPbPath: `
-				elem: <name: "interface" >
+				elem: <name: "interfaces" >
 				elem: <name: "transceiver" >
 				elem: <name: "presence" >
 			`,
 			wantRetCode: codes.OK,
 		},
 		{
-			desc:       "query SHOW interface transceiver presence - with no interface specified",
+			desc:       "query SHOW interfaces transceiver presence - with no interface specified",
 			pathTarget: "SHOW",
 			textPbPath: `
-				elem: <name: "interface" >
+				elem: <name: "interfaces" >
 				elem: <name: "transceiver" >
 				elem: <name: "presence" >
 			`,
@@ -81,10 +81,10 @@ func TestShowInterfaceTransceiverPresence(t *testing.T) {
 			},
 		},
 		{
-			desc:       "query SHOW interface transceiver presence - with interface specified",
+			desc:       "query SHOW interfaces transceiver presence - with interface specified",
 			pathTarget: "SHOW",
 			textPbPath: `
-				elem: <name: "interface" >
+				elem: <name: "interfaces" >
 				elem: <name: "transceiver" >
 				elem: <name: "presence" key: { key: "interface" value: "Ethernet0" } >
 			`,
@@ -99,10 +99,10 @@ func TestShowInterfaceTransceiverPresence(t *testing.T) {
 			},
 		},
 		{
-			desc:       "query SHOW interface transceiver presence - with non-existent interface specified",
+			desc:       "query SHOW interfaces transceiver presence - with non-existent interface specified",
 			pathTarget: "SHOW",
 			textPbPath: `
-				elem: <name: "interface" >
+				elem: <name: "interfaces" >
 				elem: <name: "transceiver" >
 				elem: <name: "presence" key: { key: "interface" value: "Ethernet1" } >
 			`,

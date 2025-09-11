@@ -13,11 +13,11 @@ const (
 	ingressLosslessPoolName = "ingress_lossless"
 )
 
-func getHeadroomPoolWatermark(options sdc.OptionMap) ([]byte, error) {
+func getHeadroomPoolWatermark(args sdc.CmdArgs, options sdc.OptionMap) ([]byte, error) {
 	return getHeadroomPoolWatermarkByType(false)
 }
 
-func getHeadroomPoolPersistentWatermark(options sdc.OptionMap) ([]byte, error) {
+func getHeadroomPoolPersistentWatermark(args sdc.CmdArgs, options sdc.OptionMap) ([]byte, error) {
 	return getHeadroomPoolWatermarkByType(true)
 }
 

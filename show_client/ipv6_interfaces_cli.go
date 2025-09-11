@@ -19,7 +19,7 @@ func (g *glogAdapter) Debugf(format string, args ...any) { log.V(6).Infof(format
 // getIPv6Interfaces is the handler for the "show ipv6 interfaces" command.
 // It uses the ipinterfaces library to get all interface details and returns them
 // as a JSON byte slice.
-func getIPv6Interfaces(options sdc.OptionMap) ([]byte, error) {
+func getIPv6Interfaces(args sdc.CmdArgs, options sdc.OptionMap) ([]byte, error) {
 	log.V(2).Info("Executing 'show ipv6 interfaces' command via ipinterfaces library.")
 
 	// Instantiate the provider with its dependencies.

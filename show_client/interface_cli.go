@@ -1,6 +1,7 @@
 package show_client
 
 import (
+	"bufio"
 	"encoding/json"
 	"fmt"
 	"math"
@@ -12,7 +13,24 @@ import (
 
 	log "github.com/golang/glog"
 	sdc "github.com/sonic-net/sonic-gnmi/sonic_data_client"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 )
+
+const (
+	interfaceOption        = " -i "
+	interfaceDescStartLine = "Interface"
+	descriptionDataSize    = 5
+)
+
+type interfaceDescriptionDetails struct {
+	Admin       string `json:"Admin"`
+	Alias       string `json:"Alias"`
+	Description string `json:"Description"`
+	Oper        string `json:"Oper"`
+}
+
+type interfaceDescription map[string]interfaceDescriptionDetails
 
 type InterfaceCountersResponse struct {
 	State  string
@@ -91,7 +109,7 @@ func computeState(iface string, portTable map[string]interface{}) string {
 	}
 }
 
-func getInterfaceCounters(options sdc.OptionMap) ([]byte, error) {
+func getInterfaceCounters(args sdc.CmdArgs, options sdc.OptionMap) ([]byte, error) {
 	var ifaces []string
 	period := 0
 	takeDiffSnapshot := false
@@ -262,12 +280,64 @@ var allPortErrors = [][]string{
 	{"no_rx_reachability_count", "no_rx_reachability_time"},
 }
 
-func getInterfaceErrors(options sdc.OptionMap) ([]byte, error) {
+func loadDescriptionFromCmdOutput(data string) interfaceDescription {
+	scanner := bufio.NewScanner(strings.NewReader(data))
+	var processStart bool
+	description := make(interfaceDescription)
+
+	for scanner.Scan() {
+		line := scanner.Text()
+		if !processStart {
+			if strings.HasPrefix(strings.TrimSpace(line), interfaceDescStartLine) {
+				processStart = true
+				scanner.Scan()
+			}
+			continue
+		}
+
+		fields := strings.Fields(line)
+		if len(fields) < descriptionDataSize {
+			continue
+		}
+
+		description[fields[0]] = interfaceDescriptionDetails{
+			Oper:        fields[1],
+			Admin:       fields[2],
+			Alias:       fields[3],
+			Description: strings.Join(fields[4:], " "),
+		}
+	}
+	return description
+}
+
+func getInterfacesDescription(args sdc.CmdArgs, options sdc.OptionMap) ([]byte, error) {
+	cmdForInterfaceDesc := "intfutil -c description"
+	// TODO
 	intf, ok := options["interface"].String()
-	if !ok {
-		return nil, fmt.Errorf("No interface name passed in as option")
+	if ok {
+		interfaceName := GetNameForInterfaceAlias(intf)
+		if interfaceName != "" {
+			cmdForInterfaceDesc += interfaceOption + interfaceName
+		} else {
+			cmdForInterfaceDesc += interfaceOption + intf
+		}
 	}
 
+	interfaceDescStr, err := GetDataFromHostCommand(cmdForInterfaceDesc)
+	if err != nil {
+		return []byte(""), err
+	}
+
+	interfaceDesc := loadDescriptionFromCmdOutput(interfaceDescStr)
+
+	return json.Marshal(interfaceDesc)
+}
+
+func getInterfaceErrors(args sdc.CmdArgs, options sdc.OptionMap) ([]byte, error) {
+	intf := args.At(0)
+	if intf == "" {
+		return nil, status.Errorf(codes.InvalidArgument, "No interface name passed in as option")
+	}
 	// Query Port Operational Errors Table from STATE_DB
 	queries := [][]string{
 		{"STATE_DB", "PORT_OPERR_TABLE", intf},
@@ -328,8 +398,8 @@ func getIntfsFromConfigDB(intf string) ([]string, error) {
 	return ports, nil
 }
 
-func getInterfaceFecStatus(options sdc.OptionMap) ([]byte, error) {
-	intf, _ := options["interface"].String()
+func getInterfaceFecStatus(args sdc.CmdArgs, options sdc.OptionMap) ([]byte, error) {
+	intf := args.At(0)
 
 	ports, err := getIntfsFromConfigDB(intf)
 	if err != nil {
@@ -731,9 +801,9 @@ func getSubInterfaceStatus(intf string) ([]byte, error) {
 	return json.Marshal(interfaceStatus)
 }
 
-func getInterfaceStatus(options sdc.OptionMap) ([]byte, error) {
+func getInterfaceStatus(args sdc.CmdArgs, options sdc.OptionMap) ([]byte, error) {
 	isSubIntf := false
-	intf, _ := options["interface"].String()
+	intf := args.At(0)
 	if intf != "" {
 		if intf == "subport" {
 			isSubIntf = true
@@ -929,8 +999,10 @@ func getInterfaceStatus(options sdc.OptionMap) ([]byte, error) {
 	return json.Marshal(interfaceStatus)
 }
 
-func getInterfaceAlias(options sdc.OptionMap) ([]byte, error) {
+func getInterfaceAlias(args sdc.CmdArgs, options sdc.OptionMap) ([]byte, error) {
+	// TODO
 	intf, _ := options["interface"].String()
+	namingMode, _ := options[SonicCliIfaceMode].String()
 
 	// Read CONFIG_DB.PORT
 	queries := [][]string{{"CONFIG_DB", "PORT"}}
@@ -952,6 +1024,12 @@ func getInterfaceAlias(options sdc.OptionMap) ([]byte, error) {
 
 	// If a specific interface was requested, accept port name
 	if intf != "" {
+		intf, err := TryConvertInterfaceNameFromAlias(intf, namingMode)
+		if err != nil {
+			log.Errorf("Error: %v", err)
+			return nil, err
+		}
+
 		name := intf
 		if _, ok := nameToAlias[name]; !ok {
 			return nil, fmt.Errorf("Invalid interface name %s", name)
@@ -970,8 +1048,8 @@ func getInterfaceAlias(options sdc.OptionMap) ([]byte, error) {
 	return json.Marshal(out)
 }
 
-func getInterfaceSwitchportConfig(options sdc.OptionMap) ([]byte, error) {
-	intf, _ := options["interface"].String()
+func getInterfaceSwitchportConfig(args sdc.CmdArgs, options sdc.OptionMap) ([]byte, error) {
+	namingMode, _ := options[SonicCliIfaceMode].String()
 
 	// Read CONFIG_DB tables
 	portTbl, err := GetMapFromQueries([][]string{{"CONFIG_DB", "PORT"}})
@@ -1008,21 +1086,6 @@ func getInterfaceSwitchportConfig(options sdc.OptionMap) ([]byte, error) {
 	}
 	keys := append(ports, portchannels...)
 	keys = natsortInterfaces(keys)
-
-	// Optionally filter by interface
-	if intf != "" {
-		found := false
-		for _, k := range keys {
-			if k == intf {
-				found = true
-				keys = []string{intf}
-				break
-			}
-		}
-		if !found {
-			return nil, fmt.Errorf("Got unexpected extra argument %s", intf)
-		}
-	}
 
 	// Build VLAN membership maps
 	untaggedMap := make(map[string][]string)
@@ -1056,7 +1119,7 @@ func getInterfaceSwitchportConfig(options sdc.OptionMap) ([]byte, error) {
 		mode := GetInterfaceSwitchportMode(portTbl, portChannelTbl, vlanMemberTbl, k)
 
 		switchportConfig = append(switchportConfig, map[string]string{
-			"Interface": GetInterfaceNameForDisplay(k),
+			"Interface": GetInterfaceNameForDisplay(k, namingMode),
 			"Mode":      mode,
 			"Untagged":  strings.Join(untagged, ","),
 			"Tagged":    strings.Join(tagged, ","),
@@ -1066,8 +1129,8 @@ func getInterfaceSwitchportConfig(options sdc.OptionMap) ([]byte, error) {
 	return json.Marshal(switchportConfig)
 }
 
-func getInterfaceSwitchportStatus(options sdc.OptionMap) ([]byte, error) {
-	intf, _ := options["interface"].String()
+func getInterfaceSwitchportStatus(args sdc.CmdArgs, options sdc.OptionMap) ([]byte, error) {
+	namingMode, _ := options[SonicCliIfaceMode].String()
 
 	// Read CONFIG_DB tables
 	portTbl, err := GetMapFromQueries([][]string{{"CONFIG_DB", "PORT"}})
@@ -1105,28 +1168,13 @@ func getInterfaceSwitchportStatus(options sdc.OptionMap) ([]byte, error) {
 	keys := append(ports, portchannels...)
 	keys = natsortInterfaces(keys)
 
-	// Optionally filter by interface
-	if intf != "" {
-		found := false
-		for _, k := range keys {
-			if k == intf {
-				found = true
-				keys = []string{intf}
-				break
-			}
-		}
-		if !found {
-			return nil, fmt.Errorf("Got unexpected extra argument %s", intf)
-		}
-	}
-
 	// Emit switchportStatus
 	switchportStatus := make([]map[string]string, 0, len(keys))
 	for _, k := range keys {
 		mode := GetInterfaceSwitchportMode(portTbl, portChannelTbl, vlanMemberTbl, k)
 
 		switchportStatus = append(switchportStatus, map[string]string{
-			"Interface": GetInterfaceNameForDisplay(k),
+			"Interface": GetInterfaceNameForDisplay(k, namingMode),
 			"Mode":      mode,
 		})
 	}
@@ -1148,8 +1196,10 @@ func IsInterfaceInPortchannel(portchannelMemberTable map[string]interface{}, int
 	return false
 }
 
-func getInterfaceFlap(options sdc.OptionMap) ([]byte, error) {
+func getInterfaceFlap(args sdc.CmdArgs, options sdc.OptionMap) ([]byte, error) {
+	// TODO
 	intf, _ := options["interface"].String()
+	namingMode, _ := options[SonicCliIfaceMode].String()
 
 	// Query APPL_DB PORT_TABLE
 	queries := [][]string{
@@ -1164,6 +1214,11 @@ func getInterfaceFlap(options sdc.OptionMap) ([]byte, error) {
 	// Collect ports (optionally filter by interface)
 	var ports []string
 	if intf != "" {
+		intf, err := TryConvertInterfaceNameFromAlias(intf, namingMode)
+		if err != nil {
+			log.Errorf("Error: %v", err)
+			return nil, err
+		}
 		if _, ok := portTable[intf]; !ok {
 			return nil, fmt.Errorf("Invalid interface name %s", intf)
 		}
@@ -1192,7 +1247,7 @@ func getInterfaceFlap(options sdc.OptionMap) ([]byte, error) {
 		lastUp := GetFieldValueString(portTable, p, "Never", "last_up_time")
 
 		rows = append(rows, map[string]string{
-			"Interface":                GetInterfaceNameForDisplay(p),
+			"Interface":                p,
 			"Flap Count":               flapCount,
 			"Admin":                    adminStatus,
 			"Oper":                     operStatus,
@@ -1218,7 +1273,9 @@ func getInterfaceFlap(options sdc.OptionMap) ([]byte, error) {
 // 4) "0.0.0.0"
 // 5) "type"
 // 6) "BackEndLeafRouter"
-func getInterfaceNeighborExpected(options sdc.OptionMap) ([]byte, error) {
+func getInterfaceNeighborExpected(args sdc.CmdArgs, options sdc.OptionMap) ([]byte, error) {
+	// TODO: Supports an interfacename as arg
+	namingMode, _ := options[SonicCliIfaceMode].String()
 	// Fetch DEVICE_NEIGHBOR
 	neighborTbl, err := GetMapFromQueries([][]string{{"CONFIG_DB", "DEVICE_NEIGHBOR"}})
 	if err != nil {
@@ -1257,7 +1314,7 @@ func getInterfaceNeighborExpected(options sdc.OptionMap) ([]byte, error) {
 			ntype = "None"
 		}
 
-		displayIf := GetInterfaceNameForDisplay(localIf)
+		displayIf := GetInterfaceNameForDisplay(localIf, namingMode)
 
 		out[displayIf] = map[string]string{
 			"Neighbor":         device,
@@ -1271,8 +1328,10 @@ func getInterfaceNeighborExpected(options sdc.OptionMap) ([]byte, error) {
 	return json.Marshal(out)
 }
 
-func getInterfaceNamingMode(options sdc.OptionMap) ([]byte, error) {
-	mode := GetInterfaceNamingMode()
-	namingModeResp := namingModeResponse{NamingMode: mode}
+func getInterfaceNamingMode(args sdc.CmdArgs, options sdc.OptionMap) ([]byte, error) {
+	namingMode, _ := options[SonicCliIfaceMode].String()
+
+	namingMode = GetInterfaceNamingMode(namingMode)
+	namingModeResp := namingModeResponse{NamingMode: namingMode}
 	return json.Marshal(namingModeResp)
 }

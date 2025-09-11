@@ -73,6 +73,9 @@ var (
 		}, { // Periodic PG watermarks for one or all Ethernet ports
 			path:      []string{"COUNTERS_DB", "PERIODIC_WATERMARKS", "Ethernet*", "PriorityGroups"},
 			transFunc: v2rTranslate(v2rEthPortPGPeriodicWMs),
+		}, { // User watermarks for all queues of one or all Ethernet ports
+			path:      []string{"COUNTERS_DB", "USER_WATERMARKS", "Ethernet*", "Queues"},
+			transFunc: v2rTranslate(v2rEthPortQueueUserWMs),
 		}, { // COUNTER_DB RATES Ethernet*
 			path:      []string{"COUNTERS_DB", "RATES", "Ethernet*"},
 			transFunc: v2rTranslate(v2rEthPortStats),
@@ -125,6 +128,33 @@ func initCountersPGNameMap() error {
 		}
 	}
 	return nil
+}
+
+func GetCountersQueueTypeMap() (map[string]string, error) {
+	oidTypeMap, err := getCountersMap("COUNTERS_QUEUE_TYPE_MAP")
+	if err != nil {
+		return nil, err
+	}
+	if len(countersQueueNameMap) == 0 {
+		err = initCountersQueueNameMap()
+		if err != nil {
+			return nil, err
+		}
+	}
+	countersQueueTypeMap := make(map[string]string)
+	for queue, oid := range countersQueueNameMap {
+		if qtype, ok := oidTypeMap[oid]; ok {
+			if qtype == "SAI_QUEUE_TYPE_UNICAST" {
+				countersQueueTypeMap[queue] = "UC"
+			} else if qtype == "SAI_QUEUE_TYPE_MULTICAST" {
+				countersQueueTypeMap[queue] = "MC"
+			} else {
+				log.V(1).Infof("Invalid queue type %s for queue %s", qtype, queue)
+				countersQueueTypeMap[queue] = "Unknown"
+			}
+		}
+	}
+	return countersQueueTypeMap, nil
 }
 
 func initCountersPortNameMap() error {
@@ -809,6 +839,43 @@ func v2rEthPortPGPeriodicWMs(paths []string) ([]tablePath, error) {
 		}
 	}
 	log.V(6).Infof("v2rEthPortPGPeriodicWMs: %v", tblPaths)
+	return tblPaths, nil
+}
+
+// Populate real data paths from paths like
+// [COUNTERS_DB USER_WATERMARKS Ethernet* Queues] or
+// [COUNTERS_DB USER_WATERMARKS Ethernet64 Queues]
+func v2rEthPortQueueUserWMs(paths []string) ([]tablePath, error) {
+	separator, _ := GetTableKeySeparator(paths[DbIdx], "")
+	var tblPaths []tablePath
+	if strings.HasSuffix(paths[KeyIdx], "*") { // user watermarks on all Ethernet ports
+		for queue, oid := range countersQueueNameMap {
+			port_qindex := strings.Split(queue, separator)
+			namespace, err := getPortNamespace(port_qindex[0])
+			if err != nil {
+				return nil, err
+			}
+			// queue is in format of "Ethernet64:8"
+			tblPath := buildTablePath(namespace, paths[DbIdx], paths[TblIdx], oid, separator, "", "", queue, "")
+			tblPaths = append(tblPaths, tblPath)
+		}
+	} else { // user watermarks on a single port
+		port := getSonicPortName(paths[KeyIdx])
+		namespace, err := getPortNamespace(port)
+		if err != nil {
+			return nil, err
+		}
+		for queue, oid := range countersQueueNameMap {
+			port_qindex := strings.Split(queue, separator)
+			if port_qindex[0] != port {
+				continue
+			}
+			//queue is in format of "Ethernet64:8"
+			tblPath := buildTablePath(namespace, paths[DbIdx], paths[TblIdx], oid, separator, "", "", queue, "")
+			tblPaths = append(tblPaths, tblPath)
+		}
+	}
+	log.V(6).Infof("v2rEthPortQueueUserWMs: %v", tblPaths)
 	return tblPaths, nil
 }
 

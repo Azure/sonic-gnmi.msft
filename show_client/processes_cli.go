@@ -13,11 +13,11 @@ import (
 
 // processEntry for STATE_DB PROCESS_STATS
 type processEntry struct {
-	Pid  string `json:"PID"`
-	Ppid string `json:"PPID"`
-	Cmd  string `json:"CMD"`
-	Mem  string `json:"%MEM"`
-	Cpu  string `json:"%CPU"`
+	Pid   string `json:"PID"`
+	Ppid  string `json:"PPID"`
+	Cmd   string `json:"CMD"`
+	Mem   string `json:"%MEM"`
+	Cpu   string `json:"%CPU"`
 	Stime string `json:"STIME,omitempty"`
 	Time  string `json:"TIME,omitempty"`
 	Tt    string `json:"TT,omitempty"`
@@ -26,18 +26,18 @@ type processEntry struct {
 	pidNum int `json:"-"`
 }
 
-func getProcessesRoot(options sdc.OptionMap) ([]byte, error) {
+func getProcessesRoot(args sdc.CmdArgs, options sdc.OptionMap) ([]byte, error) {
 	help := map[string]interface{}{
 		"subcommands": map[string]string{
-			"summary":	"show/processes/summary",
-			"cpu":      "show/processes/cpu",
-			"mem":      "show/processes/mem",
+			"summary": "show/processes/summary: Show processses info",
+			"cpu":     "show/processes/cpu: Show processes CPU info",
+			"mem":     "show/processes/mem: Show processes memory info",
 		},
 	}
 	return json.Marshal(help)
 }
 
-func getProcessesSummary(options sdc.OptionMap) ([]byte, error) {
+func getProcessesSummary(args sdc.CmdArgs, options sdc.OptionMap) ([]byte, error) {
 	queries := [][]string{{"STATE_DB", "PROCESS_STATS"}}
 	processesSummary, err := GetMapFromQueries(queries)
 	if err != nil {

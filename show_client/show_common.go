@@ -30,6 +30,7 @@ const ConfigDbPort = "PORT"
 const FDBTable = "FDB_TABLE"
 const VlanSubInterfaceSeparator = '.'
 const SonicCliIfaceMode = "SONIC_CLI_IFACE_MODE"
+const Alias = "alias"
 
 const (
 	dbIndex    = 0 // The first index for a query will be the DB
@@ -232,6 +233,15 @@ func RemapAliasToPortNameForQueues(queueData map[string]interface{}) map[string]
 	return remapped
 }
 
+func GetNameForInterfaceAlias(intfAlias string) string {
+	aliasMap := sdc.AliasToPortNameMap()
+	if name, ok := aliasMap[intfAlias]; ok {
+		return name
+	} else {
+		return ""
+	}
+}
+
 func GetValueOrDefault(values map[string]interface{}, key string, defaultValue string) string {
 	if value, ok := values[key]; ok {
 		return fmt.Sprint(value)
@@ -300,16 +310,6 @@ func natsortInterfaces(interfaces []string) []string {
 	return interfaces
 }
 
-// toString converts any value to string, returning the value directly if it is already a string.
-func toString(v interface{}) string {
-	switch x := v.(type) {
-	case string:
-		return x
-	default:
-		return fmt.Sprint(v)
-	}
-}
-
 func GetSortedKeys(m map[string]interface{}) []string {
 	keys := make([]string, 0, len(m))
 	for k := range m {
@@ -336,11 +336,11 @@ func ParseKey(key interface{}, delimiter string) (string, string) {
 
 // GetInterfaceNameForDisplay returns alias when SONIC_CLI_IFACE_MODE=alias; otherwise the name.
 // It also preserves VLAN sub-interface suffix like Ethernet0.100.
-func GetInterfaceNameForDisplay(name string) string {
+func GetInterfaceNameForDisplay(name string, namingMode string) string {
 	if name == "" {
 		return name
 	}
-	if interfaceNamingMode := GetInterfaceNamingMode(); interfaceNamingMode != "alias" {
+	if interfaceNamingMode := GetInterfaceNamingMode(namingMode); interfaceNamingMode != Alias {
 		return name
 	}
 
@@ -433,9 +433,27 @@ func Capitalize(s string) string {
 	return strings.ToUpper(s[:1]) + strings.ToLower(s[1:])
 }
 
-func GetInterfaceNamingMode() string {
-	if mode := os.Getenv(SonicCliIfaceMode); mode != "" {
-		return mode
+func GetInterfaceNamingMode(namingMode string) string {
+	if namingMode != "" {
+		return namingMode
 	}
 	return "default"
+}
+
+// TryConvertInterfaceNameFromAlias tries to convert an interface alias to its interface name.
+// If naming mode is "alias", attempts conversion; if conversion fails, returns error.
+func TryConvertInterfaceNameFromAlias(interfaceName string, namingMode string) (string, error) {
+	if GetInterfaceNamingMode(namingMode) == Alias {
+		alias := interfaceName
+		aliasMap := sdc.AliasToPortNameMap()
+		if itfName, ok := aliasMap[alias]; ok {
+			interfaceName = itfName
+		}
+
+		// AliasToName should return "" if not found
+		if interfaceName == "" || interfaceName == alias {
+			return "", fmt.Errorf("Cannot find interface name for alias %s", alias)
+		}
+	}
+	return interfaceName, nil
 }

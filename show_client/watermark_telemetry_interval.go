@@ -18,7 +18,7 @@ admin@sonic:~$ redis-cli -n 4 HGETALL "WATERMARK_TABLE|TELEMETRY_INTERVAL"
 2) "30"
 */
 
-func getWatermarkTelemetryInterval(options sdc.OptionMap) ([]byte, error) {
+func getWatermarkTelemetryInterval(args sdc.CmdArgs, options sdc.OptionMap) ([]byte, error) {
 	queries := [][]string{
 		{"CONFIG_DB", "WATERMARK_TABLE", "TELEMETRY_INTERVAL"},
 	}

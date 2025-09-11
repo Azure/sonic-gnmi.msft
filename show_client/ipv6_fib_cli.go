@@ -21,9 +21,10 @@ import (
 //	3         fc02:1000::/64  ::         Vlan1000
 //
 // Total number of entries 3
-func getIPv6Fib(options sdc.OptionMap) ([]byte, error) {
+func getIPv6Fib(args sdc.CmdArgs, options sdc.OptionMap) ([]byte, error) {
 
 	var filter string
+	// TODO: cleanup constant and use args
 	if ov, ok := options[OptionKeyIpAddress]; ok {
 		if v, ok2 := ov.String(); ok2 {
 			filter = strings.TrimSpace(v)

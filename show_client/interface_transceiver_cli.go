@@ -123,10 +123,6 @@ func getInterfaceTransceiverLpMode(args sdc.CmdArgs, options sdc.OptionMap) ([]b
 		return nil, err
 	}
 
-	if strings.HasPrefix(output, "Error: invalid port") {
-		return nil, errors.New(output)
-	}
-
 	lines := strings.Split(output, "\n")
 	entries := make([]portLpmode, 0)
 

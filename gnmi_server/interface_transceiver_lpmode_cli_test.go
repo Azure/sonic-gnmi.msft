@@ -70,19 +70,6 @@ func TestShowInterfaceTransceiverLpMode(t *testing.T) {
 			wantRespVal: []byte(expectedOne),
 			valTest:     true,
 		},
-		{
-			desc:     "invalid port error",
-			path: `
-				elem: <name: "interfaces" >
-				elem: <name: "transceiver" >
-				elem: <name: "lpmode" >
-				elem: <name: "Ethernet33" >
-			`,
-			mockFile:    "../testdata/SFPUTIL_SHOW_LPMODE_INVALID_PORT.txt",
-			wantRetCode: codes.NotFound,
-			wantRespVal: nil,
-			valTest:     false,
-		},
 	}
 
 	for _, tc := range tests {

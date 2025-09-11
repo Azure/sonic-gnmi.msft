@@ -162,7 +162,6 @@ func init() {
 		0,
 		1,
 		nil,
-		showCmdOptionInterface, // TODO
 		sdc.UnimplementedOption(showCmdOptionNamespace),
 		showCmdOptionDisplay,
 	)
@@ -200,7 +199,6 @@ func init() {
 		0,
 		1,
 		nil,
-		showCmdOptionInterface, // TODO
 		sdc.UnimplementedOption(showCmdOptionNamespace),
 		showCmdOptionDisplay,
 		showCmdOptionVerbose,
@@ -429,10 +427,45 @@ func init() {
 		"SHOW/queue/watermark/COMMAND[OPTIONS]: Show user WM for queues",
 		0,
 		0,
+		map[string]string{
+			"all":       "show/queue/watermark/all",
+			"unicast":   "show/queue/watermark/unicast",
+			"multicast": "show/queue/watermark/multicast",
+		},
+	)
+	sdc.RegisterCliPath(
+		[]string{"SHOW", "queue", "watermark", "all"},
+		getQueueUserWatermarksAll,
+		"SHOW/queue/watermark/all[OPTIONS]: Show user WM for unicast and multicast queues",
+		0,
+		0,
 		nil,
-		showCmdOptionInterfaces, // TODO: Should be arg
-		sdc.RequiredOption(showCmdOptionQueueType),
-	)	
+		showCmdOptionInterfaces,
+		sdc.UnimplementedOption(showCmdOptionNamespace),
+		showCmdOptionJson,
+	)
+	sdc.RegisterCliPath(
+		[]string{"SHOW", "queue", "watermark", "unicast"},
+		getQueueUserWatermarksUnicast,
+		"SHOW/queue/watermark/unicast[OPTIONS]: Show user WM for unicast queues",
+		0,
+		0,
+		nil,
+		showCmdOptionInterfaces,
+		sdc.UnimplementedOption(showCmdOptionNamespace),
+		showCmdOptionJson,
+	)
+	sdc.RegisterCliPath(
+		[]string{"SHOW", "queue", "watermark", "multicast"},
+		getQueueUserWatermarksMulticast,
+		"SHOW/queue/watermark/multicast[OPTIONS]: Show user WM for multicast queues",
+		0,
+		0,
+		nil,
+		showCmdOptionInterfaces,
+		sdc.UnimplementedOption(showCmdOptionNamespace),
+		showCmdOptionJson,
+	)
 	sdc.RegisterCliPath(
 		[]string{"SHOW", "ipv6", "prefix-list"},
 		getIPv6PrefixList,
@@ -480,7 +513,6 @@ func init() {
 		0,
 		1,
 		nil,
-		showCmdOptionSid, // TODO
 		showCmdOptionVerbose,
 	)
 

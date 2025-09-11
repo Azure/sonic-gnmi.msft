@@ -107,7 +107,7 @@ type portLpmode struct {
 
 func getInterfaceTransceiverLpMode(args sdc.CmdArgs, options sdc.OptionMap) ([]byte, error) {
 	intf := args.At(0)
-	cmdParts := []string{"sfputil", "show", "lpmode"}
+	cmdParts := []string{"sudo", "sfputil", "show", "lpmode"}
 	if intf != "" {
 		cmdParts = append(cmdParts, "-p", intf)
 	}

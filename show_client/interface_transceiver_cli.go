@@ -2,7 +2,6 @@ package show_client
 
 import (
 	"encoding/json"
-	"errors"
 	"strings"
 
 	log "github.com/golang/glog"

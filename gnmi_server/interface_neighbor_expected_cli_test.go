@@ -148,7 +148,7 @@ func TestShowInterfaceNeighborExpected(t *testing.T) {
 				AddDataSet(t, ConfigDbNum, minDataFile)
 			},
 			wantCode: codes.OK,
-			wantVal:  []byte(`{"etp3":{"Neighbor":"DeviceC","NeighborPort":"Ethernet12","NeighborLoopback":"None","NeighborMgmt":"None","NeighborType":"None"}}`),
+			wantVal:  []byte(`{}`),
 			valTest:  true,
 		},
 	}

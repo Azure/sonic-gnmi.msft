@@ -1321,11 +1321,17 @@ func getInterfaceNeighborExpected(args sdc.CmdArgs, options sdc.OptionMap) ([]by
 		return nil, err
 	}
 
+	// Skip neighbor if its metadata (DEVICE_NEIGHBOR_METADATA) is missing (python try/except KeyError: pass)
 	buildEntry := func(canonIf string) (map[string]string, bool) {
 		device := GetFieldValueString(neighborTbl, canonIf, "", "name")
 		if device == "" {
 			return nil, false
 		}
+		// Require metadata key to exist (strict parity with python pass on KeyError)
+		if _, ok := metaTbl[device]; !ok {
+			return nil, false
+		}
+
 		remotePort := GetFieldValueString(neighborTbl, canonIf, "None", "port")
 		if remotePort == "" {
 			remotePort = "None"
@@ -1355,27 +1361,23 @@ func getInterfaceNeighborExpected(args sdc.CmdArgs, options sdc.OptionMap) ([]by
 	}
 
 	aliasMode := GetInterfaceNamingMode() == "alias"
-
-	// Collect and sort canonical keys
 	canonicalKeys := make([]string, 0, len(neighborTbl))
 	for k := range neighborTbl {
 		canonicalKeys = append(canonicalKeys, k)
 	}
 	canonicalKeys = natsortInterfaces(canonicalKeys)
 
-	// Build final map directly (alias or canonical keys depending on mode)
 	finalMap := make(map[string]map[string]string, len(canonicalKeys))
 	for _, c := range canonicalKeys {
 		if entry, ok := buildEntry(c); ok {
 			key := c
 			if aliasMode {
-				key = GetInterfaceNameForDisplay(c) // alias
+				key = GetInterfaceNameForDisplay(c)
 			}
 			finalMap[key] = entry
 		}
 	}
 
-	// Filter single interface
 	if intf != "" {
 		entry, ok := finalMap[intf]
 		if !ok {

@@ -197,6 +197,15 @@ func parseCPUSummary(s string) CPUSummary {
 	return summary
 }
 
+func extractNumber(data string) string {
+    re := regexp.MustCompile(`\d+`)
+    foundNumbers := re.FindAllString(data, -1)
+    if len(foundNumbers) > 0 {
+        return foundNumbers[0]
+    }
+    return ""
+}
+
 func parseMemorySummary(s string) MemorySummary {
 	var summary MemorySummary
 	// A simple approach based on splitting, but may be fragile

@@ -388,14 +388,6 @@ func init() {
 	)
 
 	// SHOW/processes
-	sdc.RegisterCliPath(
-		[]string{"SHOW", "process", "memory"},
-		getTopMemoryUsage,
-    	0,
-    	0,
-		nil,
-		showCmdOptionVerbose,
-	)
   sdc.RegisterCliPath(
 		[]string{"SHOW", "processes"},
 		getProcessesRoot,
@@ -414,6 +406,15 @@ func init() {
 		"SHOW/processes/summary[OPTIONS]: Show processes info",
 		0,
 		0,
+		nil,
+		showCmdOptionVerbose,
+	)
+	sdc.RegisterCliPath(
+		[]string{"SHOW", "process", "memory"},
+		getTopMemoryUsage,
+		"SHOW/processes/memory[OPTIONS]: Show processes information sorted by memory usage",
+    	0,
+    	0,
 		nil,
 		showCmdOptionVerbose,
 	)

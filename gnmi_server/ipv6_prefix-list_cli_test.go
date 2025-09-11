@@ -80,7 +80,20 @@ func TestGetIPv6PrefixList(t *testing.T) {
 			mockFile:    "../testdata/VTYSH_SHOW_IPV6_PREFIX-LIST_SINGLE.txt",
 		},
 		{
-			desc:       "multi Prefix list output",
+			desc:       "multi Prefix list output in one valid JSON block",
+			pathTarget: "SHOW",
+			textPbPath: `
+				elem: <name: "ipv6" >
+				elem: <name: "prefix-list" >
+			`,
+			wantRetCode: codes.OK,
+			wantRespVal:    []byte(multiExpectedResponse),
+			valTest:     true,
+			mockFile:    "../testdata/VTYSH_SHOW_IPV6_PREFIX-LIST_MULTI_IN_ONE.txt",
+		},
+		// There is a bug in vtysh that multiple JSON blocks are printed before FRR version 10.1
+		{
+			desc:       "multi Prefix list output in multiple valid JSON blocks",
 			pathTarget: "SHOW",
 			textPbPath: `
 				elem: <name: "ipv6" >

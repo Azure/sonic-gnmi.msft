@@ -399,8 +399,7 @@ func getIntfsFromConfigDB(intf string) ([]string, error) {
 }
 
 func getInterfaceFecStatus(args sdc.CmdArgs, options sdc.OptionMap) ([]byte, error) {
-	// TODO
-	intf, _ := options["interface"].String()
+	intf := args.At(0)
 
 	ports, err := getIntfsFromConfigDB(intf)
 	if err != nil {
@@ -804,8 +803,7 @@ func getSubInterfaceStatus(intf string) ([]byte, error) {
 
 func getInterfaceStatus(args sdc.CmdArgs, options sdc.OptionMap) ([]byte, error) {
 	isSubIntf := false
-	// TODO
-	intf, _ := options["interface"].String()
+	intf := args.At(0)
 	if intf != "" {
 		if intf == "subport" {
 			isSubIntf = true

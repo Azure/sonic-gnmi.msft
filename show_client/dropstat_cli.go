@@ -318,7 +318,7 @@ func getAlias(counterName string) string {
 		return counterName
 	}
 
-	aliasVal := toString(getOrDefault(aliasQuery, "alias", interface{}(counterName)))
+	aliasVal := fmt.Sprint(getOrDefault(aliasQuery, "alias", interface{}(counterName)))
 	return aliasVal
 }
 
@@ -340,7 +340,7 @@ func inGroup(counterStat string, objectStatMap string, group string) bool {
 		return false
 	}
 
-	return group == toString(getOrDefault(group_query, "group", ""))
+	return group == fmt.Sprint(getOrDefault(group_query, "group", ""))
 }
 
 // Checks whether the type of the given counter_stat is the same as counter_type.
@@ -362,7 +362,7 @@ func isType(counterStat string, objectStatMap string, counterType string) bool {
 		return false
 	}
 
-	return counterType == toString(getOrDefault(typeQuery, "type", ""))
+	return counterType == fmt.Sprint(getOrDefault(typeQuery, "type", ""))
 }
 
 // getEntry returns the CONFIG_DB DEBUG_COUNTER row for a given counterName.

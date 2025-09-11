@@ -118,6 +118,18 @@ func TestGetIPv6PrefixList(t *testing.T) {
 			mockFile:    "../testdata/VTYSH_SHOW_IPV6_PREFIX-LIST_MULTI.txt",
 		},
 		{
+			desc:       "invalid json output from vtysh command",
+			pathTarget: "SHOW",
+			textPbPath: `
+				elem: <name: "ipv6" >
+				elem: <name: "prefix-list">
+			`,
+			wantRetCode: codes.OK,
+			wantRespVal:    []byte(emptyExpected),
+			valTest:     true,
+			mockFile:    "../testdata/VTYSH_SHOW_IPV6_PREFIX-LIST_INVALID_JSON.txt",
+		},
+		{
 			desc:       "multi Prefix list output-filter by not exist prefix_list_name",
 			pathTarget: "SHOW",
 			textPbPath: `

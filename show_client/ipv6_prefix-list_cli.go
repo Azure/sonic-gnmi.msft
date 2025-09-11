@@ -64,7 +64,10 @@ func getIPv6PrefixList(args sdc.CmdArgs, options sdc.OptionMap) ([]byte, error) 
 	for {
 		var pl prefixListData
 		if err := decoder.Decode(&pl); err != nil {
-			break // End of input or error
+			if err.Error() != "EOF" {
+				log.Errorf("Failed to decode JSON OUTPUT:%v, from command %q, error: %v", rawOutput, vtyshIPv6PrefixListCommand, err)
+			}
+			break
 		}
 		blocks = append(blocks, pl)
 	}

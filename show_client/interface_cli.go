@@ -52,6 +52,21 @@ type namingModeResponse struct {
 	NamingMode string `json:"naming_mode"`
 }
 
+func calculateDiffCounters(oldCounter, newCounter, defaultValue string) string {
+	if oldCounter == defaultValue || newCounter == defaultValue {
+		return defaultValue
+	}
+	oldV, err := strconv.ParseInt(oldCounter, base10, 64)
+	if err != nil {
+		return defaultValue
+	}
+	newV, err := strconv.ParseInt(newCounter, base10, 64)
+	if err != nil || newV < oldV { // guard reset/rollover
+		return defaultValue
+	}
+	return strconv.FormatInt(newV-oldV, base10)
+}
+
 func calculateByteRate(rate string) string {
 	if rate == defaultMissingCounterValue {
 		return defaultMissingCounterValue
@@ -406,7 +421,7 @@ func getInterfaceFecStatus(args sdc.CmdArgs, options sdc.OptionMap) ([]byte, err
 		log.Errorf("Failed to get front panel ports: %v", err)
 		return nil, err
 	}
-	ports = natsortInterfaces(ports)
+	ports = NatsortInterfaces(ports)
 
 	portFecStatus := make([]map[string]string, 0, len(ports)+1)
 	for i := range ports {
@@ -784,7 +799,7 @@ func getSubInterfaceStatus(intf string) ([]byte, error) {
 		log.Errorf("Failed to get sub-interfaces from APPL_DB: %v", err)
 		return nil, err
 	}
-	ports = natsortInterfaces(ports)
+	ports = NatsortInterfaces(ports)
 
 	interfaceStatus := make([]map[string]string, 0, len(ports))
 	for i := range ports {
@@ -827,8 +842,8 @@ func getInterfaceStatus(args sdc.CmdArgs, options sdc.OptionMap) ([]byte, error)
 		log.Errorf("Failed to get portchannel list from CONFIG_DB: %v", err)
 		return nil, err
 	}
-	ports = natsortInterfaces(ports)
-	portchannels = natsortInterfaces(portchannels)
+	ports = NatsortInterfaces(ports)
+	portchannels = NatsortInterfaces(portchannels)
 	intfModeMap := getIntfModeMap(ports)
 	poModeMap := getPortchannelModeMap(portchannels)
 	poSpeedMap := getPortchannelSpeedMap(portchannels)
@@ -1085,7 +1100,7 @@ func getInterfaceSwitchportConfig(args sdc.CmdArgs, options sdc.OptionMap) ([]by
 		portchannels = append(portchannels, pc)
 	}
 	keys := append(ports, portchannels...)
-	keys = natsortInterfaces(keys)
+	keys = NatsortInterfaces(keys)
 
 	// Build VLAN membership maps
 	untaggedMap := make(map[string][]string)
@@ -1166,7 +1181,7 @@ func getInterfaceSwitchportStatus(args sdc.CmdArgs, options sdc.OptionMap) ([]by
 		portchannels = append(portchannels, pc)
 	}
 	keys := append(ports, portchannels...)
-	keys = natsortInterfaces(keys)
+	keys = NatsortInterfaces(keys)
 
 	// Emit switchportStatus
 	switchportStatus := make([]map[string]string, 0, len(keys))
@@ -1228,7 +1243,7 @@ func getInterfaceFlap(args sdc.CmdArgs, options sdc.OptionMap) ([]byte, error) {
 			ports = append(ports, p)
 		}
 	}
-	ports = natsortInterfaces(ports)
+	ports = NatsortInterfaces(ports)
 
 	// Build rows
 	rows := make([]map[string]string, 0, len(ports))

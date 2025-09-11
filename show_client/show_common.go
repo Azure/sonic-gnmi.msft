@@ -2,7 +2,6 @@ package show_client
 
 import (
 	"fmt"
-	"net"
 	"os"
 	"os/exec"
 	"sort"
@@ -289,22 +288,7 @@ func GetSumFields(data map[string]interface{}, key string, defaultValue string, 
 	return strconv.FormatInt(total, base10)
 }
 
-func calculateDiffCounters(oldCounter string, newCounter string, defaultValue string) string {
-	if oldCounter == defaultValue || newCounter == defaultValue {
-		return defaultValue
-	}
-	oldCounterValue, err := strconv.ParseInt(oldCounter, base10, 64)
-	if err != nil {
-		return defaultValue
-	}
-	newCounterValue, err := strconv.ParseInt(newCounter, base10, 64)
-	if err != nil {
-		return defaultValue
-	}
-	return strconv.FormatInt(newCounterValue-oldCounterValue, base10)
-}
-
-func natsortInterfaces(interfaces []string) []string {
+func NatsortInterfaces(interfaces []string) []string {
 	// Naturally sort the port list
 	sort.Sort(natural.StringSlice(interfaces))
 	return interfaces
@@ -393,27 +377,13 @@ func SplitCompositeKey(k string) (string, string, bool) {
 	return "", "", false
 }
 
-// getOrDefault returns m[key] when present; otherwise returns def.
+// GetOrDefault returns m[key] when present; otherwise returns def.
 // Safe to call with a nil map. Handy for nested map lookups with explicit defaults.
-func getOrDefault[T any](m map[string]T, key string, def T) T {
+func GetOrDefault[T any](m map[string]T, key string, def T) T {
 	if v, ok := m[key]; ok {
 		return v
 	}
 	return def
-}
-
-// matchIPFamily checks if prefix belongs to desired family
-func matchIPFamily(prefix string, wantIPv6 bool) bool {
-	host := prefix
-	if i := strings.IndexByte(prefix, '/'); i >= 0 {
-		host = prefix[:i]
-	}
-	ip := net.ParseIP(host)
-	if ip == nil {
-		return false
-	}
-	isV6 := ip.To4() == nil
-	return isV6 == wantIPv6
 }
 
 // ContainsString returns true if target is present in list.

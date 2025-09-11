@@ -1015,8 +1015,7 @@ func getInterfaceStatus(args sdc.CmdArgs, options sdc.OptionMap) ([]byte, error)
 }
 
 func getInterfaceAlias(args sdc.CmdArgs, options sdc.OptionMap) ([]byte, error) {
-	// TODO
-	intf, _ := options["interface"].String()
+	intf := args.At(0)
 	namingMode, _ := options[SonicCliIfaceMode].String()
 
 	// Read CONFIG_DB.PORT
@@ -1212,8 +1211,7 @@ func IsInterfaceInPortchannel(portchannelMemberTable map[string]interface{}, int
 }
 
 func getInterfaceFlap(args sdc.CmdArgs, options sdc.OptionMap) ([]byte, error) {
-	// TODO
-	intf, _ := options["interface"].String()
+	intf := args.At(0)
 	namingMode, _ := options[SonicCliIfaceMode].String()
 
 	// Query APPL_DB PORT_TABLE

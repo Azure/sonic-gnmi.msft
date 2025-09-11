@@ -109,7 +109,7 @@ func init() {
 		0,
 		1,
 		nil,
-		showCmdOptionInterface, // TODO: Take as arg not option
+		showCmdOptionInterface,
 		showCmdOptionSonicCliIfaceMode,
 		sdc.UnimplementedOption(showCmdOptionNamespace),
 		showCmdOptionDisplay,
@@ -173,7 +173,7 @@ func init() {
 		0,
 		1,
 		nil,
-		showCmdOptionInterface, // TODO: Take as arg not option
+		showCmdOptionInterface,
 		showCmdOptionSonicCliIfaceMode,
 	)
 	sdc.RegisterCliPath(

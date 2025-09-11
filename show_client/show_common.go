@@ -16,15 +16,20 @@ import (
 	"gopkg.in/yaml.v2"
 )
 
+const ConfigDBPortTable = "PORT"
 const AppDBPortTable = "PORT_TABLE"
 const StateDBPortTable = "PORT_TABLE"
+const ConfigDBPortChannelTable = "PORTCHANNEL"
+const AppDBPortChannelTable = "LAG_TABLE"
 const DefaultEmptyString = ""
 const StateDb = "STATE_DB"
 const ConfigDb = "CONFIG_DB"
+const ApplDb = "APPL_DB"
 const ConfigDbPort = "PORT"
 const FDBTable = "FDB_TABLE"
 const VlanSubInterfaceSeparator = '.'
 const SonicCliIfaceMode = "SONIC_CLI_IFACE_MODE"
+const Alias = "alias"
 
 const (
 	dbIndex    = 0 // The first index for a query will be the DB
@@ -227,6 +232,15 @@ func RemapAliasToPortNameForQueues(queueData map[string]interface{}) map[string]
 	return remapped
 }
 
+func GetNameForInterfaceAlias(intfAlias string) string {
+	aliasMap := sdc.AliasToPortNameMap()
+	if name, ok := aliasMap[intfAlias]; ok {
+		return name
+	} else {
+		return ""
+	}
+}
+
 func GetValueOrDefault(values map[string]interface{}, key string, defaultValue string) string {
 	if value, ok := values[key]; ok {
 		return fmt.Sprint(value)
@@ -274,35 +288,10 @@ func GetSumFields(data map[string]interface{}, key string, defaultValue string, 
 	return strconv.FormatInt(total, base10)
 }
 
-func calculateDiffCounters(oldCounter string, newCounter string, defaultValue string) string {
-	if oldCounter == defaultValue || newCounter == defaultValue {
-		return defaultValue
-	}
-	oldCounterValue, err := strconv.ParseInt(oldCounter, base10, 64)
-	if err != nil {
-		return defaultValue
-	}
-	newCounterValue, err := strconv.ParseInt(newCounter, base10, 64)
-	if err != nil {
-		return defaultValue
-	}
-	return strconv.FormatInt(newCounterValue-oldCounterValue, base10)
-}
-
-func natsortInterfaces(interfaces []string) []string {
+func NatsortInterfaces(interfaces []string) []string {
 	// Naturally sort the port list
 	sort.Sort(natural.StringSlice(interfaces))
 	return interfaces
-}
-
-// toString converts any value to string, returning the value directly if it is already a string.
-func toString(v interface{}) string {
-	switch x := v.(type) {
-	case string:
-		return x
-	default:
-		return fmt.Sprint(v)
-	}
 }
 
 func GetSortedKeys(m map[string]interface{}) []string {
@@ -331,11 +320,11 @@ func ParseKey(key interface{}, delimiter string) (string, string) {
 
 // GetInterfaceNameForDisplay returns alias when SONIC_CLI_IFACE_MODE=alias; otherwise the name.
 // It also preserves VLAN sub-interface suffix like Ethernet0.100.
-func GetInterfaceNameForDisplay(name string) string {
+func GetInterfaceNameForDisplay(name string, namingMode string) string {
 	if name == "" {
 		return name
 	}
-	if interfaceNamingMode := os.Getenv(SonicCliIfaceMode); interfaceNamingMode != "alias" {
+	if interfaceNamingMode := GetInterfaceNamingMode(namingMode); interfaceNamingMode != Alias {
 		return name
 	}
 
@@ -375,8 +364,9 @@ func GetInterfaceSwitchportMode(
 // SplitCompositeKey splits a two-part composite key using '|' or ':' delimiters.
 // Returns left, right, true on success; empty strings and false otherwise.
 // Examples:
-//   "Vlan100|Ethernet0" -> ("Vlan100", "Ethernet0", true)
-//   "PortChannel001:Ethernet4" -> ("PortChannel001", "Ethernet4", true)
+//
+//	"Vlan100|Ethernet0" -> ("Vlan100", "Ethernet0", true)
+//	"PortChannel001:Ethernet4" -> ("PortChannel001", "Ethernet4", true)
 func SplitCompositeKey(k string) (string, string, bool) {
 	if parts := strings.Split(k, "|"); len(parts) == 2 {
 		return parts[0], parts[1], true
@@ -385,4 +375,55 @@ func SplitCompositeKey(k string) (string, string, bool) {
 		return parts[0], parts[1], true
 	}
 	return "", "", false
+}
+
+// GetOrDefault returns m[key] when present; otherwise returns def.
+// Safe to call with a nil map. Handy for nested map lookups with explicit defaults.
+func GetOrDefault[T any](m map[string]T, key string, def T) T {
+	if v, ok := m[key]; ok {
+		return v
+	}
+	return def
+}
+
+// ContainsString returns true if target is present in list.
+func ContainsString(list []string, target string) bool {
+	for _, s := range list {
+		if s == target {
+			return true
+		}
+	}
+	return false
+}
+
+func Capitalize(s string) string {
+	if len(s) == 0 {
+		return s
+	}
+	return strings.ToUpper(s[:1]) + strings.ToLower(s[1:])
+}
+
+func GetInterfaceNamingMode(namingMode string) string {
+	if namingMode != "" {
+		return namingMode
+	}
+	return "default"
+}
+
+// TryConvertInterfaceNameFromAlias tries to convert an interface alias to its interface name.
+// If naming mode is "alias", attempts conversion; if conversion fails, returns error.
+func TryConvertInterfaceNameFromAlias(interfaceName string, namingMode string) (string, error) {
+	if GetInterfaceNamingMode(namingMode) == Alias {
+		alias := interfaceName
+		aliasMap := sdc.AliasToPortNameMap()
+		if itfName, ok := aliasMap[alias]; ok {
+			interfaceName = itfName
+		}
+
+		// AliasToName should return "" if not found
+		if interfaceName == "" || interfaceName == alias {
+			return "", fmt.Errorf("Cannot find interface name for alias %s", alias)
+		}
+	}
+	return interfaceName, nil
 }

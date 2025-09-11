@@ -1,0 +1,69 @@
+{
+  "PORT_TABLE|Ethernet0": {
+    "state": "ok",
+    "netdev_oper_status": "up",
+    "admin_status": "up",
+    "mtu": "9100",
+    "host_tx_ready": "true",
+    "supported_speeds": "200000,100000,50000,40000,25000,10000,1000",
+    "supported_fecs": "none,rs,fc,auto",
+    "NPU_SI_SETTINGS_SYNC_STATUS": "NPU_SI_SETTINGS_DEFAULT",
+    "rmt_adv_speeds": "N/A",
+    "speed": "200000",
+    "fec": "rs"
+  },
+  "PORT_TABLE|Ethernet40": {
+    "state": "ok",
+    "netdev_oper_status": "up",
+    "admin_status": "up",
+    "mtu": "9100",
+    "host_tx_ready": "true",
+    "supported_speeds": "200000,100000,50000,40000,25000,10000,1000",
+    "supported_fecs": "none,rs,fc,auto",
+    "NPU_SI_SETTINGS_SYNC_STATUS": "NPU_SI_SETTINGS_DEFAULT",
+    "rmt_adv_speeds": "N/A",
+    "speed": "200000"
+  },
+  "PORT_TABLE|Ethernet80": {
+    "state": "ok",
+    "netdev_oper_status": "up",
+    "admin_status": "up",
+    "mtu": "9100",
+    "host_tx_ready": "true",
+    "supported_speeds": "200000,100000,50000,40000,25000,10000,2500,1000",
+    "supported_fecs": "none,rs,fc,auto",
+    "NPU_SI_SETTINGS_SYNC_STATUS": "NPU_SI_SETTINGS_DEFAULT",
+    "rmt_adv_speeds": "N/A",
+    "speed": "2500",
+    "fec": "rs"
+  },
+  "PORT_TABLE|Ethernet120": {
+    "state": "ok",
+    "netdev_oper_status": "up",
+    "admin_status": "up",
+    "mtu": "9100",
+    "host_tx_ready": "true",
+    "supported_speeds": "200000,100000,50000,40000,25000,10000,1000",
+    "supported_fecs": "none,rs,fc,auto",
+    "NPU_SI_SETTINGS_SYNC_STATUS": "NPU_SI_SETTINGS_DEFAULT",
+    "rmt_adv_speeds": "N/A",
+    "speed": "1000",
+    "fec": "rs"
+  },
+  "TRANSCEIVER_INFO|Ethernet0": {
+    "type": "SFP",
+    "serial": "DEF0000000"
+  },
+  "TRANSCEIVER_INFO|Ethernet40": {
+    "type": "SFP",
+    "serial": "ABC123456"
+  },
+  "TRANSCEIVER_INFO|Ethernet80": {
+    "type": "SFP",
+    "serial": "XYZ987654"
+  },
+  "TRANSCEIVER_INFO|Ethernet120": {
+    "type": "RJ45",
+    "serial": "XYZ987654"
+  }
+}

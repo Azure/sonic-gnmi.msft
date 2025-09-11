@@ -10,12 +10,12 @@ import (
 const fieldBufferPool = "SAI_BUFFER_POOL_STAT_WATERMARK_BYTES"
 
 // User watermarks: align with Python 'show buffer_pool watermark' which uses USER_WATERMARKS: prefix
-func getBufferPoolWatermark(options sdc.OptionMap) ([]byte, error) {
+func getBufferPoolWatermark(args sdc.CmdArgs, options sdc.OptionMap) ([]byte, error) {
 	return getBufferPoolWatermarkByType(false)
 }
 
 // Persistent watermarks: align with Python 'show buffer_pool persistent-watermark'
-func getBufferPoolPersistentWatermark(options sdc.OptionMap) ([]byte, error) {
+func getBufferPoolPersistentWatermark(args sdc.CmdArgs, options sdc.OptionMap) ([]byte, error) {
 	return getBufferPoolWatermarkByType(true)
 }
 

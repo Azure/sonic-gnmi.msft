@@ -1,0 +1,16 @@
+{
+  "PORT_TABLE:Ethernet0": {
+    "flap_count": "3",
+    "admin_status": "up",
+    "oper_status": "down",
+    "last_up_time": "1000",
+    "last_down_time": "2000"
+  },
+  "PORT_TABLE:Ethernet1": {
+    "flap_count": "0",
+    "admin_status": "down",
+    "oper_status": "down",
+    "last_up_time": "Never",
+    "last_down_time": "1234"
+  }
+}

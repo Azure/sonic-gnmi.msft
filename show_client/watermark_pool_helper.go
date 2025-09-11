@@ -65,7 +65,7 @@ func collectBufferPoolWatermarks(pools map[string]string, tableName string, fiel
 
 		bytes := defaultMissingCounterValue
 		if val, ok := data[fieldName]; ok {
-			bytes = toString(val)
+			bytes = fmt.Sprint(val)
 		} else {
 			log.Errorf("Missing field %s in %s for pool %s oid %s -> Bytes=%s", fieldName, tableName, pool, oid, bytes)
 		}

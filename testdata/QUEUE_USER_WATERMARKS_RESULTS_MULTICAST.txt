@@ -1,0 +1,11 @@
+{
+    "Ethernet0": {
+        "MC2": "256"
+    },
+    "Ethernet40": {
+        "MC2": "N/A"
+    },
+    "Ethernet80": {
+        "MC2": "0"
+    }
+}

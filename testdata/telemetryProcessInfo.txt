@@ -1,0 +1,5 @@
+root           1  1.3  0.1  30544 26240 pts/0    Ss+  07:57   0:00 /usr/bin/python3 /usr/local/bin/supervisord
+root           8  0.3  0.1 124964 27540 pts/0    Sl   07:57   0:00 python3 /usr/bin/supervisor-proc-exit-listener --container-name telemetry
+root          11  0.0  0.0 222220  4236 pts/0    Sl   07:57   0:00 /usr/sbin/rsyslogd -n -iNONE
+root          11  0.0  0.0 222220  4236 pts/0    Sl
+

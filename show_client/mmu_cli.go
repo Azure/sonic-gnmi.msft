@@ -70,7 +70,7 @@ const (
 //  4. "164075364"
 //  5. "type"
 //  6. "egress"
-func getMmuConfig(options sdc.OptionMap) ([]byte, error) {
+func getMmuConfig(args sdc.CmdArgs, options sdc.OptionMap) ([]byte, error) {
 	lossless, err := getTableAsNestedMap(ConfigDb, cfgTableDefaultLossless)
 	if err != nil {
 		log.Errorf("[show mmu]|Failed to read %s: %v", cfgTableDefaultLossless, err)
@@ -93,7 +93,7 @@ func getMmuConfig(options sdc.OptionMap) ([]byte, error) {
 		Profiles:                profiles,
 	}
 
-	if v, ok := options["verbose"].Bool(); ok && v {
+	if v, ok := options[OptionKeyVerbose].Bool(); ok && v {
 		resp.Totals = &MmuTotals{
 			Pools:    len(pools),
 			Profiles: len(profiles),

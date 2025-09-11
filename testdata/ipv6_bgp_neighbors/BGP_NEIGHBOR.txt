@@ -1,0 +1,22 @@
+{
+    "BGP_NEIGHBOR|fc00::7a": {
+        "admin_status": "up",
+        "asn": "64600",
+        "holdtime": "10",
+        "keepalive": "3",
+        "local_addr": "fc00::79",
+        "name": "ARISTA03T1",
+        "nhopself": "0",
+        "rrclient": "0"
+    },
+    "BGP_NEIGHBOR|fc00::72": {
+        "admin_status": "up",
+        "asn": "64600",
+        "holdtime": "10",
+        "keepalive": "3",
+        "local_addr": "fc00::71",
+        "name": "ARISTA01T1",
+        "nhopself": "0",
+        "rrclient": "0"
+    }
+}

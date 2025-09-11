@@ -42,7 +42,7 @@ func TestShowClientOptions(t *testing.T) {
 	portRatesFileName := "../testdata/PORT_RATES.txt"
 	portTableFileName := "../testdata/PORT_TABLE.txt"
 
-	showInterfaceCountersHelp := `{"options":{"display":"[display=all] No-op since no-multi-asic support","help":"[help=true]Show this message","interfaces":"[interfaces=TEXT] Filter by interfaces name","json":"[json=true] No-op since response is in json format","namespace":"UNIMPLEMENTED","period":"[period=INTEGER] Display statistics over a specified period (in seconds)","verbose":"[verbose=true] Enable verbose output"},"subcommands":null}`
+	showInterfaceCountersHelp := `{"options":{"display":"[display=all] No-op since no-multi-asic support","help":"[help=true]Show this message","interfaces":"[interfaces=TEXT] Filter by interfaces name","json":"[json=true] No-op since response is in json format","namespace":"UNIMPLEMENTED","period":"[period=INTEGER] Display statistics over a specified period (in seconds)","verbose":"[verbose=true] Enable verbose output"},"subcommands":{"detailed":"show/interfaces/counters/detailed: Show interface counters detailed","errors":"show/interfaces/counters/errors: Show interface counters errors","fec-histogram":"show/interfaces/counters/fec-histogram: Show interface counters fec-histogram","fec-stats":"show/interfaces/counters/fec-stats: Show interface counters rates","rates":"show/interfaces/counters/rates: Show interface counters rates","rif":"show/interfaces/counters/rif: Show interface counters rif","trim":"show/interfaces/counters/trim: Show interface counters trim"},"usage":{"desc":"SHOW/interfaces/counters[OPTIONS]: Show interface counters"}}`
 	interfaceCountersSelectPorts := `{"Ethernet0":{"State":"U","RxOk":"149903","RxBps":"25.12 B/s","RxUtil":"0.00%","RxErr":"0","RxDrp":"957","RxOvr":"0","TxOk":"144782","TxBps":"773.23 KB/s","TxUtil":"0.01%","TxErr":"0","TxDrp":"2","TxOvr":"0"}}`
 
 	ResetDataSetsAndMappings(t)
@@ -57,10 +57,10 @@ func TestShowClientOptions(t *testing.T) {
 		testInit    func()
 	}{
 		{
-			desc:       "query SHOW interface counters[help=True]",
+			desc:       "query SHOW interfaces counters[help=True]",
 			pathTarget: "SHOW",
 			textPbPath: `
-				elem: <name: "interface" >
+				elem: <name: "interfaces" >
 				elem: <name: "counters" key: { key: "help" value: "True" }>
 			`,
 			wantRetCode: codes.OK,
@@ -68,10 +68,10 @@ func TestShowClientOptions(t *testing.T) {
 			valTest:     true,
 		},
 		{
-			desc:       "query SHOW interface counters[interfaces=Ethernet0][help=False]",
+			desc:       "query SHOW interfaces counters[interfaces=Ethernet0][help=False]",
 			pathTarget: "SHOW",
 			textPbPath: `
-				elem: <name: "interface" >
+				elem: <name: "interfaces" >
 				elem: <name: "counters" 
 				      key: { key: "interfaces" value: "Ethernet0" }
 				      key: { key: "help" value: "false" }>
@@ -88,10 +88,10 @@ func TestShowClientOptions(t *testing.T) {
 			},
 		},
 		{
-			desc:       "query SHOW interface counters[interfaces-Ethernet0][period=foobar]",
+			desc:       "query SHOW interfaces counters[interfaces-Ethernet0][period=foobar]",
 			pathTarget: "SHOW",
 			textPbPath: `
-				elem: <name: "interface" >
+				elem: <name: "interfaces" >
 				elem: <name: "counters"
 				      key: { key: "interfaces" value: "Ethernet0" }
 				      key: { key: "period" value: "foobar" }>
@@ -100,10 +100,10 @@ func TestShowClientOptions(t *testing.T) {
 		},
 
 		{
-			desc:       "query SHOW interface counters[interfaces-Ethernet0][period=5][foo=bar]",
+			desc:       "query SHOW interfaces counters[interfaces-Ethernet0][period=5][foo=bar]",
 			pathTarget: "SHOW",
 			textPbPath: `
-				elem: <name: "interface" >
+				elem: <name: "interfaces" >
 				elem: <name: "counters"
 				      key: { key: "interfaces" value: "Ethernet0" }
 				      key: { key: "period" value: "5" }
@@ -112,25 +112,36 @@ func TestShowClientOptions(t *testing.T) {
 			wantRetCode: codes.InvalidArgument,
 		},
 		{
-			desc:       "query SHOW interface errors missing interface",
+			desc:       "query SHOW interfaces errors missing interface",
 			pathTarget: "SHOW",
 			textPbPath: `
-				elem: <name: "interface" >
+				elem: <name: "interfaces" >
 				elem: <name: "errors">
 			`,
 			wantRetCode: codes.InvalidArgument,
 		},
 		{
-			desc:       "query SHOW interface counters[interfaces-Ethernet0][period=5][namespace=all]",
+			desc:       "query SHOW interfaces counters[interfaces-Ethernet0][period=5][namespace=all]",
 			pathTarget: "SHOW",
 			textPbPath: `
-				elem: <name: "interface" >
+				elem: <name: "interfaces" >
 				elem: <name: "counters"
 				      key: { key: "interfaces" value: "Ethernet0" }
 				      key: { key: "period" value: "5" }
 				      key: { key: "namespace" value: "all" }>
 			`,
 			wantRetCode: codes.Unimplemented,
+		},
+		{
+			desc:       "query SHOW ipv6 bgp neighbors[info_type] - wrong info_type",
+			pathTarget: "SHOW",
+			textPbPath: `
+				elem: <name: "ipv6" >
+				elem: <name: "bgp" >
+				elem: <name: "neighbors"
+				      key: { key: "info_type" value: "unknown" } key: {key: "ipaddress" value: "fc00::72"}>
+			`,
+			wantRetCode: codes.InvalidArgument,
 		},
 	}
 

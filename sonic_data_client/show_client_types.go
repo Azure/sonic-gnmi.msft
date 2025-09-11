@@ -8,15 +8,18 @@ type ShowCmdOption struct {
 	optType     OptionType // 0 means required, 1 means optional, -1 means unimplemented, all other values means invalid argument
 	description string     // will be used in help output
 	valueType   ValueType
+	enumValues  []string // valid only when valueType is EnumValue
 }
 
 type OptionValue struct {
 	value interface{}
 }
 
+type CmdArgs []string
+
 type OptionMap map[string]OptionValue
 
-type DataGetter func(options OptionMap) ([]byte, error)
+type DataGetter func(args CmdArgs, options OptionMap) ([]byte, error)
 
 type TablePath = tablePath
 
@@ -24,6 +27,9 @@ type ShowPathConfig struct {
 	dataGetter  DataGetter
 	options     map[string]ShowCmdOption
 	description map[string]map[string]string
+	minArgs     int // 0 means no args required, all numbers greater are required
+	maxArgs     int // 0 means no args allowed, -1 means any number of args
+	regLen      int // length of registered prefix
 }
 
 var (
@@ -39,6 +45,7 @@ const (
 	StringSliceValue ValueType = 1
 	BoolValue        ValueType = 2
 	IntValue         ValueType = 3
+	EnumValue        ValueType = 4
 
 	Required      OptionType = 0
 	Optional      OptionType = 1
@@ -46,6 +53,14 @@ const (
 
 	showCmdOptionHelpDesc = "[help=true]Show this message"
 )
+
+func (args CmdArgs) At(index int) string {
+	val := ""
+	if len(args) > index {
+		val = args[index]
+	}
+	return val
+}
 
 func (ov OptionValue) String() (string, bool) {
 	s, ok := ov.value.(string)
@@ -67,12 +82,13 @@ func (ov OptionValue) Int() (int, bool) {
 	return i, ok
 }
 
-func NewShowCmdOption(name string, desc string, valType ValueType) ShowCmdOption {
+func NewShowCmdOption(name string, desc string, valType ValueType, enumVals ...string) ShowCmdOption {
 	return ShowCmdOption{
 		optName:     name,
 		optType:     Optional,
 		description: desc,
 		valueType:   valType,
+		enumValues:  enumVals,
 	}
 }
 

@@ -1,0 +1,4 @@
+{
+  "PORT|Ethernet0": { "alias": "etp1" },
+  "PORT|Ethernet8": { "alias": "etp2" }
+}

@@ -9,7 +9,7 @@ import (
 
 // getEcnProfiles fetches all WRED_PROFILE entries from CONFIG_DB.
 // Redis keys: "WRED_PROFILE|<profile_name>"
-func getEcnProfiles(options sdc.OptionMap) ([]byte, error) {
+func getEcnProfiles(args sdc.CmdArgs, options sdc.OptionMap) ([]byte, error) {
 	queries := [][]string{
 		{"CONFIG_DB", "WRED_PROFILE", "*"},
 	}

@@ -32,21 +32,21 @@ New JSON schema per PortChannel (key = numeric ID without 'PortChannel' prefix):
 	    "Protocol": {
 	      "name": "LACP",
 	      "active": true,
-	      "oper_status": "up",        // "up" | "down" | ""
-	      "status_valid": true        // false if oper_status unavailable, meant 'N/A' before
+	      "operational_status": "up"   // "up" | "down" | "N/A" (when unavailable)
 	    },
 	    "Ports": [
 	      {
 	        "name": "Ethernet0",
 	        "selected": true,
-	        "status": "enabled",       // "enabled" | "disabled" | ""
-	        "in_sync": true            // false meant '*' before
+	        "status": "enabled",         // "enabled" | "disabled" | ""
+	        "in_sync": true              // false previously shown as '*'
 	      }
 	    ]
 	  }
 	}
 */
-func getInterfacePortchannel(options sdc.OptionMap) ([]byte, error) {
+func getInterfacePortchannel(args sdc.CmdArgs, options sdc.OptionMap) ([]byte, error) {
+	namingMode, _ := options[SonicCliIfaceMode].String()
 	cfgPC, err := GetMapFromQueries([][]string{{"CONFIG_DB", "PORTCHANNEL"}})
 	if err != nil {
 		return nil, err
@@ -74,10 +74,10 @@ func getInterfacePortchannel(options sdc.OptionMap) ([]byte, error) {
 		applLag:     applLag,
 		stateLagMem: stateLagMember,
 		applLagMem:  applLagMember,
-		aliasMode:   (GetInterfaceNamingMode() == "alias"),
+		aliasMode:   (namingMode == "alias"),
 	}
 
-	result := ts.getTeamshowResult()
+	result := ts.getTeamshowResult(namingMode)
 	return json.Marshal(result)
 }
 
@@ -128,12 +128,13 @@ admin@sonic:~$ redis-cli -n 0 HGETALL "LAG_TABLE:PortChannel102"
 func (t *teamShow) getPortchannelStatus(pc string) map[string]interface{} {
 	active := GetFieldValueString(t.stateLag, pc, "", "runner.active") == "true"
 	oper := strings.ToLower(GetFieldValueString(t.applLag, pc, "", "oper_status"))
-	statusValid := oper == "up" || oper == "down"
+	if oper != "up" && oper != "down" {
+		oper = "N/A"
+	}
 	return map[string]interface{}{
-		"name":         "LACP",
-		"active":       active,
-		"oper_status":  oper,
-		"status_valid": statusValid,
+		"name":               "LACP",
+		"active":             active,
+		"operational_status": oper,
 	}
 }
 
@@ -154,7 +155,7 @@ func (t *teamShow) getPortchannelMemberStatus(pc, member string) (bool, string) 
 }
 
 // Structured members list
-func (t *teamShow) getPortchannelMembers(pc string) []map[string]interface{} {
+func (t *teamShow) getPortchannelMembers(pc string, namingMode string) []map[string]interface{} {
 	prefix := pc + "|"
 	var members []string
 	for k := range t.stateLagMem {
@@ -173,7 +174,7 @@ func (t *teamShow) getPortchannelMembers(pc string) []map[string]interface{} {
 
 		display := mem
 		if t.aliasMode {
-			display = GetInterfaceNameForDisplay(mem)
+			display = GetInterfaceNameForDisplay(mem, namingMode)
 		}
 		out = append(out, map[string]interface{}{
 			"name":     display,
@@ -195,7 +196,7 @@ func getTeamID(team string) string {
 }
 
 // Build final structured result
-func (t *teamShow) getTeamshowResult() map[string]map[string]interface{} {
+func (t *teamShow) getTeamshowResult(namingMode string) map[string]map[string]interface{} {
 	names := t.getPortchannelNames()
 	res := make(map[string]map[string]interface{}, len(names))
 	for _, pc := range names {
@@ -203,7 +204,7 @@ func (t *teamShow) getTeamshowResult() map[string]map[string]interface{} {
 		res[teamID] = map[string]interface{}{
 			"Team Dev": pc,
 			"Protocol": t.getPortchannelStatus(pc),
-			"Ports":    t.getPortchannelMembers(pc),
+			"Ports":    t.getPortchannelMembers(pc, namingMode),
 		}
 	}
 	return res

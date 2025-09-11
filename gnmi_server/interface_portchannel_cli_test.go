@@ -35,6 +35,7 @@ func TestShowInterfacePortchannel(t *testing.T) {
 	lagTableApplFile := "../testdata/LAG_TABLE_APPL_EXPECTED.txt"
 	lagMemberTableStateFile := "../testdata/LAG_MEMBER_TABLE_STATE_EXPECTED.txt"
 	lagMemberTableApplFile := "../testdata/LAG_MEMBER_TABLE_APPL_EXPECTED.txt"
+	portAliasFile := "../testdata/PORT_ALIAS_EXPECTED.txt"
 
 	tests := []struct {
 		desc       string
@@ -59,7 +60,26 @@ func TestShowInterfacePortchannel(t *testing.T) {
 				elem: <name: "portchannel">
 			`,
 			wantCode: codes.OK,
-			wantVal:  `{"101":{"Team Dev":"PortChannel101","Protocol":{"name":"LACP","active":true,"oper_status":"up","status_valid":true},"Ports":[{"name":"Ethernet0","selected":true,"status":"enabled","in_sync":true}]},"102":{"Team Dev":"PortChannel102","Protocol":{"name":"LACP","active":true,"oper_status":"down","status_valid":true},"Ports":[{"name":"Ethernet0","selected":false,"status":"disabled","in_sync":true}]},"103":{"Team Dev":"PortChannel103","Protocol":{"name":"LACP","active":false,"oper_status":"up","status_valid":true},"Ports":[{"name":"Ethernet0","selected":true,"status":"enabled","in_sync":true},{"name":"Ethernet8","selected":false,"status":"disabled","in_sync":true}]}}`,
+			wantVal:  `{"101":{"Team Dev":"PortChannel101","Protocol":{"name":"LACP","active":true,"operational_status":"up"},"Ports":[{"name":"Ethernet0","selected":true,"status":"enabled","in_sync":true}]},"102":{"Team Dev":"PortChannel102","Protocol":{"name":"LACP","active":true,"operational_status":"down"},"Ports":[{"name":"Ethernet0","selected":false,"status":"disabled","in_sync":true}]},"103":{"Team Dev":"PortChannel103","Protocol":{"name":"LACP","active":false,"operational_status":"up"},"Ports":[{"name":"Ethernet0","selected":true,"status":"enabled","in_sync":true},{"name":"Ethernet8","selected":false,"status":"disabled","in_sync":true}]}}`,
+			valTest:  true,
+		},
+		{
+			desc: "alias mode via path key: member ports rendered with aliases",
+			init: func() {
+				FlushDataSet(t, ConfigDbNum)
+				AddDataSet(t, ConfigDbNum, portchannelFile)
+				AddDataSet(t, StateDbNum, lagTableStateFile)
+				AddDataSet(t, StateDbNum, lagMemberTableStateFile)
+				AddDataSet(t, ApplDbNum, lagTableApplFile)
+				AddDataSet(t, ApplDbNum, lagMemberTableApplFile)
+				AddDataSet(t, ConfigDbNum, portAliasFile)
+			},
+			textPbPath: `
+				elem: <name: "interfaces">
+				elem: <name: "portchannel" key: { key: "SONIC_CLI_IFACE_MODE" value: "alias" } >
+			`,
+			wantCode: codes.OK,
+			wantVal:  `{"101":{"Team Dev":"PortChannel101","Protocol":{"name":"LACP","active":true,"operational_status":"up"},"Ports":[{"name":"etp1","selected":true,"status":"enabled","in_sync":true}]},"102":{"Team Dev":"PortChannel102","Protocol":{"name":"LACP","active":true,"operational_status":"down"},"Ports":[{"name":"etp1","selected":false,"status":"disabled","in_sync":true}]},"103":{"Team Dev":"PortChannel103","Protocol":{"name":"LACP","active":false,"operational_status":"up"},"Ports":[{"name":"etp1","selected":true,"status":"enabled","in_sync":true},{"name":"etp2","selected":false,"status":"disabled","in_sync":true}]}}`,
 			valTest:  true,
 		},
 	}

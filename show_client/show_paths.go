@@ -109,7 +109,7 @@ func init() {
 		0,
 		1,
 		nil,
-		showCmdOptionInterface, // TODO: Take as arg not option
+		showCmdOptionSonicCliIfaceMode,
 		sdc.UnimplementedOption(showCmdOptionNamespace),
 		showCmdOptionDisplay,
 	)
@@ -172,7 +172,7 @@ func init() {
 		0,
 		1,
 		nil,
-		showCmdOptionInterface, // TODO: Take as arg not option
+		showCmdOptionSonicCliIfaceMode,
 	)
 	sdc.RegisterCliPath(
 		[]string{"SHOW", "interfaces", "neighbor", "expected"},
@@ -182,6 +182,7 @@ func init() {
 		1,
 		nil,
 		showCmdOptionInterface, // TODO: Take as arg not option
+		showCmdOptionSonicCliIfaceMode,
 	)
 	sdc.RegisterCliPath(
 		[]string{"SHOW", "interfaces", "naming_mode"},
@@ -191,6 +192,7 @@ func init() {
 		0,
 		nil,
 		showCmdOptionVerbose,
+		showCmdOptionSonicCliIfaceMode,
 	)
 	sdc.RegisterCliPath(
 		[]string{"SHOW", "interfaces", "status"},
@@ -210,7 +212,7 @@ func init() {
 		0,
 		0,
 		nil,
-		showCmdOptionInterface, // TODO: CLI doesnt support
+		showCmdOptionSonicCliIfaceMode,
 	)
 	sdc.RegisterCliPath(
 		[]string{"SHOW", "interfaces", "switchport", "status"},
@@ -219,7 +221,7 @@ func init() {
 		0,
 		0,
 		nil,
-		showCmdOptionInterface, // CLI doesnt support
+		showCmdOptionSonicCliIfaceMode,
 	)
 	sdc.RegisterCliPath(
 		[]string{"SHOW", "interfaces", "transceiver", "error-status"},
@@ -468,7 +470,15 @@ func init() {
 		sdc.UnimplementedOption(showCmdOptionNamespace),
 		showCmdOptionJson,
 	)
-
+	sdc.RegisterCliPath(
+		[]string{"SHOW", "ipv6", "prefix-list"},
+		getIPv6PrefixList,
+		"SHOW/ipv6/prefix-list/{prefix_list_name}[OPTIONS]: Show IPv6 prefix-lists",
+		0,
+		1,
+		nil,
+		showCmdOptionVerbose,
+	)
 	// SHOW/reboot-cause
 	sdc.RegisterCliPath(
 		[]string{"SHOW", "reboot-cause"},
@@ -609,5 +619,25 @@ func init() {
 		showCmdOptionInterfaces,
 		sdc.UnimplementedOption(showCmdOptionNamespace),
 		showCmdOptionJson,
+	)
+
+	sdc.RegisterCliPath(
+		[]string{"SHOW", "interfaces", "portchannel"},
+		getInterfacePortchannel,
+		"SHOW/interfaces/portchannel[OPTIONS]: Show interface portchannel",
+		0,
+		0,
+		nil,
+		showCmdOptionVerbose,
+		showCmdOptionSonicCliIfaceMode,
+	)
+	sdc.RegisterCliPath(
+		[]string{"SHOW", "ecn"},
+		getEcnProfiles,
+		"SHOW/ecn[OPTIONS]: Show ECN profiles",
+		0,
+		0,
+		nil,
+		showCmdOptionVerbose,
 	)
 }

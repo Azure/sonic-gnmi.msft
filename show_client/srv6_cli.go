@@ -40,7 +40,7 @@ func getSRv6Stats(args sdc.CmdArgs, options sdc.OptionMap) ([]byte, error) {
 		sids = append(sids, fmt.Sprintf("%s", k))
 	}
 	// Natsort the slice
-	sids = natsortInterfaces(sids)
+	sids = NatsortInterfaces(sids)
 
 	sidCounters := make([]map[string]string, 0, len(sids))
 	for _, sid := range sids {

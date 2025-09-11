@@ -5,28 +5,29 @@ import (
 )
 
 const (
-	showCmdOptionUnimplementedDesc = "UNIMPLEMENTED"
-	showCmdOptionDisplayDesc       = "[display=all] No-op since no-multi-asic support"
-	showCmdOptionVerboseDesc       = "[verbose=true] Enable verbose output"
-	showCmdOptionInterfacesDesc    = "[interfaces=TEXT] Filter by interfaces name" // TODO: Change from interfaces to interface
-	showCmdOptionInterfaceDesc     = "[interface=TEXT] Filter by single interface name"
-	showCmdOptionPortDesc          = "[port=TEXT] Filter by single port name"
-	showCmdOptionVlanDesc          = "[vlan=INTEGER] Filter by VLAN ID"
-	showCmdOptionAddressDesc       = "[address=TEXT] Filter by MAC address"
-	showCmdOptionTypeDesc          = "[type=TEXT] Filter by MAC type (static/dynamic)"
-	showCmdOptionCountDesc         = "[count=true] Only show the count of MAC addresses"
-	showCmdOptionDomDesc           = "[dom=false] Also display Digital Optical Monitoring (DOM) data"
-	showCmdOptionPeriodDesc        = "[period=INTEGER] Display statistics over a specified period (in seconds)"
-	showCmdOptionJsonDesc          = "[json=true] No-op since response is in json format"
-	showCmdOptionSidDesc           = "[sid=TEXT] Filter by SRv6 SID"
-	showCmdOptionNonzeroDesc       = "[nonzero=true] Display only non-zero values"
-	showCmdOptionTrimDesc          = "[trim=true] Display only trim counters"
-	showCmdOptionGroupDesc         = "[group=TEXT] Filter by logical counter group (eg RX_DROPS, TX_ERR)"
-	showCmdOptionCounterTypeDesc   = "[counter_type=TEXT] Filter by counter type (eg PORT_INGRESS_DROPS, SWITCH_EGRESS_DROPS)"
-	showCmdOptionIPAddressDesc     = "[ipaddress=TEXT] Filter by single IP address"
-	showCmdOptionIPV6AddressDesc   = "[ipaddress=TEXT] Filter by IPv6 address"
-	showCmdOptionInfoTypeDesc      = "[info_type=TEXT] Filter by information type"
-	showCmdOptionFrrRouteArgsDesc  = "[args=TEXT] Filter by FRR route arguments"
+	showCmdOptionUnimplementedDesc     = "UNIMPLEMENTED"
+	showCmdOptionDisplayDesc           = "[display=all] No-op since no-multi-asic support"
+	showCmdOptionVerboseDesc           = "[verbose=true] Enable verbose output"
+	showCmdOptionInterfacesDesc        = "[interfaces=TEXT] Filter by interfaces name" // TODO: Change from interfaces to interface
+	showCmdOptionInterfaceDesc         = "[interface=TEXT] Filter by single interface name"
+	showCmdOptionPortDesc              = "[port=TEXT] Filter by single port name"
+	showCmdOptionVlanDesc              = "[vlan=INTEGER] Filter by VLAN ID"
+	showCmdOptionAddressDesc           = "[address=TEXT] Filter by MAC address"
+	showCmdOptionTypeDesc              = "[type=TEXT] Filter by MAC type (static/dynamic)"
+	showCmdOptionCountDesc             = "[count=true] Only show the count of MAC addresses"
+	showCmdOptionDomDesc               = "[dom=false] Also display Digital Optical Monitoring (DOM) data"
+	showCmdOptionPeriodDesc            = "[period=INTEGER] Display statistics over a specified period (in seconds)"
+	showCmdOptionJsonDesc              = "[json=true] No-op since response is in json format"
+	showCmdOptionSidDesc               = "[sid=TEXT] Filter by SRv6 SID"
+	showCmdOptionNonzeroDesc           = "[nonzero=true] Display only non-zero values"
+	showCmdOptionTrimDesc              = "[trim=true] Display only trim counters"
+	showCmdOptionGroupDesc             = "[group=TEXT] Filter by logical counter group (eg RX_DROPS, TX_ERR)"
+	showCmdOptionCounterTypeDesc       = "[counter_type=TEXT] Filter by counter type (eg PORT_INGRESS_DROPS, SWITCH_EGRESS_DROPS)"
+	showCmdOptionIPAddressDesc         = "[ipaddress=TEXT] Filter by single IP address"
+	showCmdOptionIPV6AddressDesc       = "[ipaddress=TEXT] Filter by IPv6 address"
+	showCmdOptionInfoTypeDesc          = "[info_type=TEXT] Filter by information type"
+	showCmdOptionFrrRouteArgsDesc      = "[args=TEXT] Filter by FRR route arguments"
+	showCmdOptionSonicCliIfaceModeDesc = "[SONIC_CLI_IFACE_MODE=TEXT] Filter by sonic interface naming mode (eg alias/default)"
 )
 
 // Option keys
@@ -181,6 +182,12 @@ var (
 	showCmdOptionFrrRouteArgs = sdc.NewShowCmdOption(
 		"args",
 		showCmdOptionFrrRouteArgsDesc,
+		sdc.StringValue,
+	)
+
+	showCmdOptionSonicCliIfaceMode = sdc.NewShowCmdOption(
+		SonicCliIfaceMode,
+		showCmdOptionSonicCliIfaceModeDesc,
 		sdc.StringValue,
 	)
 )

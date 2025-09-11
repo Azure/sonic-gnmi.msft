@@ -64,7 +64,7 @@ func parseProcessLine(line string) (*TopProcess, error) {
         }, nil
 }
 
-func getTopMemoryUsage(options sdc.OptionMap) ([]byte, error) {
+func getTopMemoryUsage(args sdc.CmdArgs, options sdc.OptionMap) ([]byte, error) {
         output, err := GetDataFromHostCommand(topMemoryCommand)
 
         if err != nil {

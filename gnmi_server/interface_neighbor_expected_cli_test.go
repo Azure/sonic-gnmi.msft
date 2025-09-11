@@ -1,10 +1,9 @@
 package gnmi
 
-// Enriched tests for SHOW/interfaces/neighbor/expected
+// Tests for SHOW/interfaces/neighbor/expected
 
 import (
 	"crypto/tls"
-	"fmt"
 	"testing"
 	"time"
 
@@ -13,8 +12,6 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/credentials"
-
-	show_client "github.com/sonic-net/sonic-gnmi/show_client"
 )
 
 // getInterfaceNeighborExpected returns JSON like:
@@ -35,118 +32,143 @@ func TestShowInterfaceNeighborExpected(t *testing.T) {
 	defer ResetDataSetsAndMappings(t)
 
 	tlsConfig := &tls.Config{InsecureSkipVerify: true}
-	opts := []grpc.DialOption{grpc.WithTransportCredentials(credentials.NewTLS(tlsConfig))}
-	conn, err := grpc.Dial(TargetAddr, opts...)
+	conn, err := grpc.Dial(TargetAddr, grpc.WithTransportCredentials(credentials.NewTLS(tlsConfig)))
 	if err != nil {
 		t.Fatalf("Dial failed: %v", err)
 	}
 	defer conn.Close()
-
 	gClient := pb.NewGNMIClient(conn)
-	ctx, cancel := context.WithTimeout(context.Background(), QueryTimeout*time.Second)
-	defer cancel()
-
-	basePath := `
-      elem: <name:"interfaces">
-      elem: <name:"neighbor">
-      elem: <name:"expected">
-    `
 
 	fullDataFile := "../testdata/NEIGHBOR_EXPECTED_FULL.txt"
 	minDataFile := "../testdata/NEIGHBOR_EXPECTED_MIN.txt"
 
-	const expectedEmpty = `{}`
-
 	type tc struct {
-		desc     string
-		envMode  string
-		init     func()
-		addArg   string // optional single interface argument (alias or canonical)
-		wantCode codes.Code
-		wantVal  []byte
-		valTest  bool
+		desc       string
+		init       func()
+		pathTarget string
+		textPbPath string
+		wantCode   codes.Code
+		wantVal    []byte
+		valTest    bool
 	}
 
 	tests := []tc{
 		{
-			desc:    "empty tables default mode -> {}",
-			envMode: "",
-			init: func() {
-				// no data loaded
-			},
+			desc:       "empty tables default mode -> {}",
+			init:       func() {},
+			pathTarget: "SHOW",
+			textPbPath: `
+              elem: <name:"interfaces">
+              elem: <name:"neighbor">
+              elem: <name:"expected">
+            `,
 			wantCode: codes.OK,
 			wantVal:  []byte(`{}`),
 			valTest:  true,
 		},
 		{
-			desc:    "all neighbors default mode (canonical keys)",
-			envMode: "",
+			desc: "all neighbors default mode (canonical keys)",
 			init: func() {
 				AddDataSet(t, ConfigDbNum, fullDataFile)
 			},
+			pathTarget: "SHOW",
+			textPbPath: `
+              elem: <name:"interfaces">
+              elem: <name:"neighbor">
+              elem: <name:"expected">
+            `,
 			wantCode: codes.OK,
-			// Keys are canonical (Ethernet0, Ethernet2)
-			wantVal: []byte(`{"Ethernet0":{"Neighbor":"DeviceA","NeighborPort":"Ethernet10","NeighborLoopback":"10.0.0.1","NeighborMgmt":"192.168.0.1","NeighborType":"Leaf"},"Ethernet2":{"Neighbor":"DeviceB","NeighborPort":"Ethernet11","NeighborLoopback":"10.0.0.2","NeighborMgmt":"192.168.0.2","NeighborType":"Spine"}}`),
-			valTest: true,
+			wantVal:  []byte(`{"Ethernet0":{"Neighbor":"DeviceA","NeighborPort":"Ethernet10","NeighborLoopback":"10.0.0.1","NeighborMgmt":"192.168.0.1","NeighborType":"Leaf"},"Ethernet2":{"Neighbor":"DeviceB","NeighborPort":"Ethernet11","NeighborLoopback":"10.0.0.2","NeighborMgmt":"192.168.0.2","NeighborType":"Spine"}}`),
+			valTest:  true,
 		},
 		{
-			desc:    "all neighbors alias mode (alias keys)",
-			envMode: "alias",
+			desc: "all neighbors alias mode (alias keys)",
 			init: func() {
 				AddDataSet(t, ConfigDbNum, fullDataFile)
 			},
+			pathTarget: "SHOW",
+			textPbPath: `
+              elem: <name:"interfaces">
+              elem: <name:"neighbor">
+              elem: <name:"expected" key:{ key:"SONIC_CLI_IFACE_MODE" value:"alias" } >
+            `,
 			wantCode: codes.OK,
 			wantVal:  []byte(`{"etp1":{"Neighbor":"DeviceA","NeighborPort":"Ethernet10","NeighborLoopback":"10.0.0.1","NeighborMgmt":"192.168.0.1","NeighborType":"Leaf"},"etp2":{"Neighbor":"DeviceB","NeighborPort":"Ethernet11","NeighborLoopback":"10.0.0.2","NeighborMgmt":"192.168.0.2","NeighborType":"Spine"}}`),
 			valTest:  true,
 		},
 		{
-			desc:    "single interface alias mode valid alias",
-			envMode: "alias",
+			desc: "single interface alias mode valid alias",
 			init: func() {
 				AddDataSet(t, ConfigDbNum, fullDataFile)
 			},
-			addArg:   "etp1",
+			pathTarget: "SHOW",
+			textPbPath: `
+              elem: <name:"interfaces">
+              elem: <name:"neighbor">
+              elem: <name:"expected" key:{ key:"SONIC_CLI_IFACE_MODE" value:"alias" } >
+              elem: <name:"etp1">
+            `,
 			wantCode: codes.OK,
 			wantVal:  []byte(`{"etp1":{"Neighbor":"DeviceA","NeighborPort":"Ethernet10","NeighborLoopback":"10.0.0.1","NeighborMgmt":"192.168.0.1","NeighborType":"Leaf"}}`),
 			valTest:  true,
 		},
 		{
-			desc:    "single interface default mode canonical",
-			envMode: "",
+			desc: "single interface default mode canonical",
 			init: func() {
 				AddDataSet(t, ConfigDbNum, fullDataFile)
 			},
-			addArg:   "Ethernet2",
+			pathTarget: "SHOW",
+			textPbPath: `
+              elem: <name:"interfaces">
+              elem: <name:"neighbor">
+              elem: <name:"expected">
+              elem: <name:"Ethernet2">
+            `,
 			wantCode: codes.OK,
 			wantVal:  []byte(`{"Ethernet2":{"Neighbor":"DeviceB","NeighborPort":"Ethernet11","NeighborLoopback":"10.0.0.2","NeighborMgmt":"192.168.0.2","NeighborType":"Spine"}}`),
 			valTest:  true,
 		},
 		{
-			desc:    "alias mode invalid canonical should error",
-			envMode: "alias",
+			desc: "alias mode invalid canonical should error",
 			init: func() {
 				AddDataSet(t, ConfigDbNum, fullDataFile)
 			},
-			addArg:   "Ethernet0",
+			pathTarget: "SHOW",
+			textPbPath: `
+              elem: <name:"interfaces">
+              elem: <name:"neighbor">
+              elem: <name:"expected" key:{ key:"SONIC_CLI_IFACE_MODE" value:"alias" } >
+              elem: <name:"Ethernet0">
+            `,
 			wantCode: codes.InvalidArgument,
 			valTest:  false,
 		},
 		{
-			desc:    "alias mode invalid alias",
-			envMode: "alias",
+			desc: "alias mode invalid alias",
 			init: func() {
 				AddDataSet(t, ConfigDbNum, fullDataFile)
 			},
-			addArg:   "etp9",
+			pathTarget: "SHOW",
+			textPbPath: `
+              elem: <name:"interfaces">
+              elem: <name:"neighbor">
+              elem: <name:"expected" key:{ key:"SONIC_CLI_IFACE_MODE" value:"alias" } >
+              elem: <name:"etp9">
+            `,
 			wantCode: codes.InvalidArgument,
 			valTest:  false,
 		},
 		{
-			desc:    "missing metadata fields -> None defaults",
-			envMode: "alias",
+			desc: "missing metadata fields -> None defaults",
 			init: func() {
 				AddDataSet(t, ConfigDbNum, minDataFile)
 			},
+			pathTarget: "SHOW",
+			textPbPath: `
+              elem: <name:"interfaces">
+              elem: <name:"neighbor">
+              elem: <name:"expected" key:{ key:"SONIC_CLI_IFACE_MODE" value:"alias" } >
+            `,
 			wantCode: codes.OK,
 			wantVal:  []byte(`{}`),
 			valTest:  true,
@@ -157,22 +179,12 @@ func TestShowInterfaceNeighborExpected(t *testing.T) {
 		tc := tc
 		t.Run(tc.desc, func(t *testing.T) {
 			ResetDataSetsAndMappings(t)
-			if tc.envMode != "" {
-				t.Setenv(show_client.SonicCliIfaceMode, tc.envMode)
-			} else {
-				t.Setenv(show_client.SonicCliIfaceMode, "")
-			}
 			if tc.init != nil {
 				tc.init()
 			}
-
-			// Build path (append interface arg element if needed)
-			path := basePath
-			if tc.addArg != "" {
-				path += fmt.Sprintf(`elem: <name:"%s">`, tc.addArg)
-			}
-
-			runTestGet(t, ctx, gClient, "SHOW", path, tc.wantCode, tc.wantVal, tc.valTest)
+			ctx, cancel := context.WithTimeout(context.Background(), QueryTimeout*time.Second)
+			defer cancel()
+			runTestGet(t, ctx, gClient, tc.pathTarget, tc.textPbPath, tc.wantCode, tc.wantVal, tc.valTest)
 		})
 	}
 }

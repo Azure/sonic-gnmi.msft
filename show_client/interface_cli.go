@@ -1307,9 +1307,9 @@ func getInterfaceFlap(args sdc.CmdArgs, options sdc.OptionMap) ([]byte, error) {
 // 5) "type"
 // 6) "BackEndLeafRouter"
 func getInterfaceNeighborExpected(args sdc.CmdArgs, options sdc.OptionMap) ([]byte, error) {
-	// TODO: Supports an interfacename as arg
+	intf := args.At(0)
 	namingMode, _ := options[SonicCliIfaceMode].String()
-	// Fetch DEVICE_NEIGHBOR
+
 	neighborTbl, err := GetMapFromQueries([][]string{{"CONFIG_DB", "DEVICE_NEIGHBOR"}})
 	if err != nil {
 		log.Errorf("Failed to get DEVICE_NEIGHBOR: %v", err)
@@ -1321,13 +1321,12 @@ func getInterfaceNeighborExpected(args sdc.CmdArgs, options sdc.OptionMap) ([]by
 		return nil, err
 	}
 
-	// Skip neighbor if its metadata (DEVICE_NEIGHBOR_METADATA) is missing (python try/except KeyError: pass)
 	buildEntry := func(canonIf string) (map[string]string, bool) {
 		device := GetFieldValueString(neighborTbl, canonIf, "", "name")
 		if device == "" {
 			return nil, false
 		}
-		// Require metadata key to exist (strict parity with python pass on KeyError)
+		// Require metadata key to exist (python try/except KeyError: pass)
 		if _, ok := metaTbl[device]; !ok {
 			return nil, false
 		}
@@ -1349,9 +1348,7 @@ func getInterfaceNeighborExpected(args sdc.CmdArgs, options sdc.OptionMap) ([]by
 			ntype = "None"
 		}
 
-		displayIf := GetInterfaceNameForDisplay(localIf, namingMode)
-
-		out[displayIf] = map[string]string{
+		return map[string]string{
 			"Neighbor":         device,
 			"NeighborPort":     remotePort,
 			"NeighborLoopback": loopback,
@@ -1360,7 +1357,6 @@ func getInterfaceNeighborExpected(args sdc.CmdArgs, options sdc.OptionMap) ([]by
 		}, true
 	}
 
-	aliasMode := GetInterfaceNamingMode() == "alias"
 	canonicalKeys := make([]string, 0, len(neighborTbl))
 	for k := range neighborTbl {
 		canonicalKeys = append(canonicalKeys, k)
@@ -1371,8 +1367,8 @@ func getInterfaceNeighborExpected(args sdc.CmdArgs, options sdc.OptionMap) ([]by
 	for _, c := range canonicalKeys {
 		if entry, ok := buildEntry(c); ok {
 			key := c
-			if aliasMode {
-				key = GetInterfaceNameForDisplay(c)
+			if namingMode == "alias" {
+				key = GetInterfaceNameForDisplay(c, namingMode)
 			}
 			finalMap[key] = entry
 		}

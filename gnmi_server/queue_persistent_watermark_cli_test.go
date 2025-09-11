@@ -37,6 +37,7 @@ func TestGetQueuePersistentWatermarks(t *testing.T) {
 	queueOidMappingFileName := "../testdata/QUEUE_OID_MAPPING.txt"
 	queueTypeMappingFileName := "../testdata/QUEUE_TYPE_MAPPING.txt"
 	queuePersistentWatermarksFileName := "../testdata/QUEUE_PERSISTENT_WATERMARKS.txt"
+	rootQueuePersistentWatermarksHelp := []byte(`{"subcommands": {"all": "show/queue/persistent-watermark/all", "unicast": "show/queue/persistent-watermark/unicast", "multicast": "show/queue/persistent-watermark/multicast"}}`)
 	allQueuePersistentWatermarksAllPorts, err := os.ReadFile("../testdata/QUEUE_PERSISTENT_WATERMARKS_RESULTS_ALL.txt")
 	if err != nil {
 		t.Fatalf("Failed to read expected query results for persistent queue watermarks of all interfaces: %v", err)
@@ -66,11 +67,43 @@ func TestGetQueuePersistentWatermarks(t *testing.T) {
 		testInit    func()
 	}{
 		{
-			desc:       "query SHOW queue persistent-watermark NO DATA",  // Datasets are not loaded yet
+			desc:       "query SHOW queue persistent-watermark (root help)",
 			pathTarget: "SHOW",
 			textPbPath: `
 				elem: <name: "queue" >
-				elem: <name: "persistent-watermark" key: { key: "queue-type" value: "all" }>
+				elem: <name: "persistent-watermark" >
+			`,
+			wantRetCode: codes.OK,
+			wantRespVal: rootQueuePersistentWatermarksHelp,
+			valTest:     true,
+		},
+		{
+			desc:       "query SHOW queue persistent-watermark all NO DATA",
+			pathTarget: "SHOW",
+			textPbPath: `
+				elem: <name: "queue" >
+				elem: <name: "persistent-watermark" >
+				elem: <name: "all" >
+			`,
+			wantRetCode: codes.OK,
+		},
+		{
+			desc:       "query SHOW queue persistent-watermark unicast NO DATA",
+			pathTarget: "SHOW",
+			textPbPath: `
+				elem: <name: "queue" >
+				elem: <name: "persistent-watermark" >
+				elem: <name: "unicast" >
+			`,
+			wantRetCode: codes.OK,
+		},
+		{
+			desc:       "query SHOW queue persistent-watermark multicast NO DATA",
+			pathTarget: "SHOW",
+			textPbPath: `
+				elem: <name: "queue" >
+				elem: <name: "persistent-watermark" >
+				elem: <name: "multicast" >
 			`,
 			wantRetCode: codes.OK,
 		},
@@ -79,7 +112,8 @@ func TestGetQueuePersistentWatermarks(t *testing.T) {
 			pathTarget: "SHOW",
 			textPbPath: `
 				elem: <name: "queue" >
-				elem: <name: "persistent-watermark" key: { key: "queue-type" value: "all" }>
+				elem: <name: "persistent-watermark" >
+				elem: <name: "all" >
 			`,
 			wantRetCode: codes.OK,
 			wantRespVal: allQueuePersistentWatermarksAllPorts,
@@ -93,66 +127,72 @@ func TestGetQueuePersistentWatermarks(t *testing.T) {
 			},
 		},
 		{
-			desc:       "query SHOW queue persistent-watermark unicast queues for all interfaces",
+			desc:       "query SHOW queue persistent-watermark unicast for all interfaces",
 			pathTarget: "SHOW",
 			textPbPath: `
 				elem: <name: "queue" >
-				elem: <name: "persistent-watermark" key: { key: "queue-type" value: "unicast" }>
+				elem: <name: "persistent-watermark" >
+				elem: <name: "unicast" >
 			`,
 			wantRetCode: codes.OK,
 			wantRespVal: unicastQueuePersistentWatermarksAllPorts,
 			valTest:     true,
 		},
 		{
-			desc:       "query SHOW queue persistent-watermark multicast queues for all interfaces",
+			desc:       "query SHOW queue persistent-watermark multicast for all interfaces",
 			pathTarget: "SHOW",
 			textPbPath: `
 				elem: <name: "queue" >
-				elem: <name: "persistent-watermark" key: { key: "queue-type" value: "multicast" }>
+				elem: <name: "persistent-watermark" >
+				elem: <name: "multicast" >
 			`,
 			wantRetCode: codes.OK,
 			wantRespVal: multicastQueuePersistentWatermarksAllPorts,
 			valTest:     true,
 		},
 		{
-			desc:       "query SHOW queue persistent-watermark all queue types for Ethernet0",
+			desc:       "query SHOW queue persistent-watermark all for Ethernet0",
 			pathTarget: "SHOW",
 			textPbPath: `
 				elem: <name: "queue" >
-				elem: <name: "persistent-watermark" key: { key: "interfaces" value: "Ethernet0" } key: { key: "queue-type" value: "all" }>
+				elem: <name: "persistent-watermark" >
+				elem: <name: "all" key: { key: "interfaces" value: "Ethernet0" } >
 			`,
 			wantRetCode: codes.OK,
 			wantRespVal: allQueuePersistentWatermarksEth0,
 			valTest:     true,
 		},
 		{
-			desc:       "query SHOW queue persistent-watermark unicast queues for Ethernet40",
+			desc:       "query SHOW queue persistent-watermark unicast for Ethernet40",
 			pathTarget: "SHOW",
 			textPbPath: `
 				elem: <name: "queue" >
-				elem: <name: "persistent-watermark" key: { key: "interfaces" value: "Ethernet40" } key: { key: "queue-type" value: "unicast" }>
+				elem: <name: "persistent-watermark" >
+				elem: <name: "unicast" key: { key: "interfaces" value: "Ethernet40" } >
 			`,
 			wantRetCode: codes.OK,
 			wantRespVal: unicastQueuePersistentWatermarksEth40,
 			valTest:     true,
 		},
 		{
-			desc:       "query SHOW queue persistent-watermark multicast queues for Ethernet80",
+			desc:       "query SHOW queue persistent-watermark multicast for Ethernet80",
 			pathTarget: "SHOW",
 			textPbPath: `
 				elem: <name: "queue" >
-				elem: <name: "persistent-watermark" key: { key: "interfaces" value: "Ethernet80" } key: { key: "queue-type" value: "multicast" }>
+				elem: <name: "persistent-watermark" >
+				elem: <name: "multicast" key: { key: "interfaces" value: "Ethernet80" } >
 			`,
 			wantRetCode: codes.OK,
 			wantRespVal: multicastQueuePersistentWatermarksEth80,
 			valTest:     true,
 		},
 		{
-			desc:       "query SHOW queue persistent-watermark all queue types for Ethernet0 and Ethernet40",
+			desc:       "query SHOW queue persistent-watermark all for Ethernet0 and Ethernet40",
 			pathTarget: "SHOW",
 			textPbPath: `
 				elem: <name: "queue" >
-				elem: <name: "persistent-watermark" key: { key: "interfaces" value: "Ethernet0,Ethernet40" } key: { key: "queue-type" value: "all" }>
+				elem: <name: "persistent-watermark" >
+				elem: <name: "all" key: { key: "interfaces" value: "Ethernet0,Ethernet40" } >
 			`,
 			wantRetCode: codes.OK,
 			wantRespVal: allQueuePersistentWatermarksEth0And40,
@@ -160,29 +200,12 @@ func TestGetQueuePersistentWatermarks(t *testing.T) {
 		},
 		// Test cases for invalid requests
 		{
-			desc:       "query SHOW queue persistent-watermark interfaces option (invalid interface)",
+			desc:       "query SHOW queue persistent-watermark all for an invalid interface",
 			pathTarget: "SHOW",
 			textPbPath: `
 				elem: <name: "queue" >
-				elem: <name: "persistent-watermark" key: { key: "interfaces" value: "Ethernet7" } key: { key: "queue-type" value: "all" }>
-			`,
-			wantRetCode: codes.NotFound,
-		},
-		{
-			desc:       "query SHOW queue persistent-watermark no queue-type option",
-			pathTarget: "SHOW",
-			textPbPath: `
-				elem: <name: "queue" >
-				elem: <name: "persistent-watermark">
-			`,
-			wantRetCode: codes.InvalidArgument,
-		},
-		{
-			desc:       "query SHOW queue persistent-watermark invalid queue-type option",
-			pathTarget: "SHOW",
-			textPbPath: `
-				elem: <name: "queue" >
-				elem: <name: "persistent-watermark" key: { key: "interfaces" value: "Ethernet0" } key: { key: "queue-type" value: "dummy" }>
+				elem: <name: "persistent-watermark" >
+				elem: <name: "all" key: { key: "interfaces" value: "Ethernet7" } >
 			`,
 			wantRetCode: codes.NotFound,
 		},

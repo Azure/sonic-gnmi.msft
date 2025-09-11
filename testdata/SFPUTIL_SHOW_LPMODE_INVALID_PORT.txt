@@ -1,0 +1,3 @@
+Error: invalid port 'Ethernet33'
+
+Valid values for port: ['Ethernet0', 'Ethernet8', 'Ethernet16', 'Ethernet24', 'Ethernet32', 'Ethernet40', 'Ethernet48', 'Ethernet56', 'Ethernet64', 'Ethernet72', 'Ethernet80', 'Ethernet88', 'Ethernet96', 'Ethernet104', 'Ethernet112', 'Ethernet120', 'Ethernet128', 'Ethernet136', 'Ethernet144', 'Ethernet152', 'Ethernet160', 'Ethernet168', 'Ethernet176', 'Ethernet184', 'Ethernet192', 'Ethernet200', 'Ethernet208', 'Ethernet216']

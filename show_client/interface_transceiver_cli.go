@@ -2,6 +2,7 @@ package show_client
 
 import (
 	"encoding/json"
+	"errors"
 	"strings"
 
 	log "github.com/golang/glog"
@@ -105,13 +106,13 @@ type portLpmode struct {
 	Lpmode string `json:"Low-power Mode"`
 }
 
-func getInterfaceTransceiverLpMode(args sdc.CmdArgs, options sdc.OptionMap) ([]byte, error) {
-	var intf string
-	if v, ok := options["interface"].String(); ok {
-		intf = v
-	}
+var (
+	sfputilShowLpmodeCommand = "sudo sfputil show lpmode"
+)
 
-	cmd := "sudo sfputil show lpmode"
+func getInterfaceTransceiverLpMode(args sdc.CmdArgs, options sdc.OptionMap) ([]byte, error) {
+	intf := args.At(0)
+	cmd := sfputilShowLpmodeCommand
 	if intf != "" {
 		cmd += " -p " + intf
 	}
@@ -120,6 +121,10 @@ func getInterfaceTransceiverLpMode(args sdc.CmdArgs, options sdc.OptionMap) ([]b
 	if err != nil {
 		log.Errorf("Failed to execute '%s': %v", cmd, err)
 		return nil, err
+	}
+
+	if strings.HasPrefix(output, "Error: invalid port") {
+		return nil, errors.New(output)
 	}
 
 	lines := strings.Split(output, "\n")
@@ -135,16 +140,12 @@ func getInterfaceTransceiverLpMode(args sdc.CmdArgs, options sdc.OptionMap) ([]b
 			continue
 		}
 		port := fields[0]
-		mode := fields[len(fields)-1]
+		mode := fields[1]
 		ml := strings.ToLower(mode)
 		if ml == "on" || ml == "off" {
 			mode = strings.Title(ml)
 		}
-		log.Infof("Parsed port: '%s', lpmode: '%s'", port, mode)
-	}
-
-	if intf != "" && len(entries) == 0 {
-		entries = append(entries, portLpmode{Port: intf, Lpmode: "N/A"})
+		entries = append(entries, portLpmode{Port: port, Lpmode: mode})
 	}
 
 	return json.Marshal(entries)

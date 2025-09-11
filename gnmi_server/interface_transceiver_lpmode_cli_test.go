@@ -36,7 +36,6 @@ func TestShowInterfaceTransceiverLpMode(t *testing.T) {
 
 	expectedAll := `[{"Port":"Ethernet0","Low-power Mode":"Off"},{"Port":"Ethernet8","Low-power Mode":"Off"},{"Port":"Ethernet16","Low-power Mode":"On"}]`
 	expectedOne := `[{"Port":"Ethernet8","Low-power Mode":"Off"}]`
-	expectedMissing := `[{"Port":"Ethernet24","Low-power Mode":"N/A"}]`
 
 	tests := []struct {
 		desc        string
@@ -63,7 +62,8 @@ func TestShowInterfaceTransceiverLpMode(t *testing.T) {
 			path: `
 				elem: <name: "interfaces" >
 				elem: <name: "transceiver" >
-				elem: <name: "lpmode" key: { key: "interface" value: "Ethernet8" } >
+				elem: <name: "lpmode" >
+				elem: <name: "Ethernet8" >
 			`,
 			mockFile:    "../testdata/SFPUTIL_SHOW_LPMODE_Ethernet8.txt",
 			wantRetCode: codes.OK,
@@ -71,16 +71,17 @@ func TestShowInterfaceTransceiverLpMode(t *testing.T) {
 			valTest:     true,
 		},
 		{
-			desc:     "single missing port",
+			desc:     "invalid port error",
 			path: `
 				elem: <name: "interfaces" >
 				elem: <name: "transceiver" >
-				elem: <name: "lpmode" key: { key: "interface" value: "Ethernet24" } >
+				elem: <name: "lpmode" >
+				elem: <name: "Ethernet33" >
 			`,
-			mockFile:    "../testdata/SFPUTIL_SHOW_LPMODE_Ethernet24_EMPTY.txt",
-			wantRetCode: codes.OK,
-			wantRespVal: []byte(expectedMissing),
-			valTest:     true,
+			mockFile:    "../testdata/SFPUTIL_SHOW_LPMODE_INVALID_PORT.txt",
+			wantRetCode: codes.NotFound,
+			wantRespVal: nil,
+			valTest:     false,
 		},
 	}
 

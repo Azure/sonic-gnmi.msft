@@ -119,7 +119,6 @@ func getInterfaceTransceiverLpMode(args sdc.CmdArgs, options sdc.OptionMap) ([]b
 
 	output, err := GetDataFromHostCommand(cmd)
 	if err != nil {
-		log.Errorf("Failed to execute '%s': %v", cmd, err)
 		return nil, err
 	}
 

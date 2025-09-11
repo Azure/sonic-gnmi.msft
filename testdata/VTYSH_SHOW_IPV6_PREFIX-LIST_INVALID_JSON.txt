@@ -1,5 +1,4 @@
 {
-    "ZEBRA":,
     "BGP": {
         "DEFAULT_IPV6": {
             "addressFamily": "IPv6",
@@ -38,5 +37,6 @@
                 }
             ]
         }
-    }
+    },    
+    "ZEBRA":
 }

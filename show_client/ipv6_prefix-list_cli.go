@@ -19,6 +19,8 @@ package show_client
 
 import (
 	"encoding/json"
+    "errors"
+    "io"
 	"strings"
 
 	log "github.com/golang/glog"
@@ -47,10 +49,10 @@ type prefixList struct {
 type prefixListData map[string]map[string]prefixList
 
 func getIPv6PrefixList(args sdc.CmdArgs, options sdc.OptionMap) ([]byte, error) {
-	// Get prefix-list_namefrom args, if provided, default to ""
+	// Optional filter by prefix-list name (default empty means "all")
 	prefixListName := args.At(0)
 
-	// get raw Json output from vtysh command
+	// Get raw Json output from vtysh command
 	rawOutput, err := GetDataFromHostCommand(vtyshIPv6PrefixListCommand)
 	if err != nil {
 		log.Errorf("Unable to execute command %q, err=%v", vtyshIPv6PrefixListCommand, err)
@@ -59,64 +61,49 @@ func getIPv6PrefixList(args sdc.CmdArgs, options sdc.OptionMap) ([]byte, error) 
 
 	decoder := json.NewDecoder(strings.NewReader(rawOutput))
 
-	// Decode JSON output into prefixListData
-	var blocks []prefixListData
-	for {
-		var pl prefixListData
-		if err := decoder.Decode(&pl); err != nil {
-			if err.Error() != "EOF" {
-				log.Errorf("Failed to decode JSON OUTPUT:%v, from command %q, error: %v", rawOutput, vtyshIPv6PrefixListCommand, err)
-			}
-			break
-		}
-		blocks = append(blocks, pl)
-	}
-
-	// merge parsed blocks
+	// Build the final result directly as we decode each JSON block.
 	merged := make(prefixListData)
-	for _, block := range blocks {
-		for proto, lists := range block {
-			if _, exists := merged[proto]; !exists {
-				merged[proto] = make(map[string]prefixList)
-			}
-			for name, pl := range lists {
-				merged[proto][name] = pl
-			}
-		}
-	}
 
-	// If a specific prefix-list name is requested, filter the results
-	if prefixListName != "" {
-		filtered := make(prefixListData)
-		for proto, lists := range merged {
-			for name, pl := range lists {
-				if name == prefixListName {
-					if _, exists := filtered[proto]; !exists {
-						filtered[proto] = make(map[string]prefixList)
-					}
-					filtered[proto][name] = pl
-				}
-			}
-		}
-		merged = filtered
-	}
+	// Decode JSON output into prefixListData
+	 for {
+        var block prefixListData
+        if err := decoder.Decode(&block); err != nil {
+            if errors.Is(err, io.EOF) {
+                break // clean end of stream
+            }
+            log.Errorf("Failed to decode IPv6 prefix-list JSON: %v", err)
+            return nil, err
+        }
 
-	// If no data found after filtering, return empty JSON array
-	if len(merged) == 0 {
-		empty, err := json.Marshal([]interface{}{})
-		if err != nil {
-			log.Errorf("Failed to marshal empty result: %v", err)
-			return nil, err
-		}
-		return empty, nil
-	}
+        // Merge this block into the final map, with optional filtering by name.
+        for proto, lists := range block {
+            if prefixListName == "" {
+                // No filter: copy all lists; ensure dst exists.
+                protocolPrefixLists, ok := merged[proto]
+                if !ok {
+                    protocolPrefixLists = make(map[string]prefixList)
+                    merged[proto] = protocolPrefixLists
+                }
+                for name, pl := range lists {
+                    protocolPrefixLists[name] = pl // last-wins if repeated
+                }
+            } else {
+                // Filtered: only copy the requested list if present; create dst lazily.
+                if pl, ok := lists[prefixListName]; ok {
+                    protocolPrefixLists, ok := merged[proto]
+                    if !ok {
+                        protocolPrefixLists = make(map[string]prefixList)
+                        merged[proto] = protocolPrefixLists
+                    }
+                    protocolPrefixLists[prefixListName] = pl // last-wins if repeated
+                }
+            }
+        }
+    }
+	
+    if prefixListName != "" && len(merged) == 0 {
+        log.Infof("Prefix list %q not found in any protocol", prefixListName)
+    }
 
-	// marshal merged data back to JSON for downstream parsing
-	mergedJSON, err := json.Marshal(merged)
-	if err != nil {
-		log.Errorf("Failed to marshal merged IPv6 prefix-list data: %v", err)
-		return nil, err
-	}
-
-	return mergedJSON, nil
+	return json.Marshal(merged)
 }

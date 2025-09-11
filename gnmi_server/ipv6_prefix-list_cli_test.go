@@ -53,7 +53,7 @@ func TestGetIPv6PrefixList(t *testing.T) {
 	}
 
 	// expected empty response
-	emptyExpected, err := json.Marshal([]interface{}{})
+	emptyExpected, err := json.Marshal(map[string]interface {}{})
 	if err != nil {
 		t.Fatalf("Failed to marshal expected empty result, error: %v", err)
 	}
@@ -124,9 +124,8 @@ func TestGetIPv6PrefixList(t *testing.T) {
 				elem: <name: "ipv6" >
 				elem: <name: "prefix-list">
 			`,
-			wantRetCode: codes.OK,
-			wantRespVal:    []byte(emptyExpected),
-			valTest:     true,
+			wantRetCode: codes.NotFound,
+			valTest:     false,
 			mockFile:    "../testdata/VTYSH_SHOW_IPV6_PREFIX-LIST_INVALID_JSON.txt",
 		},
 		{

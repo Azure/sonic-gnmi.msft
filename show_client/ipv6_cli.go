@@ -50,7 +50,7 @@ var (
 	vtyshBGPIPv6BGPNeighborsCommand = "vtysh -c \"show bgp ipv6 neighbors json\""
 )
 
-func getIPv6BGPSummary(options sdc.OptionMap) ([]byte, error) {
+func getIPv6BGPSummary(args sdc.CmdArgs, options sdc.OptionMap) ([]byte, error) {
 	// Get data from vtysh command
 	vtyshOutput, err := GetDataFromHostCommand(vtyshBGPIPv6SummaryCommand)
 	if err != nil {
@@ -247,7 +247,8 @@ func getIPv6BGPNeighborsReceivedRoutes(ip string) ([]byte, error) {
 // show ipv6 bgp neighbors -> list all neighbors
 // show ipv6 bgp neighbors <ipaddress> -> show neighbor info
 // show ipv6 bgp neighbors <ipaddress> routes|advertised-routes|received-routes → show specific option
-func getIPv6BGPNeighborsHandler(options sdc.OptionMap) ([]byte, error) {
+func getIPv6BGPNeighborsHandler(args sdc.CmdArgs, options sdc.OptionMap) ([]byte, error) {
+	// TODO
 	ip, _ := options["ipaddress"].String()
 	info_type, _ := options["info_type"].String()
 
@@ -287,7 +288,7 @@ func getIPv6BGPNeighborsHandler(options sdc.OptionMap) ([]byte, error) {
 
 // Gets device ports including physical ports, port channel and vlan's ipv6_use_link_local_only configuration.
 // Returns JSON content consists of port name and link local setting.
-func getPortsIpv6LinkLocalMode(options sdc.OptionMap) ([]byte, error) {
+func getPortsIpv6LinkLocalMode(args sdc.CmdArgs, options sdc.OptionMap) ([]byte, error) {
 	type ItfLinkLocalMode struct {
 		Port string `json:"port"`
 		Mode string `json:"mode"`

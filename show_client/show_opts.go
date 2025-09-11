@@ -8,7 +8,7 @@ const (
 	showCmdOptionUnimplementedDesc = "UNIMPLEMENTED"
 	showCmdOptionDisplayDesc       = "[display=all] No-op since no-multi-asic support"
 	showCmdOptionVerboseDesc       = "[verbose=true] Enable verbose output"
-	showCmdOptionInterfacesDesc    = "[interfaces=TEXT] Filter by interfaces name"
+	showCmdOptionInterfacesDesc    = "[interfaces=TEXT] Filter by interfaces name" // TODO: Change from interfaces to interface
 	showCmdOptionInterfaceDesc     = "[interface=TEXT] Filter by single interface name"
 	showCmdOptionPortDesc          = "[port=TEXT] Filter by single port name"
 	showCmdOptionVlanDesc          = "[vlan=INTEGER] Filter by VLAN ID"
@@ -27,7 +27,6 @@ const (
 	showCmdOptionIPV6AddressDesc   = "[ipaddress=TEXT] Filter by IPv6 address"
 	showCmdOptionInfoTypeDesc      = "[info_type=TEXT] Filter by information type"
 	showCmdOptionFrrRouteArgsDesc  = "[args=TEXT] Filter by FRR route arguments"
-	showCmdOptionQueueTypeDesc     = "[queue-type=TEXT] Filter by queue type (unicast/multicast/all)"
 )
 
 // Option keys
@@ -56,7 +55,7 @@ var (
 	)
 
 	showCmdOptionInterfaces = sdc.NewShowCmdOption(
-		"interfaces",
+		"interfaces", // TODO: Change to interface
 		showCmdOptionInterfacesDesc,
 		sdc.StringSliceValue,
 	)
@@ -182,12 +181,6 @@ var (
 	showCmdOptionFrrRouteArgs = sdc.NewShowCmdOption(
 		"args",
 		showCmdOptionFrrRouteArgsDesc,
-		sdc.StringValue,
-	)
-
-	showCmdOptionQueueType = sdc.NewShowCmdOption(
-		"queue-type",
-		showCmdOptionQueueTypeDesc,
 		sdc.StringValue,
 	)
 )

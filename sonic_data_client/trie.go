@@ -86,6 +86,18 @@ func (t *Trie) Find(keys []string) (*Node, bool) {
 	return node, true
 }
 
+func (t *Trie) FindLongestPrefix(keys []string) (*Node, bool) {
+	if t == nil || t.root == nil || len(keys) < 2 {
+		return nil, false
+	}
+	for i := len(keys); i >= 2; i-- { // never match just ["SHOW"]
+		if n, ok := t.Find(keys[:i]); ok {
+			return n, true
+		}
+	}
+	return nil, false
+}
+
 // Creates and returns a pointer to a new child for the node.
 func (n *Node) NewChild(val string, meta interface{}, term bool) *Node {
 	node := &Node{

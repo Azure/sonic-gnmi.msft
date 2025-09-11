@@ -18,7 +18,7 @@ func SetTimezonesDir(dirPath string) {
 	zoneInfoDirPath = dirPath
 }
 
-func getDate(options sdc.OptionMap) ([]byte, error) {
+func getDate(args sdc.CmdArgs, options sdc.OptionMap) ([]byte, error) {
 	currentDate := time.Now().UTC().Format(time.UnixDate)
 	dateResponse := map[string]interface{}{
 		"date": currentDate,
@@ -26,7 +26,7 @@ func getDate(options sdc.OptionMap) ([]byte, error) {
 	return json.Marshal(dateResponse)
 }
 
-func getDateTimezone(options sdc.OptionMap) ([]byte, error) {
+func getDateTimezone(args sdc.CmdArgs, options sdc.OptionMap) ([]byte, error) {
 	timezones, err := zoneInfoRunner(zoneInfoDirPath)
 	if err != nil {
 		log.Errorf("Unable to get list of timezones from %v, %v", zoneInfoDirPath, err)

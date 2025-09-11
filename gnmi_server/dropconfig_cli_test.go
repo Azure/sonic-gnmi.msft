@@ -75,3 +75,80 @@ func TestShowDropcountersCapabilities(t *testing.T) {
 		})
 	}
 }
+
+func TestShowDropcountersConfiguration(t *testing.T) {
+	s := createServer(t, ServerPort)
+	go runServer(t, s)
+	defer s.ForceStop()
+	defer ResetDataSetsAndMappings(t)
+
+	tlsConfig := &tls.Config{InsecureSkipVerify: true}
+	opts := []grpc.DialOption{grpc.WithTransportCredentials(credentials.NewTLS(tlsConfig))}
+	conn, err := grpc.Dial(TargetAddr, opts...)
+	if err != nil {
+		t.Fatalf("Dial failed: %v", err)
+	}
+	defer conn.Close()
+
+	gClient := pb.NewGNMIClient(conn)
+	ctx, cancel := context.WithTimeout(context.Background(), QueryTimeout*time.Second)
+	defer cancel()
+
+	configDbFile := "../testdata/DEBUG_COUNTER_CONFIGURATION.json"
+	allData := `[{"alias":"GOOD_DROPS","description":"More port ingress drops","drop_count_threshold":"N/A","drop_monitor_status":"N/A","group":"GOOD","incident_count_threshold":"N/A","name":"DEBUG_1","reason":"SIP_LINK_LOCAL","type":"PORT_INGRESS_DROPS","window":"N/A"},{"alias":"BAD_DROPS","description":"More port ingress drops","drop_count_threshold":"N/A","drop_monitor_status":"N/A","group":"BAD","incident_count_threshold":"N/A","name":"DEBUG_2","reason":"ACL_ANY,EXCEEDS_L3_MTU","type":"PORT_INGRESS_DROPS","window":"N/A"}]`
+	singleGroupData := `[{"alias":"BAD_DROPS","description":"More port ingress drops","drop_count_threshold":"N/A","drop_monitor_status":"N/A","group":"BAD","incident_count_threshold":"N/A","name":"DEBUG_2","reason":"ACL_ANY,EXCEEDS_L3_MTU","type":"PORT_INGRESS_DROPS","window":"N/A"}]`
+
+	tests := []struct {
+		desc       string
+		init       func()
+		textPbPath string
+		wantCode   codes.Code
+		wantVal    []byte
+		valTest    bool
+	}{
+		{
+			desc: "show dropcounters configuration -- no data",
+			textPbPath: `
+              elem: <name: "dropcounters">
+              elem: <name: "configuration">
+            `,
+			wantCode: codes.OK,
+		},
+		{
+			desc: "show dropcounters configuration -- all data",
+			init: func() {
+				AddDataSet(t, ConfigDbNum, configDbFile)
+			},
+			textPbPath: `
+              elem: <name: "dropcounters">
+              elem: <name: "configuration">
+            `,
+			wantCode: codes.OK,
+			wantVal:  []byte(allData),
+			valTest:  true,
+		},
+		{
+			desc: "show dropcounters configuration -- single group",
+			init: func() {
+				AddDataSet(t, ConfigDbNum, configDbFile)
+			},
+			textPbPath: `
+              elem: <name: "dropcounters">
+              elem: <name: "configuration"
+			  	key: {key: "group" value: "BAD"}  >
+            `,
+			wantCode: codes.OK,
+			wantVal:  []byte(singleGroupData),
+			valTest:  true,
+		},
+	}
+
+	for _, tc := range tests {
+		if tc.init != nil {
+			tc.init()
+		}
+		t.Run(tc.desc, func(t *testing.T) {
+			runTestGet(t, ctx, gClient, "SHOW", tc.textPbPath, tc.wantCode, tc.wantVal, tc.valTest)
+		})
+	}
+}

@@ -2,7 +2,6 @@ package show_client
 
 import (
 	"encoding/json"
-	"fmt"
 	"strings"
 
 	log "github.com/golang/glog"
@@ -57,7 +56,7 @@ func getQueueWatermarksSnapshot(ifaces []string, requestedQueueType int, waterma
 	return response, nil
 }
 
-func getQueueWatermarks(options sdc.OptionMap, watermarkType string) ([]byte, error) {
+func getQueueWatermarksCommon(options sdc.OptionMap, requestedQueueType int, watermarkType string) ([]byte, error) {
 	if len(countersQueueTypeMap) == 0 {
 		var err error
 		countersQueueTypeMap, err = sdc.GetCountersQueueTypeMap()
@@ -72,22 +71,7 @@ func getQueueWatermarks(options sdc.OptionMap, watermarkType string) ([]byte, er
 		ifaces = interfaces
 	}
 
-	var queueTypeStr string
-	if queueTypeOpt, ok := options["queue-type"].String(); ok {
-		queueTypeStr = queueTypeOpt
-	}
-	var queueType int
-	if queueTypeStr == "all" {
-		queueType = ALL
-	} else if queueTypeStr == "unicast" {
-		queueType = UNICAST
-	} else if queueTypeStr == "multicast" {
-		queueType = MULTICAST
-	} else {
-		return nil, fmt.Errorf("Invalid queue-type option '%s'. Valid values are 'all', 'unicast', and 'multicast'", queueTypeStr)
-	}
-
-	snapshot, err := getQueueWatermarksSnapshot(ifaces, queueType, watermarkType)
+	snapshot, err := getQueueWatermarksSnapshot(ifaces, requestedQueueType, watermarkType)
 	if err != nil {
 		log.Errorf("Unable to get queue watermarks due to err: %v", err)
 		return nil, err
@@ -96,10 +80,48 @@ func getQueueWatermarks(options sdc.OptionMap, watermarkType string) ([]byte, er
 	return json.Marshal(snapshot)
 }
 
-func getQueueUserWatermarks(options sdc.OptionMap) ([]byte, error) {
-	return getQueueWatermarks(options, "USER_WATERMARKS")
+func getQueueUserWatermarks(args sdc.CmdArgs, options sdc.OptionMap) ([]byte, error) {
+	help := map[string]interface{}{
+		"subcommands": map[string]string{
+			"all":       "show/queue/watermark/all",
+			"unicast":   "show/queue/watermark/unicast",
+			"multicast": "show/queue/watermark/multicast",
+		},
+	}
+	return json.Marshal(help)
 }
 
-func getQueuePersistentWatermarks(options sdc.OptionMap) ([]byte, error) {
-	return getQueueWatermarks(options, "PERSISTENT_WATERMARKS")
+func getQueuePersistentWatermarks(args sdc.CmdArgs, options sdc.OptionMap) ([]byte, error) {
+	help := map[string]interface{}{
+		"subcommands": map[string]string{
+			"all":       "show/queue/persistent-watermark/all",
+			"unicast":   "show/queue/persistent-watermark/unicast",
+			"multicast": "show/queue/persistent-watermark/multicast",
+		},
+	}
+	return json.Marshal(help)
+}
+
+func getQueueUserWatermarksAll(args sdc.CmdArgs, options sdc.OptionMap) ([]byte, error) {
+	return getQueueWatermarksCommon(options, ALL, "USER_WATERMARKS")
+}
+
+func getQueueUserWatermarksUnicast(args sdc.CmdArgs, options sdc.OptionMap) ([]byte, error) {
+	return getQueueWatermarksCommon(options, UNICAST, "USER_WATERMARKS")
+}
+
+func getQueueUserWatermarksMulticast(args sdc.CmdArgs, options sdc.OptionMap) ([]byte, error) {
+	return getQueueWatermarksCommon(options, MULTICAST, "USER_WATERMARKS")
+}
+
+func getQueuePersistentWatermarksAll(args sdc.CmdArgs, options sdc.OptionMap) ([]byte, error) {
+	return getQueueWatermarksCommon(options, ALL, "PERSISTENT_WATERMARKS")
+}
+
+func getQueuePersistentWatermarksUnicast(args sdc.CmdArgs, options sdc.OptionMap) ([]byte, error) {
+	return getQueueWatermarksCommon(options, UNICAST, "PERSISTENT_WATERMARKS")
+}
+
+func getQueuePersistentWatermarksMulticast(args sdc.CmdArgs, options sdc.OptionMap) ([]byte, error) {
+	return getQueueWatermarksCommon(options, MULTICAST, "PERSISTENT_WATERMARKS")
 }

@@ -71,7 +71,7 @@ func TestShowInterfaceNeighborExpected(t *testing.T) {
 				FlushDataSet(t, ConfigDbNum)
 			},
 			textPbPath: `
-              elem: <name: "interface">
+              elem: <name: "interfaces">
               elem: <name: "neighbor">
               elem: <name: "expected">
             `,
@@ -87,7 +87,7 @@ func TestShowInterfaceNeighborExpected(t *testing.T) {
 				AddDataSet(t, ConfigDbNum, neighborMetaFile)
 			},
 			textPbPath: `
-              elem: <name: "interface">
+              elem: <name: "interfaces">
               elem: <name: "neighbor">
               elem: <name: "expected">
             `,
@@ -102,7 +102,7 @@ func TestShowInterfaceNeighborExpected(t *testing.T) {
 				AddDataSet(t, ConfigDbNum, neighborOnlyFile)
 			},
 			textPbPath: `
-              elem: <name: "interface">
+              elem: <name: "interfaces">
               elem: <name: "neighbor">
               elem: <name: "expected">
             `,
@@ -121,7 +121,7 @@ func TestShowInterfaceNeighborExpected(t *testing.T) {
 				t.Cleanup(func() { patch.Reset() })
 			},
 			textPbPath: `
-              elem: <name: "interface">
+              elem: <name: "interfaces">
               elem: <name: "neighbor">
               elem: <name: "expected">
             `,

@@ -409,6 +409,15 @@ func init() {
 		nil,
 		showCmdOptionVerbose,
 	)
+	sdc.RegisterCliPath(
+		[]string{"SHOW", "processes", "cpu"},
+		getProcessesCPU,
+		"SHOW/processes/cpu[OPTIONS]: Show processes CPU info",
+		0,
+		0,
+		nil,
+		showCmdOptionVerbose,
+	)
 
 	// SHOW/queue
 	sdc.RegisterCliPath(
@@ -572,11 +581,5 @@ func init() {
 		0,
 		0,
 		nil,
-	)
-	sdc.RegisterCliPath(
-		[]string{"SHOW", "processes", "cpu"},
-		getProcesesByCPU,
-		nil,
-		showCmdOptionVerbose,
 	)
 }

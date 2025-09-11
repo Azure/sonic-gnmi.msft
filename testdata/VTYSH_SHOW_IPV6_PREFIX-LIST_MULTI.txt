@@ -1,0 +1,62 @@
+{
+    "ZEBRA": {
+        "DEFAULT_IPV6": {
+            "addressFamily": "IPv6",
+            "entries": [
+                {
+                    "sequenceNumber": 5,
+                    "type": "permit",
+                    "prefix": "::/0",
+                    "maximumPrefixLength": 128
+                },
+                {
+                    "sequenceNumber": 10,
+                    "type": "permit",
+                    "prefix": "::/0",
+                    "maximumPrefixLength": 128
+                }
+            ]
+        }
+    }
+}
+{
+    "BGP": {
+        "DEFAULT_IPV6": {
+            "addressFamily": "IPv6",
+            "entries": [
+                {
+                    "sequenceNumber": 5,
+                    "type": "permit",
+                    "prefix": "::/0",
+                    "maximumPrefixLength": 128
+                },
+                {
+                    "sequenceNumber": 10,
+                    "type": "permit",
+                    "prefix": "::/0",
+                    "maximumPrefixLength": 128
+                }
+            ]
+        },
+        "LOCAL_VLAN_IPV6_PREFIX": {
+            "addressFamily": "IPv6",
+            "entries": [
+                {
+                    "sequenceNumber": 5,
+                    "type": "permit",
+                    "prefix": "ffff:1000::/64"
+                }
+            ]
+        },
+        "PL_LoopbackV6": {
+            "addressFamily": "IPv6",
+            "entries": [
+                {
+                    "sequenceNumber": 5,
+                    "type": "permit",
+                    "prefix": "cccc:1::/64"
+                }
+            ]
+        }
+    }
+}

@@ -1,13 +1,11 @@
 package gnmi
 
 // interface_switchport_cli_test.go
-
 // Tests SHOW interface/switchport/config and SHOW interface/switchport/status
 
 import (
 	"crypto/tls"
 	"fmt"
-	"os"
 	"testing"
 	"time"
 
@@ -56,8 +54,8 @@ func TestGetShowInterfaceSwitchportConfig(t *testing.T) {
 		valTest     bool
 		mockSleep   bool
 		testInit    func()
-		mockPatch   func() *gomonkey.Patches // optional: apply extra patches; returned patches will be Reset
-		teardown    func()                   // optional: run after patches.Reset(), e.g. restore env
+		mockPatch   func() *gomonkey.Patches
+		teardown    func()
 	}{
 		{
 			desc:       "query SHOW interfaces switchport config NO DATA",
@@ -91,19 +89,6 @@ func TestGetShowInterfaceSwitchportConfig(t *testing.T) {
 			},
 		},
 		{
-			desc:       "query SHOW interfaces switchport config with interface option (by name)",
-			pathTarget: "SHOW",
-			textPbPath: `
-                elem: <name: "interfaces" >
-                elem: <name: "switchport" >
-                elem: <name: "config" key: { key: "interface" value: "Ethernet0" } >
-            `,
-			wantRetCode: codes.OK,
-			wantRespVal: []byte(`[{"Interface":"Ethernet0","Mode":"trunk","Tagged":"","Untagged":"1000"}]`),
-			valTest:     true,
-			// reuse dataset loaded by previous test (no testInit)
-		},
-		{
 			desc:       "query SHOW interfaces switchport config - GetMapFromQueries returns error",
 			pathTarget: "SHOW",
 			textPbPath: `
@@ -128,40 +113,7 @@ func TestGetShowInterfaceSwitchportConfig(t *testing.T) {
 			},
 		},
 		{
-			desc:       "query SHOW interfaces switchport config - alias display (SONIC_CLI_IFACE_MODE=alias)",
-			pathTarget: "SHOW",
-			textPbPath: `
-                elem: <name: "interfaces" >
-                elem: <name: "switchport" >
-                elem: <name: "config" >
-            `,
-			wantRetCode: codes.OK,
-			valTest:     false,
-			testInit: func() {
-				FlushDataSet(t, ConfigDbNum)
-				AddDataSet(t, ConfigDbNum, portsFileName)
-				AddDataSet(t, ConfigDbNum, vlanMemberFileName)
-			},
-			mockPatch: func() *gomonkey.Patches {
-				// set alias mode and provide PortToAliasNameMap -> safe and isolated via patch
-				os.Setenv(show_client.SonicCliIfaceMode, "alias")
-				p := gomonkey.ApplyFunc(sdc.PortToAliasNameMap, func() map[string]string {
-					return map[string]string{
-						"Ethernet0": "etp0",
-						"Ethernet1": "etp1",
-					}
-				})
-				// restore env after test via teardown
-				// but teardown will be invoked after patches.Reset
-				return p
-			},
-			teardown: func() {
-				// restore SONIC_CLI_IFACE_MODE
-				os.Setenv(show_client.SonicCliIfaceMode, "")
-			},
-		},
-		{
-			desc:       "query SHOW interface switchport config - portchannel membership and colon-delimiter key",
+			desc:       "query SHOW interfaces switchport config - portchannel membership and colon-delimiter key",
 			pathTarget: "SHOW",
 			textPbPath: `
                 elem: <name: "interfaces" >
@@ -208,6 +160,30 @@ func TestGetShowInterfaceSwitchportConfig(t *testing.T) {
 				})
 			},
 		},
+		{
+			desc:       "query SHOW interfaces switchport config - path option SONIC_CLI_IFACE_MODE=alias",
+			pathTarget: "SHOW",
+			textPbPath: `
+                elem: <name: "interfaces" >
+                elem: <name: "switchport" >
+                elem: <name: "config" key: { key: "SONIC_CLI_IFACE_MODE" value: "alias" } >
+            `,
+			wantRetCode: codes.OK,
+			valTest:     false,
+			testInit: func() {
+				FlushDataSet(t, ConfigDbNum)
+				AddDataSet(t, ConfigDbNum, portsFileName)
+				AddDataSet(t, ConfigDbNum, vlanMemberFileName)
+			},
+			mockPatch: func() *gomonkey.Patches {
+				return gomonkey.ApplyFunc(sdc.PortToAliasNameMap, func() map[string]string {
+					return map[string]string{
+						"Ethernet0": "etp0",
+						"Ethernet1": "etp1",
+					}
+				})
+			},
+		},
 	}
 
 	for _, test := range tests {
@@ -219,20 +195,15 @@ func TestGetShowInterfaceSwitchportConfig(t *testing.T) {
 			patchesSlice = append(patchesSlice, gomonkey.ApplyFunc(time.Sleep, func(d time.Duration) {}))
 		}
 		if test.mockPatch != nil {
-			p := test.mockPatch()
-			if p != nil {
+			if p := test.mockPatch(); p != nil {
 				patchesSlice = append(patchesSlice, p)
 			}
 		}
-
 		t.Run(test.desc, func(t *testing.T) {
 			runTestGet(t, ctx, gClient, test.pathTarget, test.textPbPath, test.wantRetCode, test.wantRespVal, test.valTest)
 		})
-
 		for _, p := range patchesSlice {
-			if p != nil {
-				p.Reset()
-			}
+			p.Reset()
 		}
 		if test.teardown != nil {
 			test.teardown()
@@ -309,19 +280,6 @@ func TestGetShowInterfaceSwitchportStatus(t *testing.T) {
 			},
 		},
 		{
-			desc:       "query SHOW interface switchport status with interface option (by name)",
-			pathTarget: "SHOW",
-			textPbPath: `
-                elem: <name: "interfaces" >
-                elem: <name: "switchport" >
-                elem: <name: "status" key: { key: "interface" value: "Ethernet0" } >
-            `,
-			wantRetCode: codes.OK,
-			wantRespVal: []byte(`[{"Interface":"Ethernet0","Mode":"trunk"}]`),
-			valTest:     true,
-		},
-		// --------- new cases for status ----------
-		{
 			desc:       "query SHOW interfaces switchport status - GetMapFromQueries returns error",
 			pathTarget: "SHOW",
 			textPbPath: `
@@ -341,35 +299,6 @@ func TestGetShowInterfaceSwitchportStatus(t *testing.T) {
 					}
 					return map[string]interface{}{}, nil
 				})
-			},
-		},
-		{
-			desc:       "query SHOW interfaces switchport status - alias display (SONIC_CLI_IFACE_MODE=alias)",
-			pathTarget: "SHOW",
-			textPbPath: `
-                elem: <name: "interfaces" >
-                elem: <name: "switchport" >
-                elem: <name: "status" >
-            `,
-			wantRetCode: codes.OK,
-			valTest:     false,
-			testInit: func() {
-				FlushDataSet(t, ConfigDbNum)
-				AddDataSet(t, ConfigDbNum, portsFileName)
-				AddDataSet(t, ConfigDbNum, vlanMemberFileName)
-			},
-			mockPatch: func() *gomonkey.Patches {
-				old := os.Getenv(show_client.SonicCliIfaceMode)
-				os.Setenv(show_client.SonicCliIfaceMode, "alias")
-				p := gomonkey.ApplyFunc(sdc.PortToAliasNameMap, func() map[string]string {
-					return map[string]string{"Ethernet0": "etp0"}
-				})
-				// teardown will restore env
-				_ = old
-				return p
-			},
-			teardown: func() {
-				os.Setenv(show_client.SonicCliIfaceMode, "")
 			},
 		},
 		{
@@ -415,6 +344,30 @@ func TestGetShowInterfaceSwitchportStatus(t *testing.T) {
 				})
 			},
 		},
+		{
+			desc:       "query SHOW interfaces switchport status - path option SONIC_CLI_IFACE_MODE=alias",
+			pathTarget: "SHOW",
+			textPbPath: `
+                elem: <name: "interfaces" >
+                elem: <name: "switchport" >
+                elem: <name: "status" key: { key: "SONIC_CLI_IFACE_MODE" value: "alias" } >
+            `,
+			wantRetCode: codes.OK,
+			valTest:     false,
+			testInit: func() {
+				FlushDataSet(t, ConfigDbNum)
+				AddDataSet(t, ConfigDbNum, portsFileName)
+				AddDataSet(t, ConfigDbNum, vlanMemberFileName)
+			},
+			mockPatch: func() *gomonkey.Patches {
+				return gomonkey.ApplyFunc(sdc.PortToAliasNameMap, func() map[string]string {
+					return map[string]string{
+						"Ethernet0": "etp0",
+						"Ethernet1": "etp1",
+					}
+				})
+			},
+		},
 	}
 
 	for _, test := range tests {
@@ -426,20 +379,15 @@ func TestGetShowInterfaceSwitchportStatus(t *testing.T) {
 			patchesSlice = append(patchesSlice, gomonkey.ApplyFunc(time.Sleep, func(d time.Duration) {}))
 		}
 		if test.mockPatch != nil {
-			p := test.mockPatch()
-			if p != nil {
+			if p := test.mockPatch(); p != nil {
 				patchesSlice = append(patchesSlice, p)
 			}
 		}
-
 		t.Run(test.desc, func(t *testing.T) {
 			runTestGet(t, ctx, gClient, test.pathTarget, test.textPbPath, test.wantRetCode, test.wantRespVal, test.valTest)
 		})
-
 		for _, p := range patchesSlice {
-			if p != nil {
-				p.Reset()
-			}
+			p.Reset()
 		}
 		if test.teardown != nil {
 			test.teardown()

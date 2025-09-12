@@ -1,0 +1,11 @@
+{
+  "WRED_PROFILE|AZURE_LOSSLESS": {
+    "green_min_threshold": "400000",
+    "green_max_threshold": "400000",
+    "green_drop_probability": "5",
+    "wred_green_enable": "true"
+  },
+  "WRED_PROFILE|AZURE_LOSSY": {
+    "yellow_max_threshold": "200000"
+  }
+}

@@ -96,7 +96,7 @@ func getVlanDhcpHelperAddress(cfg vlanConfig, vlan string) interface{} {
 			}
 		}
 	}
-	ipAddress = natsortInterfaces(ipAddress)
+	ipAddress = NatsortInterfaces(ipAddress)
 	return ipAddress
 }
 

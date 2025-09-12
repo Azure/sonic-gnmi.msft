@@ -135,6 +135,17 @@ func init() {
 		showCmdOptionJson,
 		showCmdOptionVerbose,
 	)
+
+	// SHOW/interfaces/counters/rif
+	sdc.RegisterCliPath(
+		[]string{"SHOW", "interfaces", "counters", "rif"},
+		getInterfaceRifCounters,
+		"SHOW/interfaces/counters/rif/{INTERFACENAME}[OPTIONS]",
+		0,
+		1,
+		nil,
+		showCmdOptionPeriod,
+	)
 	sdc.RegisterCliPath(
 		[]string{"SHOW", "interfaces", "description"},
 		getInterfacesDescription,
@@ -589,16 +600,5 @@ func init() {
 		0,
 		nil,
 		showCmdOptionVerbose,
-	)
-
-	// SHOW/interfaces/counters/rif
-	sdc.RegisterCliPath(
-		[]string{"SHOW", "interfaces", "counters", "rif"},
-		getInterfaceRifCounters,
-		"SHOW/interfaces/counters/rif/{INTERFACENAME}[OPTIONS]",
-		0,
-		1,
-		nil,
-		showCmdOptionPeriod,
 	)
 }

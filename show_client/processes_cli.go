@@ -57,12 +57,12 @@ func getProcessesSummary(args sdc.CmdArgs, options sdc.OptionMap) ([]byte, error
 func getProcessesCPU(args sdc.CmdArgs, options sdc.OptionMap) ([]byte, error) {
 	cmdForProcessByCPU := topCommand + orderByCPU
 
-	processDetails, err := helpers.GetDataFromHostCommand(cmdForProcessByCPU)
+	processDetails, err := GetDataFromHostCommand(cmdForProcessByCPU)
 	if err != nil {
 		return []byte(""), err
 	}
 
-	return helpers.LoadProcessesDataFromCmdOutput(cmdForProcessByCPU)
+	return helpers.LoadProcessesDataFromCmdOutput(processDetails)
 }
 
 func buildProcessEntries(processesSummary map[string]interface{}) []processEntry {

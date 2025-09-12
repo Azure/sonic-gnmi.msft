@@ -4,13 +4,11 @@ import (
     "bufio"
 	"encoding/json"
 	"fmt"
-	"sort"
+    "os"
+    "regexp"
 	"strconv"
     "strings"
 	"time"
-
-	log "github.com/golang/glog"
-	sdc "github.com/sonic-net/sonic-gnmi/sonic_data_client"
 )
 
 // TopOutput holds the complete parsed output of the `top` command.
@@ -74,9 +72,9 @@ type Process struct {
 	User     string
 	Priority int
 	Nice     int
-	Virt     int64  // Virtual Memory
-	Res      int64  // Resident Memory
-	Shr      int64  // Shared Memory
+	Virt     uint64  // Virtual Memory
+	Res      uint64  // Resident Memory
+	Shr      uint64  // Shared Memory
 	State    string // e.g., "S" for sleep
 	CPU      float64
 	Memory   float64
@@ -243,6 +241,12 @@ func parseSwapSummary(s string) SwapSummary {
 	return summary
 }
 
+func parseMemoryValue(data string) uint64 {
+    pageSize := uint64(os.Getpagesize()) / 1024
+    parsedValue, _ := strconv.ParseUint(data, 10, 64)
+    return parsedValue * pageSize
+}
+
 func parseProcessLine(s string) (Process, error) {
 	var proc Process
 	fields := strings.Fields(s)
@@ -254,9 +258,9 @@ func parseProcessLine(s string) (Process, error) {
 	proc.User = fields[1]
 	proc.Priority, _ = strconv.Atoi(fields[2])
 	proc.Nice, _ = strconv.Atoi(fields[3])
-	proc.Virt, _ = parseMemoryValue(fields[4])
-	proc.Res, _ = parseMemoryValue(fields[5])
-	proc.Shr, _ = parseMemoryValue(fields[6])
+	proc.Virt = parseMemoryValue(fields[4])
+	proc.Res = parseMemoryValue(fields[5])
+	proc.Shr = parseMemoryValue(fields[6])
 	proc.State = fields[7]
 	proc.CPU, _ = strconv.ParseFloat(fields[8], 64)
 	proc.Memory, _ = strconv.ParseFloat(fields[9], 64)

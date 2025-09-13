@@ -1,0 +1,5 @@
+Port         Low-power Mode
+-----------  ----------------
+Ethernet0    Off
+Ethernet8    Off
+Ethernet16   On

@@ -432,8 +432,6 @@ func init() {
 		sdc.UnimplementedOption(showCmdOptionNamespace),
 		showCmdOptionVerbose,
 	)
-
-	// SHOW/queue/watermark
 	sdc.RegisterCliPath(
 		[]string{"SHOW", "queue", "watermark"},
 		getQueueUserWatermarks,
@@ -479,6 +477,52 @@ func init() {
 		sdc.UnimplementedOption(showCmdOptionNamespace),
 		showCmdOptionJson,
 	)
+	sdc.RegisterCliPath(
+		[]string{"SHOW", "queue", "persistent-watermark"},
+		getQueuePersistentWatermarks,
+		"SHOW/queue/persistent-watermark/COMMAND[OPTIONS]: Show persistent WM for queues",
+		0,
+		0,
+		map[string]string{
+			"all":       "show/queue/persistent-watermark/all",
+			"unicast":   "show/queue/persistent-watermark/unicast",
+			"multicast": "show/queue/persistent-watermark/multicast",
+		},
+	)
+	sdc.RegisterCliPath(
+		[]string{"SHOW", "queue", "persistent-watermark", "all"},
+		getQueuePersistentWatermarksAll,
+		"SHOW/queue/persistent-watermark/all[OPTIONS]: Show persistent WM for unicast and multicast queues",
+		0,
+		0,
+		nil,
+		showCmdOptionInterfaces,
+		sdc.UnimplementedOption(showCmdOptionNamespace),
+		showCmdOptionJson,
+	)
+	sdc.RegisterCliPath(
+		[]string{"SHOW", "queue", "persistent-watermark", "unicast"},
+		getQueuePersistentWatermarksUnicast,
+		"SHOW/queue/persistent-watermark/unicast[OPTIONS]: Show persistent WM for unicast queues",
+		0,
+		0,
+		nil,
+		showCmdOptionInterfaces,
+		sdc.UnimplementedOption(showCmdOptionNamespace),
+		showCmdOptionJson,
+	)
+	sdc.RegisterCliPath(
+		[]string{"SHOW", "queue", "persistent-watermark", "multicast"},
+		getQueuePersistentWatermarksMulticast,
+		"SHOW/queue/persistent-watermark/multicast[OPTIONS]: Show persistent WM for multicast queues",
+		0,
+		0,
+		nil,
+		showCmdOptionInterfaces,
+		sdc.UnimplementedOption(showCmdOptionNamespace),
+		showCmdOptionJson,
+	)
+
 	sdc.RegisterCliPath(
 		[]string{"SHOW", "ipv6", "prefix-list"},
 		getIPv6PrefixList,
@@ -581,53 +625,6 @@ func init() {
 		0,
 		0,
 		nil,
-	)
-
-	// SHOW/queue/persistent-watermark
-	sdc.RegisterCliPath(
-		[]string{"SHOW", "queue", "persistent-watermark"},
-		getQueuePersistentWatermarks,
-		"SHOW/queue/persistent-watermark/COMMAND[OPTIONS]: Show persistent WM for queues",
-		0,
-		0,
-		map[string]string{
-			"all":       "show/queue/persistent-watermark/all",
-			"unicast":   "show/queue/persistent-watermark/unicast",
-			"multicast": "show/queue/persistent-watermark/multicast",
-		},
-	)
-	sdc.RegisterCliPath(
-		[]string{"SHOW", "queue", "persistent-watermark", "all"},
-		getQueuePersistentWatermarksAll,
-		"SHOW/queue/persistent-watermark/all[OPTIONS]: Show persistent WM for unicast and multicast queues",
-		0,
-		0,
-		nil,
-		showCmdOptionInterfaces,
-		sdc.UnimplementedOption(showCmdOptionNamespace),
-		showCmdOptionJson,
-	)
-	sdc.RegisterCliPath(
-		[]string{"SHOW", "queue", "persistent-watermark", "unicast"},
-		getQueuePersistentWatermarksUnicast,
-		"SHOW/queue/persistent-watermark/unicast[OPTIONS]: Show persistent WM for unicast queues",
-		0,
-		0,
-		nil,
-		showCmdOptionInterfaces,
-		sdc.UnimplementedOption(showCmdOptionNamespace),
-		showCmdOptionJson,
-	)
-	sdc.RegisterCliPath(
-		[]string{"SHOW", "queue", "persistent-watermark", "multicast"},
-		getQueuePersistentWatermarksMulticast,
-		"SHOW/queue/persistent-watermark/multicast[OPTIONS]: Show persistent WM for multicast queues",
-		0,
-		0,
-		nil,
-		showCmdOptionInterfaces,
-		sdc.UnimplementedOption(showCmdOptionNamespace),
-		showCmdOptionJson,
 	)
 
 	sdc.RegisterCliPath(

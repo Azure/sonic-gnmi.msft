@@ -179,13 +179,33 @@ func getQueueCountersSnapshot(ifaces []string, onlyNonZero bool, onlyTrim bool, 
 	return response, nil
 }
 
-func getQueueCounters(args sdc.CmdArgs, options sdc.OptionMap) ([]byte, error) {
-	// TODO: cli only supports one interface provided as an argument not optio needs changes
+func removeDuplicates(input []string) []string {
+	seen := make(map[string]bool)
+	var unique []string
+	for _, str := range input {
+		if !seen[str] {
+			seen[str] = true
+			unique = append(unique, str)
+		}
+	}
+	return unique
+}
 
+func getRequestedInterfaces(args sdc.CmdArgs, options sdc.OptionMap) []string {
 	var ifaces []string
 	if interfaces, ok := options["interfaces"].Strings(); ok {
 		ifaces = interfaces
 	}
+	arg_iface := args.At(0)
+	if arg_iface != "" {
+		ifaces = append(ifaces, arg_iface)
+	}
+	// remove duplicates
+	return removeDuplicates(ifaces)
+}
+
+func getQueueCounters(args sdc.CmdArgs, options sdc.OptionMap) ([]byte, error) {
+	ifaces := getRequestedInterfaces(args, options)
 
 	onlyNonZero := false
 	if nonzeroOpt, ok := options["nonzero"].Bool(); ok {
@@ -206,11 +226,8 @@ func getQueueCounters(args sdc.CmdArgs, options sdc.OptionMap) ([]byte, error) {
 	return json.Marshal(snapshot)
 }
 
-func getQueueWredCounters(options sdc.OptionMap) ([]byte, error) {
-	var ifaces []string
-	if interfaces, ok := options["interfaces"].Strings(); ok {
-		ifaces = interfaces
-	}
+func getQueueWredCounters(args sdc.CmdArgs, options sdc.OptionMap) ([]byte, error) {
+	ifaces := getRequestedInterfaces(args, options)
 
 	onlyNonZero := false
 	if nonzeroOpt, ok := options["nonzero"].Bool(); ok {

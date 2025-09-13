@@ -145,6 +145,8 @@ func init() {
 		1,
 		nil,
 		showCmdOptionPeriod,
+		showCmdOptionJson,
+		showCmdOptionVerbose,
 	)
 	sdc.RegisterCliPath(
 		[]string{"SHOW", "interfaces", "description"},

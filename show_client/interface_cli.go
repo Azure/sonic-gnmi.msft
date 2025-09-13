@@ -52,7 +52,7 @@ type namingModeResponse struct {
 	NamingMode string `json:"naming_mode"`
 }
 
-func calculateDiffCounters(oldCounter, newCounter, defaultValue string) string {
+func calculateDiffCountersReturnDefault(oldCounter, newCounter, defaultValue string) string {
 	if oldCounter == defaultValue || newCounter == defaultValue {
 		return defaultValue
 	}
@@ -261,18 +261,18 @@ func calculateDiffSnapshot(oldSnapshot map[string]InterfaceCountersResponse, new
 		}
 		diffResponse[iface] = InterfaceCountersResponse{
 			State:  newResp.State,
-			RxOk:   calculateDiffCounters(oldResp.RxOk, newResp.RxOk, defaultMissingCounterValue),
+			RxOk:   calculateDiffCountersReturnDefault(oldResp.RxOk, newResp.RxOk, defaultMissingCounterValue),
 			RxBps:  newResp.RxBps,
 			RxUtil: newResp.RxUtil,
-			RxErr:  calculateDiffCounters(oldResp.RxErr, newResp.RxErr, defaultMissingCounterValue),
-			RxDrp:  calculateDiffCounters(oldResp.RxDrp, newResp.RxDrp, defaultMissingCounterValue),
-			RxOvr:  calculateDiffCounters(oldResp.RxOvr, newResp.RxOvr, defaultMissingCounterValue),
-			TxOk:   calculateDiffCounters(oldResp.TxOk, newResp.TxOk, defaultMissingCounterValue),
+			RxErr:  calculateDiffCountersReturnDefault(oldResp.RxErr, newResp.RxErr, defaultMissingCounterValue),
+			RxDrp:  calculateDiffCountersReturnDefault(oldResp.RxDrp, newResp.RxDrp, defaultMissingCounterValue),
+			RxOvr:  calculateDiffCountersReturnDefault(oldResp.RxOvr, newResp.RxOvr, defaultMissingCounterValue),
+			TxOk:   calculateDiffCountersReturnDefault(oldResp.TxOk, newResp.TxOk, defaultMissingCounterValue),
 			TxBps:  newResp.TxBps,
 			TxUtil: newResp.TxUtil,
-			TxErr:  calculateDiffCounters(oldResp.TxErr, newResp.TxErr, defaultMissingCounterValue),
-			TxDrp:  calculateDiffCounters(oldResp.TxDrp, newResp.TxDrp, defaultMissingCounterValue),
-			TxOvr:  calculateDiffCounters(oldResp.TxOvr, newResp.TxOvr, defaultMissingCounterValue),
+			TxErr:  calculateDiffCountersReturnDefault(oldResp.TxErr, newResp.TxErr, defaultMissingCounterValue),
+			TxDrp:  calculateDiffCountersReturnDefault(oldResp.TxDrp, newResp.TxDrp, defaultMissingCounterValue),
+			TxOvr:  calculateDiffCountersReturnDefault(oldResp.TxOvr, newResp.TxOvr, defaultMissingCounterValue),
 		}
 	}
 	return diffResponse

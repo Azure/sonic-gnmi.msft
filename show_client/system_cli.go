@@ -11,7 +11,7 @@ import (
 
 const showSystemMemoryCommand = "free -m"
 
-func getSystemMemory(options sdc.OptionMap) ([]byte, error) {
+func getSystemMemory(args sdc.CmdArgs, options sdc.OptionMap) ([]byte, error) {
 	// Get data from host command
 	output, err := GetDataFromHostCommand(showSystemMemoryCommand)
 	if err != nil {

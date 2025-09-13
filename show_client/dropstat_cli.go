@@ -45,7 +45,7 @@ var stdPortHeadersMap = map[string]string{
 // Currently, only port-level drop counts are supported and switch-level drop counts are not supported
 // Most VOQ and fabric platforms are multi‑ASIC. Because the current implementation doesn't perform per‑ASIC aggregation, switch‑level counters are not supported yet.
 // The switch_type field is empty on FW-backend T0/T1 devices, so implementing switch-level counters isn’t necessary now.
-func getDropCounters(options sdc.OptionMap) ([]byte, error) {
+func getDropCounters(args sdc.CmdArgs, options sdc.OptionMap) ([]byte, error) {
 	var group string
 	var counterType string
 	if g, ok := options["group"].String(); ok {
@@ -112,7 +112,7 @@ func showPortDropCounts(group string, counterType string) map[string]map[string]
 		row["State"] = state
 
 		for _, ctr := range counters {
-			diff := getOrDefault(countsTable[port], ctr, int64(0)) - getOrDefault(getOrDefault(portDropCkpt, port, map[string]int64{}), ctr, int64(0))
+			diff := GetOrDefault(countsTable[port], ctr, int64(0)) - GetOrDefault(GetOrDefault(portDropCkpt, port, map[string]int64{}), ctr, int64(0))
 			alias, ok := headmap[ctr]
 			if !ok || alias == "" {
 				alias = ctr
@@ -318,7 +318,7 @@ func getAlias(counterName string) string {
 		return counterName
 	}
 
-	aliasVal := toString(getOrDefault(aliasQuery, "alias", interface{}(counterName)))
+	aliasVal := fmt.Sprint(GetOrDefault(aliasQuery, "alias", interface{}(counterName)))
 	return aliasVal
 }
 
@@ -340,7 +340,7 @@ func inGroup(counterStat string, objectStatMap string, group string) bool {
 		return false
 	}
 
-	return group == toString(getOrDefault(group_query, "group", ""))
+	return group == fmt.Sprint(GetOrDefault(group_query, "group", ""))
 }
 
 // Checks whether the type of the given counter_stat is the same as counter_type.
@@ -362,7 +362,7 @@ func isType(counterStat string, objectStatMap string, counterType string) bool {
 		return false
 	}
 
-	return counterType == toString(getOrDefault(typeQuery, "type", ""))
+	return counterType == fmt.Sprint(GetOrDefault(typeQuery, "type", ""))
 }
 
 // getEntry returns the CONFIG_DB DEBUG_COUNTER row for a given counterName.

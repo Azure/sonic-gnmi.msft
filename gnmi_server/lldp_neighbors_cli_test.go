@@ -36,12 +36,12 @@ func TestGetLLDPNeighbors(t *testing.T) {
 	gClient := pb.NewGNMIClient(conn)
 	ctx, cancel := context.WithTimeout(context.Background(), QueryTimeout*time.Second)
 	defer cancel()
-	
+
 	ResetDataSetsAndMappings(t)
 
 	// expected empty response
 	expectedEmptyDBResponse := `{"title": "LLDP neighbors","interfaces": {}}`
-	
+
 	// Expected output for standalone device
 	expectedLLDPNeighborsOnlyOneResponseFileName := "../testdata/lldp/Expected_show_lldp_neighbors_response_only_one.txt"
 	expectedLLDPNeighborsOnlyOneResponse, err := ioutil.ReadFile(expectedLLDPNeighborsOnlyOneResponseFileName)
@@ -69,13 +69,13 @@ func TestGetLLDPNeighbors(t *testing.T) {
 		{
 			desc:       "query SHOW lldp neighbors - empty json output",
 			pathTarget: "SHOW",
-			textPbPath:  `
+			textPbPath: `
 				elem: <name: "lldp" >
 				elem: <name: "neighbors" >
 			`,
-			wantRetCode:    codes.OK,
-			wantRespVal:    []byte(expectedEmptyDBResponse),
-			valTest:        true,
+			wantRetCode: codes.OK,
+			wantRespVal: []byte(expectedEmptyDBResponse),
+			valTest:     true,
 			mockOutputFile: map[string]string{
 				"docker": "../testdata/lldp/lldpctl_empty_json.txt",
 			},
@@ -83,13 +83,13 @@ func TestGetLLDPNeighbors(t *testing.T) {
 		{
 			desc:       "query SHOW lldp neighbors - standalone",
 			pathTarget: "SHOW",
-			textPbPath:  `
+			textPbPath: `
 				elem: <name: "lldp" >
 				elem: <name: "neighbors" >
 			`,
-			wantRetCode:    codes.OK,
-			wantRespVal:    []byte(expectedLLDPNeighborsOnlyOneResponse),
-			valTest:        true,
+			wantRetCode: codes.OK,
+			wantRespVal: []byte(expectedLLDPNeighborsOnlyOneResponse),
+			valTest:     true,
 			mockOutputFile: map[string]string{
 				"docker": "../testdata/lldp/lldpctl_only_one_interface_json.txt",
 			},
@@ -98,13 +98,13 @@ func TestGetLLDPNeighbors(t *testing.T) {
 		{
 			desc:       "query SHOW lldp neighbors - normal device",
 			pathTarget: "SHOW",
-			textPbPath:  `
+			textPbPath: `
 				elem: <name: "lldp" >
 				elem: <name: "neighbors" >
 			`,
-			wantRetCode:    codes.OK,
-			wantRespVal:    []byte(expectedLLDPNeighborsResponse),
-			valTest:        true,
+			wantRetCode: codes.OK,
+			wantRespVal: []byte(expectedLLDPNeighborsResponse),
+			valTest:     true,
 			mockOutputFile: map[string]string{
 				"docker": "../testdata/lldp/lldpctl_json.txt",
 			},

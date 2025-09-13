@@ -9,7 +9,6 @@ import (
 	"time"
 
 	pb "github.com/openconfig/gnmi/proto/gnmi"
-	show_client "github.com/sonic-net/sonic-gnmi/show_client"
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
@@ -45,42 +44,33 @@ func TestGetShowInterfaceNamingMode(t *testing.T) {
 		wantRetCode codes.Code
 		wantRespVal interface{}
 		valTest     bool
-		envKey      string
-		envVal      string
 	}{
 		{
-			desc:       "query SHOW interface naming_mode (default)",
+			desc:       "query SHOW interfaces naming_mode (default)",
 			pathTarget: "SHOW",
 			textPbPath: `
-                elem: <name: "interface" >
+                elem: <name: "interfaces" >
                 elem: <name: "naming_mode" >
             `,
 			wantRetCode: codes.OK,
 			wantRespVal: []byte(expectedDefault),
 			valTest:     true,
-			envKey:      show_client.SonicCliIfaceMode,
-			envVal:      "",
 		},
 		{
-			desc:       "query SHOW interface naming_mode (alias)",
+			desc:       "query SHOW interfaces naming_mode with SONIC_CLI_IFACE_MODE=alias option",
 			pathTarget: "SHOW",
 			textPbPath: `
-                elem: <name: "interface" >
-                elem: <name: "naming_mode" >
+                elem: <name: "interfaces" >
+                elem: <name: "naming_mode" key: { key: "SONIC_CLI_IFACE_MODE" value: "alias" } >
             `,
 			wantRetCode: codes.OK,
 			wantRespVal: []byte(expectedAlias),
 			valTest:     true,
-			envKey:      show_client.SonicCliIfaceMode,
-			envVal:      "alias",
 		},
 	}
 
 	for _, test := range tests {
 		t.Run(test.desc, func(t *testing.T) {
-			if test.envKey != "" {
-				t.Setenv(test.envKey, test.envVal)
-			}
 			runTestGet(t, ctx, gClient, test.pathTarget, test.textPbPath, test.wantRetCode, test.wantRespVal, test.valTest)
 		})
 	}

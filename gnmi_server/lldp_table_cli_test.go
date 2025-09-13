@@ -36,12 +36,12 @@ func TestGetLLDPTable(t *testing.T) {
 	gClient := pb.NewGNMIClient(conn)
 	ctx, cancel := context.WithTimeout(context.Background(), QueryTimeout*time.Second)
 	defer cancel()
-	
+
 	ResetDataSetsAndMappings(t)
 
 	// expected empty response
 	expectedEmptyDBResponse := `{"capability_codes_helper":"Capability codes: (R) Router, (B) Bridge, (O) Other","neighbors": [],"total": 0}`
-	
+
 	// Expected output for standalone device
 	expectedLLDPTableOnlyOneResponseFileName := "../testdata/lldp/Expected_show_lldp_table_response_only_one.txt"
 	expectedLLDPTableOnlyResponse, err := ioutil.ReadFile(expectedLLDPTableOnlyOneResponseFileName)
@@ -69,13 +69,13 @@ func TestGetLLDPTable(t *testing.T) {
 		{
 			desc:       "query SHOW lldp table - empty json output",
 			pathTarget: "SHOW",
-			textPbPath:  `
+			textPbPath: `
 				elem: <name: "lldp" >
 				elem: <name: "table" >
 			`,
-			wantRetCode:    codes.OK,
-			wantRespVal:    []byte(expectedEmptyDBResponse),
-			valTest:        true,
+			wantRetCode: codes.OK,
+			wantRespVal: []byte(expectedEmptyDBResponse),
+			valTest:     true,
 			mockOutputFile: map[string]string{
 				"docker": "../testdata/lldp/lldpctl_empty_json.txt",
 			},
@@ -83,13 +83,13 @@ func TestGetLLDPTable(t *testing.T) {
 		{
 			desc:       "query SHOW lldp table - standalone",
 			pathTarget: "SHOW",
-			textPbPath:  `
+			textPbPath: `
 				elem: <name: "lldp" >
 				elem: <name: "table" >
 			`,
-			wantRetCode:    codes.OK,
-			wantRespVal:    []byte(expectedLLDPTableOnlyResponse),
-			valTest:        true,
+			wantRetCode: codes.OK,
+			wantRespVal: []byte(expectedLLDPTableOnlyResponse),
+			valTest:     true,
 			mockOutputFile: map[string]string{
 				"docker": "../testdata/lldp/lldpctl_only_one_interface_json.txt",
 			},
@@ -98,13 +98,13 @@ func TestGetLLDPTable(t *testing.T) {
 		{
 			desc:       "query SHOW lldp table - normal device",
 			pathTarget: "SHOW",
-			textPbPath:  `
+			textPbPath: `
 				elem: <name: "lldp" >
 				elem: <name: "table" >
 			`,
-			wantRetCode:    codes.OK,
-			wantRespVal:    []byte(expectedLLDPTableResponse),
-			valTest:        true,
+			wantRetCode: codes.OK,
+			wantRespVal: []byte(expectedLLDPTableResponse),
+			valTest:     true,
 			mockOutputFile: map[string]string{
 				"docker": "../testdata/lldp/lldpctl_json.txt",
 			},

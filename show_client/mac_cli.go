@@ -20,7 +20,7 @@ admin@sonic:~$ redis-cli -n 0 hget "SWITCH_TABLE:switch" "fdb_aging_time"
 "600"
 */
 
-func getMacAgingTime(options sdc.OptionMap) ([]byte, error) {
+func getMacAgingTime(args sdc.CmdArgs, options sdc.OptionMap) ([]byte, error) {
 	queries := [][]string{
 		{"APPL_DB", "SWITCH_TABLE", "switch"},
 	}
@@ -61,7 +61,7 @@ type macEntry struct {
 }
 
 // getMacTable queries STATE_DB FDB_TABLE entries and returns either the list or count per options
-func getMacTable(options sdc.OptionMap) ([]byte, error) {
+func getMacTable(args sdc.CmdArgs, options sdc.OptionMap) ([]byte, error) {
 	// Parse filters
 	vlanFilter := -1
 	if v, ok := options["vlan"].Int(); ok {
@@ -180,7 +180,7 @@ func processFDBData(data map[string]interface{}, addIfMatch func(int, string, st
 		if !ok {
 			continue
 		}
-		addIfMatch(vlan, mac, toString(fv["port"]), toString(fv["type"]))
+		addIfMatch(vlan, mac, fmt.Sprint(fv["port"]), fmt.Sprint(fv["type"]))
 	}
 }
 

@@ -1,0 +1,14 @@
+{
+    "BGP": {
+        "LOCAL_VLAN_IPV6_PREFIX": {
+            "addressFamily": "IPv6",
+            "entries": [
+                {
+                    "sequenceNumber": 10,
+                    "type": "permit",
+                    "prefix": "ffff:1000::/64"
+                }
+            ]
+        }
+    }
+}

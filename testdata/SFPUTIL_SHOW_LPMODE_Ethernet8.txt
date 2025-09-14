@@ -1,0 +1,3 @@
+Port       Low-power Mode
+---------  ----------------
+Ethernet8  Off

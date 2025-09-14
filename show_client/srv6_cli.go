@@ -11,10 +11,7 @@ import (
 func getSRv6Stats(args sdc.CmdArgs, options sdc.OptionMap) ([]byte, error) {
 	// Get SRv6 statistics per MY_SID entry
 	// TODO
-	sid := ""
-	if option, ok := options["sid"].String(); ok {
-		sid = option
-	}
+	sid := args.At(0)
 
 	// First, query SID -> Counter OID mapping
 	queries := [][]string{
@@ -43,7 +40,7 @@ func getSRv6Stats(args sdc.CmdArgs, options sdc.OptionMap) ([]byte, error) {
 		sids = append(sids, fmt.Sprintf("%s", k))
 	}
 	// Natsort the slice
-	sids = natsortInterfaces(sids)
+	sids = NatsortInterfaces(sids)
 
 	sidCounters := make([]map[string]string, 0, len(sids))
 	for _, sid := range sids {

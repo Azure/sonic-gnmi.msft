@@ -81,7 +81,8 @@ func TestGetSRv6Stats(t *testing.T) {
 			pathTarget: "SHOW",
 			textPbPath: `
 				elem: <name: "srv6" >
-				elem: <name: "stats" key: { key: "sid" value: "2001:db8:1::/48" } >
+				elem: <name: "stats" >
+				elem: <name: "2001:db8:1::/48" >
 			`,
 			wantRetCode: codes.OK,
 			wantRespVal: []byte(singleSrv6Counter),

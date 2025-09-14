@@ -571,10 +571,12 @@ func init() {
 		showCmdOptionVerbose,
 	)
 
-	// SHOW/watermark
 	sdc.RegisterCliPath(
 		[]string{"SHOW", "interfaces", "transceiver", "eeprom"},
 		getTransceiverEEPROM,
+		"SHOW/interfaces/transceiver/eeprom[OPTIONS]: Show interface transceiver EEPROM information",
+		0,
+		1,
 		nil,
 		showCmdOptionPort,
 		showCmdOptionDom,
@@ -583,23 +585,15 @@ func init() {
 	sdc.RegisterCliPath(
 		[]string{"SHOW", "interfaces", "transceiver", "info"},
 		getTransceiverInfo,
+		"SHOW/interfaces/transceiver/info[OPTIONS]: Show interface transceiver information",
+		0,
+		1,
 		nil,
 		showCmdOptionPort,
 		sdc.UnimplementedOption(showCmdOptionNamespace),
 	)
+	// SHOW/watermark
 	sdc.RegisterCliPath(
-		[]string{"SHOW", "interfaces", "description"},
-		getInterfacesDescription,
-    "SHOW/interfaces/description/{INTERFACENAME}[OPTIONS]: Show interface status, protocol and description",
-		0,
-		1,
-		nil,
-		sdc.UnimplementedOption(showCmdOptionNamespace),
-		sdc.UnimplementedOption(showCmdOptionDisplay),
-		showCmdOptionInterface, // TODO
-		showCmdOptionVerbose,
-  )
-  sdc.RegisterCliPath(
 		[]string{"SHOW", "watermark", "telemetry", "interval"},
 		getWatermarkTelemetryInterval,
 		"SHOW/watermark/telemetry/interval[OPTIONS]: Show telemetry interval",

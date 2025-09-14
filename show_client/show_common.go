@@ -7,7 +7,6 @@ import (
 	"sort"
 	"strconv"
 	"strings"
-	"sync"
 
 	log "github.com/golang/glog"
 	"github.com/google/shlex"
@@ -441,17 +440,16 @@ func isFrontPanelPort(iface string, role string) bool {
 	return !isRoleInternal(role)
 }
 
-var (
-	portMappingsOnce        sync.Once
-	cachedLogicalToPhysical map[string][]int
-	cachedPhysicalToLogic   map[int][]string
-	cachedErr               error
-)
+type PortMappingRetriever struct {
+	logicalToPhysical map[string][]int
+	physicalToLogic   map[int][]string
+	err               error
+}
 
 // This funtion is used to get all ports on device, and then, returns two maps -- logic ports to physical ports and physical ports to logic ports
 // To get all ports, the function is https://github.com/sonic-net/sonic-buildimage/blob/master/src/sonic-config-engine/portconfig.py#L171
 // We can see from the code that, first, we try to get all ports from config db, if the connection is not available, we will use other methods to get ports
-func readPorttabMappings() (map[string][]int, map[int][]string, error) {
+func (pmr *PortMappingRetriever) readPorttabMappings() {
 	logicalToPhysical := make(map[string][]int)
 	physicalToLogic := make(map[int][]string)
 	logical := []string{}
@@ -462,7 +460,8 @@ func readPorttabMappings() (map[string][]int, map[int][]string, error) {
 	portTable, err := GetMapFromQueries(queries)
 	if err != nil {
 		log.Errorf("Unable to pull data for queries %v, got err %v", queries, err)
-		return nil, nil, err
+		pmr.err = err
+		return
 	}
 	for iface := range portTable {
 		if isFrontPanelPort(iface, GetFieldValueString(portTable, iface, defaultMissingCounterValue, "role")) {
@@ -470,7 +469,7 @@ func readPorttabMappings() (map[string][]int, map[int][]string, error) {
 		}
 	}
 
-	natsort.Sort(logical)
+	sort.Sort(natural.StringSlice(logical))
 
 	for _, intfName := range logical {
 		fpPortIndex := 1
@@ -492,33 +491,29 @@ func readPorttabMappings() (map[string][]int, map[int][]string, error) {
 		}
 	}
 
-	return logicalToPhysical, physicalToLogic, nil
+	pmr.logicalToPhysical = logicalToPhysical
+	pmr.physicalToLogic = physicalToLogic
+	pmr.err = nil
 }
 
-func loadPortMappings() {
-	cachedLogicalToPhysical, cachedPhysicalToLogic, cachedErr = readPorttabMappings()
-}
-
-func getLogicalToPhysical(logicalPort string) []int {
-	portMappingsOnce.Do(loadPortMappings)
-	if cachedErr != nil {
+func getLogicalToPhysical(pmr *PortMappingRetriever, logicalPort string) []int {
+	if pmr.err != nil {
 		return nil
 	}
-	return cachedLogicalToPhysical[logicalPort]
+	return pmr.logicalToPhysical[logicalPort]
 }
 
-func getPhysicalToLogic(physicalPort int) []string {
-	portMappingsOnce.Do(loadPortMappings)
-	if cachedErr != nil {
+func getPhysicalToLogic(pmr *PortMappingRetriever, physicalPort int) []string {
+	if pmr.err != nil {
 		return nil
 	}
-	return cachedPhysicalToLogic[physicalPort]
+	return pmr.physicalToLogic[physicalPort]
 }
 
-func getFirstSubPort(logicalPort string) string {
-	physicalPort := getLogicalToPhysical(logicalPort)
+func getFirstSubPort(pmr *PortMappingRetriever, logicalPort string) string {
+	physicalPort := getLogicalToPhysical(pmr, logicalPort)
 	if len(physicalPort) != 0 {
-		logicalPortList := getPhysicalToLogic(physicalPort[0])
+		logicalPortList := getPhysicalToLogic(pmr, physicalPort[0])
 		if len(logicalPortList) != 0 {
 			return logicalPortList[0]
 		}
@@ -535,6 +530,7 @@ func mergeMaps(a, b map[string]string) map[string]string {
 		result[k] = v
 	}
 	return result
+}
 
 // TryConvertInterfaceNameFromAlias tries to convert an interface alias to its interface name.
 // If naming mode is "alias", attempts conversion; if conversion fails, returns error.

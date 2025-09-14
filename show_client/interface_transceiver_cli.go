@@ -3,10 +3,11 @@ package show_client
 import (
 	"encoding/json"
 	"fmt"
+	"sort"
 	"strings"
 
-	"github.com/facette/natsort"
 	log "github.com/golang/glog"
+	natural "github.com/maruel/natural"
 	sdc "github.com/sonic-net/sonic-gnmi/sonic_data_client"
 )
 
@@ -106,7 +107,7 @@ func getInterfaceTransceiverPresence(args sdc.CmdArgs, options sdc.OptionMap) ([
 var CmisDataMap = mergeMaps(QsfpDataMap, QsfpCmisDeltaDataMap)
 var CCmisDataMap = mergeMaps(CmisDataMap, CCmisDeltaDataMap)
 
-func getEEPROM(options sdc.OptionMap) (map[string]string, error) {
+func getEEPROM(args sdc.CmdArgs, options sdc.OptionMap) (map[string]string, error) {
 	var intf string
 	if v, ok := options["port"].String(); ok {
 		intf = v
@@ -146,13 +147,13 @@ func getEEPROM(options sdc.OptionMap) (map[string]string, error) {
 	return intfEEPROM, nil
 }
 
-func getTransceiverEEPROM(options sdc.OptionMap) ([]byte, error) {
-	intfEEPROM, _ := getEEPROM(options)
+func getTransceiverEEPROM(args sdc.CmdArgs, options sdc.OptionMap) ([]byte, error) {
+	intfEEPROM, _ := getEEPROM(args, options)
 	keys := make([]string, 0, len(intfEEPROM))
 	for key := range intfEEPROM {
 		keys = append(keys, key)
 	}
-	natsort.Sort(keys)
+	sort.Sort(natural.StringSlice(keys))
 
 	for _, k := range keys {
 		fmt.Printf("%s: %s\n", k, intfEEPROM[k])
@@ -166,13 +167,13 @@ func getTransceiverEEPROM(options sdc.OptionMap) ([]byte, error) {
 }
 
 // Command "show interfaces transceiver info"
-func getTransceiverInfo(options sdc.OptionMap) ([]byte, error) {
-	intfEEPROM, _ := getEEPROM(options)
+func getTransceiverInfo(args sdc.CmdArgs, options sdc.OptionMap) ([]byte, error) {
+	intfEEPROM, _ := getEEPROM(args, options)
 	keys := make([]string, 0, len(intfEEPROM))
 	for key := range intfEEPROM {
 		keys = append(keys, key)
 	}
-	natsort.Sort(keys)
+	sort.Sort(natural.StringSlice(keys))
 
 	for _, k := range keys {
 		fmt.Printf("%s: %s\n", k, intfEEPROM[k])

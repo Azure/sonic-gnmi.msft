@@ -4,10 +4,8 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/facette/natsort"
-	log "github.com/golang/glog"
 	"regexp"
 	"sort"
-	"strconv"
 	"strings"
 )
 
@@ -147,7 +145,9 @@ func convertSfpInfoToOutputString(sfpInfoDict map[string]interface{}, sfpFirmwar
 
 	for _, key := range sortedKeys {
 		if key == "cable_type" {
-			output[sfpInfoDict["cable_type"]] = sfpInfoDict["cable_length"]
+			if cableType, ok := sfpInfoDict["cable_type"].(string); ok {
+				output[cableType] = sfpInfoDict["cable_length"]
+			}
 		} else if key == "cable_length" {
 		} else if key == "specification_compliance" && !isSfpCmis {
 			if sfpInfoDict["type"] == "QSFP-DD Double Density 8X Pluggable Transceiver" {
@@ -169,7 +169,7 @@ func convertSfpInfoToOutputString(sfpInfoDict map[string]interface{}, sfpFirmwar
 
 						output[QsfpDataMap[key]] = make(map[string]interface{})
 						for _, k := range keys {
-							output[QsfpDataMap[key]][k] = specComplianceDict[k]
+							output[QsfpDataMap[key]] = map[string]interface{}{k: specComplianceDict[k]}
 						}
 					}
 				}
@@ -203,7 +203,7 @@ func convertSfpInfoToOutputString(sfpInfoDict map[string]interface{}, sfpFirmwar
 						value = fmt.Sprintf("%v", v)
 					}
 				}
-				output[QsfpDataMap[key]] = value
+				output[displayName] = value
 			}
 		}
 	}
@@ -229,7 +229,6 @@ func formatDictValueToString(sortedKeyTable []string, domInfoDict map[string]int
 }
 
 func convertDomToOutputString(sfpType string, isSfpCmis bool, domInfoDict map[string]interface{}) map[string]interface{} {
-	indent := strings.Repeat(" ", 8)
 	outputDom := make(map[string]interface{})
 
 	if strings.HasPrefix(sfpType, "QSFP") || strings.HasPrefix(sfpType, "OSFP") {
@@ -244,9 +243,7 @@ func convertDomToOutputString(sfpType string, isSfpCmis bool, domInfoDict map[st
 			}
 			natsort.Sort(sortedKeyTable)
 			outputChannel := formatDictValueToString(sortedKeyTable, domInfoDict, CmisDomChannelMonitorMap, QsfpDdDomValueUnitMap)
-			for key, value := range outputChannel {
-				outputDom[key] = value
-			}
+			outputDom["ChannelMonitorValues"] = outputChannel
 		} else {
 			sortedKeyTable = make([]string, 0, len(QsfpDomChannelMonitorMap))
 			for k := range QsfpDomChannelMonitorMap {
@@ -254,9 +251,7 @@ func convertDomToOutputString(sfpType string, isSfpCmis bool, domInfoDict map[st
 			}
 			natsort.Sort(sortedKeyTable)
 			outputChannel := formatDictValueToString(sortedKeyTable, domInfoDict, QsfpDomChannelMonitorMap, DomValueUnitMap)
-			for key, value := range outputChannel {
-				outputDom[key] = value
-			}
+			outputDom["ChannelMonitorValues"] = outputChannel
 		}
 
 		if isSfpCmis {
@@ -272,9 +267,7 @@ func convertDomToOutputString(sfpType string, isSfpCmis bool, domInfoDict map[st
 		}
 		natsort.Sort(sortedKeyTable)
 		outputChannelThreshold := formatDictValueToString(sortedKeyTable, domInfoDict, domMap, DomChannelThresholdUnitMap)
-		for key, value := range outputChannelThreshold {
-			outputDom[key] = value
-		}
+		outputDom["ChannelThresholdValues"] = outputChannelThreshold
 
 		outputDom["ModuleMonitorValues"] = ""
 		sortedKeyTable = make([]string, 0, len(DomModuleMonitorMap))
@@ -283,16 +276,12 @@ func convertDomToOutputString(sfpType string, isSfpCmis bool, domInfoDict map[st
 		}
 		natsort.Sort(sortedKeyTable)
 		outputModule := formatDictValueToString(sortedKeyTable, domInfoDict, DomModuleMonitorMap, DomValueUnitMap)
-		for key, value := range outputModule {
-			outputDom[key] = value
-		}
+		outputDom["ModuleMonitorValues"] = outputModule
 
 		outputDom["ModuleThresholdValues"] = ""
 		sortedKeyTable = make([]string, 0, len(DomModuleThresholdMap))
 		outputModuleThreshold := formatDictValueToString(sortedKeyTable, domInfoDict, DomModuleThresholdMap, DomModuleThresholdUnitMap)
-		for key, value := range outputModuleThreshold {
-			outputDom[key] = value
-		}
+		outputDom["ModuleThresholdValues"] = outputModuleThreshold
 	} else {
 		outputDom["MonitorData"] = ""
 		sortedKeyTable := make([]string, 0, len(SfpDomChannelMonitorMap))
@@ -301,9 +290,7 @@ func convertDomToOutputString(sfpType string, isSfpCmis bool, domInfoDict map[st
 		}
 		natsort.Sort(sortedKeyTable)
 		outputChannel := formatDictValueToString(sortedKeyTable, domInfoDict, SfpDomChannelMonitorMap, DomValueUnitMap)
-		for key, value := range outputChannel {
-			outputDom[key] = value
-		}
+		outputDom["MonitorData"] = outputChannel
 
 		sortedKeyTable = make([]string, 0, len(DomModuleMonitorMap))
 		for k := range DomModuleMonitorMap {
@@ -311,8 +298,15 @@ func convertDomToOutputString(sfpType string, isSfpCmis bool, domInfoDict map[st
 		}
 		natsort.Sort(sortedKeyTable)
 		outputModule := formatDictValueToString(sortedKeyTable, domInfoDict, DomModuleMonitorMap, DomValueUnitMap)
+
+		monitorData, ok := outputDom["MonitorData"].(map[string]interface{})
+		if !ok {
+			monitorData = make(map[string]interface{})
+			outputDom["MonitorData"] = monitorData
+		}
+
 		for key, value := range outputModule {
-			outputDom[key] = value
+			monitorData[key] = value
 		}
 
 		outputDom["ThresholdData"] = ""
@@ -322,9 +316,7 @@ func convertDomToOutputString(sfpType string, isSfpCmis bool, domInfoDict map[st
 		}
 		natsort.Sort(sortedKeyTable)
 		outputModuleThreshold := formatDictValueToString(sortedKeyTable, domInfoDict, DomModuleThresholdMap, DomModuleThresholdUnitMap)
-		for key, value := range outputModuleThreshold {
-			outputDom[key] = value
-		}
+		outputDom["ThresholdData"] = outputModuleThreshold
 
 		sortedKeyTable = make([]string, 0, len(SfpDomChannelThresholdMap))
 		for k := range SfpDomChannelThresholdMap {
@@ -332,8 +324,15 @@ func convertDomToOutputString(sfpType string, isSfpCmis bool, domInfoDict map[st
 		}
 		natsort.Sort(sortedKeyTable)
 		outputChannelThreshold := formatDictValueToString(sortedKeyTable, domInfoDict, SfpDomChannelThresholdMap, DomChannelThresholdUnitMap)
+
+		thresholdData, ok := outputDom["ThresholdData"].(map[string]interface{})
+		if !ok {
+			thresholdData = make(map[string]interface{})
+			outputDom["ThresholdData"] = thresholdData
+		}
+
 		for key, value := range outputChannelThreshold {
-			outputDom[key] = value
+			thresholdData[key] = value
 		}
 	}
 	return outputDom
@@ -352,7 +351,10 @@ func convertInterfaceSfpInfoToCliOutputString(iface string, dumpDom bool) string
 	output := make(map[string]interface{})
 	var queries [][]string
 
-	firstPort := getFirstSubPort(iface)
+	pmr := &PortMappingRetriever{}
+	pmr.readPorttabMappings()
+
+	firstPort := getFirstSubPort(pmr, iface)
 	if firstPort == "" {
 		fmt.Printf("Error: Unable to get first subport for %s while converting SFP info\n", iface)
 		return "SFP EEPROM Not detected\n"
@@ -371,14 +373,11 @@ func convertInterfaceSfpInfoToCliOutputString(iface string, dumpDom bool) string
 	if len(sfpInfoDict) != 0 {
 		isSfpCmis := isTransceiverCmis(sfpInfoDict)
 		if portType, ok := sfpInfoDict["type"].(string); ok && portType == RJ45PortType {
-			output = "SFP EEPROM is not applicable for RJ45 port\n"
+			return "SFP EEPROM is not applicable for RJ45 port\n"
 		} else {
-			output = "SFP EEPROM detected\n"
+			// output = "SFP EEPROM detected\n"
 			sfpInfoOutput := convertSfpInfoToOutputString(sfpInfoDict, sfpFirmwareInfoDict)
-			for key, value := range sfpInfoOutput {
-				output[key] = value
-			}
-
+			output = sfpInfoOutput
 			if dumpDom {
 				queries = [][]string{
 					{"STATE_DB", "TRANSCEIVER_DOM_SENSOR", firstPort},
@@ -400,10 +399,14 @@ func convertInterfaceSfpInfoToCliOutputString(iface string, dumpDom bool) string
 						domInfoDict[k] = v
 					}
 				}
-				if sfpType, ok := val.(string); ok {
-					dumOutput := convertDomToOutputString(sfpType, isSfpCmis, domInfoDict)
-				} else {
-					return output
+
+				if val, ok := sfpInfoDict["type"]; ok {
+					if sfpType, ok := val.(string); ok {
+						dumOutput := convertDomToOutputString(sfpType, isSfpCmis, domInfoDict)
+						for k, v := range dumOutput {
+							output[k] = v
+						}
+					}
 				}
 			}
 		}
@@ -414,5 +417,10 @@ func convertInterfaceSfpInfoToCliOutputString(iface string, dumpDom bool) string
 			return "SFP EEPROM Not detected\n"
 		}
 	}
-	return output
+
+	b, err := json.Marshal(output)
+	if err != nil {
+		return "Error serializing SFP info\n"
+	}
+	return string(b)
 }

@@ -10,7 +10,7 @@ type uptimeResponse struct {
 	Uptime string `json:"uptime"`
 }
 
-func getUptime(options sdc.OptionMap) ([]byte, error) {
+func getUptime(args sdc.CmdArgs, options sdc.OptionMap) ([]byte, error) {
 	uptimeParam := []string{"-p"}
 	uptimeData := GetUptime(uptimeParam)
 

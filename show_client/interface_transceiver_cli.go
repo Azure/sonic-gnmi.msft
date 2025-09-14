@@ -3,6 +3,7 @@ package show_client
 import (
 	"encoding/json"
 	"fmt"
+	"strings"
 
 	"github.com/facette/natsort"
 	log "github.com/golang/glog"
@@ -27,8 +28,8 @@ func getAllPortsFromConfigDB() ([]string, error) {
 	return ports, nil
 }
 
-// Command "show interfaces transceiver error-status"
-func getTransceiverErrorStatus(options sdc.OptionMap) ([]byte, error) {
+func getTransceiverErrorStatus(args sdc.CmdArgs, options sdc.OptionMap) ([]byte, error) {
+	// TODO
 	var intf string
 	if v, ok := options["interface"].String(); ok {
 		intf = v
@@ -53,8 +54,12 @@ func getTransceiverErrorStatus(options sdc.OptionMap) ([]byte, error) {
 	return data, nil
 }
 
-func getInterfaceTransceiverPresence(options sdc.OptionMap) ([]byte, error) {
-	intf, _ := options["interface"].String()
+func getInterfaceTransceiverPresence(args sdc.CmdArgs, options sdc.OptionMap) ([]byte, error) {
+	// TODO
+	var intf string
+	if v, ok := options["interface"].String(); ok {
+		intf = v
+	}
 
 	// Get STATE_DB transceiver info
 	queries := [][]string{
@@ -178,4 +183,46 @@ func getTransceiverInfo(options sdc.OptionMap) ([]byte, error) {
 		return nil, err
 	}
 	return data, nil
+}
+
+type portLpmode struct {
+	Port   string `json:"Port"`
+	Lpmode string `json:"Low-power Mode"`
+}
+
+func getInterfaceTransceiverLpMode(args sdc.CmdArgs, options sdc.OptionMap) ([]byte, error) {
+	intf := args.At(0)
+	cmdParts := []string{"sudo", "sfputil", "show", "lpmode"}
+	if intf != "" {
+		cmdParts = append(cmdParts, "-p", intf)
+	}
+	cmdStr := strings.Join(cmdParts, " ")
+
+	output, err := GetDataFromHostCommand(cmdStr)
+	if err != nil {
+		return nil, err
+	}
+
+	lines := strings.Split(output, "\n")
+	entries := make([]portLpmode, 0)
+
+	for _, line := range lines {
+		line = strings.TrimSpace(line)
+		if line == "" || strings.HasPrefix(line, "Port") || strings.HasPrefix(line, "---") {
+			continue
+		}
+		fields := strings.Fields(line)
+		if len(fields) != 2 {
+			continue
+		}
+		port := fields[0]
+		mode := fields[1]
+		ml := strings.ToLower(mode)
+		if ml == "on" || ml == "off" {
+			mode = strings.Title(ml)
+		}
+		entries = append(entries, portLpmode{Port: port, Lpmode: mode})
+	}
+
+	return json.Marshal(entries)
 }

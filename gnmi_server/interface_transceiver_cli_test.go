@@ -51,7 +51,7 @@ func TestGetTransceiverErrorStatus(t *testing.T) {
 		testInit    func()
 	}{
 		{
-			desc:       "query SHOW interface transceiver error-status read error",
+			desc:       "query SHOW interfaces transceiver error-status read error",
 			pathTarget: "SHOW",
 			textPbPath: `
 				elem: <name: "" >
@@ -61,7 +61,7 @@ func TestGetTransceiverErrorStatus(t *testing.T) {
 			wantRetCode: codes.NotFound,
 		},
 		{
-			desc:       "query SHOW interface transceiver error-status NO interface dataset",
+			desc:       "query SHOW interfaces transceiver error-status NO interface dataset",
 			pathTarget: "SHOW",
 			textPbPath: `
 				elem: <name: "interfaces" >
@@ -71,7 +71,7 @@ func TestGetTransceiverErrorStatus(t *testing.T) {
 			wantRetCode: codes.OK,
 		},
 		{
-			desc:       "query SHOW interface transceiver error-status",
+			desc:       "query SHOW interfaces transceiver error-status",
 			pathTarget: "SHOW",
 			textPbPath: `
 				elem: <name: "interfaces" >
@@ -87,7 +87,7 @@ func TestGetTransceiverErrorStatus(t *testing.T) {
 			},
 		},
 		{
-			desc:       "query SHOW interface transceiver error-status port option",
+			desc:       "query SHOW interfaces transceiver error-status port option",
 			pathTarget: "SHOW",
 			textPbPath: `
 				elem: <name: "interfaces" >

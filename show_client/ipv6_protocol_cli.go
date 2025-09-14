@@ -39,7 +39,7 @@ var (
 	reEntryLine  = regexp.MustCompile(`^([A-Za-z0-9_-]+)\s*: *(.+)$`)
 )
 
-func getIPv6Protocol(options sdc.OptionMap) ([]byte, error) {
+func getIPv6Protocol(args sdc.CmdArgs, options sdc.OptionMap) ([]byte, error) {
 	rawOutput, err := GetDataFromHostCommand(vtyshIPv6ProtocolCommand)
 	if err != nil {
 		log.Errorf("Unable to execute command %q, err=%v", vtyshIPv6ProtocolCommand, err)

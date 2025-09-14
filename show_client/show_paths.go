@@ -320,7 +320,8 @@ func init() {
 		nil,
 		showCmdOptionPort,
 		sdc.UnimplementedOption(showCmdOptionNamespace),
-  sdc.RegisterCliPath(
+	)
+	sdc.RegisterCliPath(
 		[]string{"SHOW", "interfaces", "description"},
 		getInterfacesDescription,
 		nil,

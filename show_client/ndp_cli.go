@@ -124,7 +124,7 @@ func parseNDPOutput(output string, intf string) NeighborTable {
 		// Try to match FDB entry to replace iface
 		if vlanID != 0 && mac != "" {
 			for _, fdb := range bridgeMacList {
-				if fdb.VlanID == vlanID && fdb.Mac == mac {
+				if fdb.VlanID == vlanID && strings.EqualFold(fdb.Mac, mac) {
 					iface = fdb.IfName
 					vlan = strconv.Itoa(fdb.VlanID)
 					break

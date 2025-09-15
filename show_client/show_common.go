@@ -341,26 +341,6 @@ func GetInterfaceNameForDisplay(name string, namingMode string) string {
 	return name
 }
 
-// GetInterfaceSwitchportMode returns the switchport mode.
-func GetInterfaceSwitchportMode(
-	portTbl, portChannelTbl, vlanMemberTbl map[string]interface{},
-	name string,
-) string {
-	if m := GetFieldValueString(portTbl, name, "", "mode"); m != "" {
-		return m
-	}
-	if m := GetFieldValueString(portChannelTbl, name, "", "mode"); m != "" {
-		return m
-	}
-	for k := range vlanMemberTbl {
-		_, member, ok := SplitCompositeKey(k)
-		if ok && member == name {
-			return "trunk"
-		}
-	}
-	return "routed"
-}
-
 // SplitCompositeKey splits a two-part composite key using '|' or ':' delimiters.
 // Returns left, right, true on success; empty strings and false otherwise.
 // Examples:

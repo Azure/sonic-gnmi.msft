@@ -1196,6 +1196,26 @@ func getInterfaceSwitchportStatus(args sdc.CmdArgs, options sdc.OptionMap) ([]by
 	return json.Marshal(switchportStatus)
 }
 
+// GetInterfaceSwitchportMode returns the switchport mode.
+func GetInterfaceSwitchportMode(
+	portTbl, portChannelTbl, vlanMemberTbl map[string]interface{},
+	name string,
+) string {
+	if m := GetFieldValueString(portTbl, name, "", "mode"); m != "" {
+		return m
+	}
+	if m := GetFieldValueString(portChannelTbl, name, "", "mode"); m != "" {
+		return m
+	}
+	for k := range vlanMemberTbl {
+		_, member, ok := SplitCompositeKey(k)
+		if ok && member == name {
+			return "trunk"
+		}
+	}
+	return "routed"
+}
+
 // IsInterfaceInPortchannel reports whether interfaceName is a member of any portchannel.
 func IsInterfaceInPortchannel(portchannelMemberTable map[string]interface{}, interfaceName string) bool {
 	if portchannelMemberTable == nil || interfaceName == "" {

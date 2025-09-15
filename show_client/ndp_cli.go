@@ -263,57 +263,6 @@ func getVlanIDFromBvid(bvid string, bvidMap map[string]string) (string, error) {
 	return "", fmt.Errorf("BVID %s not found in VLAN map", bvid)
 }
 
-/*
-func getVlanIDFromBvid(bvid string) (string, error) {
-	queries := [][]string{
-		{"ASIC_DB", "ASIC_STATE:SAI_OBJECT_TYPE_VLAN:*"},
-	}
-
-	vlanData, err := GetMapFromQueries(queries)
-	if err != nil {
-		log.Errorf("Failed to get VLAN data for BVID %s: %v", bvid, err)
-		return "", err
-	}
-
-	const prefix = "SAI_OBJECT_TYPE_VLAN:"
-
-	for key, val := range vlanData {
-		if !strings.HasPrefix(key, prefix) {
-			continue
-		}
-
-		vlanBvid := strings.TrimPrefix(key, prefix) // keeps the "oid:..." part
-		if vlanBvid != bvid {
-			continue
-		}
-
-		// type-assert val to map[string]interface{}
-		ent, ok := val.(map[string]interface{})
-		if !ok {
-			log.Warningf("Unexpected format for VLAN entry %s: %#v", key, val)
-			return "", fmt.Errorf("invalid VLAN entry format for BVID %s", bvid)
-		}
-
-		// get VLAN ID
-		if vlanIDRaw, ok := ent["SAI_VLAN_ATTR_VLAN_ID"]; ok {
-			if vlanIDStr, ok := vlanIDRaw.(string); ok {
-				log.Infof("Found VLAN ID %s for BVID %s", vlanIDStr, bvid)
-				return vlanIDStr, nil
-			} else {
-				log.Warningf("VLAN ID is not a string for BVID %s: %#v", bvid, vlanIDRaw)
-				return "", fmt.Errorf("invalid VLAN ID type for BVID %s", bvid)
-			}
-		} else {
-			log.Warningf("VLAN ID not found for BVID %s in entry %v", bvid, ent)
-			return "", fmt.Errorf("VLAN ID not found for BVID %s", bvid)
-		}
-	}
-
-	log.Warningf("BVID %s not found in VLAN data", bvid)
-	return "", fmt.Errorf("BVID %s not found", bvid)
-}
-*/
-
 func getBridgePortMap() (map[string]string, error) {
 	queries := [][]string{
 		{"ASIC_DB", "ASIC_STATE:SAI_OBJECT_TYPE_BRIDGE_PORT:*"},
@@ -323,7 +272,7 @@ func getBridgePortMap() (map[string]string, error) {
 		log.Errorf("Failed to get SAI_OBJECT_TYPE_BRIDGE_PORT list from ASIC_DB: %v", err)
 		return nil, err
 	}
-	log.Infof("SAI_OBJECT_TYPE_BRIDGE_PORT data from query: %v", brPortStr)
+	log.V(6).Infof("SAI_OBJECT_TYPE_BRIDGE_PORT data from query: %v", brPortStr)
 
 	ifBrOidMap := make(map[string]string)
 	oidPrefix := len("oid:0x")
@@ -371,7 +320,7 @@ func fetchFdbData() ([]BridgeMacEntry, error) {
 		log.Errorf("Failed to get SAI_OBJECT_TYPE_FDB_ENTRY list from ASIC_DB: %v", err)
 		return nil, err
 	}
-	log.Infof("FDB_ENTRY list: %v", brPortStr)
+	log.V(6).Infof("FDB_ENTRY list: %v", brPortStr)
 
 	ifOidMap, err := getInterfaceOidMap()
 	if err != nil {
@@ -475,7 +424,7 @@ func getNDP(args sdc.CmdArgs, options sdc.OptionMap) ([]byte, error) {
 	if intf != "" {
 		cmd += " dev " + intf
 	}
-	log.V(2).Infof("Running command: %s", cmd)
+	log.V(6).Infof("Running command: %s", cmd)
 
 	cmdOutput, err := GetDataFromHostCommand(cmd)
 	if err != nil {
@@ -488,10 +437,10 @@ func getNDP(args sdc.CmdArgs, options sdc.OptionMap) ([]byte, error) {
 		return []byte(`{"TotalEntries":0,"Entries":[]}`), nil
 	}
 
-	log.Infof("ndp output: %s", cmdOutput)
+	log.V(6).Infof("ndp output: %s", cmdOutput)
 	// Parse the output
 	table := parseNDPOutput(cmdOutput, intf)
-	log.Infof("parsed table: %v", table)
+	log.V(6).Infof("parsed table: %v", table)
 	// Convert to JSON
 	jsonData, err := json.Marshal(table)
 	if err != nil {

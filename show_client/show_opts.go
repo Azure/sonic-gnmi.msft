@@ -26,7 +26,6 @@ const (
 	showCmdOptionIPAddressDesc         = "[ipaddress=TEXT] Filter by single IP address"
 	showCmdOptionIPV6AddressDesc       = "[ipaddress=TEXT] Filter by IPv6 address"
 	showCmdOptionInfoTypeDesc          = "[info_type=TEXT] Filter by information type"
-	showCmdOptionFrrRouteArgsDesc      = "[args=TEXT] Filter by FRR route arguments"
 	showCmdOptionSonicCliIfaceModeDesc = "[SONIC_CLI_IFACE_MODE=TEXT] Filter by sonic interface naming mode (eg alias/default)"
 )
 
@@ -176,12 +175,6 @@ var (
 	showCmdOptionInfoTypeForBgpNetwork = sdc.NewShowCmdOption(
 		"info_type",
 		showCmdOptionInfoTypeDesc,
-		sdc.StringValue,
-	)
-
-	showCmdOptionFrrRouteArgs = sdc.NewShowCmdOption(
-		"args",
-		showCmdOptionFrrRouteArgsDesc,
 		sdc.StringValue,
 	)
 

@@ -6,12 +6,9 @@ import (
 	"fmt"
 	log "github.com/golang/glog"
 	"github.com/sonic-net/sonic-gnmi/show_client/common"
-	sdc "github.com/sonic-net/sonic-gnmi/sonic_data_client"
 	"reflect"
 	"strings"
 )
-
-const topMemoryCommand = "top -bn 1 -o %MEM"
 
 func cleanPrefix(line, prefix string) string {
 	return strings.TrimSpace(strings.TrimPrefix(line, prefix))
@@ -19,7 +16,7 @@ func cleanPrefix(line, prefix string) string {
 
 func parseProcessLine(line string) (*common.TopProcessData, error) {
 	fields := strings.Fields(line)
-	if len(fields) < reflect.TypeOf(TopProcessResponse{}).NumField() {
+	if len(fields) < reflect.TypeOf(common.TopProcessData{}).NumField() {
 		return nil, fmt.Errorf("invalid process line: %q", line)
 	}
 	return &common.TopProcessData{
@@ -48,7 +45,7 @@ func LoadProcessesDataFromCmdOutput(output string) ([]byte, error) {
 	scanner := bufio.NewScanner(strings.NewReader(string(output)))
 	var (
 		uptime, tasks, cpuUsage, memoryUsage, swapUsage string
-		processes                                       []TopProcessData
+		processes                                       []common.TopProcessData
 		startParsing                                    bool
 	)
 

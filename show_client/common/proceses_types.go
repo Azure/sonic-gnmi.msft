@@ -1,7 +1,5 @@
 package common
 
-import "strings"
-
 // Struct to hold individual process details
 type TopProcessData struct {
 	PID     string `json:"pid"`

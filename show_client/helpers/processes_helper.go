@@ -1,271 +1,98 @@
 package helpers
 
 import (
-    "bufio"
+	"bufio"
 	"encoding/json"
 	"fmt"
-    "os"
-    "regexp"
-	"strconv"
-    "strings"
-	"time"
+	log "github.com/golang/glog"
+	"github.com/sonic-net/sonic-gnmi/show_client/common"
+	sdc "github.com/sonic-net/sonic-gnmi/sonic_data_client"
+	"reflect"
+	"strings"
 )
 
-// TopOutput holds the complete parsed output of the `top` command.
-type TopOutput struct {
-	Summary   TopSummary
-	Processes []Process
+const topMemoryCommand = "top -bn 1 -o %MEM"
+
+func cleanPrefix(line, prefix string) string {
+	return strings.TrimSpace(strings.TrimPrefix(line, prefix))
 }
 
-// TopSummary holds the system-wide information from the top of the `top` output.
-type TopSummary struct {
-	Timestamp     time.Time
-	Uptime        string // e.g., "up 14:31"
-	TotalUsers    int
-	LoadAverage   []float64 // Last 1, 5, and 15 minutes
-	TaskSummary   TaskSummary
-	CPUSummary    CPUSummary
-	MemorySummary MemorySummary
-	SwapSummary   SwapSummary
-}
-
-// TaskSummary holds statistics on the system tasks (processes).
-type TaskSummary struct {
-	Total    int
-	Running  int
-	Sleeping int
-	Stopped  int
-	Zombie   int
-}
-
-// CPUSummary holds detailed CPU usage statistics.
-type CPUSummary struct {
-	User              float64
-	System            float64
-	Nice              float64
-	Idle              float64
-	IOWait            float64
-	HardwareInterrupt float64
-	SoftwareInterrupt float64
-	Steal             float64
-}
-
-// MemorySummary holds system memory usage statistics.
-type MemorySummary struct {
-	Total     int64
-	Free      int64
-	Used      int64
-	BuffCache int64
-}
-
-// SwapSummary holds system swap space usage statistics.
-type SwapSummary struct {
-	Total int64
-	Free  int64
-	Used  int64
-	Avail int64
-}
-
-// Process holds the information for a single process entry from the `top` output.
-type Process struct {
-	PID      int
-	User     string
-	Priority int
-	Nice     int
-	Virt     uint64  // Virtual Memory
-	Res      uint64  // Resident Memory
-	Shr      uint64  // Shared Memory
-	State    string // e.g., "S" for sleep
-	CPU      float64
-	Memory   float64
-	Time     string // e.g., "00:00.12"
-	Command  string
-}
-
-func LoadProcessesDataFromCmdOutput(data string) ([]byte, error) {
-	//Store the data in process struct
-    var output TopOutput
-	scanner := bufio.NewScanner(strings.NewReader(data))
-
-	for i := 0; i < 7 && scanner.Scan(); i++ {
-		line := scanner.Text()
-		if strings.Contains(line, "top -") {
-			// Extract uptime and load average
-			parts := strings.Split(line, ",")
-			if len(parts) >= 3 {
-				output.Summary.Uptime = strings.TrimSpace(parts[0])
-				output.Summary.LoadAverage = parseLoadAverage(parts[2])
-			}
-		} else if strings.Contains(line, "Tasks:") {
-			// Extract task summary
-			output.Summary.TaskSummary = parseTaskSummary(line)
-		} else if strings.Contains(line, "%Cpu(s):") {
-			// Extract CPU summary
-			output.Summary.CPUSummary = parseCPUSummary(line)
-		} else if strings.Contains(line, "MiB Mem :") {
-			// Extract memory summary
-			output.Summary.MemorySummary = parseMemorySummary(line)
-		} else if strings.Contains(line, "MiB Swap:") {
-			// Extract swap summary
-			output.Summary.SwapSummary = parseSwapSummary(line)
-		}
-
-		if strings.Contains(line, "PID") && strings.Contains(line, "COMMAND") {
-			//Headers
-			break
-		}
+func parseProcessLine(line string) (*common.TopProcessData, error) {
+	fields := strings.Fields(line)
+	if len(fields) < reflect.TypeOf(TopProcessResponse{}).NumField() {
+		return nil, fmt.Errorf("invalid process line: %q", line)
 	}
+	return &common.TopProcessData{
+		PID:     fields[0],
+		User:    fields[1],
+		PR:      fields[2],
+		NI:      fields[3],
+		VIRT:    fields[4],
+		RES:     fields[5],
+		SHR:     fields[6],
+		S:       fields[7],
+		CPU:     fields[8],
+		MEM:     fields[9],
+		TIME:    fields[10],
+		Command: strings.Join(fields[11:], " "),
+	}, nil
+}
+
+func LoadProcessesDataFromCmdOutput(output string) ([]byte, error) {
+
+	if strings.TrimSpace(output) == "" {
+		log.Errorf("Got empty output for top command")
+		return nil, fmt.Errorf("Got empty output for top command")
+	}
+
+	scanner := bufio.NewScanner(strings.NewReader(string(output)))
+	var (
+		uptime, tasks, cpuUsage, memoryUsage, swapUsage string
+		processes                                       []TopProcessData
+		startParsing                                    bool
+	)
 
 	for scanner.Scan() {
 		line := scanner.Text()
-		if strings.TrimSpace(line) == "" {
-			continue
-		}
-		process, err := parseProcessLine(line)
-		if err == nil {
-			output.Processes = append(output.Processes, process)
-		}
-	}
-    return json.Marshal(output)
-}
 
-// Helper functions for parsing
-func parseLoadAverage(s string) []float64 {
-	var loads []float64
-	loadStr := strings.TrimPrefix(strings.TrimSpace(s), "load average:")
-	loadParts := strings.Split(loadStr, ",")
-	for _, p := range loadParts {
-		val, err := strconv.ParseFloat(strings.TrimSpace(p), 64)
-		if err == nil {
-			loads = append(loads, val)
-		}
-	}
-	return loads
-}
-
-func parseTaskSummary(s string) TaskSummary {
-	var summary TaskSummary
-	parts := strings.Split(s, ",")
-	for _, p := range parts {
-		p = strings.TrimSpace(p)
-		if strings.Contains(p, "total") {
-			summary.Total, _ = strconv.Atoi(extractNumber(p))
-		} else if strings.Contains(p, "running") {
-			summary.Running, _ = strconv.Atoi(extractNumber(p))
-		} else if strings.Contains(p, "sleeping") {
-			summary.Sleeping, _ = strconv.Atoi(extractNumber(p))
-		} else if strings.Contains(p, "stopped") {
-			summary.Stopped, _ = strconv.Atoi(extractNumber(p))
-		} else if strings.Contains(p, "zombie") {
-			summary.Zombie, _ = strconv.Atoi(extractNumber(p))
+		switch {
+		case strings.HasPrefix(line, "top -"):
+			uptime = cleanPrefix(line, "top -")
+		case strings.HasPrefix(line, "Tasks:"):
+			tasks = cleanPrefix(line, "Tasks:")
+		case strings.HasPrefix(line, "%Cpu(s):"):
+			cpuUsage = cleanPrefix(line, "%Cpu(s):")
+		case strings.HasPrefix(line, "MiB Mem :"):
+			memoryUsage = cleanPrefix(line, "MiB Mem :")
+		case strings.HasPrefix(line, "MiB Swap:"):
+			swapUsage = cleanPrefix(line, "MiB Swap:")
+		case strings.Contains(line, "PID") && strings.Contains(line, "USER"):
+			startParsing = true
+		default:
+			if !startParsing || strings.TrimSpace(line) == "" {
+				continue
+			}
+			process, err := parseProcessLine(line)
+			if err != nil {
+				log.V(2).Infof("Skipping line: %v", err)
+				continue
+			}
+			processes = append(processes, *process)
 		}
 	}
-	return summary
-}
 
-func parseCPUSummary(s string) CPUSummary {
-	var summary CPUSummary
-	// A more robust solution might use regex, but this is sufficient for a fixed format.
-	s = strings.TrimPrefix(s, "%Cpu(s):")
-	parts := strings.Fields(s)
-	for i := 0; i < len(parts)-1; i += 2 {
-		val, err := strconv.ParseFloat(parts[i], 64)
-		if err != nil {
-			continue
-		}
-		switch parts[i+1] {
-		case "us,":
-			summary.User = val
-		case "sy,":
-			summary.System = val
-		case "ni,":
-			summary.Nice = val
-		case "id,":
-			summary.Idle = val
-		case "wa,":
-			summary.IOWait = val
-		case "hi,":
-			summary.HardwareInterrupt = val
-		case "si,":
-			summary.SoftwareInterrupt = val
-		case "st":
-			summary.Steal = val
-		}
-	}
-	return summary
-}
-
-func extractNumber(data string) string {
-    re := regexp.MustCompile(`\d+`)
-    foundNumbers := re.FindAllString(data, -1)
-    if len(foundNumbers) > 0 {
-        return foundNumbers[0]
-    }
-    return ""
-}
-
-func parseMemorySummary(s string) MemorySummary {
-	var summary MemorySummary
-	// A simple approach based on splitting, but may be fragile
-	parts := strings.Split(s, ",")
-	for _, p := range parts {
-		p = strings.TrimSpace(p)
-		if strings.Contains(p, "total") {
-			summary.Total, _ = strconv.ParseInt(extractNumber(p), 10, 64)
-		} else if strings.Contains(p, "free") {
-			summary.Free, _ = strconv.ParseInt(extractNumber(p), 10, 64)
-		} else if strings.Contains(p, "used") {
-			summary.Used, _ = strconv.ParseInt(extractNumber(p), 10, 64)
-		} else if strings.Contains(p, "buff/cache") {
-			summary.BuffCache, _ = strconv.ParseInt(extractNumber(p), 10, 64)
-		}
-	}
-	return summary
-}
-
-func parseSwapSummary(s string) SwapSummary {
-	var summary SwapSummary
-	parts := strings.Split(s, ",")
-	for _, p := range parts {
-		p = strings.TrimSpace(p)
-		if strings.Contains(p, "total") {
-			summary.Total, _ = strconv.ParseInt(extractNumber(p), 10, 64)
-		} else if strings.Contains(p, "free") {
-			summary.Free, _ = strconv.ParseInt(extractNumber(p), 10, 64)
-		} else if strings.Contains(p, "used") {
-			summary.Used, _ = strconv.ParseInt(extractNumber(p), 10, 64)
-		} else if strings.Contains(p, "avail") {
-			summary.Avail, _ = strconv.ParseInt(extractNumber(p), 10, 64)
-		}
-	}
-	return summary
-}
-
-func parseMemoryValue(data string) uint64 {
-    pageSize := uint64(os.Getpagesize()) / 1024
-    parsedValue, _ := strconv.ParseUint(data, 10, 64)
-    return parsedValue * pageSize
-}
-
-func parseProcessLine(s string) (Process, error) {
-	var proc Process
-	fields := strings.Fields(s)
-	if len(fields) < 12 {
-		return proc, fmt.Errorf("not enough fields in process line: %s", s)
+	if uptime == "" || len(processes) == 0 {
+		return nil, fmt.Errorf("incomplete top output: missing uptime or processes")
 	}
 
-	proc.PID, _ = strconv.Atoi(fields[0])
-	proc.User = fields[1]
-	proc.Priority, _ = strconv.Atoi(fields[2])
-	proc.Nice, _ = strconv.Atoi(fields[3])
-	proc.Virt = parseMemoryValue(fields[4])
-	proc.Res = parseMemoryValue(fields[5])
-	proc.Shr = parseMemoryValue(fields[6])
-	proc.State = fields[7]
-	proc.CPU, _ = strconv.ParseFloat(fields[8], 64)
-	proc.Memory, _ = strconv.ParseFloat(fields[9], 64)
-	proc.Time = fields[10]
-	proc.Command = strings.Join(fields[11:], " ")
+	response := common.TopProcessCompleteResponse{
+		Uptime:      uptime,
+		Tasks:       tasks,
+		CPUUsage:    cpuUsage,
+		MemoryUsage: memoryUsage,
+		SwapUsage:   swapUsage,
+		Processes:   processes,
+	}
 
-	return proc, nil
+	return json.MarshalIndent(response, "", "  ")
 }

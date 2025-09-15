@@ -8,8 +8,8 @@ import (
 	"strings"
 
 	log "github.com/golang/glog"
+	"github.com/sonic-net/sonic-gnmi/show_client/helpers"
 	sdc "github.com/sonic-net/sonic-gnmi/sonic_data_client"
-    "github.com/sonic-net/sonic-gnmi/show_client/helpers"
 )
 
 const (
@@ -36,7 +36,7 @@ func getProcessesRoot(args sdc.CmdArgs, options sdc.OptionMap) ([]byte, error) {
 	help := map[string]interface{}{
 		"subcommands": map[string]string{
 			"summary": "show/processes/summary: Show processses info",
-			"cpu":     "show/processes/cpu: Show processes CPU info",
+			"cpu":     "show/processes/cpu: Show processes information sorted by cpu usage",
 			"mem":     "show/processes/mem: Show processes memory info",
 		},
 	}

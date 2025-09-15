@@ -412,7 +412,7 @@ func init() {
 	sdc.RegisterCliPath(
 		[]string{"SHOW", "processes", "cpu"},
 		getProcessesCPU,
-		"SHOW/processes/cpu[OPTIONS]: Show processes CPU info",
+		"SHOW/processes/cpu[OPTIONS]: Show processes information sorted by cpu usage",
 		0,
 		0,
 		nil,

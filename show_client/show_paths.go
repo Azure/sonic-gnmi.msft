@@ -273,7 +273,7 @@ func init() {
 		getIPv6BGPNeighborsHandler,
 		"SHOW/ipv6/bgp/neighbors/{IPADDRESS}/{routes|advertised-routes|received-routes}[OPTIONS]: Show IPv6 BGP neighbors",
 		0,
-		3,
+		2,
 		nil,
 		showCmdOptionIPAddress, // TODO
 		showCmdOptionInfoType,  // TODO

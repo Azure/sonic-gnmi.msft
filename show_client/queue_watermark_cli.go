@@ -2,7 +2,6 @@ package show_client
 
 import (
 	"encoding/json"
-	"fmt"
 	"strings"
 
 	log "github.com/golang/glog"
@@ -57,7 +56,7 @@ func getQueueUserWatermarksSnapshot(ifaces []string, requestedQueueType int) (ma
 	return response, nil
 }
 
-func getQueueUserWatermarks(args sdc.CmdArgs, options sdc.OptionMap) ([]byte, error) {
+func getQueueUserWatermarksCommon(options sdc.OptionMap, requestedQueueType int) ([]byte, error) {
 	if len(countersQueueTypeMap) == 0 {
 		var err error
 		countersQueueTypeMap, err = sdc.GetCountersQueueTypeMap()
@@ -73,26 +72,34 @@ func getQueueUserWatermarks(args sdc.CmdArgs, options sdc.OptionMap) ([]byte, er
 		ifaces = interfaces
 	}
 
-	var queueTypeStr string
-	if queueTypeOpt, ok := options["queue-type"].String(); ok {
-		queueTypeStr = queueTypeOpt
-	}
-	var queueType int
-	if queueTypeStr == "all" {
-		queueType = ALL
-	} else if queueTypeStr == "unicast" {
-		queueType = UNICAST
-	} else if queueTypeStr == "multicast" {
-		queueType = MULTICAST
-	} else {
-		return nil, fmt.Errorf("Invalid queue-type option '%s'. Valid values are 'all', 'unicast', and 'multicast'", queueTypeStr)
-	}
-
-	snapshot, err := getQueueUserWatermarksSnapshot(ifaces, queueType)
+	snapshot, err := getQueueUserWatermarksSnapshot(ifaces, requestedQueueType)
 	if err != nil {
 		log.Errorf("Unable to get queue user watermarks due to err: %v", err)
 		return nil, err
 	}
 
 	return json.Marshal(snapshot)
+}
+
+func getQueueUserWatermarks(args sdc.CmdArgs, options sdc.OptionMap) ([]byte, error) {
+	help := map[string]interface{}{
+		"subcommands": map[string]string{
+			"all":       "show/queue/watermark/all",
+			"unicast":   "show/queue/watermark/unicast",
+			"multicast": "show/queue/watermark/multicast",
+		},
+	}
+	return json.Marshal(help)
+}
+
+func getQueueUserWatermarksAll(args sdc.CmdArgs, options sdc.OptionMap) ([]byte, error) {
+	return getQueueUserWatermarksCommon(options, ALL)
+}
+
+func getQueueUserWatermarksUnicast(args sdc.CmdArgs, options sdc.OptionMap) ([]byte, error) {
+	return getQueueUserWatermarksCommon(options, UNICAST)
+}
+
+func getQueueUserWatermarksMulticast(args sdc.CmdArgs, options sdc.OptionMap) ([]byte, error) {
+	return getQueueUserWatermarksCommon(options, MULTICAST)
 }

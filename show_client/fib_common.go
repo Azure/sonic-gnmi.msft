@@ -1,6 +1,7 @@
 package show_client
 
 import (
+	"net"
 	"sort"
 	"strings"
 
@@ -74,4 +75,18 @@ func parseFibVrf(key string) (string, string) {
 		}
 	}
 	return "", key
+}
+
+// matchIPFamily checks if prefix belongs to desired family
+func matchIPFamily(prefix string, wantIPv6 bool) bool {
+	host := prefix
+	if i := strings.IndexByte(prefix, '/'); i >= 0 {
+		host = prefix[:i]
+	}
+	ip := net.ParseIP(host)
+	if ip == nil {
+		return false
+	}
+	isV6 := ip.To4() == nil
+	return isV6 == wantIPv6
 }

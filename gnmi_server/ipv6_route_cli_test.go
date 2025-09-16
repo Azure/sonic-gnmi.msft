@@ -49,7 +49,7 @@ func TestGetIPv6Route(t *testing.T) {
 		valTest        bool
 	}{
 		{
-			desc:       "query SHOW ipv6 route base",
+			desc:       "query `SHOW ipv6 route`",
 			pathTarget: "SHOW",
 			textPbPath: `
 				elem: <name: "ipv6" >
@@ -61,11 +61,12 @@ func TestGetIPv6Route(t *testing.T) {
 			valTest:        true,
 		},
 		{
-			desc:       "query SHOW ipv6 route bgp",
+			desc:       "query `SHOW ipv6 route bgp`",
 			pathTarget: "SHOW",
 			textPbPath: `
 				elem: <name: "ipv6" >
-				elem: <name: "route" key <key: "args" value: "bgp" > >
+				elem: <name: "route" >
+				elem: <name: "bgp" >
 			`,
 			wantRetCode:    codes.OK,
 			wantRespFile:   "../testdata/VTYSH_SHOW_IPV6_ROUTE_BGP.json",
@@ -73,11 +74,12 @@ func TestGetIPv6Route(t *testing.T) {
 			valTest:        true,
 		},
 		{
-			desc:       "query SHOW ipv6 route prefix arg",
+			desc:       "query `SHOW ipv6 route [IPADDRESS]`",
 			pathTarget: "SHOW",
 			textPbPath: `
 				elem: <name: "ipv6" >
-				elem: <name: "route" key <key: "args" value: "2001:db8::/64" > >
+				elem: <name: "route" >
+				elem: <name: "2001:db8::/64" >
 			`,
 			wantRetCode:    codes.OK,
 			wantRespFile:   "../testdata/VTYSH_SHOW_IPV6_ROUTE_PREFIX.json",
@@ -85,15 +87,29 @@ func TestGetIPv6Route(t *testing.T) {
 			valTest:        true,
 		},
 		{
-			desc:       "query SHOW ipv6 route args include json (no duplicate)",
+			desc:       "query `SHOW ipv6 route bgp json`",
 			pathTarget: "SHOW",
 			textPbPath: `
 				elem: <name: "ipv6" >
-				elem: <name: "route" key <key: "args" value: "bgp json" > >
+				elem: <name: "route" >
+				elem: <name: "bgp" >
 			`,
 			wantRetCode:    codes.OK,
 			wantRespFile:   "../testdata/VTYSH_SHOW_IPV6_ROUTE_BGP.json",
 			mockOutputFile: "../testdata/VTYSH_SHOW_IPV6_ROUTE_BGP.json",
+			valTest:        true,
+		},
+		{
+			desc:       "query `SHOW ipv6 route nexthop-group`",
+			pathTarget: "SHOW",
+			textPbPath: `
+				elem: <name: "ipv6" >
+				elem: <name: "route" >
+				elem: <name: "nexthop-group" >
+			`,
+			wantRetCode:    codes.OK,
+			wantRespFile:   "../testdata/VTYSH_SHOW_IPV6_ROUTE.json",
+			mockOutputFile: "../testdata/VTYSH_SHOW_IPV6_ROUTE.json",
 			valTest:        true,
 		},
 		{

@@ -18,30 +18,22 @@ func getIPv6Route(args sdc.CmdArgs, options sdc.OptionMap) ([]byte, error) {
 		return nil, fmt.Errorf("'show ipv6 route' is not supported on multi-ASIC platforms")
 	}
 
-	cmdArgs := []string{"show", "ipv6", "route"}
-	jsonArgPresent := false
+	vtyshCmdArgs := []string{"show", "ipv6", "route"}
 
-	// TODO: Change this to use args map
-	if val, ok := options["args"]; ok {
-		if frrArgs, ok := val.String(); ok {
-			userArgs := strings.Fields(frrArgs)
-			for _, arg := range userArgs {
-				if arg == "json" {
-					jsonArgPresent = true
-				}
-				cmdArgs = append(cmdArgs, arg)
-			}
+	for _, a := range args {
+		// Skip empty args
+		// Skip "nexthop-group" since NHG ID already included in JSON output
+		// Skip "json" since we will add it at the end
+		if a == "" || a == "nexthop-group" || a == "json" {
+			continue
 		}
+		vtyshCmdArgs = append(vtyshCmdArgs, a)
 	}
 
-	if !jsonArgPresent {
-		cmdArgs = append(cmdArgs, "json")
-	}
-
-	vtyshCmdArgs := strings.Join(cmdArgs, " ")
+	vtyshCmdArgs = append(vtyshCmdArgs, "json")
 
 	// For single-ASIC, run in the default BGP instance on the host.
-	vtyshIPv6RouteCmd := fmt.Sprintf("vtysh -c \"%s\"", vtyshCmdArgs)
+	vtyshIPv6RouteCmd := fmt.Sprintf("vtysh -c \"%s\"", strings.Join(vtyshCmdArgs, " "))
 
 	output, err := GetDataFromHostCommand(vtyshIPv6RouteCmd)
 	if err != nil {

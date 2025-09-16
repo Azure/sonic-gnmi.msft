@@ -52,6 +52,21 @@ type namingModeResponse struct {
 	NamingMode string `json:"naming_mode"`
 }
 
+func calculateDiffReturnDefault(oldCounter, newCounter, defaultValue string) string {
+	if oldCounter == defaultValue || newCounter == defaultValue {
+		return defaultValue
+	}
+	oldV, err := strconv.ParseInt(oldCounter, base10, 64)
+	if err != nil {
+		return defaultValue
+	}
+	newV, err := strconv.ParseInt(newCounter, base10, 64)
+	if err != nil || newV < oldV { // guard reset/rollover
+		return defaultValue
+	}
+	return strconv.FormatInt(newV-oldV, base10)
+}
+
 func calculateByteRate(rate string) string {
 	if rate == defaultMissingCounterValue {
 		return defaultMissingCounterValue
@@ -246,18 +261,18 @@ func calculateDiffSnapshot(oldSnapshot map[string]InterfaceCountersResponse, new
 		}
 		diffResponse[iface] = InterfaceCountersResponse{
 			State:  newResp.State,
-			RxOk:   calculateDiffCounters(oldResp.RxOk, newResp.RxOk, defaultMissingCounterValue),
+			RxOk:   calculateDiffReturnDefault(oldResp.RxOk, newResp.RxOk, defaultMissingCounterValue),
 			RxBps:  newResp.RxBps,
 			RxUtil: newResp.RxUtil,
-			RxErr:  calculateDiffCounters(oldResp.RxErr, newResp.RxErr, defaultMissingCounterValue),
-			RxDrp:  calculateDiffCounters(oldResp.RxDrp, newResp.RxDrp, defaultMissingCounterValue),
-			RxOvr:  calculateDiffCounters(oldResp.RxOvr, newResp.RxOvr, defaultMissingCounterValue),
-			TxOk:   calculateDiffCounters(oldResp.TxOk, newResp.TxOk, defaultMissingCounterValue),
+			RxErr:  calculateDiffReturnDefault(oldResp.RxErr, newResp.RxErr, defaultMissingCounterValue),
+			RxDrp:  calculateDiffReturnDefault(oldResp.RxDrp, newResp.RxDrp, defaultMissingCounterValue),
+			RxOvr:  calculateDiffReturnDefault(oldResp.RxOvr, newResp.RxOvr, defaultMissingCounterValue),
+			TxOk:   calculateDiffReturnDefault(oldResp.TxOk, newResp.TxOk, defaultMissingCounterValue),
 			TxBps:  newResp.TxBps,
 			TxUtil: newResp.TxUtil,
-			TxErr:  calculateDiffCounters(oldResp.TxErr, newResp.TxErr, defaultMissingCounterValue),
-			TxDrp:  calculateDiffCounters(oldResp.TxDrp, newResp.TxDrp, defaultMissingCounterValue),
-			TxOvr:  calculateDiffCounters(oldResp.TxOvr, newResp.TxOvr, defaultMissingCounterValue),
+			TxErr:  calculateDiffReturnDefault(oldResp.TxErr, newResp.TxErr, defaultMissingCounterValue),
+			TxDrp:  calculateDiffReturnDefault(oldResp.TxDrp, newResp.TxDrp, defaultMissingCounterValue),
+			TxOvr:  calculateDiffReturnDefault(oldResp.TxOvr, newResp.TxOvr, defaultMissingCounterValue),
 		}
 	}
 	return diffResponse
@@ -406,7 +421,7 @@ func getInterfaceFecStatus(args sdc.CmdArgs, options sdc.OptionMap) ([]byte, err
 		log.Errorf("Failed to get front panel ports: %v", err)
 		return nil, err
 	}
-	ports = natsortInterfaces(ports)
+	ports = NatsortInterfaces(ports)
 
 	portFecStatus := make([]map[string]string, 0, len(ports)+1)
 	for i := range ports {
@@ -784,7 +799,7 @@ func getSubInterfaceStatus(intf string) ([]byte, error) {
 		log.Errorf("Failed to get sub-interfaces from APPL_DB: %v", err)
 		return nil, err
 	}
-	ports = natsortInterfaces(ports)
+	ports = NatsortInterfaces(ports)
 
 	interfaceStatus := make([]map[string]string, 0, len(ports))
 	for i := range ports {
@@ -827,8 +842,8 @@ func getInterfaceStatus(args sdc.CmdArgs, options sdc.OptionMap) ([]byte, error)
 		log.Errorf("Failed to get portchannel list from CONFIG_DB: %v", err)
 		return nil, err
 	}
-	ports = natsortInterfaces(ports)
-	portchannels = natsortInterfaces(portchannels)
+	ports = NatsortInterfaces(ports)
+	portchannels = NatsortInterfaces(portchannels)
 	intfModeMap := getIntfModeMap(ports)
 	poModeMap := getPortchannelModeMap(portchannels)
 	poSpeedMap := getPortchannelSpeedMap(portchannels)
@@ -1000,8 +1015,8 @@ func getInterfaceStatus(args sdc.CmdArgs, options sdc.OptionMap) ([]byte, error)
 }
 
 func getInterfaceAlias(args sdc.CmdArgs, options sdc.OptionMap) ([]byte, error) {
-	// TODO
-	intf, _ := options["interface"].String()
+	intf := args.At(0)
+	namingMode, _ := options[SonicCliIfaceMode].String()
 
 	// Read CONFIG_DB.PORT
 	queries := [][]string{{"CONFIG_DB", "PORT"}}
@@ -1023,6 +1038,12 @@ func getInterfaceAlias(args sdc.CmdArgs, options sdc.OptionMap) ([]byte, error) 
 
 	// If a specific interface was requested, accept port name
 	if intf != "" {
+		intf, err := TryConvertInterfaceNameFromAlias(intf, namingMode)
+		if err != nil {
+			log.Errorf("Error: %v", err)
+			return nil, err
+		}
+
 		name := intf
 		if _, ok := nameToAlias[name]; !ok {
 			return nil, fmt.Errorf("Invalid interface name %s", name)
@@ -1042,8 +1063,7 @@ func getInterfaceAlias(args sdc.CmdArgs, options sdc.OptionMap) ([]byte, error) 
 }
 
 func getInterfaceSwitchportConfig(args sdc.CmdArgs, options sdc.OptionMap) ([]byte, error) {
-	// TODO: Need revirw as show cli doesnt support any arguments
-	intf, _ := options["interface"].String()
+	namingMode, _ := options[SonicCliIfaceMode].String()
 
 	// Read CONFIG_DB tables
 	portTbl, err := GetMapFromQueries([][]string{{"CONFIG_DB", "PORT"}})
@@ -1079,22 +1099,7 @@ func getInterfaceSwitchportConfig(args sdc.CmdArgs, options sdc.OptionMap) ([]by
 		portchannels = append(portchannels, pc)
 	}
 	keys := append(ports, portchannels...)
-	keys = natsortInterfaces(keys)
-
-	// Optionally filter by interface
-	if intf != "" {
-		found := false
-		for _, k := range keys {
-			if k == intf {
-				found = true
-				keys = []string{intf}
-				break
-			}
-		}
-		if !found {
-			return nil, fmt.Errorf("Got unexpected extra argument %s", intf)
-		}
-	}
+	keys = NatsortInterfaces(keys)
 
 	// Build VLAN membership maps
 	untaggedMap := make(map[string][]string)
@@ -1128,7 +1133,7 @@ func getInterfaceSwitchportConfig(args sdc.CmdArgs, options sdc.OptionMap) ([]by
 		mode := GetInterfaceSwitchportMode(portTbl, portChannelTbl, vlanMemberTbl, k)
 
 		switchportConfig = append(switchportConfig, map[string]string{
-			"Interface": GetInterfaceNameForDisplay(k),
+			"Interface": GetInterfaceNameForDisplay(k, namingMode),
 			"Mode":      mode,
 			"Untagged":  strings.Join(untagged, ","),
 			"Tagged":    strings.Join(tagged, ","),
@@ -1139,8 +1144,7 @@ func getInterfaceSwitchportConfig(args sdc.CmdArgs, options sdc.OptionMap) ([]by
 }
 
 func getInterfaceSwitchportStatus(args sdc.CmdArgs, options sdc.OptionMap) ([]byte, error) {
-	// TODO: CLI discrepancy same as other switchport cmd
-	intf, _ := options["interface"].String()
+	namingMode, _ := options[SonicCliIfaceMode].String()
 
 	// Read CONFIG_DB tables
 	portTbl, err := GetMapFromQueries([][]string{{"CONFIG_DB", "PORT"}})
@@ -1176,22 +1180,7 @@ func getInterfaceSwitchportStatus(args sdc.CmdArgs, options sdc.OptionMap) ([]by
 		portchannels = append(portchannels, pc)
 	}
 	keys := append(ports, portchannels...)
-	keys = natsortInterfaces(keys)
-
-	// Optionally filter by interface
-	if intf != "" {
-		found := false
-		for _, k := range keys {
-			if k == intf {
-				found = true
-				keys = []string{intf}
-				break
-			}
-		}
-		if !found {
-			return nil, fmt.Errorf("Got unexpected extra argument %s", intf)
-		}
-	}
+	keys = NatsortInterfaces(keys)
 
 	// Emit switchportStatus
 	switchportStatus := make([]map[string]string, 0, len(keys))
@@ -1199,12 +1188,32 @@ func getInterfaceSwitchportStatus(args sdc.CmdArgs, options sdc.OptionMap) ([]by
 		mode := GetInterfaceSwitchportMode(portTbl, portChannelTbl, vlanMemberTbl, k)
 
 		switchportStatus = append(switchportStatus, map[string]string{
-			"Interface": GetInterfaceNameForDisplay(k),
+			"Interface": GetInterfaceNameForDisplay(k, namingMode),
 			"Mode":      mode,
 		})
 	}
 
 	return json.Marshal(switchportStatus)
+}
+
+// GetInterfaceSwitchportMode returns the switchport mode.
+func GetInterfaceSwitchportMode(
+	portTbl, portChannelTbl, vlanMemberTbl map[string]interface{},
+	name string,
+) string {
+	if m := GetFieldValueString(portTbl, name, "", "mode"); m != "" {
+		return m
+	}
+	if m := GetFieldValueString(portChannelTbl, name, "", "mode"); m != "" {
+		return m
+	}
+	for k := range vlanMemberTbl {
+		_, member, ok := SplitCompositeKey(k)
+		if ok && member == name {
+			return "trunk"
+		}
+	}
+	return "routed"
 }
 
 // IsInterfaceInPortchannel reports whether interfaceName is a member of any portchannel.
@@ -1222,8 +1231,8 @@ func IsInterfaceInPortchannel(portchannelMemberTable map[string]interface{}, int
 }
 
 func getInterfaceFlap(args sdc.CmdArgs, options sdc.OptionMap) ([]byte, error) {
-	// TODO
-	intf, _ := options["interface"].String()
+	intf := args.At(0)
+	namingMode, _ := options[SonicCliIfaceMode].String()
 
 	// Query APPL_DB PORT_TABLE
 	queries := [][]string{
@@ -1238,6 +1247,11 @@ func getInterfaceFlap(args sdc.CmdArgs, options sdc.OptionMap) ([]byte, error) {
 	// Collect ports (optionally filter by interface)
 	var ports []string
 	if intf != "" {
+		intf, err := TryConvertInterfaceNameFromAlias(intf, namingMode)
+		if err != nil {
+			log.Errorf("Error: %v", err)
+			return nil, err
+		}
 		if _, ok := portTable[intf]; !ok {
 			return nil, fmt.Errorf("Invalid interface name %s", intf)
 		}
@@ -1247,7 +1261,7 @@ func getInterfaceFlap(args sdc.CmdArgs, options sdc.OptionMap) ([]byte, error) {
 			ports = append(ports, p)
 		}
 	}
-	ports = natsortInterfaces(ports)
+	ports = NatsortInterfaces(ports)
 
 	// Build rows
 	rows := make([]map[string]string, 0, len(ports))
@@ -1266,7 +1280,7 @@ func getInterfaceFlap(args sdc.CmdArgs, options sdc.OptionMap) ([]byte, error) {
 		lastUp := GetFieldValueString(portTable, p, "Never", "last_up_time")
 
 		rows = append(rows, map[string]string{
-			"Interface":                GetInterfaceNameForDisplay(p),
+			"Interface":                p,
 			"Flap Count":               flapCount,
 			"Admin":                    adminStatus,
 			"Oper":                     operStatus,
@@ -1294,6 +1308,7 @@ func getInterfaceFlap(args sdc.CmdArgs, options sdc.OptionMap) ([]byte, error) {
 // 6) "BackEndLeafRouter"
 func getInterfaceNeighborExpected(args sdc.CmdArgs, options sdc.OptionMap) ([]byte, error) {
 	// TODO: Supports an interfacename as arg
+	namingMode, _ := options[SonicCliIfaceMode].String()
 	// Fetch DEVICE_NEIGHBOR
 	neighborTbl, err := GetMapFromQueries([][]string{{"CONFIG_DB", "DEVICE_NEIGHBOR"}})
 	if err != nil {
@@ -1332,7 +1347,7 @@ func getInterfaceNeighborExpected(args sdc.CmdArgs, options sdc.OptionMap) ([]by
 			ntype = "None"
 		}
 
-		displayIf := GetInterfaceNameForDisplay(localIf)
+		displayIf := GetInterfaceNameForDisplay(localIf, namingMode)
 
 		out[displayIf] = map[string]string{
 			"Neighbor":         device,
@@ -1347,7 +1362,9 @@ func getInterfaceNeighborExpected(args sdc.CmdArgs, options sdc.OptionMap) ([]by
 }
 
 func getInterfaceNamingMode(args sdc.CmdArgs, options sdc.OptionMap) ([]byte, error) {
-	mode := GetInterfaceNamingMode()
-	namingModeResp := namingModeResponse{NamingMode: mode}
+	namingMode, _ := options[SonicCliIfaceMode].String()
+
+	namingMode = GetInterfaceNamingMode(namingMode)
+	namingModeResp := namingModeResponse{NamingMode: namingMode}
 	return json.Marshal(namingModeResp)
 }

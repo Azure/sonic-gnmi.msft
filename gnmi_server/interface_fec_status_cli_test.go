@@ -95,7 +95,8 @@ func TestGetShowInterfaceFecStatus(t *testing.T) {
 			textPbPath: `
 				elem: <name: "interfaces" >
 				elem: <name: "fec" >
-				elem: <name: "status" key: { key: "interface" value: "Ethernet0" } >
+				elem: <name: "status" >
+				elem: <name: "Ethernet0" >
 			`,
 			wantRetCode: codes.OK,
 			wantRespVal: []byte(oneIntfData),
@@ -115,7 +116,8 @@ func TestGetShowInterfaceFecStatus(t *testing.T) {
 			textPbPath: `
 				elem: <name: "interfaces" >
 				elem: <name: "fec" >
-				elem: <name: "status" key: { key: "interface" value: "Ethernet10" } >
+				elem: <name: "status" >
+				elem: <name: "Ethernet10" >
 			`,
 			wantRetCode: codes.OK,
 			wantRespVal: []byte(emptyResp),

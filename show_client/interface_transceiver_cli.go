@@ -2,6 +2,7 @@ package show_client
 
 import (
 	"encoding/json"
+	"strings"
 
 	log "github.com/golang/glog"
 	sdc "github.com/sonic-net/sonic-gnmi/sonic_data_client"
@@ -97,4 +98,46 @@ func getInterfaceTransceiverPresence(args sdc.CmdArgs, options sdc.OptionMap) ([
 
 	log.V(6).Infof("Transceiver presence status: %v", status)
 	return json.Marshal(status)
+}
+
+type portLpmode struct {
+	Port   string `json:"Port"`
+	Lpmode string `json:"Low-power Mode"`
+}
+
+func getInterfaceTransceiverLpMode(args sdc.CmdArgs, options sdc.OptionMap) ([]byte, error) {
+	intf := args.At(0)
+	cmdParts := []string{"sudo", "sfputil", "show", "lpmode"}
+	if intf != "" {
+		cmdParts = append(cmdParts, "-p", intf)
+	}
+	cmdStr := strings.Join(cmdParts, " ")
+
+	output, err := GetDataFromHostCommand(cmdStr)
+	if err != nil {
+		return nil, err
+	}
+
+	lines := strings.Split(output, "\n")
+	entries := make([]portLpmode, 0)
+
+	for _, line := range lines {
+		line = strings.TrimSpace(line)
+		if line == "" || strings.HasPrefix(line, "Port") || strings.HasPrefix(line, "---") {
+			continue
+		}
+		fields := strings.Fields(line)
+		if len(fields) != 2 {
+			continue
+		}
+		port := fields[0]
+		mode := fields[1]
+		ml := strings.ToLower(mode)
+		if ml == "on" || ml == "off" {
+			mode = strings.Title(ml)
+		}
+		entries = append(entries, portLpmode{Port: port, Lpmode: mode})
+	}
+
+	return json.Marshal(entries)
 }

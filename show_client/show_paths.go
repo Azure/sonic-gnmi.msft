@@ -109,7 +109,7 @@ func init() {
 		0,
 		1,
 		nil,
-		showCmdOptionInterface, // TODO: Take as arg not option
+		showCmdOptionSonicCliIfaceMode,
 		sdc.UnimplementedOption(showCmdOptionNamespace),
 		showCmdOptionDisplay,
 	)
@@ -131,6 +131,19 @@ func init() {
 		sdc.UnimplementedOption(showCmdOptionNamespace),
 		showCmdOptionDisplay,
 		showCmdOptionInterfaces,
+		showCmdOptionPeriod,
+		showCmdOptionJson,
+		showCmdOptionVerbose,
+	)
+
+	// SHOW/interfaces/counters/rif
+	sdc.RegisterCliPath(
+		[]string{"SHOW", "interfaces", "counters", "rif"},
+		getInterfaceRifCounters,
+		"SHOW/interfaces/counters/rif/{INTERFACENAME}[OPTIONS]",
+		0,
+		1,
+		nil,
 		showCmdOptionPeriod,
 		showCmdOptionJson,
 		showCmdOptionVerbose,
@@ -162,7 +175,6 @@ func init() {
 		0,
 		1,
 		nil,
-		showCmdOptionInterface, // TODO
 		sdc.UnimplementedOption(showCmdOptionNamespace),
 		showCmdOptionDisplay,
 	)
@@ -173,7 +185,7 @@ func init() {
 		0,
 		1,
 		nil,
-		showCmdOptionInterface, // TODO: Take as arg not option
+		showCmdOptionSonicCliIfaceMode,
 	)
 	sdc.RegisterCliPath(
 		[]string{"SHOW", "interfaces", "neighbor", "expected"},
@@ -183,6 +195,7 @@ func init() {
 		1,
 		nil,
 		showCmdOptionInterface, // TODO: Take as arg not option
+		showCmdOptionSonicCliIfaceMode,
 	)
 	sdc.RegisterCliPath(
 		[]string{"SHOW", "interfaces", "naming_mode"},
@@ -192,6 +205,7 @@ func init() {
 		0,
 		nil,
 		showCmdOptionVerbose,
+		showCmdOptionSonicCliIfaceMode,
 	)
 	sdc.RegisterCliPath(
 		[]string{"SHOW", "interfaces", "status"},
@@ -200,7 +214,6 @@ func init() {
 		0,
 		1,
 		nil,
-		showCmdOptionInterface, // TODO
 		sdc.UnimplementedOption(showCmdOptionNamespace),
 		showCmdOptionDisplay,
 		showCmdOptionVerbose,
@@ -212,7 +225,7 @@ func init() {
 		0,
 		0,
 		nil,
-		showCmdOptionInterface, // TODO: CLI doesnt support
+		showCmdOptionSonicCliIfaceMode,
 	)
 	sdc.RegisterCliPath(
 		[]string{"SHOW", "interfaces", "switchport", "status"},
@@ -221,7 +234,7 @@ func init() {
 		0,
 		0,
 		nil,
-		showCmdOptionInterface, // CLI doesnt support
+		showCmdOptionSonicCliIfaceMode,
 	)
 	sdc.RegisterCliPath(
 		[]string{"SHOW", "interfaces", "transceiver", "error-status"},
@@ -239,6 +252,15 @@ func init() {
 		[]string{"SHOW", "interfaces", "transceiver", "presence"},
 		getInterfaceTransceiverPresence,
 		"SHOW/interfaces/transceiver/presence/{INTERFACENAME}[OPTIONS]: Show interface transceiver presence",
+		0,
+		1,
+		nil,
+		showCmdOptionInterface, // TODO
+	)
+	sdc.RegisterCliPath(
+		[]string{"SHOW", "interfaces", "transceiver", "lpmode"},
+		getInterfaceTransceiverLpMode,
+		"SHOW/interfaces/transceiver/lpmode/{INTERFACENAME}[OPTIONS]: Show interface transceiver low-power mode",
 		0,
 		1,
 		nil,
@@ -324,7 +346,6 @@ func init() {
 		nil,
 		sdc.UnimplementedOption(showCmdOptionNamespace),
 		showCmdOptionDisplay,
-		showCmdOptionFrrRouteArgs,
 	)
 
 	// SHOW/lldp
@@ -429,11 +450,54 @@ func init() {
 		"SHOW/queue/watermark/COMMAND[OPTIONS]: Show user WM for queues",
 		0,
 		0,
-		nil,
-		showCmdOptionInterfaces, // TODO: Should be arg
-		sdc.RequiredOption(showCmdOptionQueueType),
+		map[string]string{
+			"all":       "show/queue/watermark/all",
+			"unicast":   "show/queue/watermark/unicast",
+			"multicast": "show/queue/watermark/multicast",
+		},
 	)
-
+	sdc.RegisterCliPath(
+		[]string{"SHOW", "queue", "watermark", "all"},
+		getQueueUserWatermarksAll,
+		"SHOW/queue/watermark/all[OPTIONS]: Show user WM for unicast and multicast queues",
+		0,
+		0,
+		nil,
+		showCmdOptionInterfaces,
+		sdc.UnimplementedOption(showCmdOptionNamespace),
+		showCmdOptionJson,
+	)
+	sdc.RegisterCliPath(
+		[]string{"SHOW", "queue", "watermark", "unicast"},
+		getQueueUserWatermarksUnicast,
+		"SHOW/queue/watermark/unicast[OPTIONS]: Show user WM for unicast queues",
+		0,
+		0,
+		nil,
+		showCmdOptionInterfaces,
+		sdc.UnimplementedOption(showCmdOptionNamespace),
+		showCmdOptionJson,
+	)
+	sdc.RegisterCliPath(
+		[]string{"SHOW", "queue", "watermark", "multicast"},
+		getQueueUserWatermarksMulticast,
+		"SHOW/queue/watermark/multicast[OPTIONS]: Show user WM for multicast queues",
+		0,
+		0,
+		nil,
+		showCmdOptionInterfaces,
+		sdc.UnimplementedOption(showCmdOptionNamespace),
+		showCmdOptionJson,
+	)
+	sdc.RegisterCliPath(
+		[]string{"SHOW", "ipv6", "prefix-list"},
+		getIPv6PrefixList,
+		"SHOW/ipv6/prefix-list/{prefix_list_name}[OPTIONS]: Show IPv6 prefix-lists",
+		0,
+		1,
+		nil,
+		showCmdOptionVerbose,
+	)
 	// SHOW/reboot-cause
 	sdc.RegisterCliPath(
 		[]string{"SHOW", "reboot-cause"},
@@ -472,7 +536,6 @@ func init() {
 		0,
 		1,
 		nil,
-		showCmdOptionSid, // TODO
 		showCmdOptionVerbose,
 	)
 
@@ -528,5 +591,24 @@ func init() {
 		0,
 		0,
 		nil,
+	)
+	sdc.RegisterCliPath(
+		[]string{"SHOW", "interfaces", "portchannel"},
+		getInterfacePortchannel,
+		"SHOW/interfaces/portchannel[OPTIONS]: Show interface portchannel",
+		0,
+		0,
+		nil,
+		showCmdOptionVerbose,
+		showCmdOptionSonicCliIfaceMode,
+	)
+	sdc.RegisterCliPath(
+		[]string{"SHOW", "ecn"},
+		getEcnProfiles,
+		"SHOW/ecn[OPTIONS]: Show ECN profiles",
+		0,
+		0,
+		nil,
+		showCmdOptionVerbose,
 	)
 }

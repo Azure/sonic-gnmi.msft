@@ -1361,7 +1361,7 @@ func getInterfaceNeighborExpected(args sdc.CmdArgs, options sdc.OptionMap) ([]by
 	for k := range neighborTbl {
 		canonicalKeys = append(canonicalKeys, k)
 	}
-	canonicalKeys = natsortInterfaces(canonicalKeys)
+	canonicalKeys = NatsortInterfaces(canonicalKeys)
 
 	finalMap := make(map[string]map[string]string, len(canonicalKeys))
 	for _, c := range canonicalKeys {

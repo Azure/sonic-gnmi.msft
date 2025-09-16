@@ -150,7 +150,7 @@ func TestGetNDP(t *testing.T) {
 		}
 
 		t.Run(test.desc, func(t *testing.T) {
-			runTestGet(t, ctx, gClient, test.pathTarget, test.textPbPath, test.wantRetCode, test.wantRespVal, test.valTest)
+			runTestGet(t, ctx, gClient, test.pathTarget, test.textPbPath, test.wantRetCode, test.wantRespVal, test.valTest, true)
 		})
 		if patches != nil {
 			patches.Reset()

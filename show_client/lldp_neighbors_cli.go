@@ -268,9 +268,7 @@ func getLLDPNeighbors(args sdc.CmdArgs, options sdc.OptionMap) ([]byte, error) {
 	// If interface name is provided, filter to return only that interface
 	if ifaceName != "" {
 		if entry, ok := neighbors[ifaceName]; ok {
-			singleNeighbor := make(map[string]lldpNeighborsEntry)
-			singleNeighbor[ifaceName] = entry
-			neighbors = singleNeighbor
+			neighbors = map[string]lldpNeighborsEntry{ifaceName: entry}
 		} else {
 			// Interface name provided but not found; return empty map
 			neighbors = make(map[string]lldpNeighborsEntry)

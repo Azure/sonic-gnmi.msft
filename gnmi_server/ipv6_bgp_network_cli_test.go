@@ -84,7 +84,7 @@ func TestGetIPv6BGPNetwork(t *testing.T) {
 				elem: <name: "ipv6" >
 				elem: <name: "bgp" >
 				elem: <name: "network" >
-				elem: <name: "2064:100::2" >
+				elem: <name: "2064:100::2/128" >
 			`
 		wantRespVal := `
 		{

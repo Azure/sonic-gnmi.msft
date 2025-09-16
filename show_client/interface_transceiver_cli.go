@@ -53,8 +53,7 @@ func getTransceiverErrorStatus(args sdc.CmdArgs, options sdc.OptionMap) ([]byte,
 }
 
 func getInterfaceTransceiverPresence(args sdc.CmdArgs, options sdc.OptionMap) ([]byte, error) {
-	// TODO
-	var intf string
+	intf := args.At(0)
 	if v, ok := options["interface"].String(); ok {
 		intf = v
 	}

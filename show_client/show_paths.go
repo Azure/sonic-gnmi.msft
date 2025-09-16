@@ -243,7 +243,6 @@ func init() {
 		0,
 		1,
 		nil,
-		showCmdOptionInterface, // TODO: Take as arg not option
 		showCmdOptionVerbose,
 		sdc.UnimplementedOption(showCmdOptionNamespace),
 		sdc.UnimplementedOption(showCmdOptionFetchFromHW),

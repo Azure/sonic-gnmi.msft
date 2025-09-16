@@ -37,7 +37,7 @@ func TestGetIPv6BGPNetwork(t *testing.T) {
 	defer cancel()
 
 	// info_type incorrect case
-	t.Run("SHOW ipv6 bgp network 2064:100::1 longer", func(t *testing.T) {
+	t.Run("SHOW ipv6 bgp network 2064:100::2 longer", func(t *testing.T) {
 		textPbPath := `
 				elem: <name: "ipv6" >
 				elem: <name: "bgp" >
@@ -49,7 +49,7 @@ func TestGetIPv6BGPNetwork(t *testing.T) {
 	})
 
 	// address incorrect case
-	t.Run("SHOW ipv6 bgp network 2064:100::1 longer-prefixes", func(t *testing.T) {
+	t.Run("SHOW ipv6 bgp network 2064:100::2 longer-prefixes", func(t *testing.T) {
 		textPbPath := `
 				elem: <name: "ipv6" >
 				elem: <name: "bgp" >

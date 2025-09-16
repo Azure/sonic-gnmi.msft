@@ -36,7 +36,10 @@ type TopProcessMemoryResponse struct {
 	Processes   []TopProcessResponse	`json:"processes"`
 }
 
-const topMemoryCommand = "top -bn 1 -o %MEM"
+const (
+	topMemoryCommand 	= 	"top -bn 1 -o %MEM"
+	countOfProcessFields 	= 	12
+)
 
 func cleanPrefix(line, prefix string) string {
 	return strings.TrimSpace(strings.TrimPrefix(line, prefix))
@@ -44,7 +47,7 @@ func cleanPrefix(line, prefix string) string {
 
 func parseProcessLine(line string) (*TopProcessResponse, error) {
 	fields := strings.Fields(line)
-	if len(fields) < reflect.TypeOf(TopProcessResponse{}).NumField() {
+	if len(fields) < countOfProcessFields {
 		return nil, fmt.Errorf("invalid process line: %q", line)
 	}
 	return &TopProcessResponse{

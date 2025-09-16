@@ -17,13 +17,10 @@ import (
 )
 
 const (
-	interfaceOption        = " -i "
-	interfaceDescStartLine = "Interface"
-	descriptionDataSize    = 5
-    oper_field = "oper_status"
-    admin_field = "admin_status"
-    alias_field = "alias"
-    desc_field = "description"
+	oper_field  = "oper_status"
+	admin_field = "admin_status"
+	alias_field = "alias"
+	desc_field  = "description"
 )
 
 type interfaceDescriptionDetails struct {
@@ -298,7 +295,7 @@ var allPortErrors = [][]string{
 	{"no_rx_reachability_count", "no_rx_reachability_time"},
 }
 
-func loadDescriptionFromInterfaceDetails(interfaceConfig map[string]interface{}, interfaceDetails map[string]interface{}) interfaceDescription {
+func loadDescriptionFromInterfaceDetails(interfaceConfig map[string]interface{}, interfaceDetails map[string]interface{}, interfaceName string) interfaceDescription {
 	description := make(interfaceDescription)
 	var parsedKey string
 
@@ -307,6 +304,10 @@ func loadDescriptionFromInterfaceDetails(interfaceConfig map[string]interface{},
 		if len(splitKeys) > 0 {
 			parsedKey = strings.TrimSpace(splitKeys[0])
 		} else {
+			continue
+		}
+
+		if interfaceName != "" && parsedKey != interfaceName {
 			continue
 		}
 
@@ -330,7 +331,7 @@ func getInterfacesDescription(args sdc.CmdArgs, options sdc.OptionMap) ([]byte, 
 	var interfaceName string
 
 	if ok {
-		interfaceName = GetNameForInterfaceAlias(intf)
+		interfaceName = intf
 	}
 
 	queries := [][]string{{"CONFIG_DB", "PORT"}}
@@ -339,18 +340,14 @@ func getInterfacesDescription(args sdc.CmdArgs, options sdc.OptionMap) ([]byte, 
 		return []byte(""), err
 	}
 
-	if interfaceName == "" {
-		queries = [][]string{{"APPL_DB", "PORT_TABLE"}}
-	} else {
-		queries = [][]string{{"APPL_DB", "PORT_TABLE:" + interfaceName}}
-	}
+	queries = [][]string{{"APPL_DB", "PORT_TABLE"}}
 
 	interfaceDetails, err := GetMapFromQueries(queries)
 	if err != nil {
 		return []byte(""), err
 	}
 
-	interfaceDesc := loadDescriptionFromInterfaceDetails(interfaceConfig, interfaceDetails)
+	interfaceDesc := loadDescriptionFromInterfaceDetails(interfaceConfig, interfaceDetails, interfaceName)
 
 	return json.Marshal(interfaceDesc)
 }

@@ -1,7 +1,6 @@
 package show_client
 
 import (
-	"bufio"
 	"encoding/json"
 	"fmt"
 	"math"
@@ -21,6 +20,10 @@ const (
 	interfaceOption        = " -i "
 	interfaceDescStartLine = "Interface"
 	descriptionDataSize    = 5
+    oper_field = "oper_status"
+    admin_field = "admin_status"
+    alias_field = "alias"
+    desc_field = "description"
 )
 
 type interfaceDescriptionDetails struct {
@@ -295,55 +298,59 @@ var allPortErrors = [][]string{
 	{"no_rx_reachability_count", "no_rx_reachability_time"},
 }
 
-func loadDescriptionFromCmdOutput(data string) interfaceDescription {
-	scanner := bufio.NewScanner(strings.NewReader(data))
-	var processStart bool
+func loadDescriptionFromInterfaceDetails(interfaceConfig map[string]interface{}, interfaceDetails map[string]interface{}) interfaceDescription {
 	description := make(interfaceDescription)
+	var parsedKey string
 
-	for scanner.Scan() {
-		line := scanner.Text()
-		if !processStart {
-			if strings.HasPrefix(strings.TrimSpace(line), interfaceDescStartLine) {
-				processStart = true
-				scanner.Scan()
+	for key, details := range interfaceDetails {
+		splitKeys := strings.SplitN(key, ":", 2)
+		if len(splitKeys) > 0 {
+			parsedKey = strings.TrimSpace(splitKeys[0])
+		} else {
+			continue
+		}
+
+		if _, ok := interfaceConfig[parsedKey]; ok {
+			if detailsMap, retValue := details.(map[string]interface{}); retValue {
+				description[parsedKey] = interfaceDescriptionDetails{
+					Oper:        detailsMap[oper_field].(string),
+					Admin:       detailsMap[admin_field].(string),
+					Alias:       detailsMap[alias_field].(string),
+					Description: detailsMap[desc_field].(string),
+				}
 			}
-			continue
-		}
-
-		fields := strings.Fields(line)
-		if len(fields) < descriptionDataSize {
-			continue
-		}
-
-		description[fields[0]] = interfaceDescriptionDetails{
-			Oper:        fields[1],
-			Admin:       fields[2],
-			Alias:       fields[3],
-			Description: strings.Join(fields[4:], " "),
 		}
 	}
+
 	return description
 }
 
 func getInterfacesDescription(args sdc.CmdArgs, options sdc.OptionMap) ([]byte, error) {
-	cmdForInterfaceDesc := "intfutil -c description"
-	// TODO
 	intf, ok := options["interface"].String()
+	var interfaceName string
+
 	if ok {
-		interfaceName := GetNameForInterfaceAlias(intf)
-		if interfaceName != "" {
-			cmdForInterfaceDesc += interfaceOption + interfaceName
-		} else {
-			cmdForInterfaceDesc += interfaceOption + intf
-		}
+		interfaceName = GetNameForInterfaceAlias(intf)
 	}
 
-	interfaceDescStr, err := GetDataFromHostCommand(cmdForInterfaceDesc)
+	queries := [][]string{{"CONFIG_DB", "PORT"}}
+	interfaceConfig, err := GetMapFromQueries(queries)
 	if err != nil {
 		return []byte(""), err
 	}
 
-	interfaceDesc := loadDescriptionFromCmdOutput(interfaceDescStr)
+	if interfaceName == "" {
+		queries = [][]string{{"APPL_DB", "PORT_TABLE"}}
+	} else {
+		queries = [][]string{{"APPL_DB", "PORT_TABLE:" + interfaceName}}
+	}
+
+	interfaceDetails, err := GetMapFromQueries(queries)
+	if err != nil {
+		return []byte(""), err
+	}
+
+	interfaceDesc := loadDescriptionFromInterfaceDetails(interfaceConfig, interfaceDetails)
 
 	return json.Marshal(interfaceDesc)
 }

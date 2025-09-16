@@ -90,7 +90,7 @@ func TestGetTopMemoryUsage(t *testing.T) {
                         desc:       "query show memory-usage with success case",
                         pathTarget: "SHOW",
                         textPbPath: `
-                        elem: <name: "process" >
+                        elem: <name: "processes" >
                         elem: <name: "memory" >
                         `,
                         wantRetCode: codes.OK,
@@ -102,7 +102,7 @@ func TestGetTopMemoryUsage(t *testing.T) {
                         desc:       "query show memory-usage with blank output",
                         pathTarget: "SHOW",
                         textPbPath: `
-                        elem: <name: "process" >
+                        elem: <name: "processes" >
                         elem: <name: "memory" >
                         `,
                         wantRetCode: codes.NotFound,
@@ -118,7 +118,7 @@ func TestGetTopMemoryUsage(t *testing.T) {
                         desc:       "query show memory-usage with error from command",
                         pathTarget: "SHOW",
                         textPbPath: `
-                        elem: <name: "process" >
+                        elem: <name: "processes" >
                         elem: <name: "memory" >
                         `,
                         wantRetCode: codes.NotFound,

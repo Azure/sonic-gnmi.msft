@@ -401,7 +401,7 @@ func init() {
 		},
 	)
         sdc.RegisterCliPath(
-                []string{"SHOW", "process", "memory"},
+                []string{"SHOW", "processes", "memory"},
                 getTopMemoryUsage,
                 "SHOW/processes/memory[OPTIONS]: Show processes information sorted by memory usage",
                 0,

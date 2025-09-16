@@ -21,8 +21,6 @@ func getIPv6BGPNetwork(args sdc.CmdArgs, _ sdc.OptionMap) ([]byte, error) {
 	ipArg := args.At(0)
 	infoType := args.At(1)
 
-	ipv6.ParseIP
-
 	// Validate infoType choices similar to Click Choice
 	if infoType != "" {
 		switch infoType {

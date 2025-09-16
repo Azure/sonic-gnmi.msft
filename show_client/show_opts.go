@@ -27,6 +27,7 @@ const (
 	showCmdOptionIPV6AddressDesc       = "[ipaddress=TEXT] Filter by IPv6 address"
 	showCmdOptionInfoTypeDesc          = "[info_type=TEXT] Filter by information type"
 	showCmdOptionSonicCliIfaceModeDesc = "[SONIC_CLI_IFACE_MODE=TEXT] Filter by sonic interface naming mode (eg alias/default)"
+	showCmdOptionAllDesc               = "[all=true] No-op since all queue counters are shown by default"
 )
 
 // Option keys
@@ -182,5 +183,17 @@ var (
 		SonicCliIfaceMode,
 		showCmdOptionSonicCliIfaceModeDesc,
 		sdc.StringValue,
+	)
+
+	showCmdOptionAll = sdc.NewShowCmdOption(
+		"all",
+		showCmdOptionAllDesc,
+		sdc.BoolValue,
+	)
+
+	showCmdOptionVoq = sdc.NewShowCmdOption(
+		"voq",
+		showCmdOptionUnimplementedDesc,
+		sdc.BoolValue,
 	)
 )

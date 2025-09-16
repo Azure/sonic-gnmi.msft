@@ -444,12 +444,30 @@ func init() {
 		0,
 		1,
 		nil,
-		showCmdOptionInterfaces, // TODO: Should be arg
+		showCmdOptionInterfaces,
 		showCmdOptionDisplay,
 		showCmdOptionNonzero,
+		showCmdOptionAll,
 		showCmdOptionTrim,
+		sdc.UnimplementedOption(showCmdOptionVoq),
 		sdc.UnimplementedOption(showCmdOptionNamespace),
 		showCmdOptionVerbose,
+		showCmdOptionJson,
+	)
+	sdc.RegisterCliPath(
+		[]string{"SHOW", "queue", "wredcounters"},
+		getQueueWredCounters,
+		"SHOW/queue/wredcounters/{INTERFACENAME}[OPTIONS]: Show queue WRED counters",
+		0,
+		1,
+		nil,
+		showCmdOptionInterfaces,
+		showCmdOptionDisplay,
+		showCmdOptionNonzero,
+		sdc.UnimplementedOption(showCmdOptionVoq),
+		sdc.UnimplementedOption(showCmdOptionNamespace),
+		showCmdOptionVerbose,
+		showCmdOptionJson,
 	)
 	sdc.RegisterCliPath(
 		[]string{"SHOW", "queue", "watermark"},

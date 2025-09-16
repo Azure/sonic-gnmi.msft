@@ -25,6 +25,9 @@ func isTransceiverCCmis(sfpInfoDict map[string]interface{}) bool {
 	return ok
 }
 
+var CmisDataMap = mergeMaps(QsfpDataMap, QsfpCmisDeltaDataMap)
+var CCmisDataMap = mergeMaps(CmisDataMap, CCmisDeltaDataMap)
+
 func getTransceiverDataMap(sfpInfoDict map[string]interface{}) map[string]string {
 	if sfpInfoDict == nil {
 		return QsfpDataMap

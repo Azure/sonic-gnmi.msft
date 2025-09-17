@@ -6,9 +6,10 @@ import (
 	"fmt"
 	log "github.com/golang/glog"
 	"github.com/sonic-net/sonic-gnmi/show_client/common"
-	"reflect"
 	"strings"
 )
+
+const countOfProcessFields = 12
 
 func cleanPrefix(line, prefix string) string {
 	return strings.TrimSpace(strings.TrimPrefix(line, prefix))
@@ -16,7 +17,7 @@ func cleanPrefix(line, prefix string) string {
 
 func parseProcessLine(line string) (*common.TopProcessData, error) {
 	fields := strings.Fields(line)
-	if len(fields) < reflect.TypeOf(common.TopProcessData{}).NumField() {
+	if len(fields) < countOfProcessFields {
 		return nil, fmt.Errorf("invalid process line: %q", line)
 	}
 	return &common.TopProcessData{

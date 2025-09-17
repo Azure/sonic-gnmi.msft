@@ -13,8 +13,9 @@ import (
 )
 
 const (
-	topCommand = "top -bn 1"
-	orderByCPU = " -o %CPU"
+	topCommand    = "top -bn 1"
+	orderByCPU    = " -o %CPU"
+	orderByMemory = " -o %CPU"
 )
 
 // processEntry for STATE_DB PROCESS_STATS
@@ -54,15 +55,23 @@ func getProcessesSummary(args sdc.CmdArgs, options sdc.OptionMap) ([]byte, error
 	return json.Marshal(entries)
 }
 
-func getProcessesCPU(args sdc.CmdArgs, options sdc.OptionMap) ([]byte, error) {
-	cmdForProcessByCPU := topCommand + orderByCPU
-
-	processDetails, err := GetDataFromHostCommand(cmdForProcessByCPU)
+func getProcessesData(processCmd string) ([]byte, error) {
+	processDetails, err := GetDataFromHostCommand(processCmd)
 	if err != nil {
 		return []byte(""), err
 	}
 
 	return helpers.LoadProcessesDataFromCmdOutput(processDetails)
+}
+
+func getTopMemoryUsage(args sdc.CmdArgs, options sdc.OptionMap) ([]byte, error) {
+	cmdForProcessByMemory := topCommand + orderByMemory
+	return getProcessesData(cmdForProcessByMemory)
+}
+
+func getProcessesCPU(args sdc.CmdArgs, options sdc.OptionMap) ([]byte, error) {
+	cmdForProcessByCPU := topCommand + orderByCPU
+	return getProcessesData(cmdForProcessByCPU)
 }
 
 func buildProcessEntries(processesSummary map[string]interface{}) []processEntry {

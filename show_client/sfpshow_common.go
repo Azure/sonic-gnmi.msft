@@ -73,8 +73,9 @@ func covertApplicationAdvertisementToOutputString(sfpInfoDict map[string]interfa
 	lines := []string{}
 	for _, item := range appAdvDict {
 		if dict, ok := item.(map[string]interface{}); ok {
+			var elements []string
 			if v, ok := dict["host_electrical_interface_id"].(string); ok && v != "" {
-				elements := []string{v}
+				elements = []string{v}
 			} else {
 				continue
 			}

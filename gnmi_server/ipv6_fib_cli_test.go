@@ -74,7 +74,8 @@ func TestShowIPv6Fib_FilterByPrefix(t *testing.T) {
 	// Filter by exact prefix using option key "ipaddress"
 	textPbPath := `
         elem: <name: "ipv6" >
-        elem: <name: "fib"  key: { key: "ipaddress" value: "fc00:1::/64" } >
+        elem: <name: "fib"  >
+		elem: <name: "fc00:1::/64" >
     `
 
 	expected := []byte(`{

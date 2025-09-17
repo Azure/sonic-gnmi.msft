@@ -31,8 +31,7 @@ const (
 
 // Option keys
 const (
-	OptionKeyIpAddress = "ipaddress"
-	OptionKeyVerbose   = "verbose"
+	OptionKeyVerbose = "verbose"
 )
 
 var (
@@ -164,12 +163,6 @@ var (
 		"routes",
 		"advertised-routes",
 		"received-routes",
-	)
-
-	showCmdOptionIPV6Address = sdc.NewShowCmdOption(
-		OptionKeyIpAddress,
-		showCmdOptionIPV6AddressDesc,
-		sdc.StringValue,
 	)
 
 	showCmdOptionInfoTypeForBgpNetwork = sdc.NewShowCmdOption(

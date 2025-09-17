@@ -94,7 +94,9 @@ func TestGetIPv6BGPNeighbors(t *testing.T) {
 			textPbPath: `
 				elem: <name: "ipv6" >
 				elem: <name: "bgp" >
-				elem: <name: "neighbors" key: { key: "info_type" value: "routes" } key: {key: "ipaddress" value: "fc00::7a"} >
+				elem: <name: "neighbors" >
+				elem: <name: "fc00::7a" >
+				elem: <name: "routes" >
 			`,
 			wantRetCode: codes.NotFound,
 			mockFile:    "../testdata/ipv6_bgp_neighbors/INVALID_VTYSH_JSON.txt",
@@ -109,7 +111,9 @@ func TestGetIPv6BGPNeighbors(t *testing.T) {
 			textPbPath: `
 				elem: <name: "ipv6" >
 				elem: <name: "bgp" >
-				elem: <name: "neighbors" key: { key: "info_type" value: "advertised-routes" } key: {key: "ipaddress" value: "fc00::7a"} >
+				elem: <name: "neighbors" >
+				elem: <name: "fc00::7a" >
+				elem: <name: "advertised-routes" >
 			`,
 			wantRetCode: codes.NotFound,
 			mockFile:    "../testdata/ipv6_bgp_neighbors/INVALID_VTYSH_JSON.txt",
@@ -124,7 +128,9 @@ func TestGetIPv6BGPNeighbors(t *testing.T) {
 			textPbPath: `
 				elem: <name: "ipv6" >
 				elem: <name: "bgp" >
-				elem: <name: "neighbors" key: { key: "info_type" value: "received-routes" } key: {key: "ipaddress" value: "fc00::7a"} >
+				elem: <name: "neighbors" >
+				elem: <name: "fc00::7a" >
+				elem: <name: "received-routes" >
 			`,
 			wantRetCode: codes.NotFound,
 			mockFile:    "../testdata/ipv6_bgp_neighbors/INVALID_VTYSH_JSON.txt",
@@ -156,7 +162,8 @@ func TestGetIPv6BGPNeighbors(t *testing.T) {
 			textPbPath: `
 				elem: <name: "ipv6" >
 				elem: <name: "bgp" >
-				elem: <name: "neighbors" key: { key: "ipaddress" value: "fc00::7a" } >
+				elem: <name: "neighbors" >
+				elem: <name: "fc00::7a" >
 			`,
 			wantRetCode: codes.OK,
 			wantRespVal: []byte(ipv6BGPNeighborsIPSpecific),
@@ -173,7 +180,8 @@ func TestGetIPv6BGPNeighbors(t *testing.T) {
 			textPbPath: `
 				elem: <name: "ipv6" >
 				elem: <name: "bgp" >
-				elem: <name: "neighbors" key: { key: "ipaddress" value: "fa00::7e" } >
+				elem: <name: "neighbors" >
+				elem: <name: "fa00::7e" >
 			`,
 			wantRetCode: codes.NotFound,
 			testInit: func() {
@@ -187,7 +195,8 @@ func TestGetIPv6BGPNeighbors(t *testing.T) {
 			textPbPath: `
 				elem: <name: "ipv6" >
 				elem: <name: "bgp" >
-				elem: <name: "neighbors" key: { key: "ipaddress" value: "2001:db8:::1" } >
+				elem: <name: "neighbors" >
+				elem: <name: "2001:db8:::1" >
 			`,
 			wantRetCode: codes.NotFound,
 		},
@@ -197,7 +206,9 @@ func TestGetIPv6BGPNeighbors(t *testing.T) {
 			textPbPath: `
 				elem: <name: "ipv6" >
 				elem: <name: "bgp" >
-				elem: <name: "neighbors" key: { key: "info_type" value: "routes" } >
+				elem: <name: "neighbors" >
+				elem: <name: "" >
+				elem: <name: "routes" >
 			`,
 			wantRetCode: codes.NotFound,
 		},
@@ -207,7 +218,9 @@ func TestGetIPv6BGPNeighbors(t *testing.T) {
 			textPbPath: `
 				elem: <name: "ipv6" >
 				elem: <name: "bgp" >
-				elem: <name: "neighbors" key: { key: "info_type" value: "routes" } key: {key: "ipaddress" value: "fc00::7a"} >
+				elem: <name: "neighbors" >
+				elem: <name: "fc00::7a" >
+				elem: <name: "routes" >
 			`,
 			wantRetCode: codes.OK,
 			wantRespVal: []byte(ipv6BGPNeighborsRoutes),
@@ -224,7 +237,9 @@ func TestGetIPv6BGPNeighbors(t *testing.T) {
 			textPbPath: `
 				elem: <name: "ipv6" >
 				elem: <name: "bgp" >
-				elem: <name: "neighbors" key: { key: "info_type" value: "advertised-routes" } key: {key: "ipaddress" value: "fc00::72"} >
+				elem: <name: "neighbors" >
+				elem: <name: "fc00::72" >
+				elem: <name: "advertised-routes" >
 			`,
 			wantRetCode: codes.OK,
 			wantRespVal: []byte(ipv6BGPNeighborsAdvertisedRoutes),
@@ -241,7 +256,9 @@ func TestGetIPv6BGPNeighbors(t *testing.T) {
 			textPbPath: `
 				elem: <name: "ipv6" >
 				elem: <name: "bgp" >
-				elem: <name: "neighbors" key: { key: "info_type" value: "received-routes" } key: {key: "ipaddress" value: "fc00::72"} >
+				elem: <name: "neighbors">
+				elem: <name: "fc00::72" >
+				elem: <name: "received-routes" >
 			`,
 			wantRetCode: codes.OK,
 			wantRespVal: []byte(ipv6BGPNeighborsReceivedRoutes),

@@ -275,8 +275,6 @@ func init() {
 		0,
 		2,
 		nil,
-		showCmdOptionIPAddress, // TODO
-		showCmdOptionInfoType,  // TODO
 		sdc.UnimplementedOption(showCmdOptionNamespace),
 	)
 	sdc.RegisterCliPath(

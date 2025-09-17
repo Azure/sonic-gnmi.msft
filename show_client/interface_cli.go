@@ -1307,33 +1307,34 @@ func getInterfaceFlap(args sdc.CmdArgs, options sdc.OptionMap) ([]byte, error) {
 // 5) "type"
 // 6) "BackEndLeafRouter"
 func getInterfaceNeighborExpected(args sdc.CmdArgs, options sdc.OptionMap) ([]byte, error) {
-	// TODO: Supports an interfacename as arg
+	intf := args.At(0)
 	namingMode, _ := options[SonicCliIfaceMode].String()
-	// Fetch DEVICE_NEIGHBOR
+
 	neighborTbl, err := GetMapFromQueries([][]string{{"CONFIG_DB", "DEVICE_NEIGHBOR"}})
 	if err != nil {
 		log.Errorf("Failed to get DEVICE_NEIGHBOR: %v", err)
 		return nil, err
 	}
-
-	// Fetch DEVICE_NEIGHBOR_METADATA
 	metaTbl, err := GetMapFromQueries([][]string{{"CONFIG_DB", "DEVICE_NEIGHBOR_METADATA"}})
 	if err != nil {
 		log.Errorf("Failed to get DEVICE_NEIGHBOR_METADATA: %v", err)
 		return nil, err
 	}
 
-	out := make(map[string]map[string]string)
-	for localIf := range neighborTbl {
-		device := GetFieldValueString(neighborTbl, localIf, "", "name")
+	buildEntry := func(canonIf string) (map[string]string, bool) {
+		device := GetFieldValueString(neighborTbl, canonIf, "", "name")
 		if device == "" {
-			continue
+			return nil, false
 		}
-		remotePort := GetFieldValueString(neighborTbl, localIf, "None", "port")
+		// Require metadata key to exist (python try/except KeyError: pass)
+		if _, ok := metaTbl[device]; !ok {
+			return nil, false
+		}
+
+		remotePort := GetFieldValueString(neighborTbl, canonIf, "None", "port")
 		if remotePort == "" {
 			remotePort = "None"
 		}
-
 		loopback := GetFieldValueString(metaTbl, device, "None", "lo_addr")
 		if loopback == "" {
 			loopback = "None"
@@ -1347,18 +1348,41 @@ func getInterfaceNeighborExpected(args sdc.CmdArgs, options sdc.OptionMap) ([]by
 			ntype = "None"
 		}
 
-		displayIf := GetInterfaceNameForDisplay(localIf, namingMode)
-
-		out[displayIf] = map[string]string{
+		return map[string]string{
 			"Neighbor":         device,
 			"NeighborPort":     remotePort,
 			"NeighborLoopback": loopback,
 			"NeighborMgmt":     mgmt,
 			"NeighborType":     ntype,
+		}, true
+	}
+
+	canonicalKeys := make([]string, 0, len(neighborTbl))
+	for k := range neighborTbl {
+		canonicalKeys = append(canonicalKeys, k)
+	}
+	canonicalKeys = NatsortInterfaces(canonicalKeys)
+
+	finalMap := make(map[string]map[string]string, len(canonicalKeys))
+	for _, c := range canonicalKeys {
+		if entry, ok := buildEntry(c); ok {
+			key := c
+			if namingMode == "alias" {
+				key = GetInterfaceNameForDisplay(c, namingMode)
+			}
+			finalMap[key] = entry
 		}
 	}
 
-	return json.Marshal(out)
+	if intf != "" {
+		entry, ok := finalMap[intf]
+		if !ok {
+			return nil, status.Errorf(codes.InvalidArgument, "Invalid interface name %s", intf)
+		}
+		return json.Marshal(map[string]map[string]string{intf: entry})
+	}
+
+	return json.Marshal(finalMap)
 }
 
 func getInterfaceNamingMode(args sdc.CmdArgs, options sdc.OptionMap) ([]byte, error) {

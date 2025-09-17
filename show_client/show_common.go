@@ -29,7 +29,6 @@ const CountersDb = "COUNTERS_DB"
 const ConfigDbPort = "PORT"
 const FDBTable = "FDB_TABLE"
 const VlanSubInterfaceSeparator = '.'
-const SonicCliIfaceMode = "SONIC_CLI_IFACE_MODE"
 const Alias = "alias"
 
 const (

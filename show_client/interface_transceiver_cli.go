@@ -104,9 +104,6 @@ func getInterfaceTransceiverPresence(args sdc.CmdArgs, options sdc.OptionMap) ([
 }
 
 // Command "show interfaces transceiver eeprom"
-var CmisDataMap = mergeMaps(QsfpDataMap, QsfpCmisDeltaDataMap)
-var CCmisDataMap = mergeMaps(CmisDataMap, CCmisDeltaDataMap)
-
 func getEEPROM(args sdc.CmdArgs, options sdc.OptionMap) (map[string]string, error) {
 	var intf string
 	if v, ok := options["port"].String(); ok {

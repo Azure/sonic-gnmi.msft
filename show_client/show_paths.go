@@ -617,4 +617,15 @@ func init() {
 		nil,
 		showCmdOptionVerbose,
 	)
+
+	//SHOW/switch-trimming
+	sdc.RegisterCliPath(
+                []string{"SHOW", "switch-trimming", "global"},
+                getSwitchTrimmingGlobalConfig,
+                "SHOW/switch-trimming/global[OPTIONS]: Show switch-trimming global config",
+                0,
+                0,
+                nil,
+                showCmdOptionVerbose,
+        )
 }

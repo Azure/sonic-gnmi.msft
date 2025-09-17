@@ -39,6 +39,9 @@ func TestGetNDP(t *testing.T) {
 	countersDBFileName := "../testdata/ndp/COUNTERS_DB.txt"
 	asicDBFileName := "../testdata/ndp/ASIC_DB.txt"
 	ipNeighShowFileName := "../testdata/ndp/IP_NEIGH_OUTPUT.txt"
+	specificInterfaceFileName := "../testdata/ndp/IP_NEIGH_OUTPUT_SPECIFIC_INTERFACE.txt"
+	specificIPAddressFileName := "../testdata/ndp/IP_NEIGH_OUTPUT_SPECIFIC_IPADDRESS.txt"
+	emptyFileName := "../testdata/ndp/IP_NEIGH_OUTPUT_EMPTY.txt"
 	ndpExpectedOutput := `{"total_entries": 59,"entries": [
 {"address":"2a01:111:e210:b000::a40:f66f","mac_address":"DC:F4:01:E6:54:A9","iface":"eth0","vlan":"-","status":"REACHABLE"},
 {"address":"2a01:111:e210:b000::a40:f779","mac_address":"86:CD:79:2C:8E:0F","iface":"eth0","vlan":"-","status":"REACHABLE"},
@@ -100,6 +103,13 @@ func TestGetNDP(t *testing.T) {
 {"address":"fe80::f0e4:b5ff:fe13:2b49","mac_address":"F2:E4:B5:13:2B:49","iface":"Ethernet68","vlan":"-","status":"STALE"},
 {"address":"fe80::f043:f0ff:feb7:2009","mac_address":"F2:43:F0:B7:20:09","iface":"PortChannel108","vlan":"-","status":"REACHABLE"}
 ]}`
+	specificInterfaceNDPExpectedOutput := `{"total_entries": 3,"entries": [
+{"address":"fc00::176","mac_address":"AA:F9:F4:CB:D2:3F","iface":"Ethernet60","vlan":"-","status":"REACHABLE"},
+{"address":"fe80::4461:2ff:fe21:f","mac_address":"46:61:02:21:00:0F","iface":"Ethernet60","vlan":"-","status":"REACHABLE"},
+{"address":"fe80::a8f9:f4ff:fecb:d23f","mac_address":"AA:F9:F4:CB:D2:3F","iface":"Ethernet60","vlan":"-","status":"REACHABLE"}
+]}`
+	specificIPAddressNDPExpectedOutput := `{"total_entries": 1,"entries": [{"address":"fc00::176","mac_address":"AA:F9:F4:CB:D2:3F","iface":"Ethernet60","vlan":"-","status":"REACHABLE"}]}`
+	emptyNDPExpectedOutput := `{"total_entries": 0,"entries": []}`
 
 	ResetDataSetsAndMappings(t)
 
@@ -131,6 +141,58 @@ func TestGetNDP(t *testing.T) {
 			wantRespVal: []byte(ndpExpectedOutput),
 			valTest:     true,
 			mockFile:    ipNeighShowFileName,
+			testInit: func() {
+				FlushDataSet(t, CountersDbNum)
+				FlushDataSet(t, AsicDbNum)
+				AddDataSet(t, CountersDbNum, countersDBFileName)
+				AddDataSet(t, AsicDbNum, asicDBFileName)
+			},
+		},
+		{
+			desc:       "query SHOW ndp - specific interface",
+			pathTarget: "SHOW",
+			textPbPath: `
+				elem: <name: "ndp"  key: { key: "interface" value: "Ethernet60" } >
+			`,
+			wantRetCode: codes.OK,
+			wantRespVal: []byte(specificInterfaceNDPExpectedOutput),
+			valTest:     true,
+			mockFile:    specificInterfaceFileName,
+			testInit: func() {
+				FlushDataSet(t, CountersDbNum)
+				FlushDataSet(t, AsicDbNum)
+				AddDataSet(t, CountersDbNum, countersDBFileName)
+				AddDataSet(t, AsicDbNum, asicDBFileName)
+			},
+		},
+		{
+			desc:       "query SHOW ndp - specific ipaddress",
+			pathTarget: "SHOW",
+			textPbPath: `
+				elem: <name: "ndp">
+				elem: <name: "fc00::176" >
+			`,
+			wantRetCode: codes.OK,
+			wantRespVal: []byte(specificIPAddressNDPExpectedOutput),
+			valTest:     true,
+			mockFile:    specificIPAddressFileName,
+			testInit: func() {
+				FlushDataSet(t, CountersDbNum)
+				FlushDataSet(t, AsicDbNum)
+				AddDataSet(t, CountersDbNum, countersDBFileName)
+				AddDataSet(t, AsicDbNum, asicDBFileName)
+			},
+		},
+		{
+			desc:       "query SHOW ndp - empty output",
+			pathTarget: "SHOW",
+			textPbPath: `
+				elem: <name: "ndp" >
+			`,
+			wantRetCode: codes.OK,
+			wantRespVal: []byte(emptyNDPExpectedOutput),
+			valTest:     true,
+			mockFile:    emptyFileName,
 			testInit: func() {
 				FlushDataSet(t, CountersDbNum)
 				FlushDataSet(t, AsicDbNum)

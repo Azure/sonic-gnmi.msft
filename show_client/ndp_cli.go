@@ -25,7 +25,6 @@ type NeighborTable struct {
 	Entries      []NeighborEntry `json:"entries"`       // List of neighbor entries
 }
 
-// TODO: handle error cases
 /*
 show ndp [OPTIONS] [IP6ADDRESS] -> nbrshow -6 [-ip IPADDR] [-if IFACE] -> ip -6 neigh show [IPADDR] dev [IFACE]
 admin@str4-7060x6-512-1:~$ show ndp --help

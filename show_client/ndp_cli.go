@@ -64,10 +64,6 @@ type BridgeMacEntry struct {
 func parseNDPOutput(output string, intf string) NeighborTable {
 	table := NeighborTable{}
 
-	if strings.TrimSpace(output) == "" {
-		return table
-	}
-
 	// Fetch FDB entries
 	bridgeMacList, err := fetchFdbData()
 	if err != nil {
@@ -235,11 +231,7 @@ func buildBvidToVlanMap() (map[string]string, error) {
 		if vlanIDRaw, ok := ent["SAI_VLAN_ATTR_VLAN_ID"]; ok {
 			if vlanIDStr, ok := vlanIDRaw.(string); ok {
 				result[bvid] = vlanIDStr
-			} else {
-				log.Warningf("Invalid VLAN ID type for BVID %s: %#v", bvid, vlanIDRaw)
 			}
-		} else {
-			log.Warningf("VLAN ID not found for BVID %s", bvid)
 		}
 	}
 
@@ -314,13 +306,11 @@ func fetchFdbData() ([]BridgeMacEntry, error) {
 
 	ifOidMap, err := getInterfaceOidMap()
 	if err != nil {
-		log.Errorf("Failed to get interface OID map: %v", err)
 		return nil, err
 	}
 
 	ifBrOidMap, err := getBridgePortMap()
 	if err != nil {
-		log.Errorf("Failed to get bridge port map: %v", err)
 		return nil, err
 	}
 
@@ -340,21 +330,18 @@ func fetchFdbData() ([]BridgeMacEntry, error) {
 		// Split at first colon to separate top-level type from JSON
 		idx := strings.Index(fdbKey, ":")
 		if idx == -1 || idx+1 >= len(fdbKey) {
-			log.Warningf("Invalid FDB entry key format: %s", fdbKey)
 			continue
 		}
 		fdbJSON := fdbKey[idx+1:] // everything after the first colon
 
 		fdb := map[string]string{}
 		if err := json.Unmarshal([]byte(fdbJSON), &fdb); err != nil {
-			log.Warningf("Failed to parse FDB entry key %s: %v", fdbKey, err)
 			continue
 		}
 
 		// Attributes map
 		ent, ok := entryData.(map[string]interface{})
 		if !ok {
-			log.Warningf("Unexpected FDB entry data format for %s: %#v", fdbKey, entryData)
 			continue
 		}
 
@@ -380,7 +367,6 @@ func fetchFdbData() ([]BridgeMacEntry, error) {
 		} else if bvid, ok := fdb["bvid"]; ok {
 			vlanIDStr, err = getVlanIDFromBvid(bvid, bvidMap)
 			if err != nil || vlanIDStr == "" {
-				log.Warningf("Failed to get VLAN ID from BVID %s: %v", bvid, err)
 				vlanIDStr = bvid // fallback
 			}
 		} else {
@@ -389,7 +375,6 @@ func fetchFdbData() ([]BridgeMacEntry, error) {
 
 		vlanID, err := strconv.Atoi(vlanIDStr)
 		if err != nil {
-			log.Warningf("Invalid VLAN ID %s for entry %s", vlanIDStr, fdbKey)
 			continue
 		}
 

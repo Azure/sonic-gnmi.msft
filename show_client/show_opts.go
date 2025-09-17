@@ -31,7 +31,8 @@ const (
 
 // Option keys
 const (
-	OptionKeyVerbose = "verbose"
+	OptionKeyVerbose   = "verbose"
+	SonicCliIfaceMode  = "SONIC_CLI_IFACE_MODE"
 )
 
 var (

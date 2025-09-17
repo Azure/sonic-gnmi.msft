@@ -392,7 +392,7 @@ func convertInterfaceSfpInfoToCliOutputString(iface string, dumpDom bool) string
 	if len(sfpInfoDict) != 0 {
 		isSfpCmis := isTransceiverCmis(sfpInfoDict)
 		if portType, ok := sfpInfoDict["type"].(string); ok && portType == RJ45PortType {
-			return "SFP EEPROM is not applicable for RJ45 port\n"
+			return "SFP EEPROM is not applicable for RJ45 port"
 		} else {
 			// output = "SFP EEPROM detected\n"
 			sfpInfoOutput := convertSfpInfoToOutputString(sfpInfoDict, sfpFirmwareInfoDict)
@@ -431,7 +431,7 @@ func convertInterfaceSfpInfoToCliOutputString(iface string, dumpDom bool) string
 		}
 	} else {
 		if IsRj45Port(iface) {
-			return "SFP EEPROM is not applicable for RJ45 port\n"
+			return "SFP EEPROM is not applicable for RJ45 port"
 		} else {
 			return "SFP EEPROM Not detected\n"
 		}

@@ -578,7 +578,6 @@ func init() {
 		0,
 		1,
 		nil,
-		showCmdOptionPort,
 		showCmdOptionDom,
 		sdc.UnimplementedOption(showCmdOptionNamespace),
 	)
@@ -589,7 +588,6 @@ func init() {
 		0,
 		1,
 		nil,
-		showCmdOptionPort,
 		sdc.UnimplementedOption(showCmdOptionNamespace),
 	)
 	// SHOW/watermark

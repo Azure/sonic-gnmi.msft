@@ -104,7 +104,7 @@ func getInterfaceTransceiverPresence(args sdc.CmdArgs, options sdc.OptionMap) ([
 }
 
 // Command "show interfaces transceiver eeprom"
-func getEEPROM(args sdc.CmdArgs, options sdc.OptionMap) (map[string]string, error) {
+func getEEPROM(args sdc.CmdArgs, options sdc.OptionMap) (map[string]interface{}, error) {
 	intf := args.At(0)
 
 	var dumpDom bool
@@ -123,7 +123,7 @@ func getEEPROM(args sdc.CmdArgs, options sdc.OptionMap) (map[string]string, erro
 		return nil, err
 	}
 
-	intfEEPROM := make(map[string]string)
+	intfEEPROM := make(map[string]interface{})
 	for iface := range portTable {
 		if intf != "" && iface != intf {
 			continue
@@ -156,7 +156,7 @@ func getTransceiverEEPROM(args sdc.CmdArgs, options sdc.OptionMap) ([]byte, erro
 	if err != nil {
 		return nil, err
 	}
-	return string(data), nil
+	return data, nil
 }
 
 // Command "show interfaces transceiver info"
@@ -176,7 +176,7 @@ func getTransceiverInfo(args sdc.CmdArgs, options sdc.OptionMap) ([]byte, error)
 	if err != nil {
 		return nil, err
 	}
-	return string(data), nil
+	return data, nil
 }
 
 type portLpmode struct {

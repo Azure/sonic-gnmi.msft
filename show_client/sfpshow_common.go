@@ -73,12 +73,11 @@ func covertApplicationAdvertisementToOutputString(sfpInfoDict map[string]interfa
 	lines := []string{}
 	for _, item := range appAdvDict {
 		if dict, ok := item.(map[string]interface{}); ok {
-			hostInterfaceId := dict["host_electrical_interface_id"].(string)
-			if hostInterfaceId == "" {
+			if v, ok := dict["host_electrical_interface_id"].(string); ok && v != "" {
+				elements := []string{v}
+			} else {
 				continue
 			}
-
-			elements := []string{hostInterfaceId}
 
 			hostAssignOptions := "Unknown"
 			if val, ok := dict["host_lane_assignment_options"].(float64); ok {
@@ -170,10 +169,11 @@ func convertSfpInfoToOutputString(sfpInfoDict map[string]interface{}, sfpFirmwar
 						}
 						natsort.Sort(keys)
 
-						output[QsfpDataMap[key]] = make(map[string]interface{})
+						m := make(map[string]interface{})
 						for _, k := range keys {
-							output[QsfpDataMap[key]] = map[string]interface{}{k: specComplianceDict[k]}
+							m[k] = specComplianceDict[k]
 						}
+						output[QsfpDataMap[key]] = m
 					}
 				}
 			}
@@ -217,9 +217,19 @@ func formatDictValueToString(sortedKeyTable []string, domInfoDict map[string]int
 	output := make(map[string]interface{})
 
 	for _, key := range sortedKeyTable {
-		value, ok := domInfoDict[key].(string)
-		if !ok || value == "N/A" {
+		val := domInfoDict[key]
+		if val == nil {
 			continue
+		}
+
+		var value string
+		if str, ok := val.(string); ok {
+			if str == "N/A" {
+				continue
+			}
+			value = str
+		} else {
+			value = fmt.Sprintf("%v", val)
 		}
 
 		units := ""
@@ -405,8 +415,8 @@ func convertInterfaceSfpInfoToCliOutputString(iface string, dumpDom bool) string
 
 				if val, ok := sfpInfoDict["type"]; ok {
 					if sfpType, ok := val.(string); ok {
-						dumOutput := convertDomToOutputString(sfpType, isSfpCmis, domInfoDict)
-						for k, v := range dumOutput {
+						domOutput := convertDomToOutputString(sfpType, isSfpCmis, domInfoDict)
+						for k, v := range domOutput {
 							output[k] = v
 						}
 					}

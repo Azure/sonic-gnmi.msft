@@ -151,12 +151,10 @@ func getInterfaceOidMap() (map[string]string, error) {
 
 	portMap, err := GetMapFromQueries(portQueries)
 	if err != nil {
-		log.Errorf("Failed to get port name map from COUNTERS_DB: %v", err)
 		return nil, err
 	}
 	lagMap, err := GetMapFromQueries(lagQueries)
 	if err != nil {
-		log.Errorf("Failed to get lag name map from COUNTERS_DB: %v", err)
 		return nil, err
 	}
 
@@ -180,7 +178,6 @@ func getInterfaceOidMap() (map[string]string, error) {
 	for portName, oidVal := range portMap {
 		oidStr, ok := oidVal.(string)
 		if !ok {
-			log.Errorf("Non-string OID for %s: %#v", portName, oidVal)
 			continue
 		}
 		if isValidIfName(portName) {
@@ -190,7 +187,6 @@ func getInterfaceOidMap() (map[string]string, error) {
 	for lagName, oidVal := range lagMap {
 		oidStr, ok := oidVal.(string)
 		if !ok {
-			log.Errorf("Non-string OID for %s: %#v", lagName, oidVal)
 			continue
 		}
 		if isValidIfName(lagName) {
@@ -208,7 +204,6 @@ func buildBvidToVlanMap() (map[string]string, error) {
 
 	vlanData, err := GetMapFromQueries(queries)
 	if err != nil {
-		log.Errorf("Failed to get VLAN data: %v", err)
 		return nil, err
 	}
 
@@ -251,7 +246,6 @@ func getBridgePortMap() (map[string]string, error) {
 	}
 	brPortStr, err := GetMapFromQueries(queries)
 	if err != nil {
-		log.Errorf("Failed to get SAI_OBJECT_TYPE_BRIDGE_PORT list from ASIC_DB: %v", err)
 		return nil, err
 	}
 	log.V(6).Infof("SAI_OBJECT_TYPE_BRIDGE_PORT data from query: %v", brPortStr)
@@ -299,7 +293,6 @@ func fetchFdbData() ([]BridgeMacEntry, error) {
 	// "ASIC_STATE:SAI_OBJECT_TYPE_FDB_ENTRY:{\"bvid\":\"oid:0x2600000000063f\",\"mac\":\"B8:CE:F6:E5:50:05\",\"switch_id\":\"oid:0x21000000000000\"}"
 	brPortStr, err := GetMapFromQueries(queries)
 	if err != nil {
-		log.Errorf("Failed to get SAI_OBJECT_TYPE_FDB_ENTRY list from ASIC_DB: %v", err)
 		return nil, err
 	}
 	log.V(6).Infof("FDB_ENTRY list: %v", brPortStr)

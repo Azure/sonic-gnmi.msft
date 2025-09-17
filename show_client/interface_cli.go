@@ -52,7 +52,7 @@ type namingModeResponse struct {
 	NamingMode string `json:"naming_mode"`
 }
 
-func calculateDiffCounters(oldCounter, newCounter, defaultValue string) string {
+func calculateDiffReturnDefault(oldCounter, newCounter, defaultValue string) string {
 	if oldCounter == defaultValue || newCounter == defaultValue {
 		return defaultValue
 	}
@@ -261,18 +261,18 @@ func calculateDiffSnapshot(oldSnapshot map[string]InterfaceCountersResponse, new
 		}
 		diffResponse[iface] = InterfaceCountersResponse{
 			State:  newResp.State,
-			RxOk:   calculateDiffCounters(oldResp.RxOk, newResp.RxOk, defaultMissingCounterValue),
+			RxOk:   calculateDiffReturnDefault(oldResp.RxOk, newResp.RxOk, defaultMissingCounterValue),
 			RxBps:  newResp.RxBps,
 			RxUtil: newResp.RxUtil,
-			RxErr:  calculateDiffCounters(oldResp.RxErr, newResp.RxErr, defaultMissingCounterValue),
-			RxDrp:  calculateDiffCounters(oldResp.RxDrp, newResp.RxDrp, defaultMissingCounterValue),
-			RxOvr:  calculateDiffCounters(oldResp.RxOvr, newResp.RxOvr, defaultMissingCounterValue),
-			TxOk:   calculateDiffCounters(oldResp.TxOk, newResp.TxOk, defaultMissingCounterValue),
+			RxErr:  calculateDiffReturnDefault(oldResp.RxErr, newResp.RxErr, defaultMissingCounterValue),
+			RxDrp:  calculateDiffReturnDefault(oldResp.RxDrp, newResp.RxDrp, defaultMissingCounterValue),
+			RxOvr:  calculateDiffReturnDefault(oldResp.RxOvr, newResp.RxOvr, defaultMissingCounterValue),
+			TxOk:   calculateDiffReturnDefault(oldResp.TxOk, newResp.TxOk, defaultMissingCounterValue),
 			TxBps:  newResp.TxBps,
 			TxUtil: newResp.TxUtil,
-			TxErr:  calculateDiffCounters(oldResp.TxErr, newResp.TxErr, defaultMissingCounterValue),
-			TxDrp:  calculateDiffCounters(oldResp.TxDrp, newResp.TxDrp, defaultMissingCounterValue),
-			TxOvr:  calculateDiffCounters(oldResp.TxOvr, newResp.TxOvr, defaultMissingCounterValue),
+			TxErr:  calculateDiffReturnDefault(oldResp.TxErr, newResp.TxErr, defaultMissingCounterValue),
+			TxDrp:  calculateDiffReturnDefault(oldResp.TxDrp, newResp.TxDrp, defaultMissingCounterValue),
+			TxOvr:  calculateDiffReturnDefault(oldResp.TxOvr, newResp.TxOvr, defaultMissingCounterValue),
 		}
 	}
 	return diffResponse
@@ -1196,6 +1196,26 @@ func getInterfaceSwitchportStatus(args sdc.CmdArgs, options sdc.OptionMap) ([]by
 	return json.Marshal(switchportStatus)
 }
 
+// GetInterfaceSwitchportMode returns the switchport mode.
+func GetInterfaceSwitchportMode(
+	portTbl, portChannelTbl, vlanMemberTbl map[string]interface{},
+	name string,
+) string {
+	if m := GetFieldValueString(portTbl, name, "", "mode"); m != "" {
+		return m
+	}
+	if m := GetFieldValueString(portChannelTbl, name, "", "mode"); m != "" {
+		return m
+	}
+	for k := range vlanMemberTbl {
+		_, member, ok := SplitCompositeKey(k)
+		if ok && member == name {
+			return "trunk"
+		}
+	}
+	return "routed"
+}
+
 // IsInterfaceInPortchannel reports whether interfaceName is a member of any portchannel.
 func IsInterfaceInPortchannel(portchannelMemberTable map[string]interface{}, interfaceName string) bool {
 	if portchannelMemberTable == nil || interfaceName == "" {
@@ -1287,33 +1307,34 @@ func getInterfaceFlap(args sdc.CmdArgs, options sdc.OptionMap) ([]byte, error) {
 // 5) "type"
 // 6) "BackEndLeafRouter"
 func getInterfaceNeighborExpected(args sdc.CmdArgs, options sdc.OptionMap) ([]byte, error) {
-	// TODO: Supports an interfacename as arg
+	intf := args.At(0)
 	namingMode, _ := options[SonicCliIfaceMode].String()
-	// Fetch DEVICE_NEIGHBOR
+
 	neighborTbl, err := GetMapFromQueries([][]string{{"CONFIG_DB", "DEVICE_NEIGHBOR"}})
 	if err != nil {
 		log.Errorf("Failed to get DEVICE_NEIGHBOR: %v", err)
 		return nil, err
 	}
-
-	// Fetch DEVICE_NEIGHBOR_METADATA
 	metaTbl, err := GetMapFromQueries([][]string{{"CONFIG_DB", "DEVICE_NEIGHBOR_METADATA"}})
 	if err != nil {
 		log.Errorf("Failed to get DEVICE_NEIGHBOR_METADATA: %v", err)
 		return nil, err
 	}
 
-	out := make(map[string]map[string]string)
-	for localIf := range neighborTbl {
-		device := GetFieldValueString(neighborTbl, localIf, "", "name")
+	buildEntry := func(canonIf string) (map[string]string, bool) {
+		device := GetFieldValueString(neighborTbl, canonIf, "", "name")
 		if device == "" {
-			continue
+			return nil, false
 		}
-		remotePort := GetFieldValueString(neighborTbl, localIf, "None", "port")
+		// Require metadata key to exist (python try/except KeyError: pass)
+		if _, ok := metaTbl[device]; !ok {
+			return nil, false
+		}
+
+		remotePort := GetFieldValueString(neighborTbl, canonIf, "None", "port")
 		if remotePort == "" {
 			remotePort = "None"
 		}
-
 		loopback := GetFieldValueString(metaTbl, device, "None", "lo_addr")
 		if loopback == "" {
 			loopback = "None"
@@ -1327,18 +1348,41 @@ func getInterfaceNeighborExpected(args sdc.CmdArgs, options sdc.OptionMap) ([]by
 			ntype = "None"
 		}
 
-		displayIf := GetInterfaceNameForDisplay(localIf, namingMode)
-
-		out[displayIf] = map[string]string{
+		return map[string]string{
 			"Neighbor":         device,
 			"NeighborPort":     remotePort,
 			"NeighborLoopback": loopback,
 			"NeighborMgmt":     mgmt,
 			"NeighborType":     ntype,
+		}, true
+	}
+
+	canonicalKeys := make([]string, 0, len(neighborTbl))
+	for k := range neighborTbl {
+		canonicalKeys = append(canonicalKeys, k)
+	}
+	canonicalKeys = NatsortInterfaces(canonicalKeys)
+
+	finalMap := make(map[string]map[string]string, len(canonicalKeys))
+	for _, c := range canonicalKeys {
+		if entry, ok := buildEntry(c); ok {
+			key := c
+			if namingMode == "alias" {
+				key = GetInterfaceNameForDisplay(c, namingMode)
+			}
+			finalMap[key] = entry
 		}
 	}
 
-	return json.Marshal(out)
+	if intf != "" {
+		entry, ok := finalMap[intf]
+		if !ok {
+			return nil, status.Errorf(codes.InvalidArgument, "Invalid interface name %s", intf)
+		}
+		return json.Marshal(map[string]map[string]string{intf: entry})
+	}
+
+	return json.Marshal(finalMap)
 }
 
 func getInterfaceNamingMode(args sdc.CmdArgs, options sdc.OptionMap) ([]byte, error) {

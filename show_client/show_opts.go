@@ -26,14 +26,13 @@ const (
 	showCmdOptionIPAddressDesc         = "[ipaddress=TEXT] Filter by single IP address"
 	showCmdOptionIPV6AddressDesc       = "[ipaddress=TEXT] Filter by IPv6 address"
 	showCmdOptionInfoTypeDesc          = "[info_type=TEXT] Filter by information type"
-	showCmdOptionFrrRouteArgsDesc      = "[args=TEXT] Filter by FRR route arguments"
 	showCmdOptionSonicCliIfaceModeDesc = "[SONIC_CLI_IFACE_MODE=TEXT] Filter by sonic interface naming mode (eg alias/default)"
 )
 
 // Option keys
 const (
-	OptionKeyIpAddress = "ipaddress"
 	OptionKeyVerbose   = "verbose"
+	SonicCliIfaceMode  = "SONIC_CLI_IFACE_MODE"
 )
 
 var (
@@ -167,21 +166,9 @@ var (
 		"received-routes",
 	)
 
-	showCmdOptionIPV6Address = sdc.NewShowCmdOption(
-		OptionKeyIpAddress,
-		showCmdOptionIPV6AddressDesc,
-		sdc.StringValue,
-	)
-
 	showCmdOptionInfoTypeForBgpNetwork = sdc.NewShowCmdOption(
 		"info_type",
 		showCmdOptionInfoTypeDesc,
-		sdc.StringValue,
-	)
-
-	showCmdOptionFrrRouteArgs = sdc.NewShowCmdOption(
-		"args",
-		showCmdOptionFrrRouteArgsDesc,
 		sdc.StringValue,
 	)
 

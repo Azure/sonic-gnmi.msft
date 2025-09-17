@@ -1,0 +1,9 @@
+{
+  "DEVICE_NEIGHBOR|Ethernet4": {
+    "name": "DeviceC",
+    "port": "Ethernet12"
+  },
+  "PORT|Ethernet4": {
+    "alias": "etp3"
+  }
+}

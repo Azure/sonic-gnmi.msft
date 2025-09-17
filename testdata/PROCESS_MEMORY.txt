@@ -1,0 +1,9 @@
+top - 15:02:01 up 3 days,  4:12,  1 user,  load average: 0.00, 0.01, 0.05
+Tasks: 123 total,   1 running, 122 sleeping,   0 stopped,   0 zombie
+%Cpu(s):  1.0 us,  0.5 sy,  0.0 ni, 98.0 id,  0.5 wa,  0.0 hi,  0.0 si,  0.0 st
+MiB Mem : 7989.3 total,   1234.5 free,   2345.6 used,   3409.2 buff/cache
+MiB Swap: 2048.0 total,   2048.0 free,      0.0 used.   4567.8 avail Mem
+
+  PID USER     PR  NI    VIRT    RES    SHR S  %CPU %MEM     TIME+ COMMAND
+ 1234 root     20   0  123456   65432   1234 S   0.3  5.2   0:01.23 myapp
+ 5678 daemon   20   0  234567   54321   2345 S   0.1  4.8   0:00.98 anotherapp

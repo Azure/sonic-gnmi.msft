@@ -17,10 +17,9 @@ import (
 // - Reject "longer-prefixes" when ip is a host address (no '/').
 // - If info_type == json, the FRR output is JSON; pass through as JSON bytes.
 // - Otherwise, wrap plain text output as {"output":"..."} to keep JSON transport.
-func getIPv6BGPNetwork(args sdc.CmdArgs, options sdc.OptionMap) ([]byte, error) {
-	// TODO: Change to use args
-	ipArg, _ := options["ipaddress"].String()
-	infoType, _ := options["info_type"].String()
+func getIPv6BGPNetwork(args sdc.CmdArgs, _ sdc.OptionMap) ([]byte, error) {
+	ipArg := args.At(0)
+	infoType := args.At(1)
 
 	// Validate infoType choices similar to Click Choice
 	if infoType != "" {

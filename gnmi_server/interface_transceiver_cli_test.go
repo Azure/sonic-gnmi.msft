@@ -206,7 +206,8 @@ func TestGetTransceiverEEPROM(t *testing.T) {
 			textPbPath: `
 				elem: <name: "interfaces" >
 				elem: <name: "transceiver" >
-				elem: <name: "eeprom" key: { key: "port" value: "Ethernet40" }>
+				elem: <name: "eeprom" >
+				elem: <name: "Ethernet40" >
 			`,
 			wantRetCode: codes.OK,
 			wantRespVal: []byte(transceiverEEPROMPort),
@@ -328,7 +329,8 @@ func TestGetTransceiverInfo(t *testing.T) {
 			textPbPath: `
 				elem: <name: "interfaces" >
 				elem: <name: "transceiver" >
-				elem: <name: "eeprom" key: { key: "port" value: "Ethernet40" }>
+				elem: <name: "eeprom" >
+				elem: <name: "Ethernet40" >
 			`,
 			wantRetCode: codes.OK,
 			wantRespVal: []byte(transceiverEEPROMPort),

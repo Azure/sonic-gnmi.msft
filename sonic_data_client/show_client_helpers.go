@@ -34,7 +34,7 @@ func showHelp(prefix, path *gnmipb.Path, description map[string]map[string]strin
 }
 
 func (spcfg ShowPathConfig) ParseOptions(path *gnmipb.Path) (OptionMap, error) {
-	passedOptions, err := checkOptionsInPath(path, spcfg.options)
+	passedOptions, err := checkOptionsInPath(path, spcfg.options, spcfg.regLen)
 	if err != nil {
 		return nil, err
 	}
@@ -80,8 +80,8 @@ func validateRegisteredArgs(config ShowPathConfig) error {
 	if config.maxArgs > -1 && config.minArgs > config.maxArgs {
 		return status.Errorf(codes.Internal, "invalid number of min/max args: min args: %d must be less than or equal to max args: %d", config.minArgs, config.maxArgs)
 	}
-	if config.regLen <= 0 {
-		return status.Errorf(codes.Internal, "invalid config: registered prefix length: %d", config.regLen)
+	if config.regLen < 2 {
+		return status.Errorf(codes.Internal, "invalid config: registered prefix length: %d, needs to have SHOW + elem", config.regLen)
 	}
 	return nil
 }
@@ -141,10 +141,23 @@ func validateOptions(passedOptions map[string]string, options map[string]ShowCmd
 	return optionMap, nil
 }
 
-func checkOptionsInPath(path *gnmipb.Path, options map[string]ShowCmdOption) (map[string]string, error) {
+func checkOptionsInPath(path *gnmipb.Path, options map[string]ShowCmdOption, regLen int) (map[string]string, error) {
 	// Validate that path doesn't contain any option that is not registered
 	passedOptions := make(map[string]string)
-	for _, elem := range path.GetElem() {
+
+	if path == nil {
+		return nil, status.Errorf(codes.Internal, "no path passed")
+	}
+
+	elems := path.GetElem()
+
+	optionsIndex := regLen - 2 // registered length contains target and we need to get the last token in the registered path
+	if optionsIndex < 0 || optionsIndex >= len(elems) {
+		return nil, status.Errorf(codes.Internal, "invalid number of registered length tokens: %d or path: %d", regLen, len(elems))
+	}
+
+	for i := optionsIndex; i < len(elems); i++ {
+		elem := elems[i]
 		for key, val := range elem.GetKey() {
 			if _, ok := options[key]; !ok {
 				return nil, status.Errorf(codes.InvalidArgument, "option %v for path %v is not a valid option", key, path)

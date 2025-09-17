@@ -1,0 +1,11 @@
+{
+  "LAG_TABLE|PortChannel101": {
+    "runner.active": "true"
+  },
+  "LAG_TABLE|PortChannel102": {
+    "runner.active": "true"
+  },
+  "LAG_TABLE|PortChannel103": {
+    "runner.active": "false"
+  }
+}

@@ -87,7 +87,8 @@ func TestGetShowInterfaceFlap(t *testing.T) {
 			pathTarget: "SHOW",
 			textPbPath: `
                 elem: <name: "interfaces" >
-                elem: <name: "flap" key: { key: "interface" value: "Ethernet0" } >
+                elem: <name: "flap" >
+				elem: <name: "Ethernet0" >
             `,
 			wantRetCode: codes.OK,
 			wantRespVal: []byte(expectedSingle),
@@ -102,7 +103,8 @@ func TestGetShowInterfaceFlap(t *testing.T) {
 			pathTarget: "SHOW",
 			textPbPath: `
                 elem: <name: "interfaces" >
-                elem: <name: "flap" key: { key: "interface" value: "Ethernet999" } >
+                elem: <name: "flap" >
+                elem: <name: "Ethernet999" >
             `,
 			wantRetCode: codes.NotFound,
 			valTest:     false,
@@ -132,11 +134,12 @@ func TestGetShowInterfaceFlap(t *testing.T) {
 			},
 		},
 		{
-			desc:       "query SHOW interfaces flap with interface=etp0 and SONIC_CLI_IFACE_MODE=alias",
+			desc:       "query SHOW interfaces flap etp0 with SONIC_CLI_IFACE_MODE=alias",
 			pathTarget: "SHOW",
 			textPbPath: `
                 elem: <name: "interfaces" >
-                elem: <name: "flap" key: { key: "interface" value: "etp0" } key: { key: "SONIC_CLI_IFACE_MODE" value: "alias" } >
+                elem: <name: "flap" >
+                elem: <name: "etp0" key: { key: "SONIC_CLI_IFACE_MODE" value: "alias" } >
             `,
 			wantRetCode: codes.OK,
 			wantRespVal: []byte(expectedNamingModeAliasWithInterface),

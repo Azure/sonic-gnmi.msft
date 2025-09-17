@@ -37,7 +37,7 @@ func getProcessesRoot(args sdc.CmdArgs, options sdc.OptionMap) ([]byte, error) {
 		"subcommands": map[string]string{
 			"summary": "show/processes/summary: Show processses info",
 			"cpu":     "show/processes/cpu: Show processes information sorted by cpu usage",
-			"mem":     "show/processes/mem: Show processes memory info",
+			"memory":  "show/processes/memory: Show processes information sorted by memory usage",
 		},
 	}
 	return json.Marshal(help)

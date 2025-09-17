@@ -253,7 +253,9 @@ func extractNeighborsEntry(iface interfaceEntry) lldpNeighborsEntry {
 }
 
 func getLLDPNeighbors(args sdc.CmdArgs, options sdc.OptionMap) ([]byte, error) {
-	// TODO: Needs to use argument
+	// Get interface name from args, if provided, default to ""
+	ifaceName := args.At(0)
+
 	data, err := getLLDPDataFromHostCommand()
 	if err != nil {
 		log.Errorf("Failed to get lldp data, get err %v", err)
@@ -262,6 +264,16 @@ func getLLDPNeighbors(args sdc.CmdArgs, options sdc.OptionMap) ([]byte, error) {
 
 	// parse neighbors summary from full lldp data
 	neighbors := extractAllNeighborsEntry(data)
+
+	// If interface name is provided, filter to return only that interface
+	if ifaceName != "" {
+		if entry, ok := neighbors[ifaceName]; ok {
+			neighbors = map[string]lldpNeighborsEntry{ifaceName: entry}
+		} else {
+			// Interface name provided but not found; return empty map
+			neighbors = make(map[string]lldpNeighborsEntry)
+		}
+	}
 
 	// create response structure
 	var response = lldpNeighborsResponse{

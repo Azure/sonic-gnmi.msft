@@ -109,7 +109,6 @@ func init() {
 		0,
 		1,
 		nil,
-		showCmdOptionInterface, // TODO: Take as arg not option
 		showCmdOptionSonicCliIfaceMode,
 		sdc.UnimplementedOption(showCmdOptionNamespace),
 		showCmdOptionDisplay,
@@ -132,6 +131,19 @@ func init() {
 		sdc.UnimplementedOption(showCmdOptionNamespace),
 		showCmdOptionDisplay,
 		showCmdOptionInterfaces,
+		showCmdOptionPeriod,
+		showCmdOptionJson,
+		showCmdOptionVerbose,
+	)
+
+	// SHOW/interfaces/counters/rif
+	sdc.RegisterCliPath(
+		[]string{"SHOW", "interfaces", "counters", "rif"},
+		getInterfaceRifCounters,
+		"SHOW/interfaces/counters/rif/{INTERFACENAME}[OPTIONS]",
+		0,
+		1,
+		nil,
 		showCmdOptionPeriod,
 		showCmdOptionJson,
 		showCmdOptionVerbose,
@@ -173,7 +185,6 @@ func init() {
 		0,
 		1,
 		nil,
-		showCmdOptionInterface, // TODO: Take as arg not option
 		showCmdOptionSonicCliIfaceMode,
 	)
 	sdc.RegisterCliPath(
@@ -246,6 +257,15 @@ func init() {
 		nil,
 		showCmdOptionInterface, // TODO
 	)
+	sdc.RegisterCliPath(
+		[]string{"SHOW", "interfaces", "transceiver", "lpmode"},
+		getInterfaceTransceiverLpMode,
+		"SHOW/interfaces/transceiver/lpmode/{INTERFACENAME}[OPTIONS]: Show interface transceiver low-power mode",
+		0,
+		1,
+		nil,
+		showCmdOptionInterface, // TODO
+	)
 
 	// SHOW/ipv6
 	sdc.RegisterCliPath(
@@ -266,8 +286,6 @@ func init() {
 		0,
 		2,
 		nil,
-		showCmdOptionIPV6Address,           // TODO
-		showCmdOptionInfoTypeForBgpNetwork, // TODO
 		sdc.UnimplementedOption(showCmdOptionNamespace),
 	)
 	sdc.RegisterCliPath(
@@ -326,7 +344,6 @@ func init() {
 		nil,
 		sdc.UnimplementedOption(showCmdOptionNamespace),
 		showCmdOptionDisplay,
-		showCmdOptionFrrRouteArgs,
 	)
 
 	// SHOW/lldp
@@ -397,9 +414,18 @@ func init() {
 		map[string]string{
 			"summary": "show/processes/summary: Show processses info",
 			"cpu":     "show/processes/cpu: Show processes CPU info",
-			"mem":     "show/processes/mem: Show processes memory info",
+			"memory":  "show/processes/memory: Show processes information sorted by memory usage",
 		},
 	)
+        sdc.RegisterCliPath(
+                []string{"SHOW", "processes", "memory"},
+                getTopMemoryUsage,
+                "SHOW/processes/memory[OPTIONS]: Show processes information sorted by memory usage",
+                0,
+                0,
+                nil,
+                showCmdOptionVerbose,
+        )
 	sdc.RegisterCliPath(
 		[]string{"SHOW", "processes", "summary"},
 		getProcessesSummary,
@@ -581,5 +607,24 @@ func init() {
 		0,
 		0,
 		nil,
+	)
+	sdc.RegisterCliPath(
+		[]string{"SHOW", "interfaces", "portchannel"},
+		getInterfacePortchannel,
+		"SHOW/interfaces/portchannel[OPTIONS]: Show interface portchannel",
+		0,
+		0,
+		nil,
+		showCmdOptionVerbose,
+		showCmdOptionSonicCliIfaceMode,
+	)
+	sdc.RegisterCliPath(
+		[]string{"SHOW", "ecn"},
+		getEcnProfiles,
+		"SHOW/ecn[OPTIONS]: Show ECN profiles",
+		0,
+		0,
+		nil,
+		showCmdOptionVerbose,
 	)
 }

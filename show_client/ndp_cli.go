@@ -424,7 +424,7 @@ func getNDP(args sdc.CmdArgs, options sdc.OptionMap) ([]byte, error) {
 
 	// If cmdOutput is empty
 	if strings.TrimSpace(cmdOutput) == "" {
-		return []byte(`{"TotalEntries":0,"Entries":[]}`), nil
+		return []byte(`{"total_entries":0,"entries":[]}`), nil
 	}
 
 	log.V(6).Infof("ndp output: %s", cmdOutput)

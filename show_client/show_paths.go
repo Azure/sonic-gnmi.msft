@@ -254,7 +254,8 @@ func init() {
 		0,
 		1,
 		nil,
-		showCmdOptionInterface, // TODO
+		showCmdOptionVerbose,
+		sdc.UnimplementedOption(showCmdOptionNamespace),
 	)
 	sdc.RegisterCliPath(
 		[]string{"SHOW", "interfaces", "transceiver", "lpmode"},
@@ -416,15 +417,15 @@ func init() {
 			"memory":  "show/processes/memory: Show processes information sorted by memory usage",
 		},
 	)
-        sdc.RegisterCliPath(
-                []string{"SHOW", "processes", "memory"},
-                getTopMemoryUsage,
-                "SHOW/processes/memory[OPTIONS]: Show processes information sorted by memory usage",
-                0,
-                0,
-                nil,
-                showCmdOptionVerbose,
-        )
+	sdc.RegisterCliPath(
+		[]string{"SHOW", "processes", "memory"},
+		getTopMemoryUsage,
+		"SHOW/processes/memory[OPTIONS]: Show processes information sorted by memory usage",
+		0,
+		0,
+		nil,
+		showCmdOptionVerbose,
+	)
 	sdc.RegisterCliPath(
 		[]string{"SHOW", "processes", "summary"},
 		getProcessesSummary,

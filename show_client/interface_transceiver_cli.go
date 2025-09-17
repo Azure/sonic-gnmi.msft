@@ -141,3 +141,71 @@ func getInterfaceTransceiverLpMode(args sdc.CmdArgs, options sdc.OptionMap) ([]b
 
 	return json.Marshal(entries)
 }
+
+func querySfpPM(intf string) map[string]string {
+	return map[string]string{
+		"name":   intf,
+		"status": "Transceiver status info not applicable",
+	}
+	// TODO: Implement the logic after we find a device that has transceiver performance monitoring enabled
+	// firstSubport := getFirstSubPort(intf)
+	// if firstSubport == "" {
+	// 	log.Errorf("Unable to get first subport for %v while converting SFP status", intf)
+	// 	return map[string]string{
+	// 		"name":   intf,
+	// 		"status": "Transceiver status info not applicable",
+	// 	}
+	// }
+
+	// // Query PM info from STATE_DB
+	// queries := [][]string{
+	// 	{"STATE_DB", "TRANSCEIVER_PM", intf},
+	// }
+	// sfpPM, err := GetMapFromQueries(queries)
+	// if err != nil {
+	// 	log.Errorf("Failed to get PM dict from STATE_DB: %v", err)
+	// 	return nil, err
+	// }
+
+	// // Query threshold info from STATE_DB
+	// queries = [][]string{
+	// 	{"STATE_DB", "TRANSCEIVER_DOM_THRESHOLD", intf},
+	// }
+	// sfpThreshold, err := GetMapFromQueries(queries)
+	// if err != nil {
+	// 	log.Errorf("Failed to get PM dict from STATE_DB: %v", err)
+	// 	return nil, err
+	// }
+}
+
+func getInterfaceTransceiverPM(args sdc.CmdArgs, options sdc.OptionMap) ([]byte, error) {
+	intf := args.At(0)
+
+	result := make([]map[string]string, 0)
+	if intf != "" {
+		result = append(result, querySfpPM(intf))
+	} else {
+		queries := [][]string{
+			{"APPL_DB", AppDBPortTable},
+		}
+		portTable, err := GetMapFromQueries(queries)
+		if err != nil {
+			log.Errorf("Failed to get interface list from APPL_DB: %v", err)
+			return nil, err
+		}
+
+		ports := make([]string, 0, len(portTable))
+		for key := range portTable {
+			ports = append(ports, key)
+		}
+		ports = NatsortInterfaces(ports)
+
+		for _, p := range ports {
+			if ok, _ := isValidPhysicalPort(p); ok {
+				result = append(result, querySfpPM(p))
+			}
+		}
+	}
+
+	return json.Marshal(result)
+}

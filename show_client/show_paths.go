@@ -253,6 +253,15 @@ func init() {
 		nil,
 		showCmdOptionInterface, // TODO
 	)
+	sdc.RegisterCliPath(
+		[]string{"SHOW", "interfaces", "transceiver", "pm"},
+		getInterfaceTransceiverPM,
+		"SHOW/interfaces/transceiver/pm/{INTERFACENAME}[OPTIONS]: Show interface transceiver performance monitoring",
+		0,
+		1,
+		nil,
+		sdc.UnimplementedOption(showCmdOptionNamespace),
+	)
 
 	// SHOW/ipv6
 	sdc.RegisterCliPath(

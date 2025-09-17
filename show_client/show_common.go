@@ -8,7 +8,6 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/facette/natsort"
 	log "github.com/golang/glog"
 	"github.com/google/shlex"
 	natural "github.com/maruel/natural"
@@ -470,7 +469,7 @@ func (pmr *PortMappingRetriever) readPorttabMappings() {
 		}
 	}
 
-	natsort.Sort(logical)
+	sort.Sort(natural.StringSlice(logical))
 
 	for _, intfName := range logical {
 		fpPortIndex := 1

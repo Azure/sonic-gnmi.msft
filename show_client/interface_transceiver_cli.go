@@ -141,7 +141,7 @@ func getInterfaceTransceiverLpMode(args sdc.CmdArgs, options sdc.OptionMap) ([]b
 func querySfpPM(intf string) map[string]string {
 	return map[string]string{
 		"name":   intf,
-		"status": "Transceiver status info not applicable",
+		"status": "Transceiver performance monitoring not applicable",
 	}
 	// TODO: Implement the logic after we find a device that has transceiver performance monitoring enabled
 	// firstSubport := getFirstSubPort(intf)

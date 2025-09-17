@@ -62,15 +62,6 @@ type BridgeMacEntry struct {
 	IfName string
 }
 
-func contains(arr []string, val string) bool {
-	for _, v := range arr {
-		if v == val {
-			return true
-		}
-	}
-	return false
-}
-
 func parseNDPOutput(output string, intf string) NeighborTable {
 	table := NeighborTable{}
 
@@ -88,7 +79,7 @@ func parseNDPOutput(output string, intf string) NeighborTable {
 	lines := strings.Split(strings.TrimSpace(output), "\n")
 	for _, line := range lines {
 		fields := strings.Fields(line)
-		if !contains(fields, "lladdr") {
+		if !ContainsString(fields, "lladdr") {
 			continue
 		}
 

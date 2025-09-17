@@ -107,7 +107,7 @@ func getMacTable(args sdc.CmdArgs, options sdc.OptionMap) ([]byte, error) {
 	if portFilter == "" {
 		portIsValid = true
 	} else {
-		allPorts, err := GetMapFromQueries([][]string{{ConfigDb, ConfigDbPort}})
+		allPorts, err := GetMapFromQueries([][]string{{ConfigDb, ConfigDBPortTable}})
 		if err != nil {
 			log.Errorf("Unable to get CONFIG_DB port, err: %v", err)
 			return nil, err

@@ -33,6 +33,7 @@ const (
 const (
 	OptionKeyIpAddress = "ipaddress"
 	OptionKeyVerbose   = "verbose"
+	SonicCliIfaceMode  = "SONIC_CLI_IFACE_MODE"
 )
 
 var (

@@ -3,10 +3,11 @@ package show_client
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/facette/natsort"
 	"regexp"
 	"sort"
 	"strings"
+
+	natural "github.com/maruel/natural"
 )
 
 func isTransceiverCmis(sfpInfoDict map[string]interface{}) bool {
@@ -168,7 +169,7 @@ func convertSfpInfoToOutputString(sfpInfoDict map[string]interface{}, sfpFirmwar
 						for k := range specComplianceDict {
 							keys = append(keys, k)
 						}
-						natsort.Sort(keys)
+						sort.Sort(natural.StringSlice(keys))
 
 						m := make(map[string]interface{})
 						for _, k := range keys {
@@ -255,7 +256,7 @@ func convertDomToOutputString(sfpType string, isSfpCmis bool, domInfoDict map[st
 			for k := range CmisDomChannelMonitorMap {
 				sortedKeyTable = append(sortedKeyTable, k)
 			}
-			natsort.Sort(sortedKeyTable)
+			sort.Sort(natural.StringSlice(sortedKeyTable))
 			outputChannel := formatDictValueToString(sortedKeyTable, domInfoDict, CmisDomChannelMonitorMap, QsfpDdDomValueUnitMap)
 			outputDom["ChannelMonitorValues"] = outputChannel
 		} else {
@@ -263,7 +264,7 @@ func convertDomToOutputString(sfpType string, isSfpCmis bool, domInfoDict map[st
 			for k := range QsfpDomChannelMonitorMap {
 				sortedKeyTable = append(sortedKeyTable, k)
 			}
-			natsort.Sort(sortedKeyTable)
+			sort.Sort(natural.StringSlice(sortedKeyTable))
 			outputChannel := formatDictValueToString(sortedKeyTable, domInfoDict, QsfpDomChannelMonitorMap, DomValueUnitMap)
 			outputDom["ChannelMonitorValues"] = outputChannel
 		}
@@ -279,7 +280,7 @@ func convertDomToOutputString(sfpType string, isSfpCmis bool, domInfoDict map[st
 		for k := range domMap {
 			sortedKeyTable = append(sortedKeyTable, k)
 		}
-		natsort.Sort(sortedKeyTable)
+		sort.Sort(natural.StringSlice(sortedKeyTable))
 		outputChannelThreshold := formatDictValueToString(sortedKeyTable, domInfoDict, domMap, DomChannelThresholdUnitMap)
 		outputDom["ChannelThresholdValues"] = outputChannelThreshold
 
@@ -288,12 +289,16 @@ func convertDomToOutputString(sfpType string, isSfpCmis bool, domInfoDict map[st
 		for k := range DomModuleMonitorMap {
 			sortedKeyTable = append(sortedKeyTable, k)
 		}
-		natsort.Sort(sortedKeyTable)
+		sort.Sort(natural.StringSlice(sortedKeyTable))
 		outputModule := formatDictValueToString(sortedKeyTable, domInfoDict, DomModuleMonitorMap, DomValueUnitMap)
 		outputDom["ModuleMonitorValues"] = outputModule
 
 		outputDom["ModuleThresholdValues"] = ""
 		sortedKeyTable = make([]string, 0, len(DomModuleThresholdMap))
+		for k := range DomModuleThresholdMap {
+			sortedKeyTable = append(sortedKeyTable, k)
+		}
+		sort.Sort(natural.StringSlice(sortedKeyTable))
 		outputModuleThreshold := formatDictValueToString(sortedKeyTable, domInfoDict, DomModuleThresholdMap, DomModuleThresholdUnitMap)
 		outputDom["ModuleThresholdValues"] = outputModuleThreshold
 	} else {
@@ -302,7 +307,7 @@ func convertDomToOutputString(sfpType string, isSfpCmis bool, domInfoDict map[st
 		for k := range SfpDomChannelMonitorMap {
 			sortedKeyTable = append(sortedKeyTable, k)
 		}
-		natsort.Sort(sortedKeyTable)
+		sort.Sort(natural.StringSlice(sortedKeyTable))
 		outputChannel := formatDictValueToString(sortedKeyTable, domInfoDict, SfpDomChannelMonitorMap, DomValueUnitMap)
 		outputDom["MonitorData"] = outputChannel
 
@@ -310,7 +315,7 @@ func convertDomToOutputString(sfpType string, isSfpCmis bool, domInfoDict map[st
 		for k := range DomModuleMonitorMap {
 			sortedKeyTable = append(sortedKeyTable, k)
 		}
-		natsort.Sort(sortedKeyTable)
+		sort.Sort(natural.StringSlice(sortedKeyTable))
 		outputModule := formatDictValueToString(sortedKeyTable, domInfoDict, DomModuleMonitorMap, DomValueUnitMap)
 
 		monitorData, ok := outputDom["MonitorData"].(map[string]interface{})
@@ -328,7 +333,7 @@ func convertDomToOutputString(sfpType string, isSfpCmis bool, domInfoDict map[st
 		for k := range DomModuleThresholdMap {
 			sortedKeyTable = append(sortedKeyTable, k)
 		}
-		natsort.Sort(sortedKeyTable)
+		sort.Sort(natural.StringSlice(sortedKeyTable))
 		outputModuleThreshold := formatDictValueToString(sortedKeyTable, domInfoDict, DomModuleThresholdMap, DomModuleThresholdUnitMap)
 		outputDom["ThresholdData"] = outputModuleThreshold
 
@@ -336,7 +341,7 @@ func convertDomToOutputString(sfpType string, isSfpCmis bool, domInfoDict map[st
 		for k := range SfpDomChannelThresholdMap {
 			sortedKeyTable = append(sortedKeyTable, k)
 		}
-		natsort.Sort(sortedKeyTable)
+		sort.Sort(natural.StringSlice(sortedKeyTable))
 		outputChannelThreshold := formatDictValueToString(sortedKeyTable, domInfoDict, SfpDomChannelThresholdMap, DomChannelThresholdUnitMap)
 
 		thresholdData, ok := outputDom["ThresholdData"].(map[string]interface{})

@@ -19,16 +19,6 @@ type SwitchTrimmingResponse struct {
         QueueIndex string `json:"queue_index"`
 }
 
-// getOrNA returns the value for a key or "N/A" if missing or empty
-func getOrNA(entry map[string]interface{}, key string) string {
-        if val, ok := entry[key]; ok {
-                if str, ok := val.(string); ok && str != "" {
-                        return str
-                }
-        }
-        return "N/A"
-}
-
 // getSwitchTrimmingGlobalConfig queries CONFIG_DB and returns JSON response
 func getSwitchTrimmingGlobalConfig(args sdc.CmdArgs, options sdc.OptionMap) ([]byte, error) {
         row, err := GetMapFromQueries([][]string{{"CONFIG_DB", cfgSwitchTrimming, cfgTrimKey}})
@@ -43,11 +33,11 @@ func getSwitchTrimmingGlobalConfig(args sdc.CmdArgs, options sdc.OptionMap) ([]b
         }
 
         response := SwitchTrimmingResponse{
-                Size:       getOrNA(row, "size"),
-                DSCPValue:  getOrNA(row, "dscp_value"),
-                TCValue:    getOrNA(row, "tc_value"),
-                QueueIndex: getOrNA(row, "queue_index"),
+                Size:       GetValueOrDefault(row, "size", "N/A"),
+                DSCPValue:  GetValueOrDefault(row, "dscp_value", "N/A"),
+                TCValue:    GetValueOrDefault(row, "tc_value", "N/A"),
+                QueueIndex: GetValueOrDefault(row, "queue_index", "N/A"),
         }
 
-        return json.MarshalIndent(response, "", "  ")
+        return json.Marshal(response)
 }

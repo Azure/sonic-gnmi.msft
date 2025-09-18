@@ -161,26 +161,21 @@ func convertSfpInfoToOutputString(sfpInfoDict map[string]interface{}, sfpFirmwar
 
 				specComplianceDict := make(map[string]interface{})
 				specStr, ok := sfpInfoDict["specification_compliance"]
-
 				if ok && specStr != "" {
-					if s, ok := specStr.(string); ok && s != "" {
-						if err := json.Unmarshal([]byte(s), &specComplianceDict); err != nil {
-							output[QsfpDataMap[key]] = "N/A"
-						} else {
-							keys := make([]string, 0, len(specComplianceDict))
-							for k := range specComplianceDict {
-								keys = append(keys, k)
-							}
-							sort.Sort(natural.StringSlice(keys))
-
-							m := make(map[string]interface{})
-							for _, k := range keys {
-								m[k] = specComplianceDict[k]
-							}
-							output[QsfpDataMap[key]] = m
-						}
-					} else {
+					if err := json.Unmarshal([]byte(specStr.(string)), &specComplianceDict); err != nil {
 						output[QsfpDataMap[key]] = "N/A"
+					} else {
+						keys := make([]string, 0, len(specComplianceDict))
+						for k := range specComplianceDict {
+							keys = append(keys, k)
+						}
+						sort.Sort(natural.StringSlice(keys))
+
+						m := make(map[string]interface{})
+						for _, k := range keys {
+							m[k] = specComplianceDict[k]
+						}
+						output[QsfpDataMap[key]] = m
 					}
 				}
 			}
@@ -397,7 +392,7 @@ func convertInterfaceSfpInfoToCliOutputString(iface string, dumpDom bool) string
 	if len(sfpInfoDict) != 0 {
 		isSfpCmis := isTransceiverCmis(sfpInfoDict)
 		if portType, ok := sfpInfoDict["type"].(string); ok && portType == RJ45PortType {
-			return "SFP EEPROM is not applicable for RJ45 port\n"
+			return "SFP EEPROM is not applicable for RJ45 port"
 		} else {
 			// output = "SFP EEPROM detected\n"
 			sfpInfoOutput := convertSfpInfoToOutputString(sfpInfoDict, sfpFirmwareInfoDict)
@@ -436,7 +431,7 @@ func convertInterfaceSfpInfoToCliOutputString(iface string, dumpDom bool) string
 		}
 	} else {
 		if IsRj45Port(iface) {
-			return "SFP EEPROM is not applicable for RJ45 port\n"
+			return "SFP EEPROM is not applicable for RJ45 port"
 		} else {
 			return "SFP EEPROM Not detected\n"
 		}

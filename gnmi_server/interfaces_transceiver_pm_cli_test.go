@@ -36,7 +36,7 @@ func TestGetTransceiverPM(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), QueryTimeout*time.Second)
 	defer cancel()
 
-	ApplDbFile := "../test_data/APPL_DB.json"
+	ApplDbFile := "../testdata/APPL_DB.json"
 	transceiverPM := `[{"name": "Ethernet0","status": "Transceiver performance monitoring not applicable"}, {"name": "Ethernet40","status": "Transceiver performance monitoring not applicable"},{"name": "Ethernet80","status": "Transceiver performance monitoring not applicable"},{"name": "Ethernet120","status": "Transceiver performance monitoring not applicable"}]`
 	transceiverPMPort := `[{"name": "Ethernet0","status": "Transceiver performance monitoring not applicable"}]`
 	ResetDataSetsAndMappings(t)

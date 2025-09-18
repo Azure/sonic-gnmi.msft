@@ -313,7 +313,7 @@ func fetchFdbData() ([]BridgeMacEntry, error) {
 
 	bvidMap, err := buildBvidToVlanMap()
 	if err != nil {
-		log.Fatalf("Failed to build BVID map: %v", err)
+		log.Warningf("Failed to build BVID map: %v", err)
 		return nil, err
 	}
 	oidPrefix := len("oid:0x")
@@ -382,7 +382,7 @@ func fetchFdbData() ([]BridgeMacEntry, error) {
 }
 
 func getNDP(args sdc.CmdArgs, options sdc.OptionMap) ([]byte, error) {
-	intf, _ := options["interface"].String()
+	intf, _ := options["iface"].String()
 	ip := args.At(0)
 
 	cmd := baseNdpCmd

@@ -94,3 +94,12 @@ func LoadProcessesDataFromCmdOutput(output string) ([]byte, error) {
 
 	return json.MarshalIndent(response, "", "  ")
 }
+
+func GetProcessesData(processCmd string) ([]byte, error) {
+	processDetails, err := GetDataFromHostCommand(processCmd)
+	if err != nil {
+		return []byte(""), err
+	}
+
+	return LoadProcessesDataFromCmdOutput(processDetails)
+}

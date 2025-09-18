@@ -55,23 +55,14 @@ func getProcessesSummary(args sdc.CmdArgs, options sdc.OptionMap) ([]byte, error
 	return json.Marshal(entries)
 }
 
-func getProcessesData(processCmd string) ([]byte, error) {
-	processDetails, err := GetDataFromHostCommand(processCmd)
-	if err != nil {
-		return []byte(""), err
-	}
-
-	return helpers.LoadProcessesDataFromCmdOutput(processDetails)
-}
-
 func getTopMemoryUsage(args sdc.CmdArgs, options sdc.OptionMap) ([]byte, error) {
 	cmdForProcessByMemory := topCommand + orderByMemory
-	return getProcessesData(cmdForProcessByMemory)
+	return helpers.GetProcessesData(cmdForProcessByMemory)
 }
 
 func getProcessesCPU(args sdc.CmdArgs, options sdc.OptionMap) ([]byte, error) {
 	cmdForProcessByCPU := topCommand + orderByCPU
-	return getProcessesData(cmdForProcessByCPU)
+	return helpers.GetProcessesData(cmdForProcessByCPU)
 }
 
 func buildProcessEntries(processesSummary map[string]interface{}) []processEntry {

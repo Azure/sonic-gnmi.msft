@@ -8,7 +8,6 @@ import (
 
 	log "github.com/golang/glog"
 	"github.com/sonic-net/sonic-gnmi/show_client/common"
-	sdc "github.com/sonic-net/sonic-gnmi/sonic_data_client"
 )
 
 // Struct to hold individual process details

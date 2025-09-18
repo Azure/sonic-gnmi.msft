@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 
 	log "github.com/golang/glog"
+	"github.com/sonic-net/sonic-gnmi/show_client/common"
 )
 
 // lldpData represents the overall LLDP data structure from lldpctl -f json0.
@@ -105,7 +106,7 @@ type unknownTLV struct {
 func getLLDPDataFromHostCommand() (lldpData, error) {
 	log.V(2).Infof("Start to get lldp data from lldpctl")
 	lldpShowJsonCommand := "docker exec lldp lldpctl -f json0"
-	lldpOutput, err := GetDataFromHostCommand(lldpShowJsonCommand)
+	lldpOutput, err := common.GetDataFromHostCommand(lldpShowJsonCommand)
 	if err != nil {
 		log.Errorf("Unable to successfully execute command %v, get err %v", lldpShowJsonCommand, err)
 		return lldpData{}, err

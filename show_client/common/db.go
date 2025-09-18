@@ -13,7 +13,9 @@ const (
 
 	minQueryLength = 2 // We need to support TARGET/TABLE as a minimum query
 	maxQueryLength = 5 // We can support up to 5 elements in query (TARGET/TABLE/(2 KEYS)/FIELD)
+)
 
+const (
 	StateDb    = "STATE_DB"
 	ConfigDb   = "CONFIG_DB"
 	ApplDb     = "APPL_DB"

@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	log "github.com/golang/glog"
+	"github.com/sonic-net/sonic-gnmi/show_client/common"
 	sdc "github.com/sonic-net/sonic-gnmi/sonic_data_client"
 )
 
@@ -13,7 +14,7 @@ const showSystemMemoryCommand = "free -m"
 
 func getSystemMemory(args sdc.CmdArgs, options sdc.OptionMap) ([]byte, error) {
 	// Get data from host command
-	output, err := GetDataFromHostCommand(showSystemMemoryCommand)
+	output, err := common.GetDataFromHostCommand(showSystemMemoryCommand)
 	if err != nil {
 		log.Errorf("Unable to successfully execute command %v, get err %v", showSystemMemoryCommand, err)
 		return nil, err

@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	log "github.com/golang/glog"
+	"github.com/sonic-net/sonic-gnmi/show_client/common"
 	sdc "github.com/sonic-net/sonic-gnmi/sonic_data_client"
 )
 
@@ -17,7 +18,7 @@ func getSRv6Stats(args sdc.CmdArgs, options sdc.OptionMap) ([]byte, error) {
 	queries := [][]string{
 		{"COUNTERS_DB", "COUNTERS_SRV6_NAME_MAP"},
 	}
-	sidCounterMap, err := GetMapFromQueries(queries)
+	sidCounterMap, err := common.GetMapFromQueries(queries)
 	if err != nil {
 		log.Errorf("Unable to pull sid->counter_oid map for queries %v, got err %v", queries, err)
 		return nil, err
@@ -40,7 +41,7 @@ func getSRv6Stats(args sdc.CmdArgs, options sdc.OptionMap) ([]byte, error) {
 		sids = append(sids, fmt.Sprintf("%s", k))
 	}
 	// Natsort the slice
-	sids = NatsortInterfaces(sids)
+	sids = common.NatsortInterfaces(sids)
 
 	sidCounters := make([]map[string]string, 0, len(sids))
 	for _, sid := range sids {
@@ -50,7 +51,7 @@ func getSRv6Stats(args sdc.CmdArgs, options sdc.OptionMap) ([]byte, error) {
 		queries := [][]string{
 			{"COUNTERS_DB", "COUNTERS", counterOid},
 		}
-		sidStats, err := GetMapFromQueries(queries)
+		sidStats, err := common.GetMapFromQueries(queries)
 		if err != nil {
 			log.Errorf("Unable to pull counters data for queries %v, got err %v", queries, err)
 			return nil, err

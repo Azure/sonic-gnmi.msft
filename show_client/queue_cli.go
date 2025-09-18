@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	log "github.com/golang/glog"
+	"github.com/sonic-net/sonic-gnmi/show_client/common"
 	sdc "github.com/sonic-net/sonic-gnmi/sonic_data_client"
 )
 
@@ -84,23 +85,23 @@ func getQueueCountersMappingNonZero(queueCounters map[string]interface{}, onlyTr
 			}
 		} else if onlyTrim {
 			response[queue] = trimCountersResponseNonZero{
-				TrimmedPackets:        GetNonZeroValueOrEmpty(countersMap, "SAI_QUEUE_STAT_TRIM_PACKETS"),
-				TrimmedSentPackets:    GetNonZeroValueOrEmpty(countersMap, "SAI_QUEUE_STAT_TX_TRIM_PACKETS"),
-				TrimmedDroppedPackets: GetNonZeroValueOrEmpty(countersMap, "SAI_QUEUE_STAT_DROPPED_TRIM_PACKETS"),
+				TrimmedPackets:        common.GetNonZeroValueOrEmpty(countersMap, "SAI_QUEUE_STAT_TRIM_PACKETS"),
+				TrimmedSentPackets:    common.GetNonZeroValueOrEmpty(countersMap, "SAI_QUEUE_STAT_TX_TRIM_PACKETS"),
+				TrimmedDroppedPackets: common.GetNonZeroValueOrEmpty(countersMap, "SAI_QUEUE_STAT_DROPPED_TRIM_PACKETS"),
 			}
 		} else {
 			response[queue] = queueCountersResponseNonZero{
-				Packets:               GetNonZeroValueOrEmpty(countersMap, "SAI_QUEUE_STAT_PACKETS"),
-				Bytes:                 GetNonZeroValueOrEmpty(countersMap, "SAI_QUEUE_STAT_BYTES"),
-				DroppedPackets:        GetNonZeroValueOrEmpty(countersMap, "SAI_QUEUE_STAT_DROPPED_PACKETS"),
-				DroppedBytes:          GetNonZeroValueOrEmpty(countersMap, "SAI_QUEUE_STAT_DROPPED_BYTES"),
-				TrimmedPackets:        GetNonZeroValueOrEmpty(countersMap, "SAI_QUEUE_STAT_TRIM_PACKETS"),
-				TrimmedSentPackets:    GetNonZeroValueOrEmpty(countersMap, "SAI_QUEUE_STAT_TX_TRIM_PACKETS"),
-				TrimmedDroppedPackets: GetNonZeroValueOrEmpty(countersMap, "SAI_QUEUE_STAT_DROPPED_TRIM_PACKETS"),
-				WREDDroppedPackets:    GetNonZeroValueOrEmpty(countersMap, "SAI_QUEUE_STAT_WRED_DROPPED_PACKETS"),
-				WREDDroppedBytes:      GetNonZeroValueOrEmpty(countersMap, "SAI_QUEUE_STAT_WRED_DROPPED_BYTES"),
-				ECNMarkedPackets:      GetNonZeroValueOrEmpty(countersMap, "SAI_QUEUE_STAT_WRED_ECN_MARKED_PACKETS"),
-				ECNMarkedBytes:        GetNonZeroValueOrEmpty(countersMap, "SAI_QUEUE_STAT_WRED_ECN_MARKED_BYTES"),
+				Packets:               common.GetNonZeroValueOrEmpty(countersMap, "SAI_QUEUE_STAT_PACKETS"),
+				Bytes:                 common.GetNonZeroValueOrEmpty(countersMap, "SAI_QUEUE_STAT_BYTES"),
+				DroppedPackets:        common.GetNonZeroValueOrEmpty(countersMap, "SAI_QUEUE_STAT_DROPPED_PACKETS"),
+				DroppedBytes:          common.GetNonZeroValueOrEmpty(countersMap, "SAI_QUEUE_STAT_DROPPED_BYTES"),
+				TrimmedPackets:        common.GetNonZeroValueOrEmpty(countersMap, "SAI_QUEUE_STAT_TRIM_PACKETS"),
+				TrimmedSentPackets:    common.GetNonZeroValueOrEmpty(countersMap, "SAI_QUEUE_STAT_TX_TRIM_PACKETS"),
+				TrimmedDroppedPackets: common.GetNonZeroValueOrEmpty(countersMap, "SAI_QUEUE_STAT_DROPPED_TRIM_PACKETS"),
+				WREDDroppedPackets:    common.GetNonZeroValueOrEmpty(countersMap, "SAI_QUEUE_STAT_WRED_DROPPED_PACKETS"),
+				WREDDroppedBytes:      common.GetNonZeroValueOrEmpty(countersMap, "SAI_QUEUE_STAT_WRED_DROPPED_BYTES"),
+				ECNMarkedPackets:      common.GetNonZeroValueOrEmpty(countersMap, "SAI_QUEUE_STAT_WRED_ECN_MARKED_PACKETS"),
+				ECNMarkedBytes:        common.GetNonZeroValueOrEmpty(countersMap, "SAI_QUEUE_STAT_WRED_ECN_MARKED_BYTES"),
 			}
 		}
 	}
@@ -128,23 +129,23 @@ func getQueueCountersMapping(queueCounters map[string]interface{}, onlyTrim bool
 			}
 		} else if onlyTrim {
 			response[queue] = trimCountersResponse{
-				TrimmedPackets:        GetValueOrDefault(countersMap, "SAI_QUEUE_STAT_TRIM_PACKETS", defaultMissingCounterValue),
-				TrimmedSentPackets:    GetValueOrDefault(countersMap, "SAI_QUEUE_STAT_TX_TRIM_PACKETS", defaultMissingCounterValue),
-				TrimmedDroppedPackets: GetValueOrDefault(countersMap, "SAI_QUEUE_STAT_DROPPED_TRIM_PACKETS", defaultMissingCounterValue),
+				TrimmedPackets:        common.GetValueOrDefault(countersMap, "SAI_QUEUE_STAT_TRIM_PACKETS", common.DefaultMissingCounterValue),
+				TrimmedSentPackets:    common.GetValueOrDefault(countersMap, "SAI_QUEUE_STAT_TX_TRIM_PACKETS", common.DefaultMissingCounterValue),
+				TrimmedDroppedPackets: common.GetValueOrDefault(countersMap, "SAI_QUEUE_STAT_DROPPED_TRIM_PACKETS", common.DefaultMissingCounterValue),
 			}
 		} else {
 			response[queue] = queueCountersResponse{
-				Packets:               GetValueOrDefault(countersMap, "SAI_QUEUE_STAT_PACKETS", defaultMissingCounterValue),
-				Bytes:                 GetValueOrDefault(countersMap, "SAI_QUEUE_STAT_BYTES", defaultMissingCounterValue),
-				DroppedPackets:        GetValueOrDefault(countersMap, "SAI_QUEUE_STAT_DROPPED_PACKETS", defaultMissingCounterValue),
-				DroppedBytes:          GetValueOrDefault(countersMap, "SAI_QUEUE_STAT_DROPPED_BYTES", defaultMissingCounterValue),
-				TrimmedPackets:        GetValueOrDefault(countersMap, "SAI_QUEUE_STAT_TRIM_PACKETS", defaultMissingCounterValue),
-				TrimmedSentPackets:    GetValueOrDefault(countersMap, "SAI_QUEUE_STAT_TX_TRIM_PACKETS", defaultMissingCounterValue),
-				TrimmedDroppedPackets: GetValueOrDefault(countersMap, "SAI_QUEUE_STAT_DROPPED_TRIM_PACKETS", defaultMissingCounterValue),
-				WREDDroppedPackets:    GetValueOrDefault(countersMap, "SAI_QUEUE_STAT_WRED_DROPPED_PACKETS", defaultMissingCounterValue),
-				WREDDroppedBytes:      GetValueOrDefault(countersMap, "SAI_QUEUE_STAT_WRED_DROPPED_BYTES", defaultMissingCounterValue),
-				ECNMarkedPackets:      GetValueOrDefault(countersMap, "SAI_QUEUE_STAT_WRED_ECN_MARKED_PACKETS", defaultMissingCounterValue),
-				ECNMarkedBytes:        GetValueOrDefault(countersMap, "SAI_QUEUE_STAT_WRED_ECN_MARKED_BYTES", defaultMissingCounterValue),
+				Packets:               common.GetValueOrDefault(countersMap, "SAI_QUEUE_STAT_PACKETS", common.DefaultMissingCounterValue),
+				Bytes:                 common.GetValueOrDefault(countersMap, "SAI_QUEUE_STAT_BYTES", common.DefaultMissingCounterValue),
+				DroppedPackets:        common.GetValueOrDefault(countersMap, "SAI_QUEUE_STAT_DROPPED_PACKETS", common.DefaultMissingCounterValue),
+				DroppedBytes:          common.GetValueOrDefault(countersMap, "SAI_QUEUE_STAT_DROPPED_BYTES", common.DefaultMissingCounterValue),
+				TrimmedPackets:        common.GetValueOrDefault(countersMap, "SAI_QUEUE_STAT_TRIM_PACKETS", common.DefaultMissingCounterValue),
+				TrimmedSentPackets:    common.GetValueOrDefault(countersMap, "SAI_QUEUE_STAT_TX_TRIM_PACKETS", common.DefaultMissingCounterValue),
+				TrimmedDroppedPackets: common.GetValueOrDefault(countersMap, "SAI_QUEUE_STAT_DROPPED_TRIM_PACKETS", common.DefaultMissingCounterValue),
+				WREDDroppedPackets:    common.GetValueOrDefault(countersMap, "SAI_QUEUE_STAT_WRED_DROPPED_PACKETS", common.DefaultMissingCounterValue),
+				WREDDroppedBytes:      common.GetValueOrDefault(countersMap, "SAI_QUEUE_STAT_WRED_DROPPED_BYTES", common.DefaultMissingCounterValue),
+				ECNMarkedPackets:      common.GetValueOrDefault(countersMap, "SAI_QUEUE_STAT_WRED_ECN_MARKED_PACKETS", common.DefaultMissingCounterValue),
+				ECNMarkedBytes:        common.GetValueOrDefault(countersMap, "SAI_QUEUE_STAT_WRED_ECN_MARKED_BYTES", common.DefaultMissingCounterValue),
 			}
 		}
 	}
@@ -162,13 +163,13 @@ func getQueueCountersSnapshot(ifaces []string, onlyNonZero bool, onlyTrim bool, 
 		}
 	}
 
-	queryMap, err := GetMapFromQueries(queries)
+	queryMap, err := common.GetMapFromQueries(queries)
 	if err != nil {
 		log.Errorf("Unable to pull data for queries %v, got err %v", queries, err)
 		return nil, err
 	}
 
-	queueCounters := RemapAliasToPortNameForQueues(queryMap)
+	queueCounters := common.RemapAliasToPortNameForQueues(queryMap)
 
 	var response map[string]interface{}
 	if onlyNonZero {

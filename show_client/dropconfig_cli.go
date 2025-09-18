@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	log "github.com/golang/glog"
+	"github.com/sonic-net/sonic-gnmi/show_client/common"
 	sdc "github.com/sonic-net/sonic-gnmi/sonic_data_client"
 )
 
@@ -19,7 +20,7 @@ func getDropcountersCapabilities(args sdc.CmdArgs, options sdc.OptionMap) ([]byt
 	queries := [][]string{
 		{"STATE_DB", "DEBUG_COUNTER_CAPABILITIES", "*"},
 	}
-	data, err := GetMapFromQueries(queries)
+	data, err := common.GetMapFromQueries(queries)
 	if err != nil {
 		log.Errorf("Unable to get debug counter capabilities data from queries %v, got err: %v", queries, err)
 		return nil, err
@@ -33,7 +34,7 @@ func getDropCountersReasons(counter_name string) []string {
 	queries := [][]string{
 		{"CONFIG_DB", "DEBUG_COUNTER_DROP_REASON"},
 	}
-	data, err := GetMapFromQueries(queries)
+	data, err := common.GetMapFromQueries(queries)
 	if err != nil {
 		log.Errorf("Unable to get drop counters reasons data from queries %v, got err: %v", queries, err)
 		return []string{}
@@ -57,7 +58,7 @@ func getDropCountersConfiguration(args sdc.CmdArgs, options sdc.OptionMap) ([]by
 	queries := [][]string{
 		{"CONFIG_DB", "DEBUG_COUNTER"},
 	}
-	config_table, err := GetMapFromQueries(queries)
+	config_table, err := common.GetMapFromQueries(queries)
 	if err != nil {
 		log.Errorf("Unable to get dropcounters configuration data from queries %v, got err: %v", queries, err)
 		return nil, err
@@ -83,14 +84,14 @@ func getDropCountersConfiguration(args sdc.CmdArgs, options sdc.OptionMap) ([]by
 
 		counter_metadata := map[string]string{
 			"name":                     counter_name,
-			"alias":                    GetValueOrDefault(counter_attributes, "alias", counter_name),
-			"group":                    GetValueOrDefault(counter_attributes, "group", "N/A"),
-			"type":                     GetValueOrDefault(counter_attributes, "type", "N/A"),
-			"description":              GetValueOrDefault(counter_attributes, "desc", "N/A"),
-			"drop_monitor_status":      GetValueOrDefault(counter_attributes, "drop_monitor_status", "N/A"),
-			"window":                   GetValueOrDefault(counter_attributes, "window", "N/A"),
-			"drop_count_threshold":     GetValueOrDefault(counter_attributes, "drop_count_threshold", "N/A"),
-			"incident_count_threshold": GetValueOrDefault(counter_attributes, "incident_count_threshold", "N/A"),
+			"alias":                    common.GetValueOrDefault(counter_attributes, "alias", counter_name),
+			"group":                    common.GetValueOrDefault(counter_attributes, "group", "N/A"),
+			"type":                     common.GetValueOrDefault(counter_attributes, "type", "N/A"),
+			"description":              common.GetValueOrDefault(counter_attributes, "desc", "N/A"),
+			"drop_monitor_status":      common.GetValueOrDefault(counter_attributes, "drop_monitor_status", "N/A"),
+			"window":                   common.GetValueOrDefault(counter_attributes, "window", "N/A"),
+			"drop_count_threshold":     common.GetValueOrDefault(counter_attributes, "drop_count_threshold", "N/A"),
+			"incident_count_threshold": common.GetValueOrDefault(counter_attributes, "incident_count_threshold", "N/A"),
 		}
 
 		// Fill in the drop reason, concat the reasons with ',' when there are more than 1.

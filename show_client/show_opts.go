@@ -32,8 +32,8 @@ const (
 
 // Option keys
 const (
-	OptionKeyVerbose   = "verbose"
-	SonicCliIfaceMode  = "SONIC_CLI_IFACE_MODE"
+	OptionKeyVerbose  = "verbose"
+	SonicCliIfaceMode = "SONIC_CLI_IFACE_MODE"
 )
 
 var (
@@ -156,15 +156,6 @@ var (
 		"ipaddress",
 		showCmdOptionIPAddressDesc,
 		sdc.StringValue,
-	)
-
-	showCmdOptionInfoType = sdc.NewShowCmdOption(
-		"info_type",
-		"Additional information to display: routes | advertised-routes | received-routes",
-		sdc.EnumValue,
-		"routes",
-		"advertised-routes",
-		"received-routes",
 	)
 
 	showCmdOptionInfoTypeForBgpNetwork = sdc.NewShowCmdOption(

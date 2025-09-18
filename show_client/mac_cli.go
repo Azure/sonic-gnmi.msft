@@ -10,6 +10,7 @@ import (
 	"strings"
 
 	log "github.com/golang/glog"
+	"github.com/sonic-net/sonic-gnmi/show_client/common"
 	sdc "github.com/sonic-net/sonic-gnmi/sonic_data_client"
 )
 
@@ -24,7 +25,7 @@ func getMacAgingTime(args sdc.CmdArgs, options sdc.OptionMap) ([]byte, error) {
 	queries := [][]string{
 		{"APPL_DB", "SWITCH_TABLE", "switch"},
 	}
-	data, err := GetMapFromQueries(queries)
+	data, err := common.GetMapFromQueries(queries)
 	if err != nil {
 		log.Errorf("Unable to get mac aging time data from queries %v, got err: %v", queries, err)
 		return nil, err
@@ -92,7 +93,7 @@ func getMacTable(args sdc.CmdArgs, options sdc.OptionMap) ([]byte, error) {
 		}
 	}
 
-	stateData, err := GetMapFromQueries([][]string{{StateDb, FDBTable}})
+	stateData, err := common.GetMapFromQueries([][]string{{common.StateDb, common.FDBTable}})
 	if err != nil {
 		log.Errorf("Unable to get STATE_DB FDB_TABLE, err: %v", err)
 		return nil, err
@@ -107,7 +108,7 @@ func getMacTable(args sdc.CmdArgs, options sdc.OptionMap) ([]byte, error) {
 	if portFilter == "" {
 		portIsValid = true
 	} else {
-		allPorts, err := GetMapFromQueries([][]string{{ConfigDb, ConfigDBPortTable}})
+		allPorts, err := common.GetMapFromQueries([][]string{{common.ConfigDb, common.ConfigDBPortTable}})
 		if err != nil {
 			log.Errorf("Unable to get CONFIG_DB port, err: %v", err)
 			return nil, err

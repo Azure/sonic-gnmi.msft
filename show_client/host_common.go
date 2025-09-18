@@ -8,6 +8,8 @@ import (
 	"strconv"
 	"strings"
 	"sync"
+
+	"github.com/sonic-net/sonic-gnmi/show_client/common"
 )
 
 var HostDevicePath string = "/usr/share/sonic/device"
@@ -36,7 +38,7 @@ func GetChassisInfo() (map[string]string, error) {
 		{"STATE_DB", "CHASSIS_INFO"},
 	}
 
-	chassisInfo, err := GetMapFromQueries(queries)
+	chassisInfo, err := common.GetMapFromQueries(queries)
 	if err != nil {
 		return nil, err
 	}
@@ -184,7 +186,7 @@ func GetLocalhostInfo(field string) string {
 	queries := [][]string{
 		{"CONFIG_DB", "DEVICE_METADATA"},
 	}
-	metadata, err := GetMapFromQueries(queries)
+	metadata, err := common.GetMapFromQueries(queries)
 	if err != nil {
 		return ""
 	}

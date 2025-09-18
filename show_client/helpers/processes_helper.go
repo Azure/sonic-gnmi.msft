@@ -37,9 +37,7 @@ type TopProcessMemoryResponse struct {
 	Processes   []TopProcessResponse `json:"processes"`
 }
 
-const (
-	countOfProcessFields = 12
-)
+const countOfProcessFields = 12
 
 func cleanPrefix(line, prefix string) string {
 	return strings.TrimSpace(strings.TrimPrefix(line, prefix))
@@ -131,5 +129,5 @@ func GetProcessesData(processCmd string) ([]byte, error) {
 		return []byte(""), err
 	}
 
-	return helpers.LoadProcessesDataFromCmdOutput(processDetails)
+	return LoadProcessesDataFromCmdOutput(processDetails)
 }

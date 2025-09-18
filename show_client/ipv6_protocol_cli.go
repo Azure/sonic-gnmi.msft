@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	log "github.com/golang/glog"
+	"github.com/sonic-net/sonic-gnmi/show_client/common"
 	sdc "github.com/sonic-net/sonic-gnmi/sonic_data_client"
 )
 
@@ -40,7 +41,7 @@ var (
 )
 
 func getIPv6Protocol(args sdc.CmdArgs, options sdc.OptionMap) ([]byte, error) {
-	rawOutput, err := GetDataFromHostCommand(vtyshIPv6ProtocolCommand)
+	rawOutput, err := common.GetDataFromHostCommand(vtyshIPv6ProtocolCommand)
 	if err != nil {
 		log.Errorf("Unable to execute command %q, err=%v", vtyshIPv6ProtocolCommand, err)
 		return nil, err

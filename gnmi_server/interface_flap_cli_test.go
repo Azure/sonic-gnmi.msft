@@ -11,7 +11,7 @@ import (
 
 	"github.com/agiledragon/gomonkey/v2"
 	pb "github.com/openconfig/gnmi/proto/gnmi"
-	show_client "github.com/sonic-net/sonic-gnmi/show_client"
+	sccommon "github.com/sonic-net/sonic-gnmi/show_client/common"
 	sdc "github.com/sonic-net/sonic-gnmi/sonic_data_client"
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
@@ -124,8 +124,8 @@ func TestGetShowInterfaceFlap(t *testing.T) {
 			wantRetCode: codes.NotFound,
 			valTest:     false,
 			mockPatch: func() []*gomonkey.Patches {
-				p := gomonkey.ApplyFunc(show_client.GetMapFromQueries, func(queries [][]string) (map[string]interface{}, error) {
-					if len(queries) > 0 && len(queries[0]) > 1 && queries[0][0] == "APPL_DB" && queries[0][1] == show_client.AppDBPortTable {
+				p := gomonkey.ApplyFunc(sccommon.GetMapFromQueries, func(queries [][]string) (map[string]interface{}, error) {
+					if len(queries) > 0 && len(queries[0]) > 1 && queries[0][0] == "APPL_DB" && queries[0][1] == sccommon.AppDBPortTable {
 						return nil, fmt.Errorf("injected failure")
 					}
 					return map[string]interface{}{}, nil

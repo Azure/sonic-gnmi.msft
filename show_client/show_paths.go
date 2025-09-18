@@ -254,7 +254,8 @@ func init() {
 		0,
 		1,
 		nil,
-		showCmdOptionInterface, // TODO
+		showCmdOptionVerbose,
+		sdc.UnimplementedOption(showCmdOptionNamespace),
 	)
 	sdc.RegisterCliPath(
 		[]string{"SHOW", "interfaces", "transceiver", "lpmode"},
@@ -274,8 +275,6 @@ func init() {
 		0,
 		2,
 		nil,
-		showCmdOptionIPAddress, // TODO
-		showCmdOptionInfoType,  // TODO
 		sdc.UnimplementedOption(showCmdOptionNamespace),
 	)
 	sdc.RegisterCliPath(
@@ -304,7 +303,6 @@ func init() {
 		0,
 		1,
 		nil,
-		showCmdOptionIPV6Address, // TODO
 		showCmdOptionVerbose,
 	)
 	sdc.RegisterCliPath(
@@ -416,15 +414,15 @@ func init() {
 			"memory":  "show/processes/memory: Show processes information sorted by memory usage",
 		},
 	)
-        sdc.RegisterCliPath(
-                []string{"SHOW", "processes", "memory"},
-                getTopMemoryUsage,
-                "SHOW/processes/memory[OPTIONS]: Show processes information sorted by memory usage",
-                0,
-                0,
-                nil,
-                showCmdOptionVerbose,
-        )
+	sdc.RegisterCliPath(
+		[]string{"SHOW", "processes", "memory"},
+		getTopMemoryUsage,
+		"SHOW/processes/memory[OPTIONS]: Show processes information sorted by memory usage",
+		0,
+		0,
+		nil,
+		showCmdOptionVerbose,
+	)
 	sdc.RegisterCliPath(
 		[]string{"SHOW", "processes", "summary"},
 		getProcessesSummary,
@@ -443,12 +441,30 @@ func init() {
 		0,
 		1,
 		nil,
-		showCmdOptionInterfaces, // TODO: Should be arg
+		showCmdOptionInterfaces,
 		showCmdOptionDisplay,
 		showCmdOptionNonzero,
+		showCmdOptionAll,
 		showCmdOptionTrim,
+		sdc.UnimplementedOption(showCmdOptionVoq),
 		sdc.UnimplementedOption(showCmdOptionNamespace),
 		showCmdOptionVerbose,
+		showCmdOptionJson,
+	)
+	sdc.RegisterCliPath(
+		[]string{"SHOW", "queue", "wredcounters"},
+		getQueueWredCounters,
+		"SHOW/queue/wredcounters/{INTERFACENAME}[OPTIONS]: Show queue WRED counters",
+		0,
+		1,
+		nil,
+		showCmdOptionInterfaces,
+		showCmdOptionDisplay,
+		showCmdOptionNonzero,
+		sdc.UnimplementedOption(showCmdOptionVoq),
+		sdc.UnimplementedOption(showCmdOptionNamespace),
+		showCmdOptionVerbose,
+		showCmdOptionJson,
 	)
 	sdc.RegisterCliPath(
 		[]string{"SHOW", "queue", "watermark"},

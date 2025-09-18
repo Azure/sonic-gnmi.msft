@@ -8,6 +8,7 @@ import (
 	"time"
 
 	log "github.com/golang/glog"
+	"github.com/sonic-net/sonic-gnmi/show_client/common"
 	sdc "github.com/sonic-net/sonic-gnmi/sonic_data_client"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -37,8 +38,8 @@ func getInterfaceRifCounters(args sdc.CmdArgs, options sdc.OptionMap) ([]byte, e
 		period = periodValue
 	}
 
-	if period > maxShowCommandPeriod {
-		return nil, status.Errorf(codes.InvalidArgument, "period value must be <= %v", maxShowCommandPeriod)
+	if period > common.MaxShowCommandPeriod {
+		return nil, status.Errorf(codes.InvalidArgument, "period value must be <= %v", common.MaxShowCommandPeriod)
 	}
 
 	rifNameMap, err := getRifNameMapping()
@@ -105,19 +106,19 @@ func getInterfaceCountersRifSnapshot(interfaceName string) (map[string]interface
 	}
 
 	queries := [][]string{
-		{CountersDb, "COUNTERS"},
+		{common.CountersDb, "COUNTERS"},
 	}
 
-	rifCountersMap, err := GetMapFromQueries(queries)
+	rifCountersMap, err := common.GetMapFromQueries(queries)
 	if err != nil {
 		return nil, fmt.Errorf("Unable to pull data for queries %v, got err %v", queries, err)
 	}
 
 	queries = [][]string{
-		{CountersDb, "RATES:*"},
+		{common.CountersDb, "RATES:*"},
 	}
 
-	rifRatesMap, err := GetMapFromQueries(queries)
+	rifRatesMap, err := common.GetMapFromQueries(queries)
 	if err != nil {
 		return nil, fmt.Errorf("Unable to pull data for queries %v, got err %v", queries, err)
 	}
@@ -140,18 +141,18 @@ func getInterfaceCountersRifSnapshot(interfaceName string) (map[string]interface
 		}
 
 		interfaceRifCounter := interfaceRifCounters{
-			RxOkPackets:  validateAndGetIntValue(GetFieldValueString(rifCountersMap, oidStr, defaultMissingCounterValue, "SAI_ROUTER_INTERFACE_STAT_IN_PACKETS")),
-			RxBps:        GetFieldValueString(rifRatesMap, oidStr, defaultMissingCounterValue, "RX_BPS"),
-			RxPps:        GetFieldValueString(rifRatesMap, oidStr, defaultMissingCounterValue, "RX_PPS"),
-			RxErrPackets: validateAndGetIntValue(GetFieldValueString(rifCountersMap, oidStr, defaultMissingCounterValue, "SAI_ROUTER_INTERFACE_STAT_IN_ERROR_PACKETS")),
-			TxOkPackets:  validateAndGetIntValue(GetFieldValueString(rifCountersMap, oidStr, defaultMissingCounterValue, "SAI_ROUTER_INTERFACE_STAT_OUT_PACKETS")),
-			TxBps:        GetFieldValueString(rifRatesMap, oidStr, defaultMissingCounterValue, "TX_BPS"),
-			TxPps:        GetFieldValueString(rifRatesMap, oidStr, defaultMissingCounterValue, "TX_PPS"),
-			TxErrPackets: validateAndGetIntValue(GetFieldValueString(rifCountersMap, oidStr, defaultMissingCounterValue, "SAI_ROUTER_INTERFACE_STAT_OUT_ERROR_PACKETS")),
-			RxErrBits:    validateAndGetIntValue(GetFieldValueString(rifCountersMap, oidStr, defaultMissingCounterValue, "SAI_ROUTER_INTERFACE_STAT_IN_ERROR_OCTETS")),
-			TxErrBits:    validateAndGetIntValue(GetFieldValueString(rifCountersMap, oidStr, defaultMissingCounterValue, "SAI_ROUTER_INTERFACE_STAT_OUT_ERROR_OCTETS")),
-			RxOkBits:     validateAndGetIntValue(GetFieldValueString(rifCountersMap, oidStr, defaultMissingCounterValue, "SAI_ROUTER_INTERFACE_STAT_IN_OCTETS")),
-			TxOkBits:     validateAndGetIntValue(GetFieldValueString(rifCountersMap, oidStr, defaultMissingCounterValue, "SAI_ROUTER_INTERFACE_STAT_OUT_OCTETS")),
+			RxOkPackets:  validateAndGetIntValue(common.GetFieldValueString(rifCountersMap, oidStr, common.DefaultMissingCounterValue, "SAI_ROUTER_INTERFACE_STAT_IN_PACKETS")),
+			RxBps:        common.GetFieldValueString(rifRatesMap, oidStr, common.DefaultMissingCounterValue, "RX_BPS"),
+			RxPps:        common.GetFieldValueString(rifRatesMap, oidStr, common.DefaultMissingCounterValue, "RX_PPS"),
+			RxErrPackets: validateAndGetIntValue(common.GetFieldValueString(rifCountersMap, oidStr, common.DefaultMissingCounterValue, "SAI_ROUTER_INTERFACE_STAT_IN_ERROR_PACKETS")),
+			TxOkPackets:  validateAndGetIntValue(common.GetFieldValueString(rifCountersMap, oidStr, common.DefaultMissingCounterValue, "SAI_ROUTER_INTERFACE_STAT_OUT_PACKETS")),
+			TxBps:        common.GetFieldValueString(rifRatesMap, oidStr, common.DefaultMissingCounterValue, "TX_BPS"),
+			TxPps:        common.GetFieldValueString(rifRatesMap, oidStr, common.DefaultMissingCounterValue, "TX_PPS"),
+			TxErrPackets: validateAndGetIntValue(common.GetFieldValueString(rifCountersMap, oidStr, common.DefaultMissingCounterValue, "SAI_ROUTER_INTERFACE_STAT_OUT_ERROR_PACKETS")),
+			RxErrBits:    validateAndGetIntValue(common.GetFieldValueString(rifCountersMap, oidStr, common.DefaultMissingCounterValue, "SAI_ROUTER_INTERFACE_STAT_IN_ERROR_OCTETS")),
+			TxErrBits:    validateAndGetIntValue(common.GetFieldValueString(rifCountersMap, oidStr, common.DefaultMissingCounterValue, "SAI_ROUTER_INTERFACE_STAT_OUT_ERROR_OCTETS")),
+			RxOkBits:     validateAndGetIntValue(common.GetFieldValueString(rifCountersMap, oidStr, common.DefaultMissingCounterValue, "SAI_ROUTER_INTERFACE_STAT_IN_OCTETS")),
+			TxOkBits:     validateAndGetIntValue(common.GetFieldValueString(rifCountersMap, oidStr, common.DefaultMissingCounterValue, "SAI_ROUTER_INTERFACE_STAT_OUT_OCTETS")),
 		}
 
 		interfaceRifCountersMap[rifName] = interfaceRifCounter
@@ -161,31 +162,31 @@ func getInterfaceCountersRifSnapshot(interfaceName string) (map[string]interface
 }
 
 func calculateDiffClampZero(oldValue, newValue string) string {
-	if newValue == defaultMissingCounterValue {
-		return defaultMissingCounterValue
+	if newValue == common.DefaultMissingCounterValue {
+		return common.DefaultMissingCounterValue
 	}
 
-	if oldValue == defaultMissingCounterValue {
+	if oldValue == common.DefaultMissingCounterValue {
 		oldValue = "0"
 	}
 
-	oldCounterValue, _ := strconv.ParseInt(oldValue, base10, 64)
-	newCounterValue, _ := strconv.ParseInt(newValue, base10, 64)
+	oldCounterValue, _ := strconv.ParseInt(oldValue, common.Base10, 64)
+	newCounterValue, _ := strconv.ParseInt(newValue, common.Base10, 64)
 
 	diff := newCounterValue - oldCounterValue
 	if diff < 0 {
 		diff = 0
 	}
 
-	return strconv.FormatInt(diff, base10)
+	return strconv.FormatInt(diff, common.Base10)
 }
 
-// Validate counter value is an integer, return defaultMissingCounterValue if not
+// Validate counter value is an integer, return common.DefaultMissingCounterValue if not
 func validateAndGetIntValue(value string) string {
-	_, valueParseErr := strconv.ParseInt(value, base10, 64)
+	_, valueParseErr := strconv.ParseInt(value, common.Base10, 64)
 	if valueParseErr != nil {
 		log.Warningf("Invalid counter value %s: %v", value, valueParseErr)
-		return defaultMissingCounterValue
+		return common.DefaultMissingCounterValue
 	}
 
 	return value
@@ -193,12 +194,12 @@ func validateAndGetIntValue(value string) string {
 
 func getRifNameMapping() (map[string]interface{}, error) {
 	queries := [][]string{
-		{CountersDb, "COUNTERS_RIF_NAME_MAP"},
+		{common.CountersDb, "COUNTERS_RIF_NAME_MAP"},
 	}
 
-	rifNameMap, err := GetMapFromQueries(queries)
+	rifNameMap, err := common.GetMapFromQueries(queries)
 	if err != nil {
-		return nil, fmt.Errorf("Failed to get COUNTERS_RIF_NAME_MAP from %s: %v", CountersDb, err)
+		return nil, fmt.Errorf("Failed to get COUNTERS_RIF_NAME_MAP from %s: %v", common.CountersDb, err)
 	}
 
 	if len(rifNameMap) == 0 {

@@ -12,6 +12,7 @@ import (
 	"sort"
 
 	log "github.com/golang/glog"
+	"github.com/sonic-net/sonic-gnmi/show_client/common"
 	sdc "github.com/sonic-net/sonic-gnmi/sonic_data_client"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -56,24 +57,24 @@ func calculateDiffReturnDefault(oldCounter, newCounter, defaultValue string) str
 	if oldCounter == defaultValue || newCounter == defaultValue {
 		return defaultValue
 	}
-	oldV, err := strconv.ParseInt(oldCounter, base10, 64)
+	oldV, err := strconv.ParseInt(oldCounter, common.Base10, 64)
 	if err != nil {
 		return defaultValue
 	}
-	newV, err := strconv.ParseInt(newCounter, base10, 64)
+	newV, err := strconv.ParseInt(newCounter, common.Base10, 64)
 	if err != nil || newV < oldV { // guard reset/rollover
 		return defaultValue
 	}
-	return strconv.FormatInt(newV-oldV, base10)
+	return strconv.FormatInt(newV-oldV, common.Base10)
 }
 
 func calculateByteRate(rate string) string {
-	if rate == defaultMissingCounterValue {
-		return defaultMissingCounterValue
+	if rate == common.DefaultMissingCounterValue {
+		return common.DefaultMissingCounterValue
 	}
 	rateFloatValue, err := strconv.ParseFloat(rate, 64)
 	if err != nil {
-		return defaultMissingCounterValue
+		return common.DefaultMissingCounterValue
 	}
 	var formatted string
 	switch {
@@ -89,16 +90,16 @@ func calculateByteRate(rate string) string {
 }
 
 func calculateUtil(rate string, portSpeed string) string {
-	if rate == defaultMissingCounterValue || portSpeed == defaultMissingCounterValue {
-		return defaultMissingCounterValue
+	if rate == common.DefaultMissingCounterValue || portSpeed == common.DefaultMissingCounterValue {
+		return common.DefaultMissingCounterValue
 	}
 	byteRate, err := strconv.ParseFloat(rate, 64)
 	if err != nil {
-		return defaultMissingCounterValue
+		return common.DefaultMissingCounterValue
 	}
 	portRate, err := strconv.ParseFloat(portSpeed, 64)
 	if err != nil {
-		return defaultMissingCounterValue
+		return common.DefaultMissingCounterValue
 	}
 	util := byteRate / (portRate * 1e6 / 8.0) * 100.0
 	return fmt.Sprintf("%.2f%%", util)
@@ -138,8 +139,8 @@ func getInterfaceCounters(args sdc.CmdArgs, options sdc.OptionMap) ([]byte, erro
 		period = periodValue
 	}
 
-	if period > maxShowCommandPeriod {
-		return nil, fmt.Errorf("period value must be <= %v", maxShowCommandPeriod)
+	if period > common.MaxShowCommandPeriod {
+		return nil, fmt.Errorf("period value must be <= %v", common.MaxShowCommandPeriod)
 	}
 
 	oldSnapshot, err := getInterfaceCountersSnapshot(ifaces)
@@ -171,31 +172,31 @@ func getInterfaceCountersSnapshot(ifaces []string) (map[string]InterfaceCounters
 		{"COUNTERS_DB", "COUNTERS", "Ethernet*"},
 	}
 
-	aliasCountersOutput, err := GetMapFromQueries(queries)
+	aliasCountersOutput, err := common.GetMapFromQueries(queries)
 	if err != nil {
 		log.Errorf("Unable to pull data for queries %v, got err %v", queries, err)
 		return nil, err
 	}
 
-	portCounters := RemapAliasToPortName(aliasCountersOutput)
+	portCounters := common.RemapAliasToPortName(aliasCountersOutput)
 
 	queries = [][]string{
 		{"COUNTERS_DB", "RATES", "Ethernet*"},
 	}
 
-	aliasRatesOutput, err := GetMapFromQueries(queries)
+	aliasRatesOutput, err := common.GetMapFromQueries(queries)
 	if err != nil {
 		log.Errorf("Unable to pull data for queries %v, got err %v", queries, err)
 		return nil, err
 	}
 
-	portRates := RemapAliasToPortName(aliasRatesOutput)
+	portRates := common.RemapAliasToPortName(aliasRatesOutput)
 
 	queries = [][]string{
 		{"APPL_DB", "PORT_TABLE"},
 	}
 
-	portTable, err := GetMapFromQueries(queries)
+	portTable, err := common.GetMapFromQueries(queries)
 	if err != nil {
 		log.Errorf("Unable to pull data for queries %v, got err %v", queries, err)
 		return nil, err
@@ -220,24 +221,24 @@ func getInterfaceCountersSnapshot(ifaces []string) (map[string]InterfaceCounters
 
 	for _, iface := range validatedIfaces {
 		state := computeState(iface, portTable)
-		portSpeed := GetFieldValueString(portTable, iface, defaultMissingCounterValue, "speed")
-		rxBps := GetFieldValueString(portRates, iface, defaultMissingCounterValue, "RX_BPS")
-		txBps := GetFieldValueString(portRates, iface, defaultMissingCounterValue, "TX_BPS")
+		portSpeed := common.GetFieldValueString(portTable, iface, common.DefaultMissingCounterValue, "speed")
+		rxBps := common.GetFieldValueString(portRates, iface, common.DefaultMissingCounterValue, "RX_BPS")
+		txBps := common.GetFieldValueString(portRates, iface, common.DefaultMissingCounterValue, "TX_BPS")
 
 		response[iface] = InterfaceCountersResponse{
 			State:  state,
-			RxOk:   GetSumFields(portCounters, iface, defaultMissingCounterValue, "SAI_PORT_STAT_IF_IN_UCAST_PKTS", "SAI_PORT_STAT_IF_IN_NON_UCAST_PKTS"),
+			RxOk:   common.GetSumFields(portCounters, iface, common.DefaultMissingCounterValue, "SAI_PORT_STAT_IF_IN_UCAST_PKTS", "SAI_PORT_STAT_IF_IN_NON_UCAST_PKTS"),
 			RxBps:  calculateByteRate(rxBps),
 			RxUtil: calculateUtil(rxBps, portSpeed),
-			RxErr:  GetFieldValueString(portCounters, iface, defaultMissingCounterValue, "SAI_PORT_STAT_IF_IN_ERRORS"),
-			RxDrp:  GetFieldValueString(portCounters, iface, defaultMissingCounterValue, "SAI_PORT_STAT_IF_IN_DISCARDS"),
-			RxOvr:  GetFieldValueString(portCounters, iface, defaultMissingCounterValue, "SAI_PORT_STAT_ETHER_RX_OVERSIZE_PKTS"),
-			TxOk:   GetSumFields(portCounters, iface, defaultMissingCounterValue, "SAI_PORT_STAT_IF_OUT_UCAST_PKTS", "SAI_PORT_STAT_IF_OUT_NON_UCAST_PKTS"),
+			RxErr:  common.GetFieldValueString(portCounters, iface, common.DefaultMissingCounterValue, "SAI_PORT_STAT_IF_IN_ERRORS"),
+			RxDrp:  common.GetFieldValueString(portCounters, iface, common.DefaultMissingCounterValue, "SAI_PORT_STAT_IF_IN_DISCARDS"),
+			RxOvr:  common.GetFieldValueString(portCounters, iface, common.DefaultMissingCounterValue, "SAI_PORT_STAT_ETHER_RX_OVERSIZE_PKTS"),
+			TxOk:   common.GetSumFields(portCounters, iface, common.DefaultMissingCounterValue, "SAI_PORT_STAT_IF_OUT_UCAST_PKTS", "SAI_PORT_STAT_IF_OUT_NON_UCAST_PKTS"),
 			TxBps:  calculateByteRate(txBps),
 			TxUtil: calculateUtil(txBps, portSpeed),
-			TxErr:  GetFieldValueString(portCounters, iface, defaultMissingCounterValue, "SAI_PORT_STAT_IF_OUT_ERRORS"),
-			TxDrp:  GetFieldValueString(portCounters, iface, defaultMissingCounterValue, "SAI_PORT_STAT_IF_OUT_DISCARDS"),
-			TxOvr:  GetFieldValueString(portCounters, iface, defaultMissingCounterValue, "SAI_PORT_STAT_ETHER_TX_OVERSIZE_PKTS"),
+			TxErr:  common.GetFieldValueString(portCounters, iface, common.DefaultMissingCounterValue, "SAI_PORT_STAT_IF_OUT_ERRORS"),
+			TxDrp:  common.GetFieldValueString(portCounters, iface, common.DefaultMissingCounterValue, "SAI_PORT_STAT_IF_OUT_DISCARDS"),
+			TxOvr:  common.GetFieldValueString(portCounters, iface, common.DefaultMissingCounterValue, "SAI_PORT_STAT_ETHER_TX_OVERSIZE_PKTS"),
 		}
 	}
 	return response, nil
@@ -261,18 +262,18 @@ func calculateDiffSnapshot(oldSnapshot map[string]InterfaceCountersResponse, new
 		}
 		diffResponse[iface] = InterfaceCountersResponse{
 			State:  newResp.State,
-			RxOk:   calculateDiffReturnDefault(oldResp.RxOk, newResp.RxOk, defaultMissingCounterValue),
+			RxOk:   calculateDiffReturnDefault(oldResp.RxOk, newResp.RxOk, common.DefaultMissingCounterValue),
 			RxBps:  newResp.RxBps,
 			RxUtil: newResp.RxUtil,
-			RxErr:  calculateDiffReturnDefault(oldResp.RxErr, newResp.RxErr, defaultMissingCounterValue),
-			RxDrp:  calculateDiffReturnDefault(oldResp.RxDrp, newResp.RxDrp, defaultMissingCounterValue),
-			RxOvr:  calculateDiffReturnDefault(oldResp.RxOvr, newResp.RxOvr, defaultMissingCounterValue),
-			TxOk:   calculateDiffReturnDefault(oldResp.TxOk, newResp.TxOk, defaultMissingCounterValue),
+			RxErr:  calculateDiffReturnDefault(oldResp.RxErr, newResp.RxErr, common.DefaultMissingCounterValue),
+			RxDrp:  calculateDiffReturnDefault(oldResp.RxDrp, newResp.RxDrp, common.DefaultMissingCounterValue),
+			RxOvr:  calculateDiffReturnDefault(oldResp.RxOvr, newResp.RxOvr, common.DefaultMissingCounterValue),
+			TxOk:   calculateDiffReturnDefault(oldResp.TxOk, newResp.TxOk, common.DefaultMissingCounterValue),
 			TxBps:  newResp.TxBps,
 			TxUtil: newResp.TxUtil,
-			TxErr:  calculateDiffReturnDefault(oldResp.TxErr, newResp.TxErr, defaultMissingCounterValue),
-			TxDrp:  calculateDiffReturnDefault(oldResp.TxDrp, newResp.TxDrp, defaultMissingCounterValue),
-			TxOvr:  calculateDiffReturnDefault(oldResp.TxOvr, newResp.TxOvr, defaultMissingCounterValue),
+			TxErr:  calculateDiffReturnDefault(oldResp.TxErr, newResp.TxErr, common.DefaultMissingCounterValue),
+			TxDrp:  calculateDiffReturnDefault(oldResp.TxDrp, newResp.TxDrp, common.DefaultMissingCounterValue),
+			TxOvr:  calculateDiffReturnDefault(oldResp.TxOvr, newResp.TxOvr, common.DefaultMissingCounterValue),
 		}
 	}
 	return diffResponse
@@ -330,7 +331,7 @@ func getInterfacesDescription(args sdc.CmdArgs, options sdc.OptionMap) ([]byte, 
 	// TODO
 	intf, ok := options["interface"].String()
 	if ok {
-		interfaceName := GetNameForInterfaceAlias(intf)
+		interfaceName := common.GetNameForInterfaceAlias(intf)
 		if interfaceName != "" {
 			cmdForInterfaceDesc += interfaceOption + interfaceName
 		} else {
@@ -338,7 +339,7 @@ func getInterfacesDescription(args sdc.CmdArgs, options sdc.OptionMap) ([]byte, 
 		}
 	}
 
-	interfaceDescStr, err := GetDataFromHostCommand(cmdForInterfaceDesc)
+	interfaceDescStr, err := common.GetDataFromHostCommand(cmdForInterfaceDesc)
 	if err != nil {
 		return []byte(""), err
 	}
@@ -357,8 +358,8 @@ func getInterfaceErrors(args sdc.CmdArgs, options sdc.OptionMap) ([]byte, error)
 	queries := [][]string{
 		{"STATE_DB", "PORT_OPERR_TABLE", intf},
 	}
-	portErrorsTbl, _ := GetMapFromQueries(queries)
-	portErrorsTbl = RemapAliasToPortName(portErrorsTbl)
+	portErrorsTbl, _ := common.GetMapFromQueries(queries)
+	portErrorsTbl = common.RemapAliasToPortName(portErrorsTbl)
 
 	// Format the port errors data
 	portErrors := make([]map[string]string, 0, len(allPortErrors)+1)
@@ -389,9 +390,9 @@ func getInterfaceErrors(args sdc.CmdArgs, options sdc.OptionMap) ([]byte, error)
 func getIntfsFromConfigDB(intf string) ([]string, error) {
 	// Get the list of ports from the SONiC CONFIG_DB
 	queries := [][]string{
-		{"CONFIG_DB", ConfigDBPortTable},
+		{"CONFIG_DB", common.ConfigDBPortTable},
 	}
-	portTable, err := GetMapFromQueries(queries)
+	portTable, err := common.GetMapFromQueries(queries)
 	if err != nil {
 		log.Errorf("Failed to get interface list from CONFIG_DB: %v", err)
 		return nil, err
@@ -421,7 +422,7 @@ func getInterfaceFecStatus(args sdc.CmdArgs, options sdc.OptionMap) ([]byte, err
 		log.Errorf("Failed to get front panel ports: %v", err)
 		return nil, err
 	}
-	ports = NatsortInterfaces(ports)
+	ports = common.NatsortInterfaces(ports)
 
 	portFecStatus := make([]map[string]string, 0, len(ports)+1)
 	for i := range ports {
@@ -432,9 +433,9 @@ func getInterfaceFecStatus(args sdc.CmdArgs, options sdc.OptionMap) ([]byte, err
 
 		// Query port admin FEC status and operation status from APPL_DB
 		queries := [][]string{
-			{"APPL_DB", AppDBPortTable, port},
+			{"APPL_DB", common.AppDBPortTable, port},
 		}
-		data, err := GetMapFromQueries(queries)
+		data, err := common.GetMapFromQueries(queries)
 		if err != nil {
 			log.Errorf("Failed to get admin FEC status for port %s: %v", port, err)
 			return nil, err
@@ -452,9 +453,9 @@ func getInterfaceFecStatus(args sdc.CmdArgs, options sdc.OptionMap) ([]byte, err
 
 		// Query port's oper FEC status from STATE_DB
 		queries = [][]string{
-			{"STATE_DB", StateDBPortTable, port},
+			{"STATE_DB", common.StateDBPortTable, port},
 		}
-		data, err = GetMapFromQueries(queries)
+		data, err = common.GetMapFromQueries(queries)
 		if err != nil {
 			log.Errorf("Failed to get oper FEC status for port %s: %v", port, err)
 			return nil, err
@@ -478,9 +479,9 @@ func getInterfaceFecStatus(args sdc.CmdArgs, options sdc.OptionMap) ([]byte, err
 func getPortchannelIntfsFromConfigDB(intf string) ([]string, error) {
 	// Get the list of portchannel interfaces from the SONiC CONFIG_DB
 	queries := [][]string{
-		{"CONFIG_DB", ConfigDBPortChannelTable},
+		{"CONFIG_DB", common.ConfigDBPortChannelTable},
 	}
-	portTable, err := GetMapFromQueries(queries)
+	portTable, err := common.GetMapFromQueries(queries)
 	if err != nil {
 		log.Errorf("Failed to get portchannel interface list from CONFIG_DB: %v", err)
 		return nil, err
@@ -507,7 +508,7 @@ func getPortOptics(intf string) string {
 	queries := [][]string{
 		{"STATE_DB", "TRANSCEIVER_INFO", intf},
 	}
-	data, err := GetMapFromQueries(queries)
+	data, err := common.GetMapFromQueries(queries)
 	if err != nil {
 		log.Errorf("Failed to get optics type for port %s: %v", intf, err)
 		return "N/A"
@@ -578,18 +579,18 @@ func portSpeedParse(speedStr string) int {
 func getPortOperSpeed(intf string) string {
 	// Query port optics type from STATE_DB
 	queries := [][]string{
-		{"STATE_DB", StateDBPortTable, intf},
+		{"STATE_DB", common.StateDBPortTable, intf},
 	}
-	stateData, err := GetMapFromQueries(queries)
+	stateData, err := common.GetMapFromQueries(queries)
 	if err != nil {
 		log.Errorf("Failed to get state for port %s from STATE_DB: %v", intf, err)
 		return "N/A"
 	}
 
 	queries = [][]string{
-		{"APPL_DB", AppDBPortTable, intf},
+		{"APPL_DB", common.AppDBPortTable, intf},
 	}
-	appData, err := GetMapFromQueries(queries)
+	appData, err := common.GetMapFromQueries(queries)
 	if err != nil {
 		log.Errorf("Failed to get state for port %s from APPL_DB: %v", intf, err)
 		return "N/A"
@@ -610,7 +611,7 @@ func getIntfModeMap(ports []string) map[string]string {
 	queries := [][]string{
 		{"CONFIG_DB", "VLAN_MEMBER"},
 	}
-	vlanMemberTable, err := GetMapFromQueries(queries)
+	vlanMemberTable, err := common.GetMapFromQueries(queries)
 	if err != nil {
 		log.Errorf("Failed to get VLAN_MEMBER table from CONFIG_DB: %v", err)
 		return nil
@@ -632,7 +633,7 @@ func getIntfModeMap(ports []string) map[string]string {
 	queries = [][]string{
 		{"CONFIG_DB", "PORTCHANNEL_MEMBER"},
 	}
-	portChannelMemberTable, err := GetMapFromQueries(queries)
+	portChannelMemberTable, err := common.GetMapFromQueries(queries)
 	if err != nil {
 		log.Errorf("Failed to get PORTCHANNEL_MEMBER table from CONFIG_DB: %v", err)
 		return nil
@@ -658,7 +659,7 @@ func getIntfModeMap(ports []string) map[string]string {
 		queries = [][]string{
 			{"CONFIG_DB", "PORT", port},
 		}
-		portData, err := GetMapFromQueries(queries)
+		portData, err := common.GetMapFromQueries(queries)
 		if err != nil {
 			log.Errorf("Failed to get port data for %s: %v", port, err)
 			continue
@@ -681,7 +682,7 @@ func getPortchannelModeMap(portchannels []string) map[string]string {
 	queries := [][]string{
 		{"CONFIG_DB", "VLAN_MEMBER"},
 	}
-	vlanMemberTable, err := GetMapFromQueries(queries)
+	vlanMemberTable, err := common.GetMapFromQueries(queries)
 	if err != nil {
 		log.Errorf("Failed to get VLAN_MEMBER table from CONFIG_DB: %v", err)
 		return nil
@@ -706,7 +707,7 @@ func getPortchannelModeMap(portchannels []string) map[string]string {
 		queries = [][]string{
 			{"CONFIG_DB", "PORTCHANNEL", port},
 		}
-		portData, err := GetMapFromQueries(queries)
+		portData, err := common.GetMapFromQueries(queries)
 		if err != nil {
 			log.Errorf("Failed to get port data for %s: %v", port, err)
 			continue
@@ -727,7 +728,7 @@ func getPortchannelSpeedMap(portchannels []string) map[string]string {
 	queries := [][]string{
 		{"CONFIG_DB", "PORTCHANNEL_MEMBER"},
 	}
-	portChannelMemberTable, err := GetMapFromQueries(queries)
+	portChannelMemberTable, err := common.GetMapFromQueries(queries)
 	if err != nil {
 		log.Errorf("Failed to get PORTCHANNEL_MEMBER table from CONFIG_DB: %v", err)
 		return nil
@@ -770,7 +771,7 @@ func getSubIntfsFromAppDB(intf string) ([]string, error) {
 	queries := [][]string{
 		{"APPL_DB", "INTF_TABLE"},
 	}
-	portTable, err := GetMapFromQueries(queries)
+	portTable, err := common.GetMapFromQueries(queries)
 	if err != nil {
 		log.Errorf("Failed to get sub-interface list from APPL_DB: %v", err)
 		return nil, err
@@ -799,7 +800,7 @@ func getSubInterfaceStatus(intf string) ([]byte, error) {
 		log.Errorf("Failed to get sub-interfaces from APPL_DB: %v", err)
 		return nil, err
 	}
-	ports = NatsortInterfaces(ports)
+	ports = common.NatsortInterfaces(ports)
 
 	interfaceStatus := make([]map[string]string, 0, len(ports))
 	for i := range ports {
@@ -842,8 +843,8 @@ func getInterfaceStatus(args sdc.CmdArgs, options sdc.OptionMap) ([]byte, error)
 		log.Errorf("Failed to get portchannel list from CONFIG_DB: %v", err)
 		return nil, err
 	}
-	ports = NatsortInterfaces(ports)
-	portchannels = NatsortInterfaces(portchannels)
+	ports = common.NatsortInterfaces(ports)
+	portchannels = common.NatsortInterfaces(portchannels)
 	intfModeMap := getIntfModeMap(ports)
 	poModeMap := getPortchannelModeMap(portchannels)
 	poSpeedMap := getPortchannelSpeedMap(portchannels)
@@ -865,9 +866,9 @@ func getInterfaceStatus(args sdc.CmdArgs, options sdc.OptionMap) ([]byte, error)
 
 		// Query port status from APPL_DB
 		queries := [][]string{
-			{"APPL_DB", AppDBPortTable, port},
+			{"APPL_DB", common.AppDBPortTable, port},
 		}
-		data, err := GetMapFromQueries(queries)
+		data, err := common.GetMapFromQueries(queries)
 		if err != nil {
 			log.Errorf("Failed to get status for port %s: %v", port, err)
 			return nil, err
@@ -941,9 +942,9 @@ func getInterfaceStatus(args sdc.CmdArgs, options sdc.OptionMap) ([]byte, error)
 
 		// Query portchannel status from APPL_DB
 		queries := [][]string{
-			{"APPL_DB", AppDBPortChannelTable, port},
+			{"APPL_DB", common.AppDBPortChannelTable, port},
 		}
-		data, err := GetMapFromQueries(queries)
+		data, err := common.GetMapFromQueries(queries)
 		if err != nil {
 			log.Errorf("Failed to get status for portchannel %s: %v", port, err)
 			return nil, err
@@ -951,9 +952,9 @@ func getInterfaceStatus(args sdc.CmdArgs, options sdc.OptionMap) ([]byte, error)
 
 		// Query portchannel config from CONFIG_DB
 		queries = [][]string{
-			{"CONFIG_DB", ConfigDBPortChannelTable, port},
+			{"CONFIG_DB", common.ConfigDBPortChannelTable, port},
 		}
-		config, err := GetMapFromQueries(queries)
+		config, err := common.GetMapFromQueries(queries)
 		if err != nil {
 			log.Errorf("Failed to get status for portchannel %s: %v", port, err)
 			return nil, err
@@ -1020,7 +1021,7 @@ func getInterfaceAlias(args sdc.CmdArgs, options sdc.OptionMap) ([]byte, error) 
 
 	// Read CONFIG_DB.PORT
 	queries := [][]string{{"CONFIG_DB", "PORT"}}
-	portEntries, err := GetMapFromQueries(queries)
+	portEntries, err := common.GetMapFromQueries(queries)
 	if err != nil {
 		log.Errorf("Failed to get ports from CONFIG_DB: %v", err)
 		return nil, err
@@ -1028,7 +1029,7 @@ func getInterfaceAlias(args sdc.CmdArgs, options sdc.OptionMap) ([]byte, error) 
 
 	nameToAlias := make(map[string]string, len(portEntries))
 	for name := range portEntries {
-		alias := GetFieldValueString(portEntries, name, "", "alias")
+		alias := common.GetFieldValueString(portEntries, name, "", "alias")
 		if alias == "" {
 			// fallback to itself if alias field is missing
 			alias = name
@@ -1038,7 +1039,7 @@ func getInterfaceAlias(args sdc.CmdArgs, options sdc.OptionMap) ([]byte, error) 
 
 	// If a specific interface was requested, accept port name
 	if intf != "" {
-		intf, err := TryConvertInterfaceNameFromAlias(intf, namingMode)
+		intf, err := common.TryConvertInterfaceNameFromAlias(intf, namingMode)
 		if err != nil {
 			log.Errorf("Error: %v", err)
 			return nil, err
@@ -1066,22 +1067,22 @@ func getInterfaceSwitchportConfig(args sdc.CmdArgs, options sdc.OptionMap) ([]by
 	namingMode, _ := options[SonicCliIfaceMode].String()
 
 	// Read CONFIG_DB tables
-	portTbl, err := GetMapFromQueries([][]string{{"CONFIG_DB", "PORT"}})
+	portTbl, err := common.GetMapFromQueries([][]string{{"CONFIG_DB", "PORT"}})
 	if err != nil {
 		log.Errorf("Failed to get PORT: %v", err)
 		return nil, err
 	}
-	portChannelTbl, err := GetMapFromQueries([][]string{{"CONFIG_DB", "PORTCHANNEL"}})
+	portChannelTbl, err := common.GetMapFromQueries([][]string{{"CONFIG_DB", "PORTCHANNEL"}})
 	if err != nil {
 		log.Errorf("Failed to get PORTCHANNEL: %v", err)
 		return nil, err
 	}
-	portChannelMemberTbl, err := GetMapFromQueries([][]string{{"CONFIG_DB", "PORTCHANNEL_MEMBER"}})
+	portChannelMemberTbl, err := common.GetMapFromQueries([][]string{{"CONFIG_DB", "PORTCHANNEL_MEMBER"}})
 	if err != nil {
 		log.Errorf("Failed to get PORTCHANNEL_MEMBER: %v", err)
 		return nil, err
 	}
-	vlanMemberTbl, err := GetMapFromQueries([][]string{{"CONFIG_DB", "VLAN_MEMBER"}})
+	vlanMemberTbl, err := common.GetMapFromQueries([][]string{{"CONFIG_DB", "VLAN_MEMBER"}})
 	if err != nil {
 		log.Errorf("Failed to get VLAN_MEMBER: %v", err)
 		return nil, err
@@ -1099,17 +1100,17 @@ func getInterfaceSwitchportConfig(args sdc.CmdArgs, options sdc.OptionMap) ([]by
 		portchannels = append(portchannels, pc)
 	}
 	keys := append(ports, portchannels...)
-	keys = NatsortInterfaces(keys)
+	keys = common.NatsortInterfaces(keys)
 
 	// Build VLAN membership maps
 	untaggedMap := make(map[string][]string)
 	taggedMap := make(map[string][]string)
 	for k := range vlanMemberTbl {
-		vlan, ifname, ok := SplitCompositeKey(k)
+		vlan, ifname, ok := common.SplitCompositeKey(k)
 		if !ok {
 			continue
 		}
-		tagMode := GetFieldValueString(vlanMemberTbl, k, "", "tagging_mode")
+		tagMode := common.GetFieldValueString(vlanMemberTbl, k, "", "tagging_mode")
 		vlanID := strings.TrimPrefix(vlan, "Vlan")
 		if tagMode == "untagged" {
 			untaggedMap[ifname] = append(untaggedMap[ifname], vlanID)
@@ -1133,7 +1134,7 @@ func getInterfaceSwitchportConfig(args sdc.CmdArgs, options sdc.OptionMap) ([]by
 		mode := GetInterfaceSwitchportMode(portTbl, portChannelTbl, vlanMemberTbl, k)
 
 		switchportConfig = append(switchportConfig, map[string]string{
-			"Interface": GetInterfaceNameForDisplay(k, namingMode),
+			"Interface": common.GetInterfaceNameForDisplay(k, namingMode),
 			"Mode":      mode,
 			"Untagged":  strings.Join(untagged, ","),
 			"Tagged":    strings.Join(tagged, ","),
@@ -1147,22 +1148,22 @@ func getInterfaceSwitchportStatus(args sdc.CmdArgs, options sdc.OptionMap) ([]by
 	namingMode, _ := options[SonicCliIfaceMode].String()
 
 	// Read CONFIG_DB tables
-	portTbl, err := GetMapFromQueries([][]string{{"CONFIG_DB", "PORT"}})
+	portTbl, err := common.GetMapFromQueries([][]string{{"CONFIG_DB", "PORT"}})
 	if err != nil {
 		log.Errorf("Failed to get PORT: %v", err)
 		return nil, err
 	}
-	portChannelTbl, err := GetMapFromQueries([][]string{{"CONFIG_DB", "PORTCHANNEL"}})
+	portChannelTbl, err := common.GetMapFromQueries([][]string{{"CONFIG_DB", "PORTCHANNEL"}})
 	if err != nil {
 		log.Errorf("Failed to get PORTCHANNEL: %v", err)
 		return nil, err
 	}
-	portChannelMemberTbl, err := GetMapFromQueries([][]string{{"CONFIG_DB", "PORTCHANNEL_MEMBER"}})
+	portChannelMemberTbl, err := common.GetMapFromQueries([][]string{{"CONFIG_DB", "PORTCHANNEL_MEMBER"}})
 	if err != nil {
 		log.Errorf("Failed to get PORTCHANNEL_MEMBER: %v", err)
 		return nil, err
 	}
-	vlanMemberTbl, err := GetMapFromQueries([][]string{{"CONFIG_DB", "VLAN_MEMBER"}})
+	vlanMemberTbl, err := common.GetMapFromQueries([][]string{{"CONFIG_DB", "VLAN_MEMBER"}})
 	if err != nil {
 		log.Errorf("Failed to get VLAN_MEMBER: %v", err)
 		return nil, err
@@ -1180,7 +1181,7 @@ func getInterfaceSwitchportStatus(args sdc.CmdArgs, options sdc.OptionMap) ([]by
 		portchannels = append(portchannels, pc)
 	}
 	keys := append(ports, portchannels...)
-	keys = NatsortInterfaces(keys)
+	keys = common.NatsortInterfaces(keys)
 
 	// Emit switchportStatus
 	switchportStatus := make([]map[string]string, 0, len(keys))
@@ -1188,7 +1189,7 @@ func getInterfaceSwitchportStatus(args sdc.CmdArgs, options sdc.OptionMap) ([]by
 		mode := GetInterfaceSwitchportMode(portTbl, portChannelTbl, vlanMemberTbl, k)
 
 		switchportStatus = append(switchportStatus, map[string]string{
-			"Interface": GetInterfaceNameForDisplay(k, namingMode),
+			"Interface": common.GetInterfaceNameForDisplay(k, namingMode),
 			"Mode":      mode,
 		})
 	}
@@ -1201,14 +1202,14 @@ func GetInterfaceSwitchportMode(
 	portTbl, portChannelTbl, vlanMemberTbl map[string]interface{},
 	name string,
 ) string {
-	if m := GetFieldValueString(portTbl, name, "", "mode"); m != "" {
+	if m := common.GetFieldValueString(portTbl, name, "", "mode"); m != "" {
 		return m
 	}
-	if m := GetFieldValueString(portChannelTbl, name, "", "mode"); m != "" {
+	if m := common.GetFieldValueString(portChannelTbl, name, "", "mode"); m != "" {
 		return m
 	}
 	for k := range vlanMemberTbl {
-		_, member, ok := SplitCompositeKey(k)
+		_, member, ok := common.SplitCompositeKey(k)
 		if ok && member == name {
 			return "trunk"
 		}
@@ -1222,7 +1223,7 @@ func IsInterfaceInPortchannel(portchannelMemberTable map[string]interface{}, int
 		return false
 	}
 	for k := range portchannelMemberTable {
-		_, member, ok := SplitCompositeKey(k)
+		_, member, ok := common.SplitCompositeKey(k)
 		if ok && member == interfaceName {
 			return true
 		}
@@ -1236,9 +1237,9 @@ func getInterfaceFlap(args sdc.CmdArgs, options sdc.OptionMap) ([]byte, error) {
 
 	// Query APPL_DB PORT_TABLE
 	queries := [][]string{
-		{ApplDb, AppDBPortTable},
+		{common.ApplDb, common.AppDBPortTable},
 	}
-	portTable, err := GetMapFromQueries(queries)
+	portTable, err := common.GetMapFromQueries(queries)
 	if err != nil {
 		log.Errorf("Failed to get PORT_TABLE: %v", err)
 		return nil, err
@@ -1247,7 +1248,7 @@ func getInterfaceFlap(args sdc.CmdArgs, options sdc.OptionMap) ([]byte, error) {
 	// Collect ports (optionally filter by interface)
 	var ports []string
 	if intf != "" {
-		intf, err := TryConvertInterfaceNameFromAlias(intf, namingMode)
+		intf, err := common.TryConvertInterfaceNameFromAlias(intf, namingMode)
 		if err != nil {
 			log.Errorf("Error: %v", err)
 			return nil, err
@@ -1261,23 +1262,23 @@ func getInterfaceFlap(args sdc.CmdArgs, options sdc.OptionMap) ([]byte, error) {
 			ports = append(ports, p)
 		}
 	}
-	ports = NatsortInterfaces(ports)
+	ports = common.NatsortInterfaces(ports)
 
 	// Build rows
 	rows := make([]map[string]string, 0, len(ports))
 	for _, p := range ports {
-		flapCount := GetFieldValueString(portTable, p, "Never", "flap_count")
-		adminStatus := GetFieldValueString(portTable, p, "Unknown", "admin_status")
-		operStatus := GetFieldValueString(portTable, p, "Unknown", "oper_status")
+		flapCount := common.GetFieldValueString(portTable, p, "Never", "flap_count")
+		adminStatus := common.GetFieldValueString(portTable, p, "Unknown", "admin_status")
+		operStatus := common.GetFieldValueString(portTable, p, "Unknown", "oper_status")
 		// Capitalize like Python's .capitalize()
 		if adminStatus != "" {
-			adminStatus = Capitalize(adminStatus)
+			adminStatus = common.Capitalize(adminStatus)
 		}
 		if operStatus != "" {
-			operStatus = Capitalize(operStatus)
+			operStatus = common.Capitalize(operStatus)
 		}
-		lastDown := GetFieldValueString(portTable, p, "Never", "last_down_time")
-		lastUp := GetFieldValueString(portTable, p, "Never", "last_up_time")
+		lastDown := common.GetFieldValueString(portTable, p, "Never", "last_down_time")
+		lastUp := common.GetFieldValueString(portTable, p, "Never", "last_up_time")
 
 		rows = append(rows, map[string]string{
 			"Interface":                p,
@@ -1310,19 +1311,19 @@ func getInterfaceNeighborExpected(args sdc.CmdArgs, options sdc.OptionMap) ([]by
 	intf := args.At(0)
 	namingMode, _ := options[SonicCliIfaceMode].String()
 
-	neighborTbl, err := GetMapFromQueries([][]string{{"CONFIG_DB", "DEVICE_NEIGHBOR"}})
+	neighborTbl, err := common.GetMapFromQueries([][]string{{"CONFIG_DB", "DEVICE_NEIGHBOR"}})
 	if err != nil {
 		log.Errorf("Failed to get DEVICE_NEIGHBOR: %v", err)
 		return nil, err
 	}
-	metaTbl, err := GetMapFromQueries([][]string{{"CONFIG_DB", "DEVICE_NEIGHBOR_METADATA"}})
+	metaTbl, err := common.GetMapFromQueries([][]string{{"CONFIG_DB", "DEVICE_NEIGHBOR_METADATA"}})
 	if err != nil {
 		log.Errorf("Failed to get DEVICE_NEIGHBOR_METADATA: %v", err)
 		return nil, err
 	}
 
 	buildEntry := func(canonIf string) (map[string]string, bool) {
-		device := GetFieldValueString(neighborTbl, canonIf, "", "name")
+		device := common.GetFieldValueString(neighborTbl, canonIf, "", "name")
 		if device == "" {
 			return nil, false
 		}
@@ -1331,19 +1332,19 @@ func getInterfaceNeighborExpected(args sdc.CmdArgs, options sdc.OptionMap) ([]by
 			return nil, false
 		}
 
-		remotePort := GetFieldValueString(neighborTbl, canonIf, "None", "port")
+		remotePort := common.GetFieldValueString(neighborTbl, canonIf, "None", "port")
 		if remotePort == "" {
 			remotePort = "None"
 		}
-		loopback := GetFieldValueString(metaTbl, device, "None", "lo_addr")
+		loopback := common.GetFieldValueString(metaTbl, device, "None", "lo_addr")
 		if loopback == "" {
 			loopback = "None"
 		}
-		mgmt := GetFieldValueString(metaTbl, device, "None", "mgmt_addr")
+		mgmt := common.GetFieldValueString(metaTbl, device, "None", "mgmt_addr")
 		if mgmt == "" {
 			mgmt = "None"
 		}
-		ntype := GetFieldValueString(metaTbl, device, "None", "type")
+		ntype := common.GetFieldValueString(metaTbl, device, "None", "type")
 		if ntype == "" {
 			ntype = "None"
 		}
@@ -1361,14 +1362,14 @@ func getInterfaceNeighborExpected(args sdc.CmdArgs, options sdc.OptionMap) ([]by
 	for k := range neighborTbl {
 		canonicalKeys = append(canonicalKeys, k)
 	}
-	canonicalKeys = NatsortInterfaces(canonicalKeys)
+	canonicalKeys = common.NatsortInterfaces(canonicalKeys)
 
 	finalMap := make(map[string]map[string]string, len(canonicalKeys))
 	for _, c := range canonicalKeys {
 		if entry, ok := buildEntry(c); ok {
 			key := c
 			if namingMode == "alias" {
-				key = GetInterfaceNameForDisplay(c, namingMode)
+				key = common.GetInterfaceNameForDisplay(c, namingMode)
 			}
 			finalMap[key] = entry
 		}
@@ -1388,7 +1389,7 @@ func getInterfaceNeighborExpected(args sdc.CmdArgs, options sdc.OptionMap) ([]by
 func getInterfaceNamingMode(args sdc.CmdArgs, options sdc.OptionMap) ([]byte, error) {
 	namingMode, _ := options[SonicCliIfaceMode].String()
 
-	namingMode = GetInterfaceNamingMode(namingMode)
+	namingMode = common.GetInterfaceNamingMode(namingMode)
 	namingModeResp := namingModeResponse{NamingMode: namingMode}
 	return json.Marshal(namingModeResp)
 }

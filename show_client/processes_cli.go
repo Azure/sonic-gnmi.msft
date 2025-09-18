@@ -8,6 +8,7 @@ import (
 	"strings"
 
 	log "github.com/golang/glog"
+	"github.com/sonic-net/sonic-gnmi/show_client/common"
 	sdc "github.com/sonic-net/sonic-gnmi/sonic_data_client"
 )
 
@@ -39,7 +40,7 @@ func getProcessesRoot(args sdc.CmdArgs, options sdc.OptionMap) ([]byte, error) {
 
 func getProcessesSummary(args sdc.CmdArgs, options sdc.OptionMap) ([]byte, error) {
 	queries := [][]string{{"STATE_DB", "PROCESS_STATS"}}
-	processesSummary, err := GetMapFromQueries(queries)
+	processesSummary, err := common.GetMapFromQueries(queries)
 	if err != nil {
 		log.Errorf("Unable to query PROCESS_STATS from queries %v, got err: %v", queries, err)
 		return nil, err

@@ -7,6 +7,7 @@ import (
 	"time"
 
 	log "github.com/golang/glog"
+	"github.com/sonic-net/sonic-gnmi/show_client/common"
 	sdc "github.com/sonic-net/sonic-gnmi/sonic_data_client"
 )
 
@@ -35,7 +36,7 @@ type VersionOutput struct {
 }
 
 func getVersion(args sdc.CmdArgs, options sdc.OptionMap) ([]byte, error) {
-	versionInfo, errorInVersionInfo := ReadYamlToMap(SonicVersionYamlPath)
+	versionInfo, errorInVersionInfo := common.ReadYamlToMap(SonicVersionYamlPath)
 	if errorInVersionInfo != nil {
 		log.Errorf("Failed to read version info from %s: %v", SonicVersionYamlPath, errorInVersionInfo)
 		return nil, errorInVersionInfo

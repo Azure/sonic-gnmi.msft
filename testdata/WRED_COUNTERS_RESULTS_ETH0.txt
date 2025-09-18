@@ -1,0 +1,20 @@
+{
+    "Ethernet0:0": {
+        "WredDrp/pkts": "N/A",
+        "WredDrp/bytes": "N/A",
+        "EcnMarked/pkts": "N/A",
+        "EcnMarked/bytes": "N/A"
+    },
+    "Ethernet0:1": {
+        "WredDrp/pkts": "N/A",
+        "WredDrp/bytes": "N/A",
+        "EcnMarked/pkts": "N/A",
+        "EcnMarked/bytes": "N/A"
+    },
+    "Ethernet0:2": {
+        "WredDrp/pkts": "2",
+        "WredDrp/bytes": "512",
+        "EcnMarked/pkts": "0",
+        "EcnMarked/bytes": "0"
+    }
+}

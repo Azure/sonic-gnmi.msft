@@ -4,9 +4,11 @@ import (
 	"bufio"
 	"encoding/json"
 	"fmt"
-	log "github.com/golang/glog"
-	sdc "github.com/sonic-net/sonic-gnmi/sonic_data_client"
 	"strings"
+
+	log "github.com/golang/glog"
+	"github.com/sonic-net/sonic-gnmi/show_client/common"
+	sdc "github.com/sonic-net/sonic-gnmi/sonic_data_client"
 )
 
 // Struct to hold individual process details
@@ -27,17 +29,17 @@ type TopProcessResponse struct {
 
 // Struct to hold the full snapshot
 type TopProcessMemoryResponse struct {
-	Uptime      string       		`json:"uptime"`
-	Tasks       string       		`json:"tasks"`
-	CPUUsage    string       		`json:"cpu_usage"`
-	MemoryUsage string       		`json:"memory_usage"`
-	SwapUsage   string       		`json:"swap_usage"`
-	Processes   []TopProcessResponse	`json:"processes"`
+	Uptime      string               `json:"uptime"`
+	Tasks       string               `json:"tasks"`
+	CPUUsage    string               `json:"cpu_usage"`
+	MemoryUsage string               `json:"memory_usage"`
+	SwapUsage   string               `json:"swap_usage"`
+	Processes   []TopProcessResponse `json:"processes"`
 }
 
 const (
-	topMemoryCommand 	= 	"top -bn 1 -o %MEM"
-	countOfProcessFields 	= 	12
+	topMemoryCommand     = "top -bn 1 -o %MEM"
+	countOfProcessFields = 12
 )
 
 func cleanPrefix(line, prefix string) string {
@@ -66,7 +68,7 @@ func parseProcessLine(line string) (*TopProcessResponse, error) {
 }
 
 func getTopMemoryUsage(args sdc.CmdArgs, options sdc.OptionMap) ([]byte, error) {
-	output, err := GetDataFromHostCommand(topMemoryCommand)
+	output, err := common.GetDataFromHostCommand(topMemoryCommand)
 
 	if err != nil {
 		log.Errorf("Unable to execute top command: %v", err)
@@ -80,8 +82,8 @@ func getTopMemoryUsage(args sdc.CmdArgs, options sdc.OptionMap) ([]byte, error) 
 	scanner := bufio.NewScanner(strings.NewReader(string(output)))
 	var (
 		uptime, tasks, cpuUsage, memoryUsage, swapUsage string
-		processes                                        []TopProcessResponse
-		startParsing                                     bool
+		processes                                       []TopProcessResponse
+		startParsing                                    bool
 	)
 
 	for scanner.Scan() {

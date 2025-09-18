@@ -635,4 +635,23 @@ func init() {
 		nil,
 		showCmdOptionVerbose,
 	)
+	sdc.RegisterCliPath(
+		[]string{"SHOW", "interfaces", "transceiver", "eeprom"},
+		getTransceiverEEPROM,
+		"SHOW/interfaces/transceiver/eeprom[OPTIONS]: Show interface transceiver EEPROM information",
+		0,
+		1,
+		nil,
+		showCmdOptionDom,
+		sdc.UnimplementedOption(showCmdOptionNamespace),
+	)
+	sdc.RegisterCliPath(
+		[]string{"SHOW", "interfaces", "transceiver", "info"},
+		getTransceiverInfo,
+		"SHOW/interfaces/transceiver/info[OPTIONS]: Show interface transceiver information",
+		0,
+		1,
+		nil,
+		sdc.UnimplementedOption(showCmdOptionNamespace),
+	)
 }

@@ -2,9 +2,12 @@ package show_client
 
 import (
 	"encoding/json"
+	"fmt"
+	"sort"
 	"strings"
 
 	log "github.com/golang/glog"
+	natural "github.com/maruel/natural"
 	sdc "github.com/sonic-net/sonic-gnmi/sonic_data_client"
 )
 
@@ -132,4 +135,80 @@ func getInterfaceTransceiverLpMode(args sdc.CmdArgs, options sdc.OptionMap) ([]b
 	}
 
 	return json.Marshal(entries)
+}
+
+// Command "show interfaces transceiver eeprom"
+func getEEPROM(args sdc.CmdArgs, options sdc.OptionMap) (map[string]interface{}, error) {
+	intf := args.At(0)
+
+	var dumpDom bool
+	if v, ok := options["dom"].Bool(); ok {
+		dumpDom = v
+	}
+
+	var queries [][]string
+	queries = [][]string{
+		{"APPL_DB", "PORT_TABLE"},
+	}
+
+	portTable, err := GetMapFromQueries(queries)
+	if err != nil {
+		log.Errorf("Unable to pull data for queries %v, got err %v", queries, err)
+		return nil, err
+	}
+
+	intfEEPROM := make(map[string]interface{})
+	for iface := range portTable {
+		if intf != "" && iface != intf {
+			continue
+		}
+
+		ok, err := isValidPhysicalPort(iface)
+		if err != nil {
+			return nil, err
+		}
+		if ok {
+			intfEEPROM[iface] = convertInterfaceSfpInfoToCliOutputString(iface, dumpDom)
+		}
+	}
+	return intfEEPROM, nil
+}
+
+func getTransceiverEEPROM(args sdc.CmdArgs, options sdc.OptionMap) ([]byte, error) {
+	intfEEPROM, _ := getEEPROM(args, options)
+	keys := make([]string, 0, len(intfEEPROM))
+	for key := range intfEEPROM {
+		keys = append(keys, key)
+	}
+	sort.Sort(natural.StringSlice(keys))
+
+	for _, k := range keys {
+		fmt.Printf("%s: %s\n", k, intfEEPROM[k])
+	}
+
+	data, err := json.Marshal(intfEEPROM)
+	if err != nil {
+		return nil, err
+	}
+	return data, nil
+}
+
+// Command "show interfaces transceiver info"
+func getTransceiverInfo(args sdc.CmdArgs, options sdc.OptionMap) ([]byte, error) {
+	intfEEPROM, _ := getEEPROM(args, options)
+	keys := make([]string, 0, len(intfEEPROM))
+	for key := range intfEEPROM {
+		keys = append(keys, key)
+	}
+	sort.Sort(natural.StringSlice(keys))
+
+	for _, k := range keys {
+		fmt.Printf("%s: %s\n", k, intfEEPROM[k])
+	}
+
+	data, err := json.Marshal(intfEEPROM)
+	if err != nil {
+		return nil, err
+	}
+	return data, nil
 }

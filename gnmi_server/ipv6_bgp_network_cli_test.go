@@ -37,25 +37,25 @@ func TestGetIPv6BGPNetwork(t *testing.T) {
 	defer cancel()
 
 	// info_type incorrect case
-	t.Run("SHOW ipv6 bgp network 2064:100::1 longer", func(t *testing.T) {
+	t.Run("SHOW ipv6 bgp network 2064:100::2 longer", func(t *testing.T) {
 		textPbPath := `
 				elem: <name: "ipv6" >
 				elem: <name: "bgp" >
-				elem: <name: "network" 
-					key: { key: "ipaddress" value: "2064:100::2" } 
-					key: { key: "info_type" value: "longer" } >
+				elem: <name: "network" >
+				elem: <name: "2064:100::2" >
+				elem: <name: "longer" >
 			`
 		runTestGet(t, ctx, gClient, "SHOW", textPbPath, codes.NotFound, nil, false)
 	})
 
 	// address incorrect case
-	t.Run("SHOW ipv6 bgp network 2064:100::1 longer-prefixes", func(t *testing.T) {
+	t.Run("SHOW ipv6 bgp network 2064:100::2 longer-prefixes", func(t *testing.T) {
 		textPbPath := `
 				elem: <name: "ipv6" >
 				elem: <name: "bgp" >
-				elem: <name: "network" 
-					key: { key: "ipaddress" value: "2064:100::2" } 
-					key: { key: "info_type" value: "longer-prefixes" } >
+				elem: <name: "network" >
+				elem: <name: "2064:100::2" >
+				elem: <name: "longer-prefixes" >
 			`
 		runTestGet(t, ctx, gClient, "SHOW", textPbPath, codes.NotFound, nil, false)
 	})
@@ -83,7 +83,8 @@ func TestGetIPv6BGPNetwork(t *testing.T) {
 		textPbPath := `
 				elem: <name: "ipv6" >
 				elem: <name: "bgp" >
-				elem: <name: "network" key: { key: "ipaddress" value: "2064:100::2/128" } >
+				elem: <name: "network" >
+				elem: <name: "2064:100::2/128" >
 			`
 		wantRespVal := `
 		{
@@ -100,9 +101,9 @@ func TestGetIPv6BGPNetwork(t *testing.T) {
 		textPbPath := `
 				elem: <name: "ipv6" >
 				elem: <name: "bgp" >
-				elem: <name: "network" 
-					key: { key: "ipaddress" value: "2064:100::2/128" } 
-					key: { key: "info_type" value: "json" } >
+				elem: <name: "network" >
+				elem: <name: "2064:100::2/128" >
+				elem: <name: "json" >
 			`
 		wantRespVal, err := os.ReadFile("../testdata/show_ipv6_bgp_network_address_json.txt")
 		if err != nil {

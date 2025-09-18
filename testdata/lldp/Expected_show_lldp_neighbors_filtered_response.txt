@@ -1,0 +1,39 @@
+{
+	"title": "LLDP neighbors",
+	"interfaces": {
+		"Ethernet354": {
+			"via": "LLDP",
+			"RID": "2",
+			"Time": "15 days, 03:12:34",
+			"Chassis": {
+				"ChassisID": "mac ff:ff:ff:ff:ff:ff",
+				"SysName": "sonic-device-6",
+				"SysDescr": "SONiC Software Version: SONiC.20250305.10 - HwSku: Arista-7060X6-64PE - Distribution: Debian 12.9 - Kernel: 6.1.0-29-2-amd64",
+				"MgmtIP": "10.10.10.10",
+				"MgmtIface": "2",
+				"Capability": [
+					"Bridge, on",
+					"Router, on",
+					"Wlan, off",
+					"Station, off"
+				]
+			},
+			"Port": {
+				"PortID": "ifname Ethernet45/3",
+				"PortDescr": "Ethernet354",
+				"TTL": "120"
+			},
+			"VLAN": [
+				{
+					"vlan-id": "101",
+					"pvid": "yes"
+				},				
+				{
+					"vlan-id": "201",
+					"pvid": "no",
+					"value": "vlan201"
+				}
+			]
+		}	
+	}
+}

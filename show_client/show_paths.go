@@ -135,6 +135,19 @@ func init() {
 		showCmdOptionJson,
 		showCmdOptionVerbose,
 	)
+
+	// SHOW/interfaces/counters/rif
+	sdc.RegisterCliPath(
+		[]string{"SHOW", "interfaces", "counters", "rif"},
+		getInterfaceRifCounters,
+		"SHOW/interfaces/counters/rif/{INTERFACENAME}[OPTIONS]",
+		0,
+		1,
+		nil,
+		showCmdOptionPeriod,
+		showCmdOptionJson,
+		showCmdOptionVerbose,
+	)
 	sdc.RegisterCliPath(
 		[]string{"SHOW", "interfaces", "description"},
 		getInterfacesDescription,
@@ -230,7 +243,6 @@ func init() {
 		0,
 		1,
 		nil,
-		showCmdOptionInterface, // TODO: Take as arg not option
 		showCmdOptionVerbose,
 		sdc.UnimplementedOption(showCmdOptionNamespace),
 		sdc.UnimplementedOption(showCmdOptionFetchFromHW),
@@ -242,7 +254,8 @@ func init() {
 		0,
 		1,
 		nil,
-		showCmdOptionInterface, // TODO
+		showCmdOptionVerbose,
+		sdc.UnimplementedOption(showCmdOptionNamespace),
 	)
 	sdc.RegisterCliPath(
 		[]string{"SHOW", "interfaces", "transceiver", "lpmode"},
@@ -262,8 +275,6 @@ func init() {
 		0,
 		2,
 		nil,
-		showCmdOptionIPAddress, // TODO
-		showCmdOptionInfoType,  // TODO
 		sdc.UnimplementedOption(showCmdOptionNamespace),
 	)
 	sdc.RegisterCliPath(
@@ -273,8 +284,6 @@ func init() {
 		0,
 		2,
 		nil,
-		showCmdOptionIPV6Address,           // TODO
-		showCmdOptionInfoTypeForBgpNetwork, // TODO
 		sdc.UnimplementedOption(showCmdOptionNamespace),
 	)
 	sdc.RegisterCliPath(
@@ -294,7 +303,6 @@ func init() {
 		0,
 		1,
 		nil,
-		showCmdOptionIPV6Address, // TODO
 		showCmdOptionVerbose,
 	)
 	sdc.RegisterCliPath(
@@ -333,7 +341,6 @@ func init() {
 		nil,
 		sdc.UnimplementedOption(showCmdOptionNamespace),
 		showCmdOptionDisplay,
-		showCmdOptionFrrRouteArgs,
 	)
 
 	// SHOW/lldp
@@ -404,8 +411,17 @@ func init() {
 		map[string]string{
 			"summary": "show/processes/summary: Show processses info",
 			"cpu":     "show/processes/cpu: Show processes CPU info",
-			"mem":     "show/processes/mem: Show processes memory info",
+			"memory":  "show/processes/memory: Show processes information sorted by memory usage",
 		},
+	)
+	sdc.RegisterCliPath(
+		[]string{"SHOW", "processes", "memory"},
+		getTopMemoryUsage,
+		"SHOW/processes/memory[OPTIONS]: Show processes information sorted by memory usage",
+		0,
+		0,
+		nil,
+		showCmdOptionVerbose,
 	)
 	sdc.RegisterCliPath(
 		[]string{"SHOW", "processes", "summary"},
@@ -425,12 +441,30 @@ func init() {
 		0,
 		1,
 		nil,
-		showCmdOptionInterfaces, // TODO: Should be arg
+		showCmdOptionInterfaces,
 		showCmdOptionDisplay,
 		showCmdOptionNonzero,
+		showCmdOptionAll,
 		showCmdOptionTrim,
+		sdc.UnimplementedOption(showCmdOptionVoq),
 		sdc.UnimplementedOption(showCmdOptionNamespace),
 		showCmdOptionVerbose,
+		showCmdOptionJson,
+	)
+	sdc.RegisterCliPath(
+		[]string{"SHOW", "queue", "wredcounters"},
+		getQueueWredCounters,
+		"SHOW/queue/wredcounters/{INTERFACENAME}[OPTIONS]: Show queue WRED counters",
+		0,
+		1,
+		nil,
+		showCmdOptionInterfaces,
+		showCmdOptionDisplay,
+		showCmdOptionNonzero,
+		sdc.UnimplementedOption(showCmdOptionVoq),
+		sdc.UnimplementedOption(showCmdOptionNamespace),
+		showCmdOptionVerbose,
+		showCmdOptionJson,
 	)
 	sdc.RegisterCliPath(
 		[]string{"SHOW", "queue", "watermark"},

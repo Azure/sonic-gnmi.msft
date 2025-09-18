@@ -1,0 +1,38 @@
+{
+    "Ethernet40:0": {
+        "WredDrp/pkts": "N/A",
+        "WredDrp/bytes": "N/A",
+        "EcnMarked/pkts": "N/A",
+        "EcnMarked/bytes": "N/A"
+    },
+    "Ethernet40:1": {
+        "WredDrp/pkts": "5",
+        "WredDrp/bytes": "500",
+        "EcnMarked/pkts": "10",
+        "EcnMarked/bytes": "1000"
+    },
+    "Ethernet40:2": {
+        "WredDrp/pkts": "N/A",
+        "WredDrp/bytes": "N/A",
+        "EcnMarked/pkts": "N/A",
+        "EcnMarked/bytes": "N/A"
+    },
+    "Ethernet80:0": {
+        "WredDrp/pkts": "N/A",
+        "WredDrp/bytes": "N/A",
+        "EcnMarked/pkts": "N/A",
+        "EcnMarked/bytes": "N/A"
+    },
+    "Ethernet80:1": {
+        "WredDrp/pkts": "N/A",
+        "WredDrp/bytes": "N/A",
+        "EcnMarked/pkts": "N/A",
+        "EcnMarked/bytes": "N/A"
+    },
+    "Ethernet80:2": {
+        "WredDrp/pkts": "N/A",
+        "WredDrp/bytes": "N/A",
+        "EcnMarked/pkts": "N/A",
+        "EcnMarked/bytes": "N/A"
+    }
+}

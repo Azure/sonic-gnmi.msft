@@ -42,7 +42,7 @@ func TestShowProcessesCommands(t *testing.T) {
 		textPbPath := `
 			elem: <name: "processes" >
 		`
-		expected := []byte(`{"subcommands":{"summary":"show/processes/summary: Show processses info","cpu":"show/processes/cpu: Show processes CPU info","mem":"show/processes/mem: Show processes memory info"}}`)
+		expected := []byte(`{"subcommands":{"summary":"show/processes/summary: Show processses info","cpu":"show/processes/cpu: Show processes CPU info","memory":"show/processes/memory: Show processes information sorted by memory usage"}}`)
 		runTestGet(t, ctx, gClient, "SHOW", textPbPath, codes.OK, expected, true)
 	})
 

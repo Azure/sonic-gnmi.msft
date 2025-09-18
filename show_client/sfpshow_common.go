@@ -45,7 +45,7 @@ func getTransceiverDataMap(sfpInfoDict map[string]interface{}) map[string]string
 	}
 }
 
-func covertApplicationAdvertisementToOutputString(sfpInfoDict map[string]interface{}) map[string]interface{} {
+func convertApplicationAdvertisementToOutputString(sfpInfoDict map[string]interface{}) map[string]interface{} {
 	key := "application_advertisement"
 
 	output := make(map[string]interface{})
@@ -161,26 +161,31 @@ func convertSfpInfoToOutputString(sfpInfoDict map[string]interface{}, sfpFirmwar
 
 				specComplianceDict := make(map[string]interface{})
 				specStr, ok := sfpInfoDict["specification_compliance"]
+        
 				if ok && specStr != "" {
-					if err := json.Unmarshal([]byte(specStr.(string)), &specComplianceDict); err != nil {
-						output[QsfpDataMap[key]] = "N/A"
-					} else {
-						keys := make([]string, 0, len(specComplianceDict))
-						for k := range specComplianceDict {
-							keys = append(keys, k)
-						}
-						sort.Sort(natural.StringSlice(keys))
+					if s, ok := specStr.(string); ok && s != "" {
+						if err := json.Unmarshal([]byte(s), &specComplianceDict); err != nil {
+							output[QsfpDataMap[key]] = "N/A"
+						} else {
+							keys := make([]string, 0, len(specComplianceDict))
+							for k := range specComplianceDict {
+								keys = append(keys, k)
+							}
+							sort.Sort(natural.StringSlice(keys))
 
-						m := make(map[string]interface{})
-						for _, k := range keys {
-							m[k] = specComplianceDict[k]
+							m := make(map[string]interface{})
+							for _, k := range keys {
+								m[k] = specComplianceDict[k]
+							}
+							output[QsfpDataMap[key]] = m
 						}
-						output[QsfpDataMap[key]] = m
+					} else {
+						output[QsfpDataMap[key]] = "N/A"
 					}
 				}
 			}
 		} else if key == "application_advertisement" {
-			applicationOutput := covertApplicationAdvertisementToOutputString(sfpInfoDict)
+			applicationOutput := convertApplicationAdvertisementToOutputString(sfpInfoDict)
 			for key, value := range applicationOutput {
 				output[key] = value
 			}

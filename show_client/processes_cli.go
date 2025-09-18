@@ -9,6 +9,7 @@ import (
 
 	log "github.com/golang/glog"
 	"github.com/sonic-net/sonic-gnmi/show_client/helpers"
+	"github.com/sonic-net/sonic-gnmi/show_client/common"
 	sdc "github.com/sonic-net/sonic-gnmi/sonic_data_client"
 )
 
@@ -46,7 +47,7 @@ func getProcessesRoot(args sdc.CmdArgs, options sdc.OptionMap) ([]byte, error) {
 
 func getProcessesSummary(args sdc.CmdArgs, options sdc.OptionMap) ([]byte, error) {
 	queries := [][]string{{"STATE_DB", "PROCESS_STATS"}}
-	processesSummary, err := GetMapFromQueries(queries)
+	processesSummary, err := common.GetMapFromQueries(queries)
 	if err != nil {
 		log.Errorf("Unable to query PROCESS_STATS from queries %v, got err: %v", queries, err)
 		return nil, err
@@ -55,24 +56,14 @@ func getProcessesSummary(args sdc.CmdArgs, options sdc.OptionMap) ([]byte, error
 	return json.Marshal(entries)
 }
 
-func getProcessesData(processCmd string) ([]byte, error) {
-	// Once GetDataFromHostCommand moves to show_client/common, We can move this whole method in helpers.
-	processDetails, err := GetDataFromHostCommand(processCmd)
-	if err != nil {
-		return []byte(""), err
-	}
-
-	return helpers.LoadProcessesDataFromCmdOutput(processDetails)
-}
-
 func getTopMemoryUsage(args sdc.CmdArgs, options sdc.OptionMap) ([]byte, error) {
 	cmdForProcessByMemory := topCommand + orderByMemory
-	return getProcessesData(cmdForProcessByMemory)
+	return helpers.GetProcessesData(cmdForProcessByMemory)
 }
 
 func getProcessesCPU(args sdc.CmdArgs, options sdc.OptionMap) ([]byte, error) {
 	cmdForProcessByCPU := topCommand + orderByCPU
-	return getProcessesData(cmdForProcessByCPU)
+	return helpers.GetProcessesData(cmdForProcessByCPU)
 }
 
 func buildProcessEntries(processesSummary map[string]interface{}) []processEntry {

@@ -9,7 +9,7 @@ import (
 )
 
 // https://github.com/Azure/sonic-utilities.msft/blob/master/scripts/fibshow
-// For command 'show ipv6 fib'  otption: ipv6address
+// For command 'show ipv6 fib'  arg: ipv6address
 // :~$ show ipv6 fib
 //
 //	No.  Vrf    Route           Nexthop    Ifname
@@ -23,14 +23,7 @@ import (
 // Total number of entries 3
 func getIPv6Fib(args sdc.CmdArgs, options sdc.OptionMap) ([]byte, error) {
 
-	var filter string
-	// TODO: cleanup constant and use args
-	if ov, ok := options[OptionKeyIpAddress]; ok {
-		if v, ok2 := ov.String(); ok2 {
-			filter = strings.TrimSpace(v)
-		}
-	}
-
+	filter := strings.TrimSpace(args.At(0))
 	entries, err := getFibEntries(filter, true) // true -> IPv6
 	if err != nil {
 		return nil, err

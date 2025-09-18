@@ -8,7 +8,7 @@ import (
 
 	"github.com/agiledragon/gomonkey/v2"
 	pb "github.com/openconfig/gnmi/proto/gnmi"
-	sc "github.com/sonic-net/sonic-gnmi/show_client"
+	sccommon "github.com/sonic-net/sonic-gnmi/show_client/common"
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
@@ -166,7 +166,7 @@ func TestShowMmu_ErrorOnLossless(t *testing.T) {
 	defer ResetDataSetsAndMappings(t)
 
 	var calls int
-	patches := gomonkey.ApplyFunc(sc.GetMapFromQueries, func(queries [][]string) (map[string]interface{}, error) {
+	patches := gomonkey.ApplyFunc(sccommon.GetMapFromQueries, func(queries [][]string) (map[string]interface{}, error) {
 		calls++
 		if calls == 1 {
 			return nil, fmt.Errorf("error when read table DEFAULT_LOSSLESS_BUFFER_PARAMETER")
@@ -198,7 +198,7 @@ func TestShowMmu_ErrorOnPools(t *testing.T) {
 	defer ResetDataSetsAndMappings(t)
 
 	var calls int
-	patches := gomonkey.ApplyFunc(sc.GetMapFromQueries, func(queries [][]string) (map[string]interface{}, error) {
+	patches := gomonkey.ApplyFunc(sccommon.GetMapFromQueries, func(queries [][]string) (map[string]interface{}, error) {
 		calls++
 		switch calls {
 		case 1:
@@ -236,7 +236,7 @@ func TestShowMmu_ErrorOnProfiles(t *testing.T) {
 	defer ResetDataSetsAndMappings(t)
 
 	var calls int
-	patches := gomonkey.ApplyFunc(sc.GetMapFromQueries, func(queries [][]string) (map[string]interface{}, error) {
+	patches := gomonkey.ApplyFunc(sccommon.GetMapFromQueries, func(queries [][]string) (map[string]interface{}, error) {
 		calls++
 		switch calls {
 		case 1: // lossless ok

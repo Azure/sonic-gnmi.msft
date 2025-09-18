@@ -16,7 +16,7 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/credentials"
 
-	show_client "github.com/sonic-net/sonic-gnmi/show_client"
+	sccommon "github.com/sonic-net/sonic-gnmi/show_client/common"
 	sdc "github.com/sonic-net/sonic-gnmi/sonic_data_client"
 )
 
@@ -103,7 +103,7 @@ func TestGetShowInterfaceSwitchportConfig(t *testing.T) {
 			},
 			mockPatch: func() *gomonkey.Patches {
 				// inject GetMapFromQueries failure when table == "PORT"
-				return gomonkey.ApplyFunc(show_client.GetMapFromQueries, func(queries [][]string) (map[string]interface{}, error) {
+				return gomonkey.ApplyFunc(sccommon.GetMapFromQueries, func(queries [][]string) (map[string]interface{}, error) {
 					if len(queries) > 0 && len(queries[0]) > 1 && queries[0][1] == "PORT" {
 						return nil, fmt.Errorf("injected GetMapFromQueries failure")
 					}
@@ -127,7 +127,7 @@ func TestGetShowInterfaceSwitchportConfig(t *testing.T) {
 			},
 			mockPatch: func() *gomonkey.Patches {
 				// Provide deterministic table content for PORT / PORTCHANNEL / PORTCHANNEL_MEMBER / VLAN_MEMBER
-				return gomonkey.ApplyFunc(show_client.GetMapFromQueries, func(queries [][]string) (map[string]interface{}, error) {
+				return gomonkey.ApplyFunc(sccommon.GetMapFromQueries, func(queries [][]string) (map[string]interface{}, error) {
 					if len(queries) == 0 || len(queries[0]) < 2 {
 						return map[string]interface{}{}, nil
 					}
@@ -293,7 +293,7 @@ func TestGetShowInterfaceSwitchportStatus(t *testing.T) {
 				FlushDataSet(t, ConfigDbNum)
 			},
 			mockPatch: func() *gomonkey.Patches {
-				return gomonkey.ApplyFunc(show_client.GetMapFromQueries, func(queries [][]string) (map[string]interface{}, error) {
+				return gomonkey.ApplyFunc(sccommon.GetMapFromQueries, func(queries [][]string) (map[string]interface{}, error) {
 					if len(queries) > 0 && len(queries[0]) > 1 && queries[0][1] == "PORT" {
 						return nil, fmt.Errorf("injected failure")
 					}
@@ -315,7 +315,7 @@ func TestGetShowInterfaceSwitchportStatus(t *testing.T) {
 				FlushDataSet(t, ConfigDbNum)
 			},
 			mockPatch: func() *gomonkey.Patches {
-				return gomonkey.ApplyFunc(show_client.GetMapFromQueries, func(queries [][]string) (map[string]interface{}, error) {
+				return gomonkey.ApplyFunc(sccommon.GetMapFromQueries, func(queries [][]string) (map[string]interface{}, error) {
 					if len(queries) == 0 || len(queries[0]) < 2 {
 						return map[string]interface{}{}, nil
 					}

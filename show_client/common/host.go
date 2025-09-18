@@ -1,4 +1,4 @@
-package show_client
+package common
 
 import (
 	"bufio"
@@ -8,17 +8,15 @@ import (
 	"strconv"
 	"strings"
 	"sync"
-
-	"github.com/sonic-net/sonic-gnmi/show_client/common"
 )
 
 var HostDevicePath string = "/usr/share/sonic/device"
 var MachineConfPath string = "/host/machine.conf"
 
 const (
-	AsicConfFilename      = "asic.conf"
-	ContainerPlatformPath = "/usr/share/sonic/platform"
-	PlatformEnvConfFile   = "platform_env.conf"
+	asicConfFilename      = "asic.conf"
+	containerPlatformPath = "/usr/share/sonic/platform"
+	platformEnvConfFile   = "platform_env.conf"
 	serial                = "serial"
 	model                 = "model"
 	revision              = "revision"
@@ -38,7 +36,7 @@ func GetChassisInfo() (map[string]string, error) {
 		{"STATE_DB", "CHASSIS_INFO"},
 	}
 
-	chassisInfo, err := common.GetMapFromQueries(queries)
+	chassisInfo, err := GetMapFromQueries(queries)
 	if err != nil {
 		return nil, err
 	}
@@ -186,7 +184,7 @@ func GetLocalhostInfo(field string) string {
 	queries := [][]string{
 		{"CONFIG_DB", "DEVICE_METADATA"},
 	}
-	metadata, err := common.GetMapFromQueries(queries)
+	metadata, err := GetMapFromQueries(queries)
 	if err != nil {
 		return ""
 	}
@@ -202,7 +200,7 @@ func GetLocalhostInfo(field string) string {
 // Returns the path as a string if found, or an empty string if not found.
 func GetAsicConfFilePath() string {
 	// 1. Check container platform path
-	candidate := filepath.Join(ContainerPlatformPath, AsicConfFilename)
+	candidate := filepath.Join(containerPlatformPath, asicConfFilename)
 	if FileExists(candidate) {
 		return candidate
 	}
@@ -210,7 +208,7 @@ func GetAsicConfFilePath() string {
 	// 2. Check host device path with platform
 	platform := GetPlatform()
 	if platform != "" {
-		candidate = filepath.Join(HostDevicePath, platform, AsicConfFilename)
+		candidate = filepath.Join(HostDevicePath, platform, asicConfFilename)
 		if FileExists(candidate) {
 			return candidate
 		}

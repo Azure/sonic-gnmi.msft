@@ -141,10 +141,6 @@ func getTransceiverEEPROM(args sdc.CmdArgs, options sdc.OptionMap) ([]byte, erro
 	}
 	sort.Sort(natural.StringSlice(keys))
 
-	for _, k := range keys {
-		fmt.Printf("%s: %s\n", k, intfEEPROM[k])
-	}
-
 	data, err := json.Marshal(intfEEPROM)
 	if err != nil {
 		return nil, err
@@ -160,10 +156,6 @@ func getTransceiverInfo(args sdc.CmdArgs, options sdc.OptionMap) ([]byte, error)
 		keys = append(keys, key)
 	}
 	sort.Sort(natural.StringSlice(keys))
-
-	for _, k := range keys {
-		fmt.Printf("%s: %s\n", k, intfEEPROM[k])
-	}
 
 	data, err := json.Marshal(intfEEPROM)
 	if err != nil {

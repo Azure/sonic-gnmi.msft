@@ -8,7 +8,7 @@ import (
 
 	"github.com/agiledragon/gomonkey/v2"
 	pb "github.com/openconfig/gnmi/proto/gnmi"
-	sc "github.com/sonic-net/sonic-gnmi/show_client"
+	sccommon "github.com/sonic-net/sonic-gnmi/show_client/common"
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
@@ -118,7 +118,7 @@ func TestShowIPv6Fib_ErrorOnRouteTable(t *testing.T) {
 	defer s.ForceStop()
 	defer ResetDataSetsAndMappings(t)
 
-	patches := gomonkey.ApplyFunc(sc.GetMapFromQueries, func(queries [][]string) (map[string]interface{}, error) {
+	patches := gomonkey.ApplyFunc(sccommon.GetMapFromQueries, func(queries [][]string) (map[string]interface{}, error) {
 		return nil, fmt.Errorf("error when read table ROUTE_TABLE")
 	})
 	defer patches.Reset()

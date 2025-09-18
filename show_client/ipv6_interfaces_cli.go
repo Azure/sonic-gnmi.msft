@@ -6,6 +6,7 @@ import (
 
 	log "github.com/golang/glog"
 	"github.com/sonic-net/sonic-gnmi/internal/ipinterfaces"
+	"github.com/sonic-net/sonic-gnmi/show_client/common"
 	sdc "github.com/sonic-net/sonic-gnmi/sonic_data_client"
 )
 
@@ -25,7 +26,7 @@ func getIPv6Interfaces(args sdc.CmdArgs, options sdc.OptionMap) ([]byte, error) 
 	// Instantiate the provider with its dependencies.
 	deps := ipinterfaces.Dependencies{
 		Logger:  &glogAdapter{},
-		DBQuery: GetMapFromQueries,
+		DBQuery: common.GetMapFromQueries,
 	}
 
 	// Extract optional namespace and display options from validated options.

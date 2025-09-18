@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	log "github.com/golang/glog"
+	"github.com/sonic-net/sonic-gnmi/show_client/common"
 	sdc "github.com/sonic-net/sonic-gnmi/sonic_data_client"
 )
 
@@ -46,7 +47,7 @@ type portAndTagging struct {
 // Function to check if given key is having valid IP, IP CIDR
 func isIPPrefixInKey(key interface{}) bool {
 	if keyStr, ok := key.(string); ok {
-		vlanId, ip := ParseKey(keyStr, pipeDelimiter)
+		vlanId, ip := common.ParseKey(keyStr, pipeDelimiter)
 
 		if vlanId == "" {
 			return false
@@ -77,7 +78,7 @@ func getVlanIpAddress(cfg vlanConfig, vlan string) interface{} {
 	var ipAddress []string
 	for key, _ := range cfg.VlanIpData {
 		if isIPPrefixInKey(key) {
-			ifname, address := ParseKey(key, pipeDelimiter)
+			ifname, address := common.ParseKey(key, pipeDelimiter)
 			if vlan == ifname {
 				ipAddress = append(ipAddress, address)
 			}
@@ -96,14 +97,14 @@ func getVlanDhcpHelperAddress(cfg vlanConfig, vlan string) interface{} {
 			}
 		}
 	}
-	ipAddress = NatsortInterfaces(ipAddress)
+	ipAddress = common.NatsortInterfaces(ipAddress)
 	return ipAddress
 }
 
 func getVlanPortsAndTagging(cfg vlanConfig, vlan string) interface{} {
 	var vlanPorts []portAndTagging
 	for key, value := range cfg.VlanPortsData {
-		portsKey, portsValue := ParseKey(key, pipeDelimiter)
+		portsKey, portsValue := common.ParseKey(key, pipeDelimiter)
 		if vlan != portsKey {
 			continue
 		}
@@ -140,19 +141,19 @@ func getVlanBrief(args sdc.CmdArgs, options sdc.OptionMap) ([]byte, error) {
 		{"CONFIG_DB", vlanMemberTable},
 	}
 
-	vlanData, err := GetMapFromQueries(queriesVlan)
+	vlanData, err := common.GetMapFromQueries(queriesVlan)
 	if err != nil {
 		log.Errorf("Unable to get data from queries %v, got err: %v", queriesVlan, err)
 		return nil, err
 	}
 
-	vlanInterfaceData, err := GetMapFromQueries(queriesVlanInterface)
+	vlanInterfaceData, err := common.GetMapFromQueries(queriesVlanInterface)
 	if err != nil {
 		log.Errorf("Unable to get data from queries %v, got err: %v", queriesVlanInterface, err)
 		return nil, err
 	}
 
-	vlanMemberData, err := GetMapFromQueries(queriesVlanMember)
+	vlanMemberData, err := common.GetMapFromQueries(queriesVlanMember)
 	if err != nil {
 		log.Errorf("Unable to get data from queries %v, got err: %v", queriesVlanMember, err)
 		return nil, err
@@ -160,7 +161,7 @@ func getVlanBrief(args sdc.CmdArgs, options sdc.OptionMap) ([]byte, error) {
 
 	vlanCfg := vlanConfig{vlanData, vlanInterfaceData, vlanMemberData}
 
-	vlans := GetSortedKeys(vlanData)
+	vlans := common.GetSortedKeys(vlanData)
 	vlanBriefData := make(map[string]interface{})
 
 	for _, vlan := range vlans {

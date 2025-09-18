@@ -8,6 +8,7 @@ import (
 	"strings"
 
 	log "github.com/golang/glog"
+	"github.com/sonic-net/sonic-gnmi/show_client/common"
 	sdc "github.com/sonic-net/sonic-gnmi/sonic_data_client"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -52,7 +53,7 @@ var (
 
 func getIPv6BGPSummary(args sdc.CmdArgs, options sdc.OptionMap) ([]byte, error) {
 	// Get data from vtysh command
-	vtyshOutput, err := GetDataFromHostCommand(vtyshBGPIPv6SummaryCommand)
+	vtyshOutput, err := common.GetDataFromHostCommand(vtyshBGPIPv6SummaryCommand)
 	if err != nil {
 		log.Errorf("Unable to succesfully execute command %v, get err %v", vtyshBGPIPv6SummaryCommand, err)
 		return nil, err
@@ -68,7 +69,7 @@ func getIPv6BGPSummary(args sdc.CmdArgs, options sdc.OptionMap) ([]byte, error) 
 		{"CONFIG_DB", "BGP_NEIGHBOR"},
 	}
 
-	bgpNeighborTableOutput, err := GetMapFromQueries(queries)
+	bgpNeighborTableOutput, err := common.GetMapFromQueries(queries)
 	if err != nil {
 		log.Errorf("Unable to pull data for queries %v, got err %v", queries, err)
 		return nil, err
@@ -111,7 +112,7 @@ func isBGPNeighborPresent(ip string) bool {
 		{"CONFIG_DB", "BGP_NEIGHBOR"},
 	}
 
-	bgpNeighborTableOutput, err := GetMapFromQueries(queries)
+	bgpNeighborTableOutput, err := common.GetMapFromQueries(queries)
 	if err != nil {
 		log.Errorf("Unable to pull data for queries %v, got err %v", queries, err)
 		return false
@@ -133,7 +134,7 @@ func getIPv6BGPNeighbors(ip string) ([]byte, error) {
 	}
 
 	// Get data from vtysh shell
-	vtyshOutput, err := GetDataFromHostCommand(cmd)
+	vtyshOutput, err := common.GetDataFromHostCommand(cmd)
 	if err != nil {
 		log.Errorf("Unable to successfully execute command %v, got err %v",
 			cmd, err)
@@ -162,7 +163,7 @@ func getIPv6BGPNeighborsRoutes(ip string) ([]byte, error) {
 	cmd := fmt.Sprintf("vtysh -c \"show bgp ipv6 neighbors %s routes json\"", ip)
 
 	// Get data from vtysh shell
-	vtyshOutput, err := GetDataFromHostCommand(cmd)
+	vtyshOutput, err := common.GetDataFromHostCommand(cmd)
 	if err != nil {
 		log.Errorf("Unable to successfully execute command %v, got err %v",
 			cmd, err)
@@ -193,7 +194,7 @@ func getIPv6BGPNeighborsAdvertisedRoutes(ip string) ([]byte, error) {
 	cmd := fmt.Sprintf("vtysh -c \"show bgp ipv6 neighbors %s advertised-routes json\"", ip)
 
 	// Run the command
-	vtyshOutput, err := GetDataFromHostCommand(cmd)
+	vtyshOutput, err := common.GetDataFromHostCommand(cmd)
 	if err != nil {
 		log.Errorf("Unable to execute command %v, got err %v", cmd, err)
 		return nil, err
@@ -221,7 +222,7 @@ func getIPv6BGPNeighborsReceivedRoutes(ip string) ([]byte, error) {
 	cmd := fmt.Sprintf("vtysh -c \"show bgp ipv6 neighbors %s received-routes json\"", ip)
 
 	// Run the command
-	vtyshOutput, err := GetDataFromHostCommand(cmd)
+	vtyshOutput, err := common.GetDataFromHostCommand(cmd)
 	if err != nil {
 		log.Errorf("Unable to execute command %v, got err %v", cmd, err)
 		return nil, err
@@ -304,10 +305,10 @@ func getPortsIpv6LinkLocalMode(args sdc.CmdArgs, options sdc.OptionMap) ([]byte,
 
 	for table, interfaceType := range tableInterfaceTypeMaps {
 		portQueries := [][]string{
-			{ConfigDb, table},
+			{common.ConfigDb, table},
 		}
 		//Gets target port names.
-		ports, err := GetMapFromQueries(portQueries)
+		ports, err := common.GetMapFromQueries(portQueries)
 		if err != nil {
 			log.Errorf("Unable to pull data for queries %v, got err %v", portQueries, err)
 			return nil, err
@@ -315,9 +316,9 @@ func getPortsIpv6LinkLocalMode(args sdc.CmdArgs, options sdc.OptionMap) ([]byte,
 
 		//Gets traget port settings.
 		itfQueries := [][]string{
-			{ConfigDb, interfaceType},
+			{common.ConfigDb, interfaceType},
 		}
-		itfs, err := GetMapFromQueries(itfQueries)
+		itfs, err := common.GetMapFromQueries(itfQueries)
 		if err != nil {
 			log.Errorf("Unable to pull data for queries %v, got err %v", itfQueries, err)
 			return nil, err

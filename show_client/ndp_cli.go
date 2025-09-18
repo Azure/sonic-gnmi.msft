@@ -25,6 +25,8 @@ type NeighborTable struct {
 	Entries      []NeighborEntry `json:"entries"`       // List of neighbor entries
 }
 
+const oidPrefixLen = len("oid:0x")
+
 /*
 show ndp [OPTIONS] [IP6ADDRESS] -> nbrshow -6 [-ip IPADDR] [-if IFACE] -> ip -6 neigh show [IPADDR] dev [IFACE]
 admin@str4-7060x6-512-1:~$ show ndp --help
@@ -164,7 +166,6 @@ func getInterfaceOidMap() (map[string]string, error) {
 	vlanRe := regexp.MustCompile(`^Vlan(\d+)$`)
 	mgmtRe := regexp.MustCompile(`^eth(\d+)$`)
 
-	oidPrefix := len("oid:0x")
 	ifOidMap := make(map[string]string)
 
 	// helper closure to check valid names
@@ -177,20 +178,20 @@ func getInterfaceOidMap() (map[string]string, error) {
 
 	for portName, oidVal := range portMap {
 		oidStr, ok := oidVal.(string)
-		if !ok {
+		if !ok || len(oidStr) <= oidPrefixLen {
 			continue
 		}
 		if isValidIfName(portName) {
-			ifOidMap[oidStr[oidPrefix:]] = portName
+			ifOidMap[oidStr[oidPrefixLen:]] = portName
 		}
 	}
 	for lagName, oidVal := range lagMap {
 		oidStr, ok := oidVal.(string)
-		if !ok {
+		if !ok || len(oidStr) <= oidPrefixLen {
 			continue
 		}
 		if isValidIfName(lagName) {
-			ifOidMap[oidStr[oidPrefix:]] = lagName
+			ifOidMap[oidStr[oidPrefixLen:]] = lagName
 		}
 	}
 
@@ -251,14 +252,13 @@ func getBridgePortMap() (map[string]string, error) {
 	log.V(6).Infof("SAI_OBJECT_TYPE_BRIDGE_PORT data from query: %v", brPortStr)
 
 	ifBrOidMap := make(map[string]string)
-	oidPrefix := len("oid:0x")
 
 	for key, val := range brPortStr {
 		parts := strings.SplitN(key, ":", 2)
 		if len(parts) < 2 {
 			continue
 		}
-		bridgePortOid := parts[1][oidPrefix:] // strip "oid:0x"
+		bridgePortOid := parts[1][oidPrefixLen:] // strip "oid:0x"
 
 		attrs, ok := val.(map[string]string)
 		if !ok {
@@ -278,7 +278,7 @@ func getBridgePortMap() (map[string]string, error) {
 		if !ok {
 			continue
 		}
-		portId := portIdRaw[oidPrefix:] // strip "oid:0x"
+		portId := portIdRaw[oidPrefixLen:] // strip "oid:0x"
 		// Map bridge port OID to port ID
 		ifBrOidMap[bridgePortOid] = portId
 	}
@@ -316,7 +316,7 @@ func fetchFdbData() ([]BridgeMacEntry, error) {
 		log.Warningf("Failed to build BVID map: %v", err)
 		return nil, err
 	}
-	oidPrefix := len("oid:0x")
+
 	bridgeMacList := []BridgeMacEntry{}
 
 	for fdbKey, entryData := range brPortStr {
@@ -339,10 +339,10 @@ func fetchFdbData() ([]BridgeMacEntry, error) {
 		}
 
 		brPortOidRaw, ok := ent["SAI_FDB_ENTRY_ATTR_BRIDGE_PORT_ID"].(string)
-		if !ok || len(brPortOidRaw) <= oidPrefix {
+		if !ok || len(brPortOidRaw) <= oidPrefixLen {
 			continue
 		}
-		brPortOid := brPortOidRaw[oidPrefix:]
+		brPortOid := brPortOidRaw[oidPrefixLen:]
 
 		portID, ok := ifBrOidMap[brPortOid]
 		if !ok {

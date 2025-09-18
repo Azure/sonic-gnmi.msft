@@ -266,6 +266,17 @@ func init() {
 		nil,
 		showCmdOptionInterface, // TODO
 	)
+	sdc.RegisterCliPath(
+		[]string{"SHOW", "interfaces", "transceiver", "status"},
+		getInterfaceTransceiverStatus,
+		"SHOW/interfaces/transceiver/status/{INTERFACENAME}[OPTIONS]: Show interface transceiver status",
+		0,
+		1,
+		nil,
+		showCmdOptionSonicCliIfaceMode,
+		sdc.UnimplementedOption(showCmdOptionNamespace),
+		showCmdOptionVerbose,
+	)
 
 	// SHOW/ipv6
 	sdc.RegisterCliPath(

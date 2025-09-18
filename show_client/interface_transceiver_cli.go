@@ -2,6 +2,7 @@ package show_client
 
 import (
 	"encoding/json"
+	"fmt"
 	"strings"
 
 	log "github.com/golang/glog"
@@ -133,4 +134,44 @@ func getInterfaceTransceiverLpMode(args sdc.CmdArgs, options sdc.OptionMap) ([]b
 	}
 
 	return json.Marshal(entries)
+}
+
+func getInterfaceTransceiverStatus(args sdc.CmdArgs, options sdc.OptionMap) ([]byte, error) {
+	intfArg := args.At(0)
+	namingMode, _ := options[SonicCliIfaceMode].String()
+
+	// APPL_DB PORT_TABLE -> determine valid ports
+	portTable, err := GetMapFromQueries([][]string{{ApplDb, AppDBPortTable}})
+	if err != nil {
+		return nil, fmt.Errorf("failed to read PORT_TABLE: %w", err)
+	}
+
+	var ports []string
+	if intfArg != "" {
+		interfaceName, err := TryConvertInterfaceNameFromAlias(intfArg, namingMode)
+		if err != nil {
+			return nil, fmt.Errorf("alias conversion failed for %s: %w", intfArg, err)
+		}
+		if _, ok := portTable[interfaceName]; !ok {
+			return nil, fmt.Errorf("invalid interface name %s", intfArg)
+		}
+		ports = []string{interfaceName}
+	} else {
+		for p := range portTable {
+			ports = append(ports, p)
+		}
+		ports = NatsortInterfaces(ports)
+	}
+
+	result := make(map[string]string, len(ports))
+
+	for _, p := range ports {
+		if ok, _ := common.IsValidPhysicalPort(p); !ok {
+			continue
+		}
+		statusStr := convertInterfaceSfpStatusToCliOutputString(p)
+		result[p] = statusStr
+	}
+
+	return json.Marshal(result)
 }

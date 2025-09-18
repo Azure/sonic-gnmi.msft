@@ -7,7 +7,7 @@ import (
 	"time"
 
 	pb "github.com/openconfig/gnmi/proto/gnmi"
-	show_client "github.com/sonic-net/sonic-gnmi/show_client"
+	sccommon "github.com/sonic-net/sonic-gnmi/show_client/common"
 
 	"github.com/agiledragon/gomonkey/v2"
 	"golang.org/x/net/context"
@@ -215,7 +215,7 @@ func TestGetTopMemoryUsage(t *testing.T) {
 			wantRespVal: nil,
 			valTest:     false,
 			testInit: func() *gomonkey.Patches {
-				return gomonkey.ApplyFunc(show_client.GetDataFromHostCommand, func(cmd string) (string, error) {
+				return gomonkey.ApplyFunc(sccommon.GetDataFromHostCommand, func(cmd string) (string, error) {
 					return "", nil
 				})
 			},
@@ -231,7 +231,7 @@ func TestGetTopMemoryUsage(t *testing.T) {
 			wantRespVal: nil,
 			valTest:     false,
 			testInit: func() *gomonkey.Patches {
-				return gomonkey.ApplyFunc(show_client.GetDataFromHostCommand, func(cmd string) (string, error) {
+				return gomonkey.ApplyFunc(sccommon.GetDataFromHostCommand, func(cmd string) (string, error) {
 					return "", fmt.Errorf("simulated command failure")
 				})
 			},

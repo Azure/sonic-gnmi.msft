@@ -82,7 +82,7 @@ func TestGetSwitchTrimmingGlobalConfig(t *testing.T) {
 			wantRespVal: []byte(`{
 				"response": "No configuration is present in CONFIG DB"
 			}`),
-			valTest:     true,
+			valTest: true,
 			testInit: func() *gomonkey.Patches {
 				return gomonkey.ApplyFunc(common.GetMapFromQueries, func(queries [][]string) (map[string]interface{}, error) {
 					return map[string]interface{}{}, nil

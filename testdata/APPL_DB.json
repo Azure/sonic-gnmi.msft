@@ -87,6 +87,12 @@
     "ipredriver": "0x4,0x4,0x4,0x4",
     "last_down_time": "Fri Jul 18 19:59:28 2025"
   },
+  "PORT_TABLE:PortConfigDone": {
+    "NULL": "NULL"
+  },
+  "PORT_TABLE:PortConfigInit": {
+    "NULL": "NULL"
+  },
   "LAG_TABLE:PortChannel1": {
     "admin_status": "up",
     "mtu": "9100",

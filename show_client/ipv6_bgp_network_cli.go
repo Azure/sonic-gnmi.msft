@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	log "github.com/golang/glog"
+	"github.com/sonic-net/sonic-gnmi/show_client/common"
 	sdc "github.com/sonic-net/sonic-gnmi/sonic_data_client"
 )
 
@@ -46,7 +47,7 @@ func getIPv6BGPNetwork(args sdc.CmdArgs, _ sdc.OptionMap) ([]byte, error) {
 	}
 	cmd += "\""
 
-	rawOutput, err := GetDataFromHostCommand(cmd)
+	rawOutput, err := common.GetDataFromHostCommand(cmd)
 	if err != nil {
 		log.Errorf("Unable to execute command %q, output=%q err=%v", cmd, rawOutput, err)
 		return nil, err

@@ -5,6 +5,7 @@ import (
 	"sort"
 	"strings"
 
+	"github.com/sonic-net/sonic-gnmi/show_client/common"
 	sdc "github.com/sonic-net/sonic-gnmi/sonic_data_client"
 )
 
@@ -47,23 +48,23 @@ New JSON schema per PortChannel (key = numeric ID without 'PortChannel' prefix):
 */
 func getInterfacePortchannel(args sdc.CmdArgs, options sdc.OptionMap) ([]byte, error) {
 	namingMode, _ := options[SonicCliIfaceMode].String()
-	cfgPC, err := GetMapFromQueries([][]string{{"CONFIG_DB", "PORTCHANNEL"}})
+	cfgPC, err := common.GetMapFromQueries([][]string{{"CONFIG_DB", "PORTCHANNEL"}})
 	if err != nil {
 		return nil, err
 	}
-	stateLag, err := GetMapFromQueries([][]string{{"STATE_DB", "LAG_TABLE"}})
+	stateLag, err := common.GetMapFromQueries([][]string{{"STATE_DB", "LAG_TABLE"}})
 	if err != nil {
 		return nil, err
 	}
-	applLag, err := GetMapFromQueries([][]string{{"APPL_DB", "LAG_TABLE"}})
+	applLag, err := common.GetMapFromQueries([][]string{{"APPL_DB", "LAG_TABLE"}})
 	if err != nil {
 		return nil, err
 	}
-	stateLagMember, err := GetMapFromQueries([][]string{{"STATE_DB", "LAG_MEMBER_TABLE"}})
+	stateLagMember, err := common.GetMapFromQueries([][]string{{"STATE_DB", "LAG_MEMBER_TABLE"}})
 	if err != nil {
 		return nil, err
 	}
-	applLagMember, err := GetMapFromQueries([][]string{{"APPL_DB", "LAG_MEMBER_TABLE"}})
+	applLagMember, err := common.GetMapFromQueries([][]string{{"APPL_DB", "LAG_MEMBER_TABLE"}})
 	if err != nil {
 		return nil, err
 	}
@@ -126,8 +127,8 @@ admin@sonic:~$ redis-cli -n 0 HGETALL "LAG_TABLE:PortChannel102"
 8) "up"
 */
 func (t *teamShow) getPortchannelStatus(pc string) map[string]interface{} {
-	active := GetFieldValueString(t.stateLag, pc, "", "runner.active") == "true"
-	oper := strings.ToLower(GetFieldValueString(t.applLag, pc, "", "oper_status"))
+	active := common.GetFieldValueString(t.stateLag, pc, "", "runner.active") == "true"
+	oper := strings.ToLower(common.GetFieldValueString(t.applLag, pc, "", "oper_status"))
 	if oper != "up" && oper != "down" {
 		oper = "N/A"
 	}
@@ -149,8 +150,8 @@ admin@sonic:~$ redis-cli -n 0 HGETALL "LAG_MEMBER_TABLE:PortChannel102:Ethernet3
 2) "enabled"
 */
 func (t *teamShow) getPortchannelMemberStatus(pc, member string) (bool, string) {
-	selected := GetFieldValueString(t.stateLagMem, pc+"|"+member, "", "runner.aggregator.selected") == "true"
-	status := GetFieldValueString(t.applLagMem, pc+":"+member, "", "status") // enabled/disabled/empty
+	selected := common.GetFieldValueString(t.stateLagMem, pc+"|"+member, "", "runner.aggregator.selected") == "true"
+	status := common.GetFieldValueString(t.applLagMem, pc+":"+member, "", "status") // enabled/disabled/empty
 	return selected, status
 }
 
@@ -174,7 +175,7 @@ func (t *teamShow) getPortchannelMembers(pc string, namingMode string) []map[str
 
 		display := mem
 		if t.aliasMode {
-			display = GetInterfaceNameForDisplay(mem, namingMode)
+			display = common.GetInterfaceNameForDisplay(mem, namingMode)
 		}
 		out = append(out, map[string]interface{}{
 			"name":     display,

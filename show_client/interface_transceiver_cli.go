@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	log "github.com/golang/glog"
+	"github.com/sonic-net/sonic-gnmi/show_client/common"
 	sdc "github.com/sonic-net/sonic-gnmi/sonic_data_client"
 )
 
@@ -12,7 +13,7 @@ func getAllPortsFromConfigDB() ([]string, error) {
 	queries := [][]string{
 		{"CONFIG_DB", "PORT"},
 	}
-	data, err := GetMapFromQueries(queries)
+	data, err := common.GetMapFromQueries(queries)
 	if err != nil {
 		log.Errorf("Unable to get data from CONFIG_DB queries %v, got err: %v", queries, err)
 		return nil, err
@@ -49,17 +50,13 @@ func getTransceiverErrorStatus(args sdc.CmdArgs, options sdc.OptionMap) ([]byte,
 }
 
 func getInterfaceTransceiverPresence(args sdc.CmdArgs, options sdc.OptionMap) ([]byte, error) {
-	// TODO
-	var intf string
-	if v, ok := options["interface"].String(); ok {
-		intf = v
-	}
+	intf := args.At(0)
 
 	// Get STATE_DB transceiver info
 	queries := [][]string{
 		{"STATE_DB", "TRANSCEIVER_INFO"},
 	}
-	data, err := GetMapFromQueries(queries)
+	data, err := common.GetMapFromQueries(queries)
 	if err != nil {
 		log.Errorf("Unable to get transceiver data from STATE_DB queries %v, got err: %v", queries, err)
 		return nil, err
@@ -109,7 +106,7 @@ func getInterfaceTransceiverLpMode(args sdc.CmdArgs, options sdc.OptionMap) ([]b
 	}
 	cmdStr := strings.Join(cmdParts, " ")
 
-	output, err := GetDataFromHostCommand(cmdStr)
+	output, err := common.GetDataFromHostCommand(cmdStr)
 	if err != nil {
 		return nil, err
 	}

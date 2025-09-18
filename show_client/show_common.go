@@ -390,6 +390,128 @@ func GetInterfaceNamingMode(namingMode string) string {
 	return "default"
 }
 
+func isValidPhysicalPort(iface string) (bool, error) {
+	queries := [][]string{
+		{"APPL_DB", "PORT_TABLE"},
+	}
+	portTable, err := GetMapFromQueries(queries)
+	if err != nil {
+		log.Errorf("Unable to pull data for queries %v, got err %v", queries, err)
+		return false, err
+	}
+	role := GetFieldValueString(portTable, iface, defaultMissingCounterValue, "role")
+	return isFrontPanelPort(iface, role), nil
+}
+
+func isRoleInternal(role string) bool {
+	return role == InternalPort || role == InbandPort || role == RecircPort || role == DpuConnectPort
+}
+
+func isFrontPanelPort(iface string, role string) bool {
+	if !strings.HasPrefix(iface, SonicInterfacePrefixes["Ethernet-FrontPanel"]) {
+		return false
+	}
+	if strings.HasPrefix(iface, SonicInterfacePrefixes["Ethernet-Backplane"]) || strings.HasPrefix(iface, SonicInterfacePrefixes["Ethernet-Inband"]) || strings.HasPrefix(iface, SonicInterfacePrefixes["Ethernet-Recirc"]) {
+		return false
+	}
+	if strings.Contains(iface, ".") {
+		return false
+	}
+	return !isRoleInternal(role)
+}
+
+type PortMappingRetriever struct {
+	logicalToPhysical map[string][]int
+	physicalToLogic   map[int][]string
+	err               error
+}
+
+// This funtion is used to get all ports on device, and then, returns two maps -- logic ports to physical ports and physical ports to logic ports
+// To get all ports, the function is https://github.com/sonic-net/sonic-buildimage/blob/master/src/sonic-config-engine/portconfig.py#L171
+// We can see from the code that, first, we try to get all ports from config db, if the connection is not available, we will use other methods to get ports
+func (pmr *PortMappingRetriever) readPorttabMappings() {
+	logicalToPhysical := make(map[string][]int)
+	physicalToLogic := make(map[int][]string)
+	logical := []string{}
+
+	queries := [][]string{
+		{"CONFIG_DB", "PORT"},
+	}
+	portTable, err := GetMapFromQueries(queries)
+	if err != nil {
+		log.Errorf("Unable to pull data for queries %v, got err %v", queries, err)
+		pmr.err = err
+		return
+	}
+	for iface := range portTable {
+		if isFrontPanelPort(iface, GetFieldValueString(portTable, iface, defaultMissingCounterValue, "role")) {
+			logical = append(logical, iface)
+		}
+	}
+
+	sort.Sort(natural.StringSlice(logical))
+
+	for _, intfName := range logical {
+		fpPortIndex := 1
+		if v, ok := portTable[intfName].(map[string]interface{}); ok {
+			if idx, exists := v["index"]; exists {
+				if indexStr, ok := idx.(string); ok {
+					if val, err := strconv.Atoi(indexStr); err == nil {
+						fpPortIndex = val
+					}
+				}
+			}
+			logicalToPhysical[intfName] = []int{fpPortIndex}
+		}
+
+		if _, ok := physicalToLogic[fpPortIndex]; !ok {
+			physicalToLogic[fpPortIndex] = []string{intfName}
+		} else {
+			physicalToLogic[fpPortIndex] = append(physicalToLogic[fpPortIndex], intfName)
+		}
+	}
+
+	pmr.logicalToPhysical = logicalToPhysical
+	pmr.physicalToLogic = physicalToLogic
+	pmr.err = nil
+}
+
+func getLogicalToPhysical(pmr *PortMappingRetriever, logicalPort string) []int {
+	if pmr.err != nil {
+		return nil
+	}
+	return pmr.logicalToPhysical[logicalPort]
+}
+
+func getPhysicalToLogic(pmr *PortMappingRetriever, physicalPort int) []string {
+	if pmr.err != nil {
+		return nil
+	}
+	return pmr.physicalToLogic[physicalPort]
+}
+
+func getFirstSubPort(pmr *PortMappingRetriever, logicalPort string) string {
+	physicalPort := getLogicalToPhysical(pmr, logicalPort)
+	if len(physicalPort) != 0 {
+		logicalPortList := getPhysicalToLogic(pmr, physicalPort[0])
+		if len(logicalPortList) != 0 {
+			return logicalPortList[0]
+		}
+	}
+	return ""
+}
+
+func mergeMaps(a, b map[string]string) map[string]string {
+	result := make(map[string]string)
+	for k, v := range a {
+		result[k] = v
+	}
+	for k, v := range b {
+		result[k] = v
+	}
+	return result
+}
+
 // TryConvertInterfaceNameFromAlias tries to convert an interface alias to its interface name.
 // If naming mode is "alias", attempts conversion; if conversion fails, returns error.
 func TryConvertInterfaceNameFromAlias(interfaceName string, namingMode string) (string, error) {

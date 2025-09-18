@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 
 	log "github.com/golang/glog"
+	"github.com/sonic-net/sonic-gnmi/show_client/common"
 	sdc "github.com/sonic-net/sonic-gnmi/sonic_data_client"
 )
 
@@ -71,17 +72,17 @@ const (
 //  5. "type"
 //  6. "egress"
 func getMmuConfig(args sdc.CmdArgs, options sdc.OptionMap) ([]byte, error) {
-	lossless, err := getTableAsNestedMap(ConfigDb, cfgTableDefaultLossless)
+	lossless, err := getTableAsNestedMap(common.ConfigDb, cfgTableDefaultLossless)
 	if err != nil {
 		log.Errorf("[show mmu]|Failed to read %s: %v", cfgTableDefaultLossless, err)
 		return nil, err
 	}
-	pools, err := getTableAsNestedMap(ConfigDb, cfgTableBufferPool)
+	pools, err := getTableAsNestedMap(common.ConfigDb, cfgTableBufferPool)
 	if err != nil {
 		log.Errorf("[show mmu]|Failed to read %s: %v", cfgTableBufferPool, err)
 		return nil, err
 	}
-	profiles, err := getTableAsNestedMap(ConfigDb, cfgTableBufferProfile)
+	profiles, err := getTableAsNestedMap(common.ConfigDb, cfgTableBufferProfile)
 	if err != nil {
 		log.Errorf("[show mmu]|Failed to read %s: %v", cfgTableBufferProfile, err)
 		return nil, err
@@ -107,7 +108,7 @@ func getMmuConfig(args sdc.CmdArgs, options sdc.OptionMap) ([]byte, error) {
 func getTableAsNestedMap(db string, table string) (map[string]map[string]interface{}, error) {
 	// Get all keys and values in the table
 	queries := [][]string{{db, table}}
-	msi, err := GetMapFromQueries(queries)
+	msi, err := common.GetMapFromQueries(queries)
 	if err != nil {
 		return nil, err
 	}

@@ -8,7 +8,7 @@ import (
         "time"
 
         pb "github.com/openconfig/gnmi/proto/gnmi"
-        show_client "github.com/sonic-net/sonic-gnmi/show_client"
+        common "github.com/sonic-net/sonic-gnmi/show_client/common"
 
         "github.com/agiledragon/gomonkey/v2"
         "google.golang.org/grpc"
@@ -61,7 +61,7 @@ func TestGetSwitchTrimmingGlobalConfig(t *testing.T) {
                         wantRespVal: []byte(expectedJSON),
                         valTest:     true,
                         testInit: func() *gomonkey.Patches {
-                                return gomonkey.ApplyFunc(show_client.GetMapFromQueries, func(queries [][]string) (map[string]interface{}, error) {
+                                return gomonkey.ApplyFunc(common.GetMapFromQueries, func(queries [][]string) (map[string]interface{}, error) {
                                         return map[string]interface{}{
                                                 "size":        "64",
                                                 "dscp_value":  "32",
@@ -84,7 +84,7 @@ func TestGetSwitchTrimmingGlobalConfig(t *testing.T) {
                         }`),
                         valTest:     true,
                         testInit: func() *gomonkey.Patches {
-                                return gomonkey.ApplyFunc(show_client.GetMapFromQueries, func(queries [][]string) (map[string]interface{}, error) {
+                                return gomonkey.ApplyFunc(common.GetMapFromQueries, func(queries [][]string) (map[string]interface{}, error) {
                                         return map[string]interface{}{}, nil
                                 })
                         },
@@ -100,7 +100,7 @@ func TestGetSwitchTrimmingGlobalConfig(t *testing.T) {
                         wantRespVal: nil,
                         valTest:     false,
                         testInit: func() *gomonkey.Patches {
-                                return gomonkey.ApplyFunc(show_client.GetMapFromQueries, func(queries [][]string) (map[string]interface{}, error) {
+                                return gomonkey.ApplyFunc(common.GetMapFromQueries, func(queries [][]string) (map[string]interface{}, error) {
                                         return nil, fmt.Errorf("simulated DB failure")
                                 })
                         },

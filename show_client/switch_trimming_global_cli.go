@@ -3,6 +3,7 @@ package show_client
 import (
         "encoding/json"
         "fmt"
+	"github.com/sonic-net/sonic-gnmi/show_client/common"
         sdc "github.com/sonic-net/sonic-gnmi/sonic_data_client"
 )
 
@@ -21,7 +22,7 @@ type SwitchTrimmingResponse struct {
 
 // getSwitchTrimmingGlobalConfig queries CONFIG_DB and returns JSON response
 func getSwitchTrimmingGlobalConfig(args sdc.CmdArgs, options sdc.OptionMap) ([]byte, error) {
-        row, err := GetMapFromQueries([][]string{{"CONFIG_DB", cfgSwitchTrimming, cfgTrimKey}})
+        row, err := common.GetMapFromQueries([][]string{{"CONFIG_DB", cfgSwitchTrimming, cfgTrimKey}})
         if err != nil {
                 return nil, fmt.Errorf("failed to query CONFIG_DB: %w", err)
         }

@@ -2,13 +2,14 @@ package show_client
 
 import (
 	log "github.com/golang/glog"
+	"github.com/sonic-net/sonic-gnmi/show_client/common"
 	sdc "github.com/sonic-net/sonic-gnmi/sonic_data_client"
 )
 
 const PreviousRebootCauseFilePath = "/host/reboot-cause/previous-reboot-cause.json"
 
 func getPreviousRebootCause(args sdc.CmdArgs, options sdc.OptionMap) ([]byte, error) {
-	data, err := GetDataFromFile(PreviousRebootCauseFilePath)
+	data, err := common.GetDataFromFile(PreviousRebootCauseFilePath)
 	if err != nil {
 		log.Errorf("Unable to get data from file %v, got err: %v", PreviousRebootCauseFilePath, err)
 		return nil, err

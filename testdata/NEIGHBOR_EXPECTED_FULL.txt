@@ -1,0 +1,26 @@
+{
+  "DEVICE_NEIGHBOR|Ethernet0": {
+    "name": "DeviceA",
+    "port": "Ethernet10"
+  },
+  "DEVICE_NEIGHBOR|Ethernet2": {
+    "name": "DeviceB",
+    "port": "Ethernet11"
+  },
+  "DEVICE_NEIGHBOR_METADATA|DeviceA": {
+    "lo_addr": "10.0.0.1",
+    "mgmt_addr": "192.168.0.1",
+    "type": "Leaf"
+  },
+  "DEVICE_NEIGHBOR_METADATA|DeviceB": {
+    "lo_addr": "10.0.0.2",
+    "mgmt_addr": "192.168.0.2",
+    "type": "Spine"
+  },
+  "PORT|Ethernet0": {
+    "alias": "etp1"
+  },
+  "PORT|Ethernet2": {
+    "alias": "etp2"
+  }
+}

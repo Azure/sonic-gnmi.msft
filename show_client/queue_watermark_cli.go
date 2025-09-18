@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	log "github.com/golang/glog"
+	"github.com/sonic-net/sonic-gnmi/show_client/common"
 	sdc "github.com/sonic-net/sonic-gnmi/sonic_data_client"
 )
 
@@ -27,7 +28,7 @@ func getQueueUserWatermarksSnapshot(ifaces []string, requestedQueueType int) (ma
 		}
 	}
 
-	queueUserWatermarks, err := GetMapFromQueries(queries)
+	queueUserWatermarks, err := common.GetMapFromQueries(queries)
 	if err != nil {
 		log.Errorf("Unable to pull data for queries %v, got err %v", queries, err)
 		return nil, err
@@ -50,7 +51,7 @@ func getQueueUserWatermarksSnapshot(ifaces []string, requestedQueueType int) (ma
 			continue
 		}
 		if requestedQueueType == ALL || (requestedQueueType == UNICAST && qtype == "UC") || (requestedQueueType == MULTICAST && qtype == "MC") {
-			response[port_qindex[0]][qtype+port_qindex[1]] = GetValueOrDefault(userWatermarkMap, "SAI_QUEUE_STAT_SHARED_WATERMARK_BYTES", defaultMissingCounterValue)
+			response[port_qindex[0]][qtype+port_qindex[1]] = common.GetValueOrDefault(userWatermarkMap, "SAI_QUEUE_STAT_SHARED_WATERMARK_BYTES", common.DefaultMissingCounterValue)
 		}
 	}
 	return response, nil

@@ -27,12 +27,13 @@ const (
 	showCmdOptionIPV6AddressDesc       = "[ipaddress=TEXT] Filter by IPv6 address"
 	showCmdOptionInfoTypeDesc          = "[info_type=TEXT] Filter by information type"
 	showCmdOptionSonicCliIfaceModeDesc = "[SONIC_CLI_IFACE_MODE=TEXT] Filter by sonic interface naming mode (eg alias/default)"
+	showCmdOptionAllDesc               = "[all=true] No-op since all queue counters are shown by default"
 )
 
 // Option keys
 const (
-	OptionKeyIpAddress = "ipaddress"
-	OptionKeyVerbose   = "verbose"
+	OptionKeyVerbose  = "verbose"
+	SonicCliIfaceMode = "SONIC_CLI_IFACE_MODE"
 )
 
 var (
@@ -157,21 +158,6 @@ var (
 		sdc.StringValue,
 	)
 
-	showCmdOptionInfoType = sdc.NewShowCmdOption(
-		"info_type",
-		"Additional information to display: routes | advertised-routes | received-routes",
-		sdc.EnumValue,
-		"routes",
-		"advertised-routes",
-		"received-routes",
-	)
-
-	showCmdOptionIPV6Address = sdc.NewShowCmdOption(
-		OptionKeyIpAddress,
-		showCmdOptionIPV6AddressDesc,
-		sdc.StringValue,
-	)
-
 	showCmdOptionInfoTypeForBgpNetwork = sdc.NewShowCmdOption(
 		"info_type",
 		showCmdOptionInfoTypeDesc,
@@ -182,5 +168,17 @@ var (
 		SonicCliIfaceMode,
 		showCmdOptionSonicCliIfaceModeDesc,
 		sdc.StringValue,
+	)
+
+	showCmdOptionAll = sdc.NewShowCmdOption(
+		"all",
+		showCmdOptionAllDesc,
+		sdc.BoolValue,
+	)
+
+	showCmdOptionVoq = sdc.NewShowCmdOption(
+		"voq",
+		showCmdOptionUnimplementedDesc,
+		sdc.BoolValue,
 	)
 )

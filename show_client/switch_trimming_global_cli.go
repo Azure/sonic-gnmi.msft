@@ -8,8 +8,8 @@ import (
 )
 
 const (
-	cfgSwitchTrimming = "SWITCH_TRIMMING"
-	cfgTrimKey        = "GLOBAL"
+	CfgSwitchTrimming = "SWITCH_TRIMMING"
+	CfgTrimKey        = "GLOBAL"
 )
 
 // SwitchTrimmingResponse defines the structured output
@@ -22,7 +22,7 @@ type SwitchTrimmingResponse struct {
 
 // getSwitchTrimmingGlobalConfig queries CONFIG_DB and returns JSON response
 func getSwitchTrimmingGlobalConfig(args sdc.CmdArgs, options sdc.OptionMap) ([]byte, error) {
-	row, err := common.GetMapFromQueries([][]string{{"CONFIG_DB", cfgSwitchTrimming, cfgTrimKey}})
+	row, err := common.GetMapFromQueries([][]string{{"CONFIG_DB", CfgSwitchTrimming, CfgTrimKey}})
 	if err != nil {
 		return nil, fmt.Errorf("failed to query CONFIG_DB: %w", err)
 	}

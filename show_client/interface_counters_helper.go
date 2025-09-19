@@ -4,7 +4,11 @@ import (
 	log "github.com/golang/glog"
 )
 
-const fecBinCount = 16 // BIN index from 0 - 15
+const (
+	fecBinCount      = 16 // BIN index from 0 - 15
+	defaultTimestamp = "None"
+	portStatCacheCmd = "cat /tmp/cache/portstat/1000/portstat"
+)
 
 type InterfaceCountersSnapshot struct {
 	// Port Status
@@ -185,6 +189,8 @@ type InterfaceCountersDetailedResponse struct {
 	RxFragments  string
 	RxUndersize  string
 	RxOverruns   string
+	// Field has to be fetched from host as not in DB
+	TimestampClearedCounters string
 }
 
 type interfaceRifCounters struct {
@@ -568,6 +574,7 @@ func projectErrorCounters(snapshot map[string]InterfaceCountersSnapshot) map[str
 
 func projectDetailedCounters(snapshot map[string]InterfaceCountersSnapshot) map[string]InterfaceCountersDetailedResponse {
 	output := make(map[string]InterfaceCountersDetailedResponse, len(snapshot))
+	timestamp := getTimestampClearedCounters()
 	for intf, value := range snapshot {
 		output[intf] = InterfaceCountersDetailedResponse{
 			TrimPkts:     value.TrimPkts,
@@ -605,6 +612,8 @@ func projectDetailedCounters(snapshot map[string]InterfaceCountersSnapshot) map[
 			RxFragments:  value.RxFragments,
 			RxUndersize:  value.RxUndersize,
 			RxOverruns:   value.RxOverruns,
+			// Not taken from snapshot
+			TimestampClearedCounters: timestamp,
 		}
 	}
 	return output
@@ -696,6 +705,28 @@ func getRifNameMapping() (map[string]interface{}, error) {
 	}
 
 	return rifNameMap, nil
+}
+
+func getTimestampClearedCounters() string {
+	portStatCacheStr, err := GetDataFromHostCommand(portstatCacheCmd)
+	if err != nil {
+		log.Errorf("Unable to execute command: %v, got err: %v", portStatCacheStr, err)
+		return defaultTimestamp
+	}
+
+	var portStatCacheMap map[string]interface{}
+
+	err := json.Unmarshal([]byte(portStatCacheStr), &data)
+	if err != nil {
+		log.Errorf("Error marshaling port stat cache: %v", err)
+		return defaultTimestamp
+	}
+
+	if timestamp, ok := portStatCacheMap["time"]; ok {
+		timestampStr := fmt.Sprintf("%v", timestamp)
+		return timestampStr
+	}
+	return defaultTimestamp
 }
 
 func calculateByteRate(rate string) string {

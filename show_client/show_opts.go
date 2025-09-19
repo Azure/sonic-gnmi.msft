@@ -184,4 +184,10 @@ var (
 		showCmdOptionSonicCliIfaceModeDesc,
 		sdc.StringValue,
 	)
+
+	showCmdOptionPrintAll = sdc.NewShowCmdOption(
+		"printall",
+		showCmdOptionPrintAllDesc,
+		sdc.BoolValue,
+	)
 )

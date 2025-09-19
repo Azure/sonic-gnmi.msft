@@ -132,6 +132,15 @@ func TestGetNDP(t *testing.T) {
 			wantRetCode: codes.NotFound,
 		},
 		{
+			desc:       "query SHOW ndp - invalid ipaddress",
+			pathTarget: "SHOW",
+			textPbPath: `
+				elem: <name: "ndp" >
+				elem: <name: "999.999.999.999" >
+			`,
+			wantRetCode: codes.NotFound,
+		},
+		{
 			desc:       "query SHOW ndp",
 			pathTarget: "SHOW",
 			textPbPath: `

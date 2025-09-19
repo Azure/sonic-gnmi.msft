@@ -255,6 +255,10 @@ func getBridgePortMap() (map[string]string, error) {
 		if len(parts) < 2 {
 			continue
 		}
+		if len(parts[1]) < oidPrefixLen {
+			// not long enough to contain "oid:0x...", skip
+			continue
+		}
 		bridgePortOid := parts[1][oidPrefixLen:] // strip "oid:0x"
 
 		attrs, ok := val.(map[string]string)

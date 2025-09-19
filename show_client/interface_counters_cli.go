@@ -26,7 +26,7 @@ func getInterfaceCounters(args sdc.CmdArgs, options sdc.OptionMap) ([]byte, erro
 		period = periodValue
 	}
 
-	if getAllCounters, ok = options["printall"].Bool(); ok {
+	if getAllCounters, ok := options["printall"].Bool(); ok {
 		fetchAllCounters = getAllCounters
 	}
 
@@ -139,7 +139,7 @@ func getInterfaceCountersTrim(args sdc.CmdArgs, options sdc.OptionMap) ([]byte, 
 	return json.Marshal(projectTrimCounters(finalSnapshot))
 }
 
-func getInterfaceCountersRates(args sdc.CmdArgs, option sdc.OptionMap) ([]byte, error) {
+func getInterfaceCountersRates(args sdc.CmdArgs, options sdc.OptionMap) ([]byte, error) {
 	period := 0
 	takeDiffSnapshot := false
 
@@ -175,7 +175,7 @@ func getInterfaceCountersRates(args sdc.CmdArgs, option sdc.OptionMap) ([]byte, 
 	return json.Marshal(projectRateCounters(finalSnapshot))
 }
 
-func getInterfaceFCountersFecStats(args sdc.CmdArgs, options sdc.OptionMap) ([]byte, error) {
+func getInterfaceCountersFecStats(args sdc.CmdArgs, options sdc.OptionMap) ([]byte, error) {
 	period := 0
 	takeDiffSnapshot := false
 
@@ -188,7 +188,7 @@ func getInterfaceFCountersFecStats(args sdc.CmdArgs, options sdc.OptionMap) ([]b
 		return nil, fmt.Errorf("period value must be <= %v and non negative", maxShowCommandPeriod)
 	}
 
-	oldSnapshot, err := getInterfaceCountersSnapshot(ifaces)
+	oldSnapshot, err := getInterfaceCountersSnapshot(nil)
 	if err != nil {
 		log.Errorf("Unable to get interfaces counter snapshot due to err: %v", err)
 		return nil, err
@@ -198,7 +198,7 @@ func getInterfaceFCountersFecStats(args sdc.CmdArgs, options sdc.OptionMap) ([]b
 	if takeDiffSnapshot && period > 0 {
 		time.Sleep(time.Duration(period) * time.Second)
 
-		newSnapshot, err := getInterfaceCountersSnapshot(ifaces)
+		newSnapshot, err := getInterfaceCountersSnapshot(nil)
 		if err != nil {
 			log.Errorf("Unable to get new interface counters snapshot due to err %v", err)
 			return nil, err
@@ -223,7 +223,7 @@ func getInterfaceCountersFecHistogram(args sdc.CmdArgs, options sdc.OptionMap) (
 		return nil, err
 	}
 
-	return json.Marshal(projectCounters(finalSnapshot))
+	return json.Marshal(projectFecHistogramCounters(finalSnapshot))
 }
 
 func getInterfaceCountersDetailed(args sdc.CmdArgs, options sdc.OptionMap) ([]byte, error) {

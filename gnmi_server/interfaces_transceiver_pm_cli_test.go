@@ -67,7 +67,7 @@ func TestGetTransceiverPM(t *testing.T) {
 			},
 		},
 		{
-			desc:       "query SHOW interfaces transceiver error-status",
+			desc:       "query SHOW interfaces transceiver pm -- single interface",
 			pathTarget: "SHOW",
 			textPbPath: `
 				elem: <name: "interfaces" >
@@ -78,6 +78,20 @@ func TestGetTransceiverPM(t *testing.T) {
 			wantRetCode: codes.OK,
 			wantRespVal: []byte(transceiverPMPort),
 			valTest:     true,
+			testInit: func() {
+				AddDataSet(t, ApplDbNum, ApplDbFile)
+			},
+		},
+		{
+			desc:       "query SHOW interfaces transceiver -- non-existent interface",
+			pathTarget: "SHOW",
+			textPbPath: `
+				elem: <name: "interfaces" >
+				elem: <name: "transceiver" >
+				elem: <name: "pm" >
+				elem: <name: "Ethernet1">
+			`,
+			wantRetCode: codes.NotFound,
 			testInit: func() {
 				AddDataSet(t, ApplDbNum, ApplDbFile)
 			},

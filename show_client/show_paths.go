@@ -135,12 +135,80 @@ func init() {
 		showCmdOptionJson,
 		showCmdOptionVerbose,
 	)
-
-	// SHOW/interfaces/counters/rif
+	sdc.RegisterCliPath(
+		[]string{"SHOW", "interfaces", "counters", "detailed"},
+		getInterfaceCountersDetailed,
+		"SHOW/interfaces/counters/detailed/INTERFACE_NAME[OPTIONS]: Show interface counters detailed",
+		1,
+		1,
+		nil,
+		showCmdOptionPeriod,
+		showCmdOptionVerbose,
+	)
+	sdc.RegisterCliPath(
+		[]string{"SHOW", "interfaces", "counters", "errors"},
+		getInterfaceCountersErrors,
+		"SHOW/interfaces/counters/errors[OPTIONS]: Show interface counters errors",
+		0,
+		0,
+		nil,
+		sdc.UnimplementedOption(showCmdOptionNamespace),
+		showCmdOptionDisplay,
+		showCmdOptionPeriod,
+		showCmdOptionJson,
+		showCmdOptionVerbose,
+	)
+	sdc.RegisterCliPath(
+		[]string{"SHOW", "interfaces", "counters", "fec-histogram"},
+		getInterfaceCountersFecHistogram,
+		"SHOW/interfaces/counters/fec-histogram/INTERFACE_NAME[OPTIONS]: Show interface counters fec-histogram",
+		1,
+		1,
+		nil,
+		sdc.UnimplementedOption(showCmdOptionNamespace),
+		showCmdOptionDisplay,
+	)
+	sdc.RegisterCliPath(
+		[]string{"SHOW", "interfaces", "counters", "fec-stats"},
+		getInterfaceCountersFecStats,
+		"SHOW/interfaces/counters/fec-stats[OPTIONS]: Show interface counters fec-stats",
+		0,
+		0,
+		nil,
+		sdc.UnimplementedOption(showCmdOptionNamespace),
+		showCmdOptionDisplay,
+		showCmdOptionPeriod,
+		showCmdOptionJson,
+		showCmdOptionVerbose,
+	)
+	sdc.RegisterCliPath(
+		[]string{"SHOW", "interfaces", "counters", "rates"},
+		getInterfaceCountersRates,
+		"SHOW/interfaces/counters/rates[OPTIONS]: Show interface counters rates",
+		0,
+		0,
+		nil,
+		sdc.UnimplementedOption(showCmdOptionNamespace),
+		showCmdOptionDisplay,
+		showCmdOptionPeriod,
+		showCmdOptionJson,
+		showCmdOptionVerbose,
+	)
 	sdc.RegisterCliPath(
 		[]string{"SHOW", "interfaces", "counters", "rif"},
 		getInterfaceRifCounters,
 		"SHOW/interfaces/counters/rif/{INTERFACENAME}[OPTIONS]",
+		0,
+		1,
+		nil,
+		showCmdOptionPeriod,
+		showCmdOptionJson,
+		showCmdOptionVerbose,
+	)
+	sdc.RegisterCliPath(
+		[]string{"SHOW", "interfaces", "counters", "trim"},
+		getInterfaceCountersTrim,
+		"SHOW/interfaces/counters/trim/{INTERFACE_NAME}[OPTIONS]: Show interface counters trim",
 		0,
 		1,
 		nil,

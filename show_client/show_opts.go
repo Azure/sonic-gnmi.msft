@@ -8,7 +8,7 @@ const (
 	showCmdOptionUnimplementedDesc     = "UNIMPLEMENTED"
 	showCmdOptionDisplayDesc           = "[display=all] No-op since no-multi-asic support"
 	showCmdOptionVerboseDesc           = "[verbose=true] Enable verbose output"
-	showCmdOptionInterfacesDesc        = "[interfaces=TEXT] Filter by interfaces name" // TODO: Change from interfaces to interface
+	showCmdOptionInterfacesDesc        = "[interface=TEXT] Filter by interfaces name"
 	showCmdOptionInterfaceDesc         = "[interface=TEXT] Filter by single interface name"
 	showCmdOptionPortDesc              = "[port=TEXT] Filter by single port name"
 	showCmdOptionVlanDesc              = "[vlan=INTEGER] Filter by VLAN ID"
@@ -27,6 +27,7 @@ const (
 	showCmdOptionIPV6AddressDesc       = "[ipaddress=TEXT] Filter by IPv6 address"
 	showCmdOptionInfoTypeDesc          = "[info_type=TEXT] Filter by information type"
 	showCmdOptionSonicCliIfaceModeDesc = "[SONIC_CLI_IFACE_MODE=TEXT] Filter by sonic interface naming mode (eg alias/default)"
+	showCmdOptionPrintAllDesc          = "[printall=true] Show all counters"
 )
 
 // Option keys
@@ -55,7 +56,7 @@ var (
 	)
 
 	showCmdOptionInterfaces = sdc.NewShowCmdOption(
-		"interfaces", // TODO: Change to interface
+		"interface",
 		showCmdOptionInterfacesDesc,
 		sdc.StringSliceValue,
 	)

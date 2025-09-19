@@ -161,7 +161,7 @@ func TestGetNDP(t *testing.T) {
 			desc:       "query SHOW ndp - specific interface",
 			pathTarget: "SHOW",
 			textPbPath: `
-				elem: <name: "ndp"  key: { key: "interface" value: "Ethernet60" } >
+				elem: <name: "ndp"  key: { key: "iface" value: "Ethernet60" } >
 			`,
 			wantRetCode: codes.OK,
 			wantRespVal: []byte(specificInterfaceNDPExpectedOutput),

@@ -51,7 +51,7 @@ func getQueueWatermarksSnapshot(ifaces []string, requestedQueueType int, waterma
 			continue
 		}
 		if requestedQueueType == ALL || (requestedQueueType == UNICAST && qtype == "UC") || (requestedQueueType == MULTICAST && qtype == "MC") {
-			response[port_qindex[0]][qtype+port_qindex[1]] = common.GetValueOrDefault(watermarkMap, "SAI_QUEUE_STAT_SHARED_WATERMARK_BYTES", common.defaultMissingCounterValue)
+			response[port_qindex[0]][qtype+port_qindex[1]] = common.GetValueOrDefault(watermarkMap, "SAI_QUEUE_STAT_SHARED_WATERMARK_BYTES", common.DefaultMissingCounterValue)
 		}
 	}
 	return response, nil

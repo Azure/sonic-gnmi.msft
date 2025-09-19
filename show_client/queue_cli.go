@@ -122,10 +122,10 @@ func getQueueCountersMapping(queueCounters map[string]interface{}, onlyTrim bool
 		}
 		if onlyWred {
 			response[queue] = wredCountersResponse{
-				WREDDroppedPackets: GetValueOrDefault(countersMap, "SAI_QUEUE_STAT_WRED_DROPPED_PACKETS", defaultMissingCounterValue),
-				WREDDroppedBytes:   GetValueOrDefault(countersMap, "SAI_QUEUE_STAT_WRED_DROPPED_BYTES", defaultMissingCounterValue),
-				ECNMarkedPackets:   GetValueOrDefault(countersMap, "SAI_QUEUE_STAT_WRED_ECN_MARKED_PACKETS", defaultMissingCounterValue),
-				ECNMarkedBytes:     GetValueOrDefault(countersMap, "SAI_QUEUE_STAT_WRED_ECN_MARKED_BYTES", defaultMissingCounterValue),
+				WREDDroppedPackets: GetValueOrDefault(countersMap, "SAI_QUEUE_STAT_WRED_DROPPED_PACKETS", common.DefaultMissingCounterValue),
+				WREDDroppedBytes:   GetValueOrDefault(countersMap, "SAI_QUEUE_STAT_WRED_DROPPED_BYTES", common.DefaultMissingCounterValue),
+				ECNMarkedPackets:   GetValueOrDefault(countersMap, "SAI_QUEUE_STAT_WRED_ECN_MARKED_PACKETS", common.DefaultMissingCounterValue),
+				ECNMarkedBytes:     GetValueOrDefault(countersMap, "SAI_QUEUE_STAT_WRED_ECN_MARKED_BYTES", common.DefaultMissingCounterValue),
 			}
 		} else if onlyTrim {
 			response[queue] = trimCountersResponse{

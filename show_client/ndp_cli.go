@@ -9,6 +9,7 @@ import (
 	"strings"
 
 	log "github.com/golang/glog"
+	"github.com/sonic-net/sonic-gnmi/show_client/common"
 	sdc "github.com/sonic-net/sonic-gnmi/sonic_data_client"
 )
 
@@ -134,11 +135,6 @@ func parseNDPOutput(output string, intf string) NeighborTable {
 		table.Entries = append(table.Entries, entry)
 	}
 
-	// Sort table by IP address (like natsorted in Python)
-	sort.Slice(table.Entries, func(i, j int) bool {
-		return table.Entries[i].Address < table.Entries[j].Address
-	})
-
 	table.TotalEntries = len(table.Entries)
 	return table
 }
@@ -151,11 +147,11 @@ func getInterfaceOidMap() (map[string]string, error) {
 		{"COUNTERS_DB", "COUNTERS_LAG_NAME_MAP"},
 	}
 
-	portMap, err := GetMapFromQueries(portQueries)
+	portMap, err := common.GetMapFromQueries(portQueries)
 	if err != nil {
 		return nil, err
 	}
-	lagMap, err := GetMapFromQueries(lagQueries)
+	lagMap, err := common.GetMapFromQueries(lagQueries)
 	if err != nil {
 		return nil, err
 	}
@@ -203,7 +199,7 @@ func buildBvidToVlanMap() (map[string]string, error) {
 		{"ASIC_DB", "ASIC_STATE:SAI_OBJECT_TYPE_VLAN:*"},
 	}
 
-	vlanData, err := GetMapFromQueries(queries)
+	vlanData, err := common.GetMapFromQueries(queries)
 	if err != nil {
 		return nil, err
 	}
@@ -245,7 +241,7 @@ func getBridgePortMap() (map[string]string, error) {
 	queries := [][]string{
 		{"ASIC_DB", "ASIC_STATE:SAI_OBJECT_TYPE_BRIDGE_PORT:*"},
 	}
-	brPortStr, err := GetMapFromQueries(queries)
+	brPortStr, err := common.GetMapFromQueries(queries)
 	if err != nil {
 		return nil, err
 	}
@@ -291,7 +287,7 @@ func fetchFdbData() ([]BridgeMacEntry, error) {
 	}
 
 	// "ASIC_STATE:SAI_OBJECT_TYPE_FDB_ENTRY:{\"bvid\":\"oid:0x2600000000063f\",\"mac\":\"B8:CE:F6:E5:50:05\",\"switch_id\":\"oid:0x21000000000000\"}"
-	brPortStr, err := GetMapFromQueries(queries)
+	brPortStr, err := common.GetMapFromQueries(queries)
 	if err != nil {
 		return nil, err
 	}

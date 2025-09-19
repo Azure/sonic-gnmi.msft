@@ -3,8 +3,8 @@ package show_client
 import (
 	"encoding/json"
 	"fmt"
+	"net"
 	"regexp"
-	"sort"
 	"strconv"
 	"strings"
 
@@ -249,6 +249,7 @@ func getBridgePortMap() (map[string]string, error) {
 
 	ifBrOidMap := make(map[string]string)
 
+	// key SAI_OBJECT_TYPE_BRIDGE_PORT:oid:0x2600000000063f
 	for key, val := range brPortStr {
 		parts := strings.SplitN(key, ":", 2)
 		if len(parts) < 2 {
@@ -315,6 +316,7 @@ func fetchFdbData() ([]BridgeMacEntry, error) {
 
 	bridgeMacList := []BridgeMacEntry{}
 
+	// fdbKey is like SAI_OBJECT_TYPE_FDB_ENTRY:{"bvid":"oid:0x2600000000063f","mac":"B8:CE:F6:E5:50:05","switch_id":"oid:0x21000000000000"}
 	for fdbKey, entryData := range brPortStr {
 		// Split at first colon to separate top-level type from JSON
 		idx := strings.Index(fdbKey, ":")
@@ -383,7 +385,11 @@ func getNDP(args sdc.CmdArgs, options sdc.OptionMap) ([]byte, error) {
 
 	cmd := baseNdpCmd
 	if ip != "" {
-		cmd += " " + ip
+		if net.ParseIP(ip) != nil {
+			cmd += " " + ip
+		} else {
+			return nil, fmt.Errorf("invalid IP address: %s", ip)
+		}
 	}
 	if intf != "" {
 		cmd += " dev " + intf

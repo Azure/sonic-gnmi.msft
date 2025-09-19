@@ -69,7 +69,6 @@ func TestGetShowInterfaceDescription(t *testing.T) {
                 elem: <name: "description" >
             `,
 			wantRetCode: codes.OK,
-			wantRespVal: []byte(expectedRetValue),
 			valTest:     false,
 			testInit: func() {
 				FlushDataSet(t, ConfigDbNum)

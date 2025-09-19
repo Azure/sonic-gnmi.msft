@@ -1,0 +1,92 @@
+{
+	"lldp": [
+		{
+			"interface": [
+				{
+					"name": "Ethernet354",
+					"via": "LLDP",
+					"rid": "2",
+					"age": "15 days, 03:12:34",
+					"chassis": [
+						{
+							"id": [
+								{
+									"type": "mac",
+									"value": "ff:ff:ff:ff:ff:ff"
+								}
+							],
+							"name": [
+								{
+									"value": "sonic-device-6"
+								}
+							],
+							"descr": [
+								{
+									"value": "SONiC Software Version: SONiC.20250305.10 - HwSku: Arista-7060X6-64PE - Distribution: Debian 12.9 - Kernel: 6.1.0-29-2-amd64"
+								}
+							],
+							"mgmt-ip": [
+								{
+									"value": "10.10.10.10"
+								}
+							],
+							"mgmt-iface": [
+								{
+									"value": "2"
+								}
+							],
+							"capability": [
+								{
+									"type": "Bridge",
+									"enabled": true
+								},
+								{
+									"type": "Router",
+									"enabled": true
+								},
+								{
+									"type": "Wlan",
+									"enabled": false
+								},
+								{
+									"type": "Station",
+									"enabled": false
+								}
+							]
+						}
+					],
+					"port": [
+						{
+							"id": [
+								{
+									"type": "ifname",
+									"value": "Ethernet45/3"
+								}
+							],
+							"descr": [
+								{
+									"value": "Ethernet354"
+								}
+							],
+							"ttl": [
+								{
+									"value": "120"
+								}
+							]
+						}
+					],
+					"vlan": [
+						{
+							"vlan-id": "101",
+							"pvid": true
+						},
+						{
+							"vlan-id": "201",
+							"value": "vlan201"
+						}
+					]
+				}
+			]
+		}
+	]
+}

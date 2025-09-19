@@ -137,7 +137,7 @@ func TryConvertInterfaceNameFromAlias(interfaceName string, namingMode string) (
 
 		// AliasToName should return "" if not found
 		if interfaceName == "" || interfaceName == alias {
-			return "", fmt.Errorf("Cannot find interface name for alias %s", alias)
+			return "", fmt.Errorf("Cannot find interface name for alias %s, aliasMap count:%d, interfaceName:%s", alias, len(aliasMap), interfaceName)
 		}
 	}
 	return interfaceName, nil

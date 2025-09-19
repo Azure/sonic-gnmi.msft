@@ -22,6 +22,7 @@ import (
 
 	log "github.com/golang/glog"
 	sdc "github.com/sonic-net/sonic-gnmi/sonic_data_client"
+	"github.com/sonic-net/sonic-gnmi/show_client/common"
 )
 
 // lldpTableResponse represents the response structure for show lldp table command.
@@ -63,11 +64,12 @@ func parseEnabledCapabilityCodes(enabledCapabilities []string) string {
 }
 
 // Extracts the LLDP table entries from the LLDP data.
-func extractAllTableEntries(data lldpData) []lldpTableEntry {
+func extractAllTableEntries(data lldpData, namingMode string) []lldpTableEntry {
 	neighbors := make([]lldpTableEntry, 0)
 
 	for _, entry := range data.LLDP {
 		for _, iface := range entry.Interface {
+			iface.Name = common.GetInterfaceNameForDisplay(iface.Name, namingMode)
 			neighbor := extractTableEntry(iface)
 			neighbors = append(neighbors, neighbor)
 		}
@@ -116,15 +118,17 @@ func extractTableEntry(iface interfaceEntry) lldpTableEntry {
 }
 
 func getLLDPTable(args sdc.CmdArgs, options sdc.OptionMap) ([]byte, error) {
+	namingMode, _ := options[SonicCliIfaceMode].String()
+
 	// get lldp data
-	data, err := getLLDPDataFromHostCommand()
+	data, err := getLLDPDataFromHostCommand("")
 	if err != nil {
 		log.Errorf("Failed to get lldp data, get err %v", err)
 		return nil, err
 	}
 
 	// parse neighbors summary from full lldp data
-	neighbors := extractAllTableEntries(data)
+	neighbors := extractAllTableEntries(data, namingMode)
 
 	// create response structure
 	var response = lldpTableResponse{

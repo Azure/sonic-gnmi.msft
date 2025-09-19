@@ -1,0 +1,41 @@
+{   
+	"capability_codes_helper": "Capability codes: (R) Router, (B) Bridge, (O) Other",
+	"neighbors": [
+		{
+			"capability": "BR",
+			"localPort": "etp0",
+			"remoteDevice": "sonic-device",
+			"remotePortDescr": "ge-0/0/11.0",
+			"remotePortId": "508"
+		},
+		{
+			"capability": "BR",
+			"localPort": "etp354",
+			"remoteDevice": "sonic-device-6",
+			"remotePortDescr": "Ethernet354",
+			"remotePortId": "Ethernet45/3"
+		},
+		{
+			"capability": "",
+			"localPort": "etp355",
+			"remoteDevice": "sonic-device-7",
+			"remotePortDescr": "Ethernet355",
+			"remotePortId": "Ethernet45/2"
+		},
+		{
+			"capability": "",
+			"localPort": "etp353",
+			"remoteDevice": "sonic-device-5",
+			"remotePortDescr": "Ethernet353",
+			"remotePortId": "Ethernet45/0"
+		},
+		{
+			"capability": "O",
+			"localPort": "etp356",
+			"remoteDevice": "sonic-device-8",
+			"remotePortDescr": "Ethernet356",
+			"remotePortId": "Ethernet45/1"
+		}
+    ],
+	"total":5
+}

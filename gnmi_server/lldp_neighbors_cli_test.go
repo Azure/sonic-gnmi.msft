@@ -16,6 +16,7 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/credentials"
+	sdc "github.com/sonic-net/sonic-gnmi/sonic_data_client"
 )
 
 func TestGetLLDPNeighbors(t *testing.T) {
@@ -56,11 +57,25 @@ func TestGetLLDPNeighbors(t *testing.T) {
 		t.Fatalf("Failed to read file %v err: %v", expectedLLDPNeighborsResponseFileName, err)
 	}
 
+	// Expected output for normal device with path option SONIC_CLI_IFACE_MODE=alias
+	expectedLLDPNeighborsAliasResponseFileName := "../testdata/lldp/Expected_show_lldp_neighbors_alias_response.txt"
+	expectedLLDPNeighborsAliasResponse, err := ioutil.ReadFile(expectedLLDPNeighborsAliasResponseFileName)
+	if err != nil {
+		t.Fatalf("Failed to read file %v err: %v", expectedLLDPNeighborsAliasResponseFileName, err)
+	}
+
 	// Expected output for normal device with specified interface name
 	expectedLLDPNeighborsWithIfNameResponseFileName := "../testdata/lldp/Expected_show_lldp_neighbors_filtered_response.txt"
 	expectedLLDPNeighborsWithIfNameResponse, err := ioutil.ReadFile(expectedLLDPNeighborsWithIfNameResponseFileName)
 	if err != nil {
 		t.Fatalf("Failed to read file %v err: %v", expectedLLDPNeighborsWithIfNameResponseFileName, err)
+	}
+
+	// Expected output for normal device with specified interface alias name
+	expectedLLDPNeighborsWithIfAliasNameResponseFileName := "../testdata/lldp/Expected_show_lldp_neighbors_filtered_alias_response.txt"
+	expectedLLDPNeighborsWithIfAliasNameResponse, err := ioutil.ReadFile(expectedLLDPNeighborsWithIfAliasNameResponseFileName)
+	if err != nil {
+		t.Fatalf("Failed to read file %v err: %v", expectedLLDPNeighborsWithIfAliasNameResponseFileName, err)
 	}
 
 	tests := []struct {
@@ -118,6 +133,21 @@ func TestGetLLDPNeighbors(t *testing.T) {
 			ignoreValOrder: true,
 		},
 		{
+			desc:       "query SHOW lldp neighbors - normal device - path option SONIC_CLI_IFACE_MODE=alias",
+			pathTarget: "SHOW",
+			textPbPath: `
+				elem: <name: "lldp" >
+                elem: <name: "neighbors" key: { key: "SONIC_CLI_IFACE_MODE" value: "alias" } >
+			`,
+			wantRetCode: codes.OK,
+			wantRespVal: []byte(expectedLLDPNeighborsAliasResponse),
+			valTest:     true,
+			mockOutputFile: map[string]string{
+				"docker": "../testdata/lldp/lldpctl_json.txt",
+			},
+			ignoreValOrder: true,
+		},
+		{
 			desc:       "query SHOW lldp neighbors - normal device with specified interface name",
 			pathTarget: "SHOW",
 			textPbPath: `
@@ -129,7 +159,23 @@ func TestGetLLDPNeighbors(t *testing.T) {
 			wantRespVal: []byte(expectedLLDPNeighborsWithIfNameResponse),
 			valTest:     true,
 			mockOutputFile: map[string]string{
-				"docker": "../testdata/lldp/lldpctl_json.txt",
+				"docker": "../testdata/lldp/lldpctl_specified_interface_json.txt",
+			},
+			ignoreValOrder: true,
+		},
+		{
+			desc:       "query SHOW lldp neighbors - normal device with specified interface name -path option SONIC_CLI_IFACE_MODE=alias",
+			pathTarget: "SHOW",
+			textPbPath: `
+				elem: <name: "lldp" >
+				elem: <name: "neighbors" >
+                elem: <name: "etp354" key: { key: "SONIC_CLI_IFACE_MODE" value: "alias" } >
+			`,
+			wantRetCode: codes.OK,
+			wantRespVal: []byte(expectedLLDPNeighborsWithIfAliasNameResponse),
+			valTest:     true,
+			mockOutputFile: map[string]string{
+				"docker": "../testdata/lldp/lldpctl_specified_interface_json.txt",
 			},
 			ignoreValOrder: true,
 		},
@@ -145,23 +191,43 @@ func TestGetLLDPNeighbors(t *testing.T) {
 			wantRespVal: []byte(expectedEmptyDBResponse),
 			valTest:     true,
 			mockOutputFile: map[string]string{
-				"docker": "../testdata/lldp/lldpctl_json.txt",
+				"docker": "../testdata/lldp/lldpctl_non_exists_interface_json0.txt",
 			},
 			ignoreValOrder: true,
 		},
 	}
 
-	for _, test := range tests {
-		var patches *gomonkey.Patches
+	for _, test := range tests {	
+		var patchesSlice []*gomonkey.Patches
+		patchesSlice = append(patchesSlice, gomonkey.ApplyFunc(sdc.PortToAliasNameMap, func() map[string]string {
+			return map[string]string{
+				"eth0": "etp0",
+				"Ethernet353": "etp353",
+				"Ethernet354": "etp354",
+				"Ethernet355": "etp355",
+				"Ethernet356": "etp356",
+			}
+		}))
+	
+		patchesSlice = append(patchesSlice, gomonkey.ApplyFunc(sdc.AliasToPortNameMap, func() map[string]string {
+			return map[string]string{
+				"etp0": "eth0",
+				"etp353": "Ethernet353",
+				"etp354": "Ethernet354",
+				"etp355": "Ethernet355",
+				"etp356": "Ethernet356",
+			}
+		}))
+
 		if len(test.mockOutputFile) > 0 {
-			patches = MockExecCmds(t, test.mockOutputFile)
+			patchesSlice = append(patchesSlice, MockExecCmds(t, test.mockOutputFile))
 		}
 
 		t.Run(test.desc, func(t *testing.T) {
 			runTestGet(t, ctx, gClient, test.pathTarget, test.textPbPath, test.wantRetCode, test.wantRespVal, test.valTest, test.ignoreValOrder)
 		})
 
-		if patches != nil {
+		for _, patches := range patchesSlice {
 			patches.Reset()
 		}
 	}

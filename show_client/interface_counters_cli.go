@@ -31,8 +31,8 @@ func getInterfaceCounters(args sdc.CmdArgs, options sdc.OptionMap) ([]byte, erro
 		fetchAllCounters = getAllCounters
 	}
 
-	if period > common.maxShowCommandPeriod || period < 0 {
-		return nil, fmt.Errorf("period value must be <= %v and non negative", maxShowCommandPeriod)
+	if period > common.MaxShowCommandPeriod || period < 0 {
+		return nil, fmt.Errorf("period value must be <= %v and non negative", common.MaxShowCommandPeriod)
 	}
 
 	oldSnapshot, err := getInterfaceCountersSnapshot(ifaces)
@@ -71,8 +71,8 @@ func getInterfaceCountersErrors(args sdc.CmdArgs, options sdc.OptionMap) ([]byte
 		period = periodValue
 	}
 
-	if period > common.maxShowCommandPeriod || period < 0 {
-		return nil, fmt.Errorf("period value must be <= %v and non negative", maxShowCommandPeriod)
+	if period > common.MaxShowCommandPeriod || period < 0 {
+		return nil, fmt.Errorf("period value must be <= %v and non negative", common.MaxShowCommandPeriod)
 	}
 
 	oldSnapshot, err := getInterfaceCountersSnapshot(nil)
@@ -113,8 +113,8 @@ func getInterfaceCountersTrim(args sdc.CmdArgs, options sdc.OptionMap) ([]byte, 
 		period = periodValue
 	}
 
-	if period > common.maxShowCommandPeriod || period < 0 {
-		return nil, fmt.Errorf("period value must be <= %v and non negative", maxShowCommandPeriod)
+	if period > common.MaxShowCommandPeriod || period < 0 {
+		return nil, fmt.Errorf("period value must be <= %v and non negative", common.MaxShowCommandPeriod)
 	}
 
 	oldSnapshot, err := getInterfaceCountersSnapshot(ifaces)
@@ -149,8 +149,8 @@ func getInterfaceCountersRates(args sdc.CmdArgs, options sdc.OptionMap) ([]byte,
 		period = periodValue
 	}
 
-	if period > common.maxShowCommandPeriod || period < 0 {
-		return nil, fmt.Errorf("period value must be <= %v and non negative", maxShowCommandPeriod)
+	if period > common.MaxShowCommandPeriod || period < 0 {
+		return nil, fmt.Errorf("period value must be <= %v and non negative", common.MaxShowCommandPeriod)
 	}
 
 	oldSnapshot, err := getInterfaceCountersSnapshot(nil)
@@ -185,8 +185,8 @@ func getInterfaceCountersFecStats(args sdc.CmdArgs, options sdc.OptionMap) ([]by
 		period = periodValue
 	}
 
-	if period > common.maxShowCommandPeriod || period < 0 {
-		return nil, fmt.Errorf("period value must be <= %v and non negative", maxShowCommandPeriod)
+	if period > common.MaxShowCommandPeriod || period < 0 {
+		return nil, fmt.Errorf("period value must be <= %v and non negative", common.MaxShowCommandPeriod)
 	}
 
 	oldSnapshot, err := getInterfaceCountersSnapshot(nil)
@@ -244,8 +244,8 @@ func getInterfaceCountersDetailed(args sdc.CmdArgs, options sdc.OptionMap) ([]by
 		period = periodValue
 	}
 
-	if period > common.maxShowCommandPeriod || period < 0 {
-		return nil, fmt.Errorf("period value must be <= %v and non negative", maxShowCommandPeriod)
+	if period > common.MaxShowCommandPeriod || period < 0 {
+		return nil, fmt.Errorf("period value must be <= %v and non negative", common.MaxShowCommandPeriod)
 	}
 
 	oldSnapshot, err := getInterfaceCountersSnapshot(ifaces)
@@ -280,8 +280,8 @@ func getInterfaceRifCounters(args sdc.CmdArgs, options sdc.OptionMap) ([]byte, e
 		period = periodValue
 	}
 
-	if period > common.maxShowCommandPeriod {
-		return nil, status.Errorf(codes.InvalidArgument, "period value must be <= %v", maxShowCommandPeriod)
+	if period > common.MaxShowCommandPeriod {
+		return nil, status.Errorf(codes.InvalidArgument, "period value must be <= %v", common.MaxShowCommandPeriod)
 	}
 
 	rifNameMap, err := getRifNameMapping()

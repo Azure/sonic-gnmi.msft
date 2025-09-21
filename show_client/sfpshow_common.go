@@ -453,9 +453,8 @@ func convertInterfaceSfpInfoToCliOutputString(iface string, dumpDom bool) string
 	return string(b)
 }
 
-func convertSfpStatusToOutputString(sfpStatus map[string]interface{}, statusMap map[string]string, orderedKeys []string) string {
-	const indent = "        " // 8 spaces
-	var b strings.Builder
+func convertSfpStatusToOutputString(sfpStatus map[string]interface{}, statusMap map[string]string, orderedKeys []string) map[string]interface{} {
+	out := make(map[string]interface{})
 	for _, k := range orderedKeys {
 		label, ok := statusMap[k]
 		if !ok {
@@ -465,13 +464,9 @@ func convertSfpStatusToOutputString(sfpStatus map[string]interface{}, statusMap 
 		if !present {
 			continue
 		}
-		b.WriteString(indent)
-		b.WriteString(label)
-		b.WriteString(": ")
-		b.WriteString(fmt.Sprint(val))
-		b.WriteByte('\n')
+		out[label] = val
 	}
-	return b.String()
+	return out
 }
 
 func convertInterfaceSfpStatusToCliOutputString(iface string) string {
@@ -517,29 +512,42 @@ func convertInterfaceSfpStatusToCliOutputString(iface string) string {
 		return fmt.Sprintf("%s\n", TransceiverStatusNotApplicable)
 	}
 
+	output := make(map[string]interface{})
+
 	// Common section
-	var b strings.Builder
-	b.WriteByte('\n')
-	b.WriteString(convertSfpStatusToOutputString(mergedSfpStatusDict, QsfpStatusMap, qsfpStatusOrder))
+	qsfpMap := convertSfpStatusToOutputString(mergedSfpStatusDict, QsfpStatusMap, qsfpStatusOrder)
+	for k, v := range qsfpMap {
+		output[k] = v
+	}
 
 	// CMIS specific section
 	if _, has := mergedSfpStatusDict["module_state"]; has {
 		normalizeCmisFlagKeys(mergedSfpStatusDict)
 		convertVdmFieldsToLegacyFields(firstSubport, mergedSfpStatusDict, CmisVdmToLegacyStatusMap, "FLAG")
-		b.WriteString(convertSfpStatusToOutputString(mergedSfpStatusDict, CmisStatusMap, cmisStatusOrder))
+		cmisMap := convertSfpStatusToOutputString(mergedSfpStatusDict, CmisStatusMap, cmisStatusOrder)
+		for k, v := range cmisMap {
+			output[k] = v
+		}
 	}
 
 	// C-CMIS specific section
 	if _, has := mergedSfpStatusDict["tuning_in_progress"]; has {
 		convertVdmFieldsToLegacyFields(firstSubport, mergedSfpStatusDict, CCmisVdmToLegacyStatusMap, "FLAG")
-		b.WriteString(convertSfpStatusToOutputString(mergedSfpStatusDict, CCmisStatusMap, ccmisStatusOrder))
+		ccmisMap := convertSfpStatusToOutputString(mergedSfpStatusDict, CCmisStatusMap, ccmisStatusOrder)
+		for k, v := range ccmisMap {
+			output[k] = v
+		}
 	}
 
-	out := b.String()
-	if out == "" || out == "\n" {
+	if len(output) <= 0 {
 		return fmt.Sprintf("%s\n", TransceiverStatusNotApplicable)
 	}
-	return out
+
+	b, err := json.Marshal(output)
+	if err != nil {
+		return "Error serializing SFP status\n"
+	}
+	return string(b)
 }
 
 // Converts VDM fields from the database into legacy field names and updates the provided dictionary with the converted values.

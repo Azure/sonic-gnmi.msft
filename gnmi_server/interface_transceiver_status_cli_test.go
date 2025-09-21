@@ -4,27 +4,19 @@ package gnmi
 // Tests SHOW interfaces transceiver status
 
 import (
+	"context"
 	"crypto/tls"
 	"encoding/json"
 	"testing"
 	"time"
 
+	"github.com/golang/protobuf/proto"
 	pb "github.com/openconfig/gnmi/proto/gnmi"
-	"golang.org/x/net/context"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/credentials"
+	"google.golang.org/grpc/status"
 )
-
-// helper to marshal expected map
-func mustJSON(t *testing.T, v interface{}) []byte {
-	t.Helper()
-	b, err := json.Marshal(v)
-	if err != nil {
-		t.Fatalf("marshal expected json: %v", err)
-	}
-	return b
-}
 
 func TestShowInterfaceTransceiverStatus(t *testing.T) {
 	// Single server reused for all cases
@@ -51,23 +43,32 @@ func TestShowInterfaceTransceiverStatus(t *testing.T) {
 
 	notApplicable := "Transceiver status info not applicable\n"
 
-	cmisOut := "\n" +
-		"        CMIS State (SW): READY\n" +
-		"        Current module state: ModuleReady\n" +
-		"        Temperature high alarm flag: False\n" +
-		"        Temperature high warning flag: False\n"
+	cmisExpected := map[string]string{
+		"CMIS State (SW)":               "READY",
+		"Current module state":          "ModuleReady",
+		"Temperature high alarm flag":   "False",
+		"Temperature high warning flag": "False",
+	}
+	eth4Expected := map[string]string{
+		"Disabled TX channels":          "0",
+		"Current module state":          "ModuleReady",
+		"Temperature high alarm flag":   "False",
+		"Temperature high warning flag": "False",
+	}
+	ccmisExpected := map[string]string{
+		"Current module state":      "ModuleReady",
+		"Tuning in progress status": "True",
+	}
 
-	ccmisOut := "\n" +
-		"        Current module state: ModuleReady\n" +
-		"        Tuning in progress status: True\n"
+	type testCase struct {
+		desc     string
+		path     string
+		init     func()
+		wantCode codes.Code
+		want     map[string]interface{}
+	}
 
-	tests := []struct {
-		desc        string
-		path        string
-		init        func()
-		wantCode    codes.Code
-		wantJSONMap map[string]string
-	}{
+	tests := []testCase{
 		{
 			desc: "all ports no STATE_DB loaded -> all Not Applicable",
 			path: `
@@ -83,7 +84,7 @@ func TestShowInterfaceTransceiverStatus(t *testing.T) {
 				AddDataSet(t, ConfigDbNum, configDbFile)
 			},
 			wantCode: codes.OK,
-			wantJSONMap: map[string]string{
+			want: map[string]interface{}{
 				"Ethernet0":  notApplicable,
 				"Ethernet4":  notApplicable,
 				"Ethernet12": notApplicable,
@@ -106,15 +107,11 @@ func TestShowInterfaceTransceiverStatus(t *testing.T) {
 				AddDataSet(t, ConfigDbNum, configDbFile)
 			},
 			wantCode: codes.OK,
-			wantJSONMap: map[string]string{
-				"Ethernet0": cmisOut,
-				"Ethernet4": "\n" +
-					"        Disabled TX channels: 0\n" +
-					"        Current module state: ModuleReady\n" +
-					"        Temperature high alarm flag: False\n" +
-					"        Temperature high warning flag: False\n",
+			want: map[string]interface{}{
+				"Ethernet0":  cmisExpected,
+				"Ethernet4":  eth4Expected,
 				"Ethernet12": notApplicable,
-				"Ethernet16": ccmisOut,
+				"Ethernet16": ccmisExpected,
 			},
 		},
 		{
@@ -134,8 +131,8 @@ func TestShowInterfaceTransceiverStatus(t *testing.T) {
 				AddDataSet(t, ConfigDbNum, configDbFile)
 			},
 			wantCode: codes.OK,
-			wantJSONMap: map[string]string{
-				"Ethernet0": cmisOut,
+			want: map[string]interface{}{
+				"Ethernet0": cmisExpected,
 			},
 		},
 		{
@@ -155,7 +152,7 @@ func TestShowInterfaceTransceiverStatus(t *testing.T) {
 				AddDataSet(t, ConfigDbNum, configDbFile)
 			},
 			wantCode: codes.OK,
-			wantJSONMap: map[string]string{
+			want: map[string]interface{}{
 				"Ethernet12": notApplicable,
 			},
 		},
@@ -176,8 +173,8 @@ func TestShowInterfaceTransceiverStatus(t *testing.T) {
 				AddDataSet(t, ConfigDbNum, configDbFile)
 			},
 			wantCode: codes.OK,
-			wantJSONMap: map[string]string{
-				"Ethernet16": ccmisOut,
+			want: map[string]interface{}{
+				"Ethernet16": ccmisExpected,
 			},
 		},
 		{
@@ -197,8 +194,8 @@ func TestShowInterfaceTransceiverStatus(t *testing.T) {
 				AddDataSet(t, ConfigDbNum, configDbFile)
 			},
 			wantCode: codes.OK,
-			wantJSONMap: map[string]string{
-				"Ethernet0": cmisOut,
+			want: map[string]interface{}{
+				"Ethernet0": cmisExpected,
 			},
 		},
 		{
@@ -237,12 +234,106 @@ func TestShowInterfaceTransceiverStatus(t *testing.T) {
 			tc.init()
 		}
 		t.Run(tc.desc, func(t *testing.T) {
-			var want interface{}
-			expectBody := tc.wantJSONMap != nil
-			if expectBody {
-				want = mustJSON(t, tc.wantJSONMap)
-			}
-			runTestGet(t, ctx, gClient, "SHOW", tc.path, tc.wantCode, want, expectBody)
+			doGetAndCompare(t, ctx, gClient, tc.path, tc.wantCode, tc.want, notApplicable)
 		})
+	}
+}
+
+func doGetAndCompare(t *testing.T, ctx context.Context, client pb.GNMIClient, textPbPath string,
+	wantCode codes.Code, want map[string]interface{}, naSentinel string) {
+
+	var pbPath pb.Path
+	if err := proto.UnmarshalText(textPbPath, &pbPath); err != nil {
+		t.Fatalf("unmarshal path: %v", err)
+	}
+	prefix := pb.Path{Target: "SHOW"}
+	req := &pb.GetRequest{Prefix: &prefix, Path: []*pb.Path{&pbPath}, Encoding: pb.Encoding_JSON_IETF}
+
+	resp, err := client.Get(ctx, req)
+	st, ok := status.FromError(err)
+	if !ok {
+		t.Fatalf("non-grpc error: %v", err)
+	}
+	if st.Code() != wantCode {
+		t.Fatalf("got code %v want %v: %v", st.Code(), wantCode, st.Message())
+	}
+
+	if want == nil {
+		// For NotFound cases we expect no body comparison.
+		return
+	}
+
+	if wantCode != codes.OK {
+		t.Fatalf("unexpected want body with non-OK code %v", wantCode)
+	}
+
+	notifs := resp.GetNotification()
+	if len(notifs) != 1 {
+		t.Fatalf("got %d notifications want 1", len(notifs))
+	}
+	updates := notifs[0].GetUpdate()
+	if len(updates) != 1 {
+		t.Fatalf("got %d updates want 1", len(updates))
+	}
+
+	val := updates[0].GetVal()
+	if val.GetJsonIetfVal() == nil {
+		t.Fatalf("expected JsonIetfVal body")
+	}
+
+	var outer map[string]interface{}
+	if err := json.Unmarshal(val.GetJsonIetfVal(), &outer); err != nil {
+		t.Fatalf("unmarshal outer json: %v", err)
+	}
+
+	// Check each expected port
+	for port, exp := range want {
+		gotRaw, present := outer[port]
+		if !present {
+			t.Fatalf("missing port %s in response", port)
+		}
+
+		switch expTyped := exp.(type) {
+		case string:
+			// Not applicable sentinel
+			gotStr, ok := gotRaw.(string)
+			if !ok {
+				t.Fatalf("port %s expected NA string, got %T", port, gotRaw)
+			}
+			if gotStr != expTyped {
+				t.Errorf("port %s: got %q want %q", port, gotStr, expTyped)
+			}
+		case map[string]string:
+			gotStr, ok := gotRaw.(string)
+			if !ok {
+				t.Fatalf("port %s expected inner JSON string, got %T", port, gotRaw)
+			}
+			var inner map[string]string
+			if err := json.Unmarshal([]byte(gotStr), &inner); err != nil {
+				t.Fatalf("port %s: unmarshal inner json: %v (payload=%s)", port, err, gotStr)
+			}
+
+			// Compare keys/values (order independent)
+			if len(inner) != len(expTyped) {
+				t.Errorf("port %s: inner field count mismatch got=%d want=%d inner=%v", port, len(inner), len(expTyped), inner)
+			}
+			for k, v := range expTyped {
+				gv, ok := inner[k]
+				if !ok {
+					t.Errorf("port %s: missing field %s", port, k)
+					continue
+				}
+				if gv != v {
+					t.Errorf("port %s field %s: got %q want %q", port, k, gv, v)
+				}
+			}
+		default:
+			t.Fatalf("unsupported expected type for port %s: %T", port, exp)
+		}
+	}
+
+	// Ensure no unexpected extra ports
+	if len(outer) != len(want) {
+		t.Errorf("unexpected port count: got=%d want=%d (outer=%v)", len(outer), len(want), outer)
 	}
 }

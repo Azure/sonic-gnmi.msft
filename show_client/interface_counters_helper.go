@@ -1,85 +1,89 @@
+package show_client
+
 import (
+	"encoding/json"
 	"fmt"
-	"strconv"
 	log "github.com/golang/glog"
+	"strconv"
 )
 
 const (
-	fecBinCount      = 16 // BIN index from 0 - 15
-	defaultTimestamp = "None"
-	portStatCacheCmd = "cat /tmp/cache/portstat/1000/portstat"
+	fecBinCount       = 16 // BIN index from 0 - 15
+	defaultTimestamp  = "None"
+	portStatCacheCmd  = "cat /tmp/cache/portstat/1000/portstat"
+	portStatCachePath = "/tmp/cache/portstat/1000/portstat"
 )
 
-type InterfaceCountersSnapshot struct {
+type InterfaceCountersSnapshot struct { // json fields defined from portstat cache
 	// Port Status
-	State  string
+	State string `json:"-"`
 	// Port Counters
-	RxOk   string
-	RxErr  string
-	RxDrp  string
-	RxOvr  string
-	TxOk   string
-	TxErr  string
-	TxDrp  string
-	TxOvr  string
+	RxOk  string `json:"rx_ok"`
+	RxErr string `json:"rx_err"`
+	RxDrp string `json:"rx_drop"`
+	RxOvr string `json:"rx_ovr"`
+	TxOk  string `json:"tx_ok"`
+	TxErr string `json:"tx_err"`
+	TxDrp string `json:"tx_drop"`
+	TxOvr string `json:"tx_ovr"`
 	// Port Rates
-	RxBps  string
-	RxPps  string
-	RxUtil string
-	TxBps  string
-	TxPps  string
-	TxUtil string
+	RxBps  string `json:"-"`
+	RxPps  string `json:"-"`
+	RxUtil string `json:"-"`
+	TxBps  string `json:"-"`
+	TxPps  string `json:"-"`
+	TxUtil string `json:"-"`
 	// FEC counters
-	FecCorr      string
-	FecUncorr    string
-	FecSymbolErr string
-	FecPreBer    string
-	FecPostBer   string
+	FecCorr      string `json:"fec_corr"`
+	FecUncorr    string `json:"fec_uncorr"`
+	FecSymbolErr string `json:"fec_symbol_err"`
+	FecPreBer    string `json:"-"`
+	FecPostBer   string `json:"-"`
 	// Trim Counters
-	TrimPkts string
-	TrimSent string
-	TrimDrp  string
+	TrimPkts string `json:"trim"`
+	TrimSent string `json:"-"`
+	TrimDrp  string `json:"-"`
 	// Detailed Counters for Octets
-	Rx64         string
-	Rx65_127     string
-	Rx128_255    string
-	Rx256_511    string
-	Rx512_1023   string
-	Rx1024_1518  string
-	Rx1519_2047  string
-	Rx2048_4095  string
-	Rx4096_9216  string
-	Rx9127_16383 string
-	Tx64         string
-	Tx65_127     string
-	Tx128_255    string
-	Tx256_511    string
-	Tx512_1023   string
-	Tx1024_1518  string
-	Tx1519_2047  string
-	Tx2048_4095  string
-	Tx4096_9216  string
-	Tx9127_16383 string
+	Rx64         string `json:"rx_64"`
+	Rx65_127     string `json:"rx_65_127"`
+	Rx128_255    string `json:"rx_128_255"`
+	Rx256_511    string `json:"rx_256_511"`
+	Rx512_1023   string `json:"rx_512_1023"`
+	Rx1024_1518  string `json:"rx_1024_1518"`
+	Rx1519_2047  string `json:"rx_1519_2047"`
+	Rx2048_4095  string `json:"rx_2048_4095"`
+	Rx4096_9216  string `json:"rx_4096_9216"`
+	Rx9217_16383 string `json:"rx_9217_16383"`
+	Tx64         string `json:"tx_64"`
+	Tx65_127     string `json:"tx_65_127"`
+	Tx128_255    string `json:"tx_128_255"`
+	Tx256_511    string `json:"tx_256_511"`
+	Tx512_1023   string `json:"tx_512_1023"`
+	Tx1024_1518  string `json:"tx_1024_1518"`
+	Tx1519_2047  string `json:"tx_1519_2047"`
+	Tx2048_4095  string `json:"tx_2048_4095"`
+	Tx4096_9216  string `json:"tx_4096_9216"`
+	Tx9217_16383 string `json:"tx_9217_16383"`
 	// Detailed Counters
-	RxAll       string
-	RxUnicast   string
-	RxMulticast string
-	RxBroadcast string
-	TxAll       string
-	TxUnicast   string
-	TxMulticast string
-	TxBroadcast string
-	RxJabbers   string
-	RxFragments string
-	RxUndersize string
-	RxOverruns  string
-	// FEC Codewords per symbol error index
-	FecErrCWs []FecErrCW
+	RxAll       string `json:"rx_all"`
+	RxUnicast   string `json:"rx_uca"`
+	RxMulticast string `json:"rx_mca"`
+	RxBroadcast string `json:"rx_bca"`
+	TxAll       string `json:"tx_all"`
+	TxUnicast   string `json:"tx_uca"`
+	TxMulticast string `json:"tx_mca"`
+	TxBroadcast string `json:"tx_bca"`
+	RxJabbers   string `json:"rx_jbr"`
+	RxFragments string `json:"rx_frag"`
+	RxUndersize string `json:"rx_usize"`
+	RxOverruns  string `json:"rx_ovrrun"`
+	// FEC Codewords per symbol error index (not in cache JSON)
+	FecErrCWs []FecErrCW `json:"-"`
 }
 
 type FecErrCW struct {
 	BinIndex  string
-	Codewords  string
+	Codewords string
 }
 
 type InterfaceCountersResponse struct {
@@ -88,7 +92,7 @@ type InterfaceCountersResponse struct {
 	RxBps  string
 	RxUtil string
 	RxErr  string
-	RxDrp  string 
+	RxDrp  string
 	RxOvr  string
 	TxOk   string
 	TxBps  string
@@ -118,13 +122,13 @@ type InterfaceCountersAllResponse struct {
 }
 
 type InterfaceCountersErrorsResponse struct {
-	State  string
-	RxErr  string
-	RxDrp  string
-	RxOvr  string
-	TxErr  string
-	TxDrp  string
-	TxOvr  string
+	State string
+	RxErr string
+	RxDrp string
+	RxOvr string
+	TxErr string
+	TxDrp string
+	TxOvr string
 }
 
 type InterfaceCountersRatesResponse struct {
@@ -166,7 +170,7 @@ type InterfaceCountersDetailedResponse struct {
 	Rx1519_2047  string
 	Rx2048_4095  string
 	Rx4096_9216  string
-	Rx9127_16383 string
+	Rx9217_16383 string
 	Tx64         string
 	Tx65_127     string
 	Tx128_255    string
@@ -176,7 +180,7 @@ type InterfaceCountersDetailedResponse struct {
 	Tx1519_2047  string
 	Tx2048_4095  string
 	Tx4096_9216  string
-	Tx9127_16383 string
+	Tx9217_16383 string
 	RxAll        string
 	RxUnicast    string
 	RxMulticast  string
@@ -271,31 +275,31 @@ func getInterfaceCountersSnapshot(ifaces []string) (map[string]InterfaceCounters
 		postBer := GetFieldValueString(portRates, iface, defaultMissingCounterValue, "FEC_POST_BER")
 
 		snapshot := InterfaceCountersSnapshot{
-			State:  state,
-			RxOk:   GetSumFields(portCounters, iface, defaultMissingCounterValue, "SAI_PORT_STAT_IF_IN_UCAST_PKTS", "SAI_PORT_STAT_IF_IN_NON_UCAST_PKTS"),
-			RxBps:  calculateByteRate(rxBps),
-			RxPps:  calculatePacketRate(rxPps),
-			RxUtil: calculateUtil(rxBps, portSpeed),
-			RxErr:  GetFieldValueString(portCounters, iface, defaultMissingCounterValue, "SAI_PORT_STAT_IF_IN_ERRORS"),
-			RxDrp:  GetFieldValueString(portCounters, iface, defaultMissingCounterValue, "SAI_PORT_STAT_IF_IN_DISCARDS"),
-			RxOvr:  GetFieldValueString(portCounters, iface, defaultMissingCounterValue, "SAI_PORT_STAT_ETHER_RX_OVERSIZE_PKTS"),
-			TxOk:   GetSumFields(portCounters, iface, defaultMissingCounterValue, "SAI_PORT_STAT_IF_OUT_UCAST_PKTS", "SAI_PORT_STAT_IF_OUT_NON_UCAST_PKTS"),
-			TxBps:  calculateByteRate(txBps),
-			TxPps:  calculatePacketRate(txPps),
-			TxUtil: calculateUtil(txBps, portSpeed),
-			TxErr:  GetFieldValueString(portCounters, iface, defaultMissingCounterValue, "SAI_PORT_STAT_IF_OUT_ERRORS"),
-			TxDrp:  GetFieldValueString(portCounters, iface, defaultMissingCounterValue, "SAI_PORT_STAT_IF_OUT_DISCARDS"),
-			TxOvr:  GetFieldValueString(portCounters, iface, defaultMissingCounterValue, "SAI_PORT_STAT_ETHER_TX_OVERSIZE_PKTS"),
-			FecCorr: GetFieldValueString(portCounters, iface, defaultMissingCounterValue, "SAI_PORT_STAT_IF_IN_FEC_CORRECTABLE_FRAMES"),
-			FecUncorr: GetFieldValueString(portCounters, iface, defaultMissingCounterValue, "SAI_PORT_STAT_IF_IN_FEC_NOT_CORRECTABLE_FRAMES"),
+			State:        state,
+			RxOk:         GetSumFields(portCounters, iface, defaultMissingCounterValue, "SAI_PORT_STAT_IF_IN_UCAST_PKTS", "SAI_PORT_STAT_IF_IN_NON_UCAST_PKTS"),
+			RxBps:        calculateByteRate(rxBps),
+			RxPps:        calculatePacketRate(rxPps),
+			RxUtil:       calculateUtil(rxBps, portSpeed),
+			RxErr:        GetFieldValueString(portCounters, iface, defaultMissingCounterValue, "SAI_PORT_STAT_IF_IN_ERRORS"),
+			RxDrp:        GetFieldValueString(portCounters, iface, defaultMissingCounterValue, "SAI_PORT_STAT_IF_IN_DISCARDS"),
+			RxOvr:        GetFieldValueString(portCounters, iface, defaultMissingCounterValue, "SAI_PORT_STAT_ETHER_RX_OVERSIZE_PKTS"),
+			TxOk:         GetSumFields(portCounters, iface, defaultMissingCounterValue, "SAI_PORT_STAT_IF_OUT_UCAST_PKTS", "SAI_PORT_STAT_IF_OUT_NON_UCAST_PKTS"),
+			TxBps:        calculateByteRate(txBps),
+			TxPps:        calculatePacketRate(txPps),
+			TxUtil:       calculateUtil(txBps, portSpeed),
+			TxErr:        GetFieldValueString(portCounters, iface, defaultMissingCounterValue, "SAI_PORT_STAT_IF_OUT_ERRORS"),
+			TxDrp:        GetFieldValueString(portCounters, iface, defaultMissingCounterValue, "SAI_PORT_STAT_IF_OUT_DISCARDS"),
+			TxOvr:        GetFieldValueString(portCounters, iface, defaultMissingCounterValue, "SAI_PORT_STAT_ETHER_TX_OVERSIZE_PKTS"),
+			FecCorr:      GetFieldValueString(portCounters, iface, defaultMissingCounterValue, "SAI_PORT_STAT_IF_IN_FEC_CORRECTABLE_FRAMES"),
+			FecUncorr:    GetFieldValueString(portCounters, iface, defaultMissingCounterValue, "SAI_PORT_STAT_IF_IN_FEC_NOT_CORRECTABLE_FRAMES"),
 			FecSymbolErr: GetFieldValueString(portCounters, iface, defaultMissingCounterValue, "SAI_PORT_STAT_IF_IN_FEC_SYMBOL_ERRORS"),
-			FecPreBer: calculateBerRate(preBer),
-			FecPostBer: calculateBerRate(postBer),
-			TrimPkts: GetFieldValueString(portCounters, iface, defaultMissingCounterValue, "SAI_PORT_STAT_TRIM_PKTS"),
-			TrimSent: GetFieldValueString(portCounters, iface, defaultMissingCounterValue, "SAI_PORT_STAT_TX_TRIM_SENT_PKTS"),
-			TrimDrp: GetFieldValueString(portCounters, iface, defaultMissingCounterValue, "SAI_PORT_STAT_DROPPED_TRIM_PKTS"),
-			Rx64: GetFieldValueString(portCounters, iface, defaultMissingCounterValue, "SAI_PORT_STAT_ETHER_IN_PKTS_64_OCTETS"),
-			Rx65_127: GetFieldValueString(portCounters, iface, defaultMissingCounterValue, "SAI_PORT_STAT_ETHER_IN_PKTS_65_TO_127_OCTETS"),
+			FecPreBer:    calculateBerRate(preBer),
+			FecPostBer:   calculateBerRate(postBer),
+			TrimPkts:     GetFieldValueString(portCounters, iface, defaultMissingCounterValue, "SAI_PORT_STAT_TRIM_PKTS"),
+			TrimSent:     GetFieldValueString(portCounters, iface, defaultMissingCounterValue, "SAI_PORT_STAT_TX_TRIM_SENT_PKTS"),
+			TrimDrp:      GetFieldValueString(portCounters, iface, defaultMissingCounterValue, "SAI_PORT_STAT_DROPPED_TRIM_PKTS"),
+			Rx64:         GetFieldValueString(portCounters, iface, defaultMissingCounterValue, "SAI_PORT_STAT_ETHER_IN_PKTS_64_OCTETS"),
+			Rx65_127:     GetFieldValueString(portCounters, iface, defaultMissingCounterValue, "SAI_PORT_STAT_ETHER_IN_PKTS_65_TO_127_OCTETS"),
 			Rx128_255:    GetFieldValueString(portCounters, iface, defaultMissingCounterValue, "SAI_PORT_STAT_ETHER_IN_PKTS_128_TO_255_OCTETS"),
 			Rx256_511:    GetFieldValueString(portCounters, iface, defaultMissingCounterValue, "SAI_PORT_STAT_ETHER_IN_PKTS_256_TO_511_OCTETS"),
 			Rx512_1023:   GetFieldValueString(portCounters, iface, defaultMissingCounterValue, "SAI_PORT_STAT_ETHER_IN_PKTS_512_TO_1023_OCTETS"),
@@ -303,7 +307,7 @@ func getInterfaceCountersSnapshot(ifaces []string) (map[string]InterfaceCounters
 			Rx1519_2047:  GetFieldValueString(portCounters, iface, defaultMissingCounterValue, "SAI_PORT_STAT_ETHER_IN_PKTS_1519_TO_2047_OCTETS"),
 			Rx2048_4095:  GetFieldValueString(portCounters, iface, defaultMissingCounterValue, "SAI_PORT_STAT_ETHER_IN_PKTS_2048_TO_4095_OCTETS"),
 			Rx4096_9216:  GetFieldValueString(portCounters, iface, defaultMissingCounterValue, "SAI_PORT_STAT_ETHER_IN_PKTS_4096_TO_9216_OCTETS"),
-			Rx9127_16383: GetFieldValueString(portCounters, iface, defaultMissingCounterValue, "SAI_PORT_STAT_ETHER_IN_PKTS_9217_TO_16383_OCTETS"),
+			Rx9217_16383: GetFieldValueString(portCounters, iface, defaultMissingCounterValue, "SAI_PORT_STAT_ETHER_IN_PKTS_9217_TO_16383_OCTETS"),
 			Tx64:         GetFieldValueString(portCounters, iface, defaultMissingCounterValue, "SAI_PORT_STAT_ETHER_OUT_PKTS_64_OCTETS"),
 			Tx65_127:     GetFieldValueString(portCounters, iface, defaultMissingCounterValue, "SAI_PORT_STAT_ETHER_OUT_PKTS_65_TO_127_OCTETS"),
 			Tx128_255:    GetFieldValueString(portCounters, iface, defaultMissingCounterValue, "SAI_PORT_STAT_ETHER_OUT_PKTS_128_TO_255_OCTETS"),
@@ -313,7 +317,7 @@ func getInterfaceCountersSnapshot(ifaces []string) (map[string]InterfaceCounters
 			Tx1519_2047:  GetFieldValueString(portCounters, iface, defaultMissingCounterValue, "SAI_PORT_STAT_ETHER_OUT_PKTS_1519_TO_2047_OCTETS"),
 			Tx2048_4095:  GetFieldValueString(portCounters, iface, defaultMissingCounterValue, "SAI_PORT_STAT_ETHER_OUT_PKTS_2048_TO_4095_OCTETS"),
 			Tx4096_9216:  GetFieldValueString(portCounters, iface, defaultMissingCounterValue, "SAI_PORT_STAT_ETHER_OUT_PKTS_4096_TO_9216_OCTETS"),
-			Tx9127_16383: GetFieldValueString(portCounters, iface, defaultMissingCounterValue, "SAI_PORT_STAT_ETHER_OUT_PKTS_9217_TO_16383_OCTETS"),
+			Tx9217_16383: GetFieldValueString(portCounters, iface, defaultMissingCounterValue, "SAI_PORT_STAT_ETHER_OUT_PKTS_9217_TO_16383_OCTETS"),
 			RxAll:        GetSumFields(portCounters, iface, defaultMissingCounterValue, "SAI_PORT_STAT_IF_IN_UCAST_PKTS", "SAI_PORT_STAT_IF_IN_MULTICAST_PKTS", "SAI_PORT_STAT_IF_IN_BROADCAST_PKTS"),
 			RxUnicast:    GetFieldValueString(portCounters, iface, defaultMissingCounterValue, "SAI_PORT_STAT_IF_IN_UCAST_PKTS"),
 			RxMulticast:  GetFieldValueString(portCounters, iface, defaultMissingCounterValue, "SAI_PORT_STAT_IF_IN_MULTICAST_PKTS"),
@@ -328,7 +332,7 @@ func getInterfaceCountersSnapshot(ifaces []string) (map[string]InterfaceCounters
 			RxOverruns:   GetFieldValueString(portCounters, iface, defaultMissingCounterValue, "SAI_PORT_STAT_IP_IN_RECEIVES"),
 		}
 
-		fecErrCWs := make([]fecErrCW, 0, fecBinCount)
+		fecErrCWs := make([]FecErrCW, 0, fecBinCount)
 		for i := 0; i < fecBinCount; i++ {
 			binIndex := fmt.Sprintf("BIN%d", i)
 			fecCodewordsKey := fmt.Sprintf("SAI_PORT_STAT_IF_IN_FEC_CODEWORD_ERRORS_S%d", i)
@@ -341,6 +345,9 @@ func getInterfaceCountersSnapshot(ifaces []string) (map[string]InterfaceCounters
 		}
 		snapshot.FecErrCWs = fecErrCWs
 		response[iface] = snapshot
+	}
+	if cacheSnapshot, ok := getPortStatCacheSnapshot(); ok { // if cache exists then we provide current counters as a diff
+		return calculateDiffSnapshot(cacheSnapshot, response), nil
 	}
 	return response, nil
 }
@@ -450,7 +457,7 @@ func calculateDiffSnapshot(oldSnapshot map[string]InterfaceCountersSnapshot, new
 			Rx1519_2047:  calculateDiffReturnDefault(oldResp.Rx1519_2047, newResp.Rx1519_2047, defaultMissingCounterValue),
 			Rx2048_4095:  calculateDiffReturnDefault(oldResp.Rx2048_4095, newResp.Rx2048_4095, defaultMissingCounterValue),
 			Rx4096_9216:  calculateDiffReturnDefault(oldResp.Rx4096_9216, newResp.Rx4096_9216, defaultMissingCounterValue),
-			Rx9127_16383: calculateDiffReturnDefault(oldResp.Rx9127_16383, newResp.Rx9127_16383, defaultMissingCounterValue),
+			Rx9217_16383: calculateDiffReturnDefault(oldResp.Rx9217_16383, newResp.Rx9217_16383, defaultMissingCounterValue),
 			Tx64:         calculateDiffReturnDefault(oldResp.Tx64, newResp.Tx64, defaultMissingCounterValue),
 			Tx65_127:     calculateDiffReturnDefault(oldResp.Tx65_127, newResp.Tx65_127, defaultMissingCounterValue),
 			Tx128_255:    calculateDiffReturnDefault(oldResp.Tx128_255, newResp.Tx128_255, defaultMissingCounterValue),
@@ -460,7 +467,7 @@ func calculateDiffSnapshot(oldSnapshot map[string]InterfaceCountersSnapshot, new
 			Tx1519_2047:  calculateDiffReturnDefault(oldResp.Tx1519_2047, newResp.Tx1519_2047, defaultMissingCounterValue),
 			Tx2048_4095:  calculateDiffReturnDefault(oldResp.Tx2048_4095, newResp.Tx2048_4095, defaultMissingCounterValue),
 			Tx4096_9216:  calculateDiffReturnDefault(oldResp.Tx4096_9216, newResp.Tx4096_9216, defaultMissingCounterValue),
-			Tx9127_16383: calculateDiffReturnDefault(oldResp.Tx9127_16383, newResp.Tx9127_16383, defaultMissingCounterValue),
+			Tx9217_16383: calculateDiffReturnDefault(oldResp.Tx9217_16383, newResp.Tx9217_16383, defaultMissingCounterValue),
 			RxAll:        calculateDiffReturnDefault(oldResp.RxAll, newResp.RxAll, defaultMissingCounterValue),
 			RxUnicast:    calculateDiffReturnDefault(oldResp.RxUnicast, newResp.RxUnicast, defaultMissingCounterValue),
 			RxMulticast:  calculateDiffReturnDefault(oldResp.RxMulticast, newResp.RxMulticast, defaultMissingCounterValue),
@@ -477,6 +484,30 @@ func calculateDiffSnapshot(oldSnapshot map[string]InterfaceCountersSnapshot, new
 		}
 	}
 	return diffResponse
+}
+
+func getPortStatCacheSnapshot() (map[string]InterfaceCountersSnapshot, bool) {
+	portStatCacheStr, err := GetDataFromFile(portStatCachePath)
+	if err != nil || len(portStatCacheStr) == 0 {
+		return nil, false
+	}
+	var portStatCacheMap map[string]json.RawMessage
+	if err := json.Unmarshal(portStatCacheStr, &portStatCacheMap); err != nil {
+		return nil, false
+	}
+	delete(portStatCacheMap, "time") // portstat cache json contains "time" as the top most element
+	output := make(map[string]InterfaceCountersSnapshot, len(portStatCacheMap))
+	for ifname, value := range portStatCacheMap {
+		var snapshot InterfaceCountersSnapshot
+		if err := json.Unmarshal(value, &snapshot); err != nil {
+			continue
+		}
+		output[ifname] = snapshot
+	}
+	if len(output) == 0 { // no interface had proper data
+		return nil, false
+	}
+	return output, true
 }
 
 func projectCounters(snapshot map[string]InterfaceCountersSnapshot) map[string]InterfaceCountersResponse {
@@ -571,7 +602,6 @@ func projectErrorCounters(snapshot map[string]InterfaceCountersSnapshot) map[str
 	return output
 }
 
-
 func projectDetailedCounters(snapshot map[string]InterfaceCountersSnapshot) map[string]InterfaceCountersDetailedResponse {
 	output := make(map[string]InterfaceCountersDetailedResponse, len(snapshot))
 	timestamp := getTimestampClearedCounters()
@@ -589,7 +619,7 @@ func projectDetailedCounters(snapshot map[string]InterfaceCountersSnapshot) map[
 			Rx1519_2047:  value.Rx1519_2047,
 			Rx2048_4095:  value.Rx2048_4095,
 			Rx4096_9216:  value.Rx4096_9216,
-			Rx9127_16383: value.Rx9127_16383,
+			Rx9217_16383: value.Rx9217_16383,
 			Tx64:         value.Tx64,
 			Tx65_127:     value.Tx65_127,
 			Tx128_255:    value.Tx128_255,
@@ -599,7 +629,7 @@ func projectDetailedCounters(snapshot map[string]InterfaceCountersSnapshot) map[
 			Tx1519_2047:  value.Tx1519_2047,
 			Tx2048_4095:  value.Tx2048_4095,
 			Tx4096_9216:  value.Tx4096_9216,
-			Tx9127_16383: value.Tx9127_16383,
+			Tx9217_16383: value.Tx9217_16383,
 			RxAll:        value.RxAll,
 			RxUnicast:    value.RxUnicast,
 			RxMulticast:  value.RxMulticast,
@@ -701,14 +731,14 @@ func getRifNameMapping() (map[string]interface{}, error) {
 	}
 
 	if len(rifNameMap) == 0 {
-		return nil, fmt.Error("No COUNTERS_RIF_NAME_MAP in DB")
+		return nil, fmt.Errorf("No COUNTERS_RIF_NAME_MAP in DB")
 	}
 
 	return rifNameMap, nil
 }
 
 func getTimestampClearedCounters() string {
-	portStatCacheStr, err := GetDataFromHostCommand(portstatCacheCmd)
+	portStatCacheStr, err := GetDataFromHostCommand(portStatCacheCmd)
 	if err != nil {
 		log.Errorf("Unable to execute command: %v, got err: %v", portStatCacheStr, err)
 		return defaultTimestamp
@@ -716,7 +746,7 @@ func getTimestampClearedCounters() string {
 
 	var portStatCacheMap map[string]interface{}
 
-	err := json.Unmarshal([]byte(portStatCacheStr), &data)
+	err = json.Unmarshal([]byte(portStatCacheStr), &portStatCacheMap)
 	if err != nil {
 		log.Errorf("Error marshaling port stat cache: %v", err)
 		return defaultTimestamp

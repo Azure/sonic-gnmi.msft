@@ -17,7 +17,7 @@ func getInterfaceCounters(args sdc.CmdArgs, options sdc.OptionMap) ([]byte, erro
 	takeDiffSnapshot := false
 	fetchAllCounters := false
 
-	if interfaces, ok := options["interfaces"].Strings(); ok {
+	if interfaces, ok := options["interface"].Strings(); ok {
 		ifaces = interfaces
 	}
 

@@ -267,70 +267,70 @@ func getInterfaceCountersSnapshot(ifaces []string) (map[string]InterfaceCounters
 
 	for _, iface := range validatedIfaces {
 		state := computeState(iface, portTable)
-		portSpeed := GetFieldValueString(portTable, iface, common.common.defaultMissingCounterValue, "speed")
-		rxBps := GetFieldValueString(portRates, iface, common.common.defaultMissingCounterValue, "RX_BPS")
-		txBps := GetFieldValueString(portRates, iface, common.common.defaultMissingCounterValue, "TX_BPS")
-		rxPps := GetFieldValueString(portRates, iface, common.common.defaultMissingCounterValue, "RX_PPS")
-		txPps := GetFieldValueString(portRates, iface, common.common.defaultMissingCounterValue, "TX_PPS")
-		preBer := GetFieldValueString(portRates, iface, common.common.defaultMissingCounterValue, "FEC_PRE_BER")
-		postBer := GetFieldValueString(portRates, iface, common.common.defaultMissingCounterValue, "FEC_POST_BER")
+		portSpeed := GetFieldValueString(portTable, iface, common.DefaultMissingCounterValue, "speed")
+		rxBps := GetFieldValueString(portRates, iface, common.DefaultMissingCounterValue, "RX_BPS")
+		txBps := GetFieldValueString(portRates, iface, common.DefaultMissingCounterValue, "TX_BPS")
+		rxPps := GetFieldValueString(portRates, iface, common.DefaultMissingCounterValue, "RX_PPS")
+		txPps := GetFieldValueString(portRates, iface, common.DefaultMissingCounterValue, "TX_PPS")
+		preBer := GetFieldValueString(portRates, iface, common.DefaultMissingCounterValue, "FEC_PRE_BER")
+		postBer := GetFieldValueString(portRates, iface, common.DefaultMissingCounterValue, "FEC_POST_BER")
 
 		snapshot := InterfaceCountersSnapshot{
 			State:        state,
-			RxOk:         GetSumFields(portCounters, iface, common.common.defaultMissingCounterValue, "SAI_PORT_STAT_IF_IN_UCAST_PKTS", "SAI_PORT_STAT_IF_IN_NON_UCAST_PKTS"),
+			RxOk:         GetSumFields(portCounters, iface, common.DefaultMissingCounterValue, "SAI_PORT_STAT_IF_IN_UCAST_PKTS", "SAI_PORT_STAT_IF_IN_NON_UCAST_PKTS"),
 			RxBps:        calculateByteRate(rxBps),
 			RxPps:        calculatePacketRate(rxPps),
 			RxUtil:       calculateUtil(rxBps, portSpeed),
-			RxErr:        GetFieldValueString(portCounters, iface, common.common.defaultMissingCounterValue, "SAI_PORT_STAT_IF_IN_ERRORS"),
-			RxDrp:        GetFieldValueString(portCounters, iface, common.common.defaultMissingCounterValue, "SAI_PORT_STAT_IF_IN_DISCARDS"),
-			RxOvr:        GetFieldValueString(portCounters, iface, common.common.defaultMissingCounterValue, "SAI_PORT_STAT_ETHER_RX_OVERSIZE_PKTS"),
-			TxOk:         GetSumFields(portCounters, iface, common.common.defaultMissingCounterValue, "SAI_PORT_STAT_IF_OUT_UCAST_PKTS", "SAI_PORT_STAT_IF_OUT_NON_UCAST_PKTS"),
+			RxErr:        GetFieldValueString(portCounters, iface, common.DefaultMissingCounterValue, "SAI_PORT_STAT_IF_IN_ERRORS"),
+			RxDrp:        GetFieldValueString(portCounters, iface, common.DefaultMissingCounterValue, "SAI_PORT_STAT_IF_IN_DISCARDS"),
+			RxOvr:        GetFieldValueString(portCounters, iface, common.DefaultMissingCounterValue, "SAI_PORT_STAT_ETHER_RX_OVERSIZE_PKTS"),
+			TxOk:         GetSumFields(portCounters, iface, common.DefaultMissingCounterValue, "SAI_PORT_STAT_IF_OUT_UCAST_PKTS", "SAI_PORT_STAT_IF_OUT_NON_UCAST_PKTS"),
 			TxBps:        calculateByteRate(txBps),
 			TxPps:        calculatePacketRate(txPps),
 			TxUtil:       calculateUtil(txBps, portSpeed),
-			TxErr:        GetFieldValueString(portCounters, iface, common.common.defaultMissingCounterValue, "SAI_PORT_STAT_IF_OUT_ERRORS"),
-			TxDrp:        GetFieldValueString(portCounters, iface, common.common.defaultMissingCounterValue, "SAI_PORT_STAT_IF_OUT_DISCARDS"),
-			TxOvr:        GetFieldValueString(portCounters, iface, common.defaultMissingCounterValue, "SAI_PORT_STAT_ETHER_TX_OVERSIZE_PKTS"),
-			FecCorr:      GetFieldValueString(portCounters, iface, common.defaultMissingCounterValue, "SAI_PORT_STAT_IF_IN_FEC_CORRECTABLE_FRAMES"),
-			FecUncorr:    GetFieldValueString(portCounters, iface, common.defaultMissingCounterValue, "SAI_PORT_STAT_IF_IN_FEC_NOT_CORRECTABLE_FRAMES"),
-			FecSymbolErr: GetFieldValueString(portCounters, iface, common.defaultMissingCounterValue, "SAI_PORT_STAT_IF_IN_FEC_SYMBOL_ERRORS"),
+			TxErr:        GetFieldValueString(portCounters, iface, common.DefaultMissingCounterValue, "SAI_PORT_STAT_IF_OUT_ERRORS"),
+			TxDrp:        GetFieldValueString(portCounters, iface, common.DefaultMissingCounterValue, "SAI_PORT_STAT_IF_OUT_DISCARDS"),
+			TxOvr:        GetFieldValueString(portCounters, iface, common.DefaultMissingCounterValue, "SAI_PORT_STAT_ETHER_TX_OVERSIZE_PKTS"),
+			FecCorr:      GetFieldValueString(portCounters, iface, common.DefaultMissingCounterValue, "SAI_PORT_STAT_IF_IN_FEC_CORRECTABLE_FRAMES"),
+			FecUncorr:    GetFieldValueString(portCounters, iface, common.DefaultMissingCounterValue, "SAI_PORT_STAT_IF_IN_FEC_NOT_CORRECTABLE_FRAMES"),
+			FecSymbolErr: GetFieldValueString(portCounters, iface, common.DefaultMissingCounterValue, "SAI_PORT_STAT_IF_IN_FEC_SYMBOL_ERRORS"),
 			FecPreBer:    calculateBerRate(preBer),
 			FecPostBer:   calculateBerRate(postBer),
-			TrimPkts:     GetFieldValueString(portCounters, iface, common.defaultMissingCounterValue, "SAI_PORT_STAT_TRIM_PKTS"),
-			TrimSent:     GetFieldValueString(portCounters, iface, common.defaultMissingCounterValue, "SAI_PORT_STAT_TX_TRIM_SENT_PKTS"),
-			TrimDrp:      GetFieldValueString(portCounters, iface, common.defaultMissingCounterValue, "SAI_PORT_STAT_DROPPED_TRIM_PKTS"),
-			Rx64:         GetFieldValueString(portCounters, iface, common.defaultMissingCounterValue, "SAI_PORT_STAT_ETHER_IN_PKTS_64_OCTETS"),
-			Rx65_127:     GetFieldValueString(portCounters, iface, common.defaultMissingCounterValue, "SAI_PORT_STAT_ETHER_IN_PKTS_65_TO_127_OCTETS"),
-			Rx128_255:    GetFieldValueString(portCounters, iface, common.defaultMissingCounterValue, "SAI_PORT_STAT_ETHER_IN_PKTS_128_TO_255_OCTETS"),
-			Rx256_511:    GetFieldValueString(portCounters, iface, common.defaultMissingCounterValue, "SAI_PORT_STAT_ETHER_IN_PKTS_256_TO_511_OCTETS"),
-			Rx512_1023:   GetFieldValueString(portCounters, iface, common.defaultMissingCounterValue, "SAI_PORT_STAT_ETHER_IN_PKTS_512_TO_1023_OCTETS"),
-			Rx1024_1518:  GetFieldValueString(portCounters, iface, common.defaultMissingCounterValue, "SAI_PORT_STAT_ETHER_IN_PKTS_1024_TO_1518_OCTETS"),
-			Rx1519_2047:  GetFieldValueString(portCounters, iface, common.defaultMissingCounterValue, "SAI_PORT_STAT_ETHER_IN_PKTS_1519_TO_2047_OCTETS"),
-			Rx2048_4095:  GetFieldValueString(portCounters, iface, common.defaultMissingCounterValue, "SAI_PORT_STAT_ETHER_IN_PKTS_2048_TO_4095_OCTETS"),
-			Rx4096_9216:  GetFieldValueString(portCounters, iface, common.defaultMissingCounterValue, "SAI_PORT_STAT_ETHER_IN_PKTS_4096_TO_9216_OCTETS"),
-			Rx9217_16383: GetFieldValueString(portCounters, iface, common.defaultMissingCounterValue, "SAI_PORT_STAT_ETHER_IN_PKTS_9217_TO_16383_OCTETS"),
-			Tx64:         GetFieldValueString(portCounters, iface, common.defaultMissingCounterValue, "SAI_PORT_STAT_ETHER_OUT_PKTS_64_OCTETS"),
-			Tx65_127:     GetFieldValueString(portCounters, iface, common.defaultMissingCounterValue, "SAI_PORT_STAT_ETHER_OUT_PKTS_65_TO_127_OCTETS"),
-			Tx128_255:    GetFieldValueString(portCounters, iface, common.defaultMissingCounterValue, "SAI_PORT_STAT_ETHER_OUT_PKTS_128_TO_255_OCTETS"),
-			Tx256_511:    GetFieldValueString(portCounters, iface, common.defaultMissingCounterValue, "SAI_PORT_STAT_ETHER_OUT_PKTS_256_TO_511_OCTETS"),
-			Tx512_1023:   GetFieldValueString(portCounters, iface, common.defaultMissingCounterValue, "SAI_PORT_STAT_ETHER_OUT_PKTS_512_TO_1023_OCTETS"),
-			Tx1024_1518:  GetFieldValueString(portCounters, iface, common.defaultMissingCounterValue, "SAI_PORT_STAT_ETHER_OUT_PKTS_1024_TO_1518_OCTETS"),
-			Tx1519_2047:  GetFieldValueString(portCounters, iface, common.defaultMissingCounterValue, "SAI_PORT_STAT_ETHER_OUT_PKTS_1519_TO_2047_OCTETS"),
-			Tx2048_4095:  GetFieldValueString(portCounters, iface, common.defaultMissingCounterValue, "SAI_PORT_STAT_ETHER_OUT_PKTS_2048_TO_4095_OCTETS"),
-			Tx4096_9216:  GetFieldValueString(portCounters, iface, common.defaultMissingCounterValue, "SAI_PORT_STAT_ETHER_OUT_PKTS_4096_TO_9216_OCTETS"),
-			Tx9217_16383: GetFieldValueString(portCounters, iface, common.defaultMissingCounterValue, "SAI_PORT_STAT_ETHER_OUT_PKTS_9217_TO_16383_OCTETS"),
-			RxAll:        GetSumFields(portCounters, iface, common.defaultMissingCounterValue, "SAI_PORT_STAT_IF_IN_UCAST_PKTS", "SAI_PORT_STAT_IF_IN_MULTICAST_PKTS", "SAI_PORT_STAT_IF_IN_BROADCAST_PKTS"),
-			RxUnicast:    GetFieldValueString(portCounters, iface, common.defaultMissingCounterValue, "SAI_PORT_STAT_IF_IN_UCAST_PKTS"),
-			RxMulticast:  GetFieldValueString(portCounters, iface, common.defaultMissingCounterValue, "SAI_PORT_STAT_IF_IN_MULTICAST_PKTS"),
-			RxBroadcast:  GetFieldValueString(portCounters, iface, common.defaultMissingCounterValue, "SAI_PORT_STAT_IF_IN_BROADCAST_PKTS"),
-			TxAll:        GetSumFields(portCounters, iface, common.defaultMissingCounterValue, "SAI_PORT_STAT_IF_OUT_UCAST_PKTS", "SAI_PORT_STAT_IF_OUT_MULTICAST_PKTS", "SAI_PORT_STAT_IF_OUT_BROADCAST_PKTS"),
-			TxUnicast:    GetFieldValueString(portCounters, iface, common.defaultMissingCounterValue, "SAI_PORT_STAT_IF_OUT_UCAST_PKTS"),
-			TxMulticast:  GetFieldValueString(portCounters, iface, common.defaultMissingCounterValue, "SAI_PORT_STAT_IF_OUT_MULTICAST_PKTS"),
-			TxBroadcast:  GetFieldValueString(portCounters, iface, common.defaultMissingCounterValue, "SAI_PORT_STAT_IF_OUT_BROADCAST_PKTS"),
-			RxJabbers:    GetFieldValueString(portCounters, iface, common.defaultMissingCounterValue, "SAI_PORT_STAT_ETHER_STATS_JABBERS"),
-			RxFragments:  GetFieldValueString(portCounters, iface, common.defaultMissingCounterValue, "SAI_PORT_STAT_ETHER_STATS_FRAGMENTS"),
-			RxUndersize:  GetFieldValueString(portCounters, iface, common.defaultMissingCounterValue, "SAI_PORT_STAT_ETHER_STATS_UNDERSIZE_PKTS"),
-			RxOverruns:   GetFieldValueString(portCounters, iface, common.defaultMissingCounterValue, "SAI_PORT_STAT_IP_IN_RECEIVES"),
+			TrimPkts:     GetFieldValueString(portCounters, iface, common.DefaultMissingCounterValue, "SAI_PORT_STAT_TRIM_PKTS"),
+			TrimSent:     GetFieldValueString(portCounters, iface, common.DefaultMissingCounterValue, "SAI_PORT_STAT_TX_TRIM_SENT_PKTS"),
+			TrimDrp:      GetFieldValueString(portCounters, iface, common.DefaultMissingCounterValue, "SAI_PORT_STAT_DROPPED_TRIM_PKTS"),
+			Rx64:         GetFieldValueString(portCounters, iface, common.DefaultMissingCounterValue, "SAI_PORT_STAT_ETHER_IN_PKTS_64_OCTETS"),
+			Rx65_127:     GetFieldValueString(portCounters, iface, common.DefaultMissingCounterValue, "SAI_PORT_STAT_ETHER_IN_PKTS_65_TO_127_OCTETS"),
+			Rx128_255:    GetFieldValueString(portCounters, iface, common.DefaultMissingCounterValue, "SAI_PORT_STAT_ETHER_IN_PKTS_128_TO_255_OCTETS"),
+			Rx256_511:    GetFieldValueString(portCounters, iface, common.DefaultMissingCounterValue, "SAI_PORT_STAT_ETHER_IN_PKTS_256_TO_511_OCTETS"),
+			Rx512_1023:   GetFieldValueString(portCounters, iface, common.DefaultMissingCounterValue, "SAI_PORT_STAT_ETHER_IN_PKTS_512_TO_1023_OCTETS"),
+			Rx1024_1518:  GetFieldValueString(portCounters, iface, common.DefaultMissingCounterValue, "SAI_PORT_STAT_ETHER_IN_PKTS_1024_TO_1518_OCTETS"),
+			Rx1519_2047:  GetFieldValueString(portCounters, iface, common.DefaultMissingCounterValue, "SAI_PORT_STAT_ETHER_IN_PKTS_1519_TO_2047_OCTETS"),
+			Rx2048_4095:  GetFieldValueString(portCounters, iface, common.DefaultMissingCounterValue, "SAI_PORT_STAT_ETHER_IN_PKTS_2048_TO_4095_OCTETS"),
+			Rx4096_9216:  GetFieldValueString(portCounters, iface, common.DefaultMissingCounterValue, "SAI_PORT_STAT_ETHER_IN_PKTS_4096_TO_9216_OCTETS"),
+			Rx9217_16383: GetFieldValueString(portCounters, iface, common.DefaultMissingCounterValue, "SAI_PORT_STAT_ETHER_IN_PKTS_9217_TO_16383_OCTETS"),
+			Tx64:         GetFieldValueString(portCounters, iface, common.DefaultMissingCounterValue, "SAI_PORT_STAT_ETHER_OUT_PKTS_64_OCTETS"),
+			Tx65_127:     GetFieldValueString(portCounters, iface, common.DefaultMissingCounterValue, "SAI_PORT_STAT_ETHER_OUT_PKTS_65_TO_127_OCTETS"),
+			Tx128_255:    GetFieldValueString(portCounters, iface, common.DefaultMissingCounterValue, "SAI_PORT_STAT_ETHER_OUT_PKTS_128_TO_255_OCTETS"),
+			Tx256_511:    GetFieldValueString(portCounters, iface, common.DefaultMissingCounterValue, "SAI_PORT_STAT_ETHER_OUT_PKTS_256_TO_511_OCTETS"),
+			Tx512_1023:   GetFieldValueString(portCounters, iface, common.DefaultMissingCounterValue, "SAI_PORT_STAT_ETHER_OUT_PKTS_512_TO_1023_OCTETS"),
+			Tx1024_1518:  GetFieldValueString(portCounters, iface, common.DefaultMissingCounterValue, "SAI_PORT_STAT_ETHER_OUT_PKTS_1024_TO_1518_OCTETS"),
+			Tx1519_2047:  GetFieldValueString(portCounters, iface, common.DefaultMissingCounterValue, "SAI_PORT_STAT_ETHER_OUT_PKTS_1519_TO_2047_OCTETS"),
+			Tx2048_4095:  GetFieldValueString(portCounters, iface, common.DefaultMissingCounterValue, "SAI_PORT_STAT_ETHER_OUT_PKTS_2048_TO_4095_OCTETS"),
+			Tx4096_9216:  GetFieldValueString(portCounters, iface, common.DefaultMissingCounterValue, "SAI_PORT_STAT_ETHER_OUT_PKTS_4096_TO_9216_OCTETS"),
+			Tx9217_16383: GetFieldValueString(portCounters, iface, common.DefaultMissingCounterValue, "SAI_PORT_STAT_ETHER_OUT_PKTS_9217_TO_16383_OCTETS"),
+			RxAll:        GetSumFields(portCounters, iface, common.DefaultMissingCounterValue, "SAI_PORT_STAT_IF_IN_UCAST_PKTS", "SAI_PORT_STAT_IF_IN_MULTICAST_PKTS", "SAI_PORT_STAT_IF_IN_BROADCAST_PKTS"),
+			RxUnicast:    GetFieldValueString(portCounters, iface, common.DefaultMissingCounterValue, "SAI_PORT_STAT_IF_IN_UCAST_PKTS"),
+			RxMulticast:  GetFieldValueString(portCounters, iface, common.DefaultMissingCounterValue, "SAI_PORT_STAT_IF_IN_MULTICAST_PKTS"),
+			RxBroadcast:  GetFieldValueString(portCounters, iface, common.DefaultMissingCounterValue, "SAI_PORT_STAT_IF_IN_BROADCAST_PKTS"),
+			TxAll:        GetSumFields(portCounters, iface, common.DefaultMissingCounterValue, "SAI_PORT_STAT_IF_OUT_UCAST_PKTS", "SAI_PORT_STAT_IF_OUT_MULTICAST_PKTS", "SAI_PORT_STAT_IF_OUT_BROADCAST_PKTS"),
+			TxUnicast:    GetFieldValueString(portCounters, iface, common.DefaultMissingCounterValue, "SAI_PORT_STAT_IF_OUT_UCAST_PKTS"),
+			TxMulticast:  GetFieldValueString(portCounters, iface, common.DefaultMissingCounterValue, "SAI_PORT_STAT_IF_OUT_MULTICAST_PKTS"),
+			TxBroadcast:  GetFieldValueString(portCounters, iface, common.DefaultMissingCounterValue, "SAI_PORT_STAT_IF_OUT_BROADCAST_PKTS"),
+			RxJabbers:    GetFieldValueString(portCounters, iface, common.DefaultMissingCounterValue, "SAI_PORT_STAT_ETHER_STATS_JABBERS"),
+			RxFragments:  GetFieldValueString(portCounters, iface, common.DefaultMissingCounterValue, "SAI_PORT_STAT_ETHER_STATS_FRAGMENTS"),
+			RxUndersize:  GetFieldValueString(portCounters, iface, common.DefaultMissingCounterValue, "SAI_PORT_STAT_ETHER_STATS_UNDERSIZE_PKTS"),
+			RxOverruns:   GetFieldValueString(portCounters, iface, common.DefaultMissingCounterValue, "SAI_PORT_STAT_IP_IN_RECEIVES"),
 		}
 
 		fecErrCWs := make([]FecErrCW, 0, fecBinCount)
@@ -395,18 +395,18 @@ func getInterfaceCountersRifSnapshot(interfaceName string) (map[string]interface
 		}
 
 		interfaceRifCounter := interfaceRifCounters{
-			RxOkPackets:  validateAndGetIntValue(GetFieldValueString(rifCountersMap, oidStr, common.defaultMissingCounterValue, "SAI_ROUTER_INTERFACE_STAT_IN_PACKETS")),
-			RxBps:        GetFieldValueString(rifRatesMap, oidStr, common.defaultMissingCounterValue, "RX_BPS"),
-			RxPps:        GetFieldValueString(rifRatesMap, oidStr, common.defaultMissingCounterValue, "RX_PPS"),
-			RxErrPackets: validateAndGetIntValue(GetFieldValueString(rifCountersMap, oidStr, common.defaultMissingCounterValue, "SAI_ROUTER_INTERFACE_STAT_IN_ERROR_PACKETS")),
-			TxOkPackets:  validateAndGetIntValue(GetFieldValueString(rifCountersMap, oidStr, common.defaultMissingCounterValue, "SAI_ROUTER_INTERFACE_STAT_OUT_PACKETS")),
-			TxBps:        GetFieldValueString(rifRatesMap, oidStr, common.defaultMissingCounterValue, "TX_BPS"),
-			TxPps:        GetFieldValueString(rifRatesMap, oidStr, common.defaultMissingCounterValue, "TX_PPS"),
-			TxErrPackets: validateAndGetIntValue(GetFieldValueString(rifCountersMap, oidStr, common.defaultMissingCounterValue, "SAI_ROUTER_INTERFACE_STAT_OUT_ERROR_PACKETS")),
-			RxErrBits:    validateAndGetIntValue(GetFieldValueString(rifCountersMap, oidStr, common.defaultMissingCounterValue, "SAI_ROUTER_INTERFACE_STAT_IN_ERROR_OCTETS")),
-			TxErrBits:    validateAndGetIntValue(GetFieldValueString(rifCountersMap, oidStr, common.defaultMissingCounterValue, "SAI_ROUTER_INTERFACE_STAT_OUT_ERROR_OCTETS")),
-			RxOkBits:     validateAndGetIntValue(GetFieldValueString(rifCountersMap, oidStr, common.defaultMissingCounterValue, "SAI_ROUTER_INTERFACE_STAT_IN_OCTETS")),
-			TxOkBits:     validateAndGetIntValue(GetFieldValueString(rifCountersMap, oidStr, common.defaultMissingCounterValue, "SAI_ROUTER_INTERFACE_STAT_OUT_OCTETS")),
+			RxOkPackets:  validateAndGetIntValue(GetFieldValueString(rifCountersMap, oidStr, common.DefaultMissingCounterValue, "SAI_ROUTER_INTERFACE_STAT_IN_PACKETS")),
+			RxBps:        GetFieldValueString(rifRatesMap, oidStr, common.DefaultMissingCounterValue, "RX_BPS"),
+			RxPps:        GetFieldValueString(rifRatesMap, oidStr, common.DefaultMissingCounterValue, "RX_PPS"),
+			RxErrPackets: validateAndGetIntValue(GetFieldValueString(rifCountersMap, oidStr, common.DefaultMissingCounterValue, "SAI_ROUTER_INTERFACE_STAT_IN_ERROR_PACKETS")),
+			TxOkPackets:  validateAndGetIntValue(GetFieldValueString(rifCountersMap, oidStr, common.DefaultMissingCounterValue, "SAI_ROUTER_INTERFACE_STAT_OUT_PACKETS")),
+			TxBps:        GetFieldValueString(rifRatesMap, oidStr, common.DefaultMissingCounterValue, "TX_BPS"),
+			TxPps:        GetFieldValueString(rifRatesMap, oidStr, common.DefaultMissingCounterValue, "TX_PPS"),
+			TxErrPackets: validateAndGetIntValue(GetFieldValueString(rifCountersMap, oidStr, common.DefaultMissingCounterValue, "SAI_ROUTER_INTERFACE_STAT_OUT_ERROR_PACKETS")),
+			RxErrBits:    validateAndGetIntValue(GetFieldValueString(rifCountersMap, oidStr, common.DefaultMissingCounterValue, "SAI_ROUTER_INTERFACE_STAT_IN_ERROR_OCTETS")),
+			TxErrBits:    validateAndGetIntValue(GetFieldValueString(rifCountersMap, oidStr, common.DefaultMissingCounterValue, "SAI_ROUTER_INTERFACE_STAT_OUT_ERROR_OCTETS")),
+			RxOkBits:     validateAndGetIntValue(GetFieldValueString(rifCountersMap, oidStr, common.DefaultMissingCounterValue, "SAI_ROUTER_INTERFACE_STAT_IN_OCTETS")),
+			TxOkBits:     validateAndGetIntValue(GetFieldValueString(rifCountersMap, oidStr, common.DefaultMissingCounterValue, "SAI_ROUTER_INTERFACE_STAT_OUT_OCTETS")),
 		}
 
 		interfaceRifCountersMap[rifName] = interfaceRifCounter
@@ -427,60 +427,60 @@ func calculateDiffSnapshot(oldSnapshot map[string]InterfaceCountersSnapshot, new
 		}
 		diffResponse[iface] = InterfaceCountersSnapshot{
 			State:        newResp.State,
-			RxOk:         calculateDiffReturnDefault(oldResp.RxOk, newResp.RxOk, common.defaultMissingCounterValue),
-			RxErr:        calculateDiffReturnDefault(oldResp.RxErr, newResp.RxErr, common.defaultMissingCounterValue),
-			RxDrp:        calculateDiffReturnDefault(oldResp.RxDrp, newResp.RxDrp, common.defaultMissingCounterValue),
-			RxOvr:        calculateDiffReturnDefault(oldResp.RxOvr, newResp.RxOvr, common.defaultMissingCounterValue),
-			TxOk:         calculateDiffReturnDefault(oldResp.TxOk, newResp.TxOk, common.defaultMissingCounterValue),
-			TxErr:        calculateDiffReturnDefault(oldResp.TxErr, newResp.TxErr, common.defaultMissingCounterValue),
-			TxDrp:        calculateDiffReturnDefault(oldResp.TxDrp, newResp.TxDrp, common.defaultMissingCounterValue),
-			TxOvr:        calculateDiffReturnDefault(oldResp.TxOvr, newResp.TxOvr, common.defaultMissingCounterValue),
+			RxOk:         calculateDiffReturnDefault(oldResp.RxOk, newResp.RxOk, common.DefaultMissingCounterValue),
+			RxErr:        calculateDiffReturnDefault(oldResp.RxErr, newResp.RxErr, common.DefaultMissingCounterValue),
+			RxDrp:        calculateDiffReturnDefault(oldResp.RxDrp, newResp.RxDrp, common.DefaultMissingCounterValue),
+			RxOvr:        calculateDiffReturnDefault(oldResp.RxOvr, newResp.RxOvr, common.DefaultMissingCounterValue),
+			TxOk:         calculateDiffReturnDefault(oldResp.TxOk, newResp.TxOk, common.DefaultMissingCounterValue),
+			TxErr:        calculateDiffReturnDefault(oldResp.TxErr, newResp.TxErr, common.DefaultMissingCounterValue),
+			TxDrp:        calculateDiffReturnDefault(oldResp.TxDrp, newResp.TxDrp, common.DefaultMissingCounterValue),
+			TxOvr:        calculateDiffReturnDefault(oldResp.TxOvr, newResp.TxOvr, common.DefaultMissingCounterValue),
 			RxBps:        newResp.RxBps,
 			RxPps:        newResp.RxPps,
 			RxUtil:       newResp.RxUtil,
 			TxBps:        newResp.TxBps,
 			TxPps:        newResp.TxPps,
 			TxUtil:       newResp.TxUtil,
-			FecCorr:      calculateDiffReturnDefault(oldResp.FecCorr, newResp.FecCorr, common.defaultMissingCounterValue),
-			FecUncorr:    calculateDiffReturnDefault(oldResp.FecUncorr, newResp.FecUncorr, common.defaultMissingCounterValue),
-			FecSymbolErr: calculateDiffReturnDefault(oldResp.FecSymbolErr, newResp.FecSymbolErr, common.defaultMissingCounterValue),
+			FecCorr:      calculateDiffReturnDefault(oldResp.FecCorr, newResp.FecCorr, common.DefaultMissingCounterValue),
+			FecUncorr:    calculateDiffReturnDefault(oldResp.FecUncorr, newResp.FecUncorr, common.DefaultMissingCounterValue),
+			FecSymbolErr: calculateDiffReturnDefault(oldResp.FecSymbolErr, newResp.FecSymbolErr, common.DefaultMissingCounterValue),
 			FecPreBer:    newResp.FecPreBer,
 			FecPostBer:   newResp.FecPostBer,
-			TrimPkts:     calculateDiffReturnDefault(oldResp.TrimPkts, newResp.TrimPkts, common.defaultMissingCounterValue),
-			TrimSent:     calculateDiffReturnDefault(oldResp.TrimSent, newResp.TrimSent, common.defaultMissingCounterValue),
-			TrimDrp:      calculateDiffReturnDefault(oldResp.TrimDrp, newResp.TrimDrp, common.defaultMissingCounterValue),
-			Rx64:         calculateDiffReturnDefault(oldResp.Rx64, newResp.Rx64, common.defaultMissingCounterValue),
-			Rx65_127:     calculateDiffReturnDefault(oldResp.Rx65_127, newResp.Rx65_127, common.defaultMissingCounterValue),
-			Rx128_255:    calculateDiffReturnDefault(oldResp.Rx128_255, newResp.Rx128_255, common.defaultMissingCounterValue),
-			Rx256_511:    calculateDiffReturnDefault(oldResp.Rx256_511, newResp.Rx256_511, common.defaultMissingCounterValue),
-			Rx512_1023:   calculateDiffReturnDefault(oldResp.Rx512_1023, newResp.Rx512_1023, common.defaultMissingCounterValue),
-			Rx1024_1518:  calculateDiffReturnDefault(oldResp.Rx1024_1518, newResp.Rx1024_1518, common.defaultMissingCounterValue),
-			Rx1519_2047:  calculateDiffReturnDefault(oldResp.Rx1519_2047, newResp.Rx1519_2047, common.defaultMissingCounterValue),
-			Rx2048_4095:  calculateDiffReturnDefault(oldResp.Rx2048_4095, newResp.Rx2048_4095, common.defaultMissingCounterValue),
-			Rx4096_9216:  calculateDiffReturnDefault(oldResp.Rx4096_9216, newResp.Rx4096_9216, common.defaultMissingCounterValue),
-			Rx9217_16383: calculateDiffReturnDefault(oldResp.Rx9217_16383, newResp.Rx9217_16383, common.defaultMissingCounterValue),
-			Tx64:         calculateDiffReturnDefault(oldResp.Tx64, newResp.Tx64, common.defaultMissingCounterValue),
-			Tx65_127:     calculateDiffReturnDefault(oldResp.Tx65_127, newResp.Tx65_127, common.defaultMissingCounterValue),
-			Tx128_255:    calculateDiffReturnDefault(oldResp.Tx128_255, newResp.Tx128_255, common.defaultMissingCounterValue),
-			Tx256_511:    calculateDiffReturnDefault(oldResp.Tx256_511, newResp.Tx256_511, common.defaultMissingCounterValue),
-			Tx512_1023:   calculateDiffReturnDefault(oldResp.Tx512_1023, newResp.Tx512_1023, common.defaultMissingCounterValue),
-			Tx1024_1518:  calculateDiffReturnDefault(oldResp.Tx1024_1518, newResp.Tx1024_1518, common.defaultMissingCounterValue),
-			Tx1519_2047:  calculateDiffReturnDefault(oldResp.Tx1519_2047, newResp.Tx1519_2047, common.defaultMissingCounterValue),
-			Tx2048_4095:  calculateDiffReturnDefault(oldResp.Tx2048_4095, newResp.Tx2048_4095, common.defaultMissingCounterValue),
-			Tx4096_9216:  calculateDiffReturnDefault(oldResp.Tx4096_9216, newResp.Tx4096_9216, common.defaultMissingCounterValue),
-			Tx9217_16383: calculateDiffReturnDefault(oldResp.Tx9217_16383, newResp.Tx9217_16383, common.defaultMissingCounterValue),
-			RxAll:        calculateDiffReturnDefault(oldResp.RxAll, newResp.RxAll, common.defaultMissingCounterValue),
-			RxUnicast:    calculateDiffReturnDefault(oldResp.RxUnicast, newResp.RxUnicast, common.defaultMissingCounterValue),
-			RxMulticast:  calculateDiffReturnDefault(oldResp.RxMulticast, newResp.RxMulticast, common.defaultMissingCounterValue),
-			RxBroadcast:  calculateDiffReturnDefault(oldResp.RxBroadcast, newResp.RxBroadcast, common.defaultMissingCounterValue),
-			TxAll:        calculateDiffReturnDefault(oldResp.TxAll, newResp.TxAll, common.defaultMissingCounterValue),
-			TxUnicast:    calculateDiffReturnDefault(oldResp.TxUnicast, newResp.TxUnicast, common.defaultMissingCounterValue),
-			TxMulticast:  calculateDiffReturnDefault(oldResp.TxMulticast, newResp.TxMulticast, common.defaultMissingCounterValue),
-			TxBroadcast:  calculateDiffReturnDefault(oldResp.TxBroadcast, newResp.TxBroadcast, common.defaultMissingCounterValue),
-			RxJabbers:    calculateDiffReturnDefault(oldResp.RxJabbers, newResp.RxJabbers, common.defaultMissingCounterValue),
-			RxFragments:  calculateDiffReturnDefault(oldResp.RxFragments, newResp.RxFragments, common.defaultMissingCounterValue),
-			RxUndersize:  calculateDiffReturnDefault(oldResp.RxUndersize, newResp.RxUndersize, common.defaultMissingCounterValue),
-			RxOverruns:   calculateDiffReturnDefault(oldResp.RxOverruns, newResp.RxOverruns, common.defaultMissingCounterValue),
+			TrimPkts:     calculateDiffReturnDefault(oldResp.TrimPkts, newResp.TrimPkts, common.DefaultMissingCounterValue),
+			TrimSent:     calculateDiffReturnDefault(oldResp.TrimSent, newResp.TrimSent, common.DefaultMissingCounterValue),
+			TrimDrp:      calculateDiffReturnDefault(oldResp.TrimDrp, newResp.TrimDrp, common.DefaultMissingCounterValue),
+			Rx64:         calculateDiffReturnDefault(oldResp.Rx64, newResp.Rx64, common.DefaultMissingCounterValue),
+			Rx65_127:     calculateDiffReturnDefault(oldResp.Rx65_127, newResp.Rx65_127, common.DefaultMissingCounterValue),
+			Rx128_255:    calculateDiffReturnDefault(oldResp.Rx128_255, newResp.Rx128_255, common.DefaultMissingCounterValue),
+			Rx256_511:    calculateDiffReturnDefault(oldResp.Rx256_511, newResp.Rx256_511, common.DefaultMissingCounterValue),
+			Rx512_1023:   calculateDiffReturnDefault(oldResp.Rx512_1023, newResp.Rx512_1023, common.DefaultMissingCounterValue),
+			Rx1024_1518:  calculateDiffReturnDefault(oldResp.Rx1024_1518, newResp.Rx1024_1518, common.DefaultMissingCounterValue),
+			Rx1519_2047:  calculateDiffReturnDefault(oldResp.Rx1519_2047, newResp.Rx1519_2047, common.DefaultMissingCounterValue),
+			Rx2048_4095:  calculateDiffReturnDefault(oldResp.Rx2048_4095, newResp.Rx2048_4095, common.DefaultMissingCounterValue),
+			Rx4096_9216:  calculateDiffReturnDefault(oldResp.Rx4096_9216, newResp.Rx4096_9216, common.DefaultMissingCounterValue),
+			Rx9217_16383: calculateDiffReturnDefault(oldResp.Rx9217_16383, newResp.Rx9217_16383, common.DefaultMissingCounterValue),
+			Tx64:         calculateDiffReturnDefault(oldResp.Tx64, newResp.Tx64, common.DefaultMissingCounterValue),
+			Tx65_127:     calculateDiffReturnDefault(oldResp.Tx65_127, newResp.Tx65_127, common.DefaultMissingCounterValue),
+			Tx128_255:    calculateDiffReturnDefault(oldResp.Tx128_255, newResp.Tx128_255, common.DefaultMissingCounterValue),
+			Tx256_511:    calculateDiffReturnDefault(oldResp.Tx256_511, newResp.Tx256_511, common.DefaultMissingCounterValue),
+			Tx512_1023:   calculateDiffReturnDefault(oldResp.Tx512_1023, newResp.Tx512_1023, common.DefaultMissingCounterValue),
+			Tx1024_1518:  calculateDiffReturnDefault(oldResp.Tx1024_1518, newResp.Tx1024_1518, common.DefaultMissingCounterValue),
+			Tx1519_2047:  calculateDiffReturnDefault(oldResp.Tx1519_2047, newResp.Tx1519_2047, common.DefaultMissingCounterValue),
+			Tx2048_4095:  calculateDiffReturnDefault(oldResp.Tx2048_4095, newResp.Tx2048_4095, common.DefaultMissingCounterValue),
+			Tx4096_9216:  calculateDiffReturnDefault(oldResp.Tx4096_9216, newResp.Tx4096_9216, common.DefaultMissingCounterValue),
+			Tx9217_16383: calculateDiffReturnDefault(oldResp.Tx9217_16383, newResp.Tx9217_16383, common.DefaultMissingCounterValue),
+			RxAll:        calculateDiffReturnDefault(oldResp.RxAll, newResp.RxAll, common.DefaultMissingCounterValue),
+			RxUnicast:    calculateDiffReturnDefault(oldResp.RxUnicast, newResp.RxUnicast, common.DefaultMissingCounterValue),
+			RxMulticast:  calculateDiffReturnDefault(oldResp.RxMulticast, newResp.RxMulticast, common.DefaultMissingCounterValue),
+			RxBroadcast:  calculateDiffReturnDefault(oldResp.RxBroadcast, newResp.RxBroadcast, common.DefaultMissingCounterValue),
+			TxAll:        calculateDiffReturnDefault(oldResp.TxAll, newResp.TxAll, common.DefaultMissingCounterValue),
+			TxUnicast:    calculateDiffReturnDefault(oldResp.TxUnicast, newResp.TxUnicast, common.DefaultMissingCounterValue),
+			TxMulticast:  calculateDiffReturnDefault(oldResp.TxMulticast, newResp.TxMulticast, common.DefaultMissingCounterValue),
+			TxBroadcast:  calculateDiffReturnDefault(oldResp.TxBroadcast, newResp.TxBroadcast, common.DefaultMissingCounterValue),
+			RxJabbers:    calculateDiffReturnDefault(oldResp.RxJabbers, newResp.RxJabbers, common.DefaultMissingCounterValue),
+			RxFragments:  calculateDiffReturnDefault(oldResp.RxFragments, newResp.RxFragments, common.DefaultMissingCounterValue),
+			RxUndersize:  calculateDiffReturnDefault(oldResp.RxUndersize, newResp.RxUndersize, common.DefaultMissingCounterValue),
+			RxOverruns:   calculateDiffReturnDefault(oldResp.RxOverruns, newResp.RxOverruns, common.DefaultMissingCounterValue),
 			FecErrCWs:    newResp.FecErrCWs,
 		}
 	}
@@ -679,43 +679,43 @@ func calculateDiffReturnDefault(oldCounter, newCounter, defaultValue string) str
 	if oldCounter == defaultValue || newCounter == defaultValue {
 		return defaultValue
 	}
-	oldV, err := strconv.ParseInt(oldCounter, base10, 64)
+	oldV, err := strconv.ParseInt(oldCounter, common.Base10, 64)
 	if err != nil {
 		return defaultValue
 	}
-	newV, err := strconv.ParseInt(newCounter, base10, 64)
+	newV, err := strconv.ParseInt(newCounter, common.Base10, 64)
 	if err != nil || newV < oldV { // guard reset/rollover
 		return defaultValue
 	}
-	return strconv.FormatInt(newV-oldV, base10)
+	return strconv.FormatInt(newV-oldV, common.Base10)
 }
 
 func calculateDiffClampZero(oldValue, newValue string) string {
-	if newValue == common.defaultMissingCounterValue {
-		return common.defaultMissingCounterValue
+	if newValue == common.DefaultMissingCounterValue {
+		return common.DefaultMissingCounterValue
 	}
 
-	if oldValue == common.defaultMissingCounterValue {
+	if oldValue == common.DefaultMissingCounterValue {
 		oldValue = "0"
 	}
 
-	oldCounterValue, _ := strconv.ParseInt(oldValue, base10, 64)
-	newCounterValue, _ := strconv.ParseInt(newValue, base10, 64)
+	oldCounterValue, _ := strconv.ParseInt(oldValue, common.Base10, 64)
+	newCounterValue, _ := strconv.ParseInt(newValue, common.Base10, 64)
 
 	diff := newCounterValue - oldCounterValue
 	if diff < 0 {
 		diff = 0
 	}
 
-	return strconv.FormatInt(diff, base10)
+	return strconv.FormatInt(diff, common.Base10)
 }
 
-// Validate counter value is an integer, return common.defaultMissingCounterValue if not
+// Validate counter value is an integer, return common.DefaultMissingCounterValue if not
 func validateAndGetIntValue(value string) string {
-	_, valueParseErr := strconv.ParseInt(value, base10, 64)
+	_, valueParseErr := strconv.ParseInt(value, common.Base10, 64)
 	if valueParseErr != nil {
 		log.Warningf("Invalid counter value %s: %v", value, valueParseErr)
-		return common.defaultMissingCounterValue
+		return common.DefaultMissingCounterValue
 	}
 
 	return value
@@ -761,12 +761,12 @@ func getTimestampClearedCounters() string {
 }
 
 func calculateByteRate(rate string) string {
-	if rate == common.common.defaultMissingCounterValue {
-		return common.common.defaultMissingCounterValue
+	if rate == common.DefaultMissingCounterValue {
+		return common.DefaultMissingCounterValue
 	}
 	rateFloatValue, err := strconv.ParseFloat(rate, 64)
 	if err != nil {
-		return common.common.defaultMissingCounterValue
+		return common.DefaultMissingCounterValue
 	}
 	var formatted string
 	switch {
@@ -782,16 +782,16 @@ func calculateByteRate(rate string) string {
 }
 
 func calculateUtil(rate string, portSpeed string) string {
-	if rate == common.common.defaultMissingCounterValue || portSpeed == common.common.defaultMissingCounterValue {
-		return common.common.defaultMissingCounterValue
+	if rate == common.DefaultMissingCounterValue || portSpeed == common.DefaultMissingCounterValue {
+		return common.DefaultMissingCounterValue
 	}
 	byteRate, err := strconv.ParseFloat(rate, 64)
 	if err != nil {
-		return common.common.defaultMissingCounterValue
+		return common.DefaultMissingCounterValue
 	}
 	portRate, err := strconv.ParseFloat(portSpeed, 64)
 	if err != nil {
-		return common.common.defaultMissingCounterValue
+		return common.DefaultMissingCounterValue
 	}
 	util := byteRate / (portRate * 1e6 / 8.0) * 100.0
 	return fmt.Sprintf("%.2f%%", util)
@@ -817,23 +817,23 @@ func computeState(iface string, portTable map[string]interface{}) string {
 }
 
 func calculatePacketRate(rate string) string {
-	if rate == common.common.defaultMissingCounterValue {
-		return common.common.defaultMissingCounterValue
+	if rate == common.DefaultMissingCounterValue {
+		return common.DefaultMissingCounterValue
 	}
 	rateFloatValue, err := strconv.ParseFloat(rate, 64)
 	if err != nil {
-		return common.common.defaultMissingCounterValue
+		return common.DefaultMissingCounterValue
 	}
 	return fmt.Sprintf("%.2f/s", rateFloatValue)
 }
 
 func calculateBerRate(rate string) string {
-	if rate == common.common.defaultMissingCounterValue {
-		return common.common.defaultMissingCounterValue
+	if rate == common.DefaultMissingCounterValue {
+		return common.DefaultMissingCounterValue
 	}
 	rateFloatValue, err := strconv.ParseFloat(rate, 64)
 	if err != nil {
-		return common.common.defaultMissingCounterValue
+		return common.DefaultMissingCounterValue
 	}
 	return fmt.Sprintf("%.2e", rateFloatValue)
 }

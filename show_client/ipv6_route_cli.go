@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	log "github.com/golang/glog"
+	"github.com/sonic-net/sonic-gnmi/show_client/common"
 	sdc "github.com/sonic-net/sonic-gnmi/sonic_data_client"
 )
 
@@ -35,7 +36,7 @@ func getIPv6Route(args sdc.CmdArgs, options sdc.OptionMap) ([]byte, error) {
 	// For single-ASIC, run in the default BGP instance on the host.
 	vtyshIPv6RouteCmd := fmt.Sprintf("vtysh -c \"%s\"", strings.Join(vtyshCmdArgs, " "))
 
-	output, err := GetDataFromHostCommand(vtyshIPv6RouteCmd)
+	output, err := common.GetDataFromHostCommand(vtyshIPv6RouteCmd)
 	if err != nil {
 		log.Errorf("Unable to successfully execute command %v, get err %v", vtyshIPv6RouteCmd, err)
 		return nil, err

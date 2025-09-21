@@ -8,6 +8,7 @@ import (
 
 	log "github.com/golang/glog"
 
+	"github.com/sonic-net/sonic-gnmi/show_client/common"
 	sdc "github.com/sonic-net/sonic-gnmi/sonic_data_client"
 )
 
@@ -32,7 +33,7 @@ type serviceProcess struct {
 
 func getServices(args sdc.CmdArgs, options sdc.OptionMap) ([]byte, error) {
 	cmd := "sudo docker ps --format '{{.Names}}'"
-	processesStr, err := GetDataFromHostCommand(cmd)
+	processesStr, err := common.GetDataFromHostCommand(cmd)
 	if err != nil {
 		errorMessage := fmt.Sprintf("Failed to run command:%s, err is:%v", cmd, err)
 		log.Errorf(errorMessage)
@@ -46,7 +47,7 @@ func getServices(args sdc.CmdArgs, options sdc.OptionMap) ([]byte, error) {
 	for index, serviceName := range serviceNames {
 		log.V(2).Infof("Processing service %s", serviceName)
 		cmd = fmt.Sprintf(`bash -o pipefail -c "sudo docker exec %s ps aux --no-headers | sed '$d'"`, serviceName)
-		processOutput, err := GetDataFromHostCommand(cmd)
+		processOutput, err := common.GetDataFromHostCommand(cmd)
 		log.V(2).Infof("Command output: %s", processOutput)
 		if err != nil {
 			log.Errorf("Failed to run command %q for service %s: %v", cmd, serviceName, err)

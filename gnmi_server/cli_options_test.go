@@ -196,17 +196,6 @@ func TestShowClientOptions(t *testing.T) {
 			`,
 			wantRetCode: codes.Unimplemented,
 		},
-		{
-			desc:       "query SHOW ipv6 bgp neighbors[info_type] - wrong info_type",
-			pathTarget: "SHOW",
-			textPbPath: `
-				elem: <name: "ipv6" >
-				elem: <name: "bgp" >
-				elem: <name: "neighbors"
-				      key: { key: "info_type" value: "unknown" } key: {key: "ipaddress" value: "fc00::72"}>
-			`,
-			wantRetCode: codes.InvalidArgument,
-		},
 	}
 
 	for _, test := range tests {

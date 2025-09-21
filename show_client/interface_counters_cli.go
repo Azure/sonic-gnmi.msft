@@ -6,6 +6,7 @@ import (
 	"time"
 
 	log "github.com/golang/glog"
+	"github.com/sonic-net/sonic-gnmi/show_client/common"
 	sdc "github.com/sonic-net/sonic-gnmi/sonic_data_client"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -30,7 +31,7 @@ func getInterfaceCounters(args sdc.CmdArgs, options sdc.OptionMap) ([]byte, erro
 		fetchAllCounters = getAllCounters
 	}
 
-	if period > maxShowCommandPeriod || period < 0 {
+	if period > common.maxShowCommandPeriod || period < 0 {
 		return nil, fmt.Errorf("period value must be <= %v and non negative", maxShowCommandPeriod)
 	}
 
@@ -70,7 +71,7 @@ func getInterfaceCountersErrors(args sdc.CmdArgs, options sdc.OptionMap) ([]byte
 		period = periodValue
 	}
 
-	if period > maxShowCommandPeriod || period < 0 {
+	if period > common.maxShowCommandPeriod || period < 0 {
 		return nil, fmt.Errorf("period value must be <= %v and non negative", maxShowCommandPeriod)
 	}
 
@@ -112,7 +113,7 @@ func getInterfaceCountersTrim(args sdc.CmdArgs, options sdc.OptionMap) ([]byte, 
 		period = periodValue
 	}
 
-	if period > maxShowCommandPeriod || period < 0 {
+	if period > common.maxShowCommandPeriod || period < 0 {
 		return nil, fmt.Errorf("period value must be <= %v and non negative", maxShowCommandPeriod)
 	}
 
@@ -148,7 +149,7 @@ func getInterfaceCountersRates(args sdc.CmdArgs, options sdc.OptionMap) ([]byte,
 		period = periodValue
 	}
 
-	if period > maxShowCommandPeriod || period < 0 {
+	if period > common.maxShowCommandPeriod || period < 0 {
 		return nil, fmt.Errorf("period value must be <= %v and non negative", maxShowCommandPeriod)
 	}
 
@@ -184,7 +185,7 @@ func getInterfaceCountersFecStats(args sdc.CmdArgs, options sdc.OptionMap) ([]by
 		period = periodValue
 	}
 
-	if period > maxShowCommandPeriod || period < 0 {
+	if period > common.maxShowCommandPeriod || period < 0 {
 		return nil, fmt.Errorf("period value must be <= %v and non negative", maxShowCommandPeriod)
 	}
 
@@ -243,7 +244,7 @@ func getInterfaceCountersDetailed(args sdc.CmdArgs, options sdc.OptionMap) ([]by
 		period = periodValue
 	}
 
-	if period > maxShowCommandPeriod || period < 0 {
+	if period > common.maxShowCommandPeriod || period < 0 {
 		return nil, fmt.Errorf("period value must be <= %v and non negative", maxShowCommandPeriod)
 	}
 
@@ -279,7 +280,7 @@ func getInterfaceRifCounters(args sdc.CmdArgs, options sdc.OptionMap) ([]byte, e
 		period = periodValue
 	}
 
-	if period > maxShowCommandPeriod {
+	if period > common.maxShowCommandPeriod {
 		return nil, status.Errorf(codes.InvalidArgument, "period value must be <= %v", maxShowCommandPeriod)
 	}
 

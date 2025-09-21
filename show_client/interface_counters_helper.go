@@ -11,7 +11,6 @@ import (
 const (
 	fecBinCount       = 16 // BIN index from 0 - 15
 	defaultTimestamp  = "None"
-	portStatCacheCmd  = "cat /tmp/cache/portstat/1000/portstat"
 	portStatCachePath = "/tmp/cache/portstat/1000/portstat"
 )
 
@@ -80,6 +79,8 @@ type InterfaceCountersSnapshot struct { // json fields defined from portstat cac
 	RxOverruns  string `json:"rx_ovrrun"`
 	// FEC Codewords per symbol error index (not in cache JSON)
 	FecErrCWs []FecErrCW `json:"-"`
+	// Timestamp Cleared Counters
+	TimestampClearedCounters string `json:"-"`
 }
 
 type FecErrCW struct {
@@ -345,6 +346,7 @@ func getInterfaceCountersSnapshot(ifaces []string) (map[string]InterfaceCounters
 			fecErrCWs = append(fecErrCWs, entry)
 		}
 		snapshot.FecErrCWs = fecErrCWs
+		snapshot.TimestampClearedCounters = defaultTimestamp
 		response[iface] = snapshot
 	}
 	if cacheSnapshot, ok := getPortStatCacheSnapshot(); ok { // if cache exists then we provide current counters as a diff
@@ -482,9 +484,19 @@ func calculateDiffSnapshot(oldSnapshot map[string]InterfaceCountersSnapshot, new
 			RxUndersize:  calculateDiffReturnDefault(oldResp.RxUndersize, newResp.RxUndersize, common.DefaultMissingCounterValue),
 			RxOverruns:   calculateDiffReturnDefault(oldResp.RxOverruns, newResp.RxOverruns, common.DefaultMissingCounterValue),
 			FecErrCWs:    newResp.FecErrCWs,
+			TimestampClearedCounters: getTimestampClearedCounters(oldResp.TimestampClearedCounters, newResp.TimestampClearedCounters)
 		}
 	}
 	return diffResponse
+}
+
+func getTimestampClearedCounters(oldTS, newTS string) string {
+	if oldTS == defaultTimestamp && newTS == defaultTimestamp { // cache was not available for either
+		return defaultTimestamp
+	} else if newTS != defaultTimestamp { // prioritize new TS
+		return newTS
+	}
+	return oldTS
 }
 
 func getPortStatCacheSnapshot() (map[string]InterfaceCountersSnapshot, bool) {
@@ -496,6 +508,15 @@ func getPortStatCacheSnapshot() (map[string]InterfaceCountersSnapshot, bool) {
 	if err := json.Unmarshal(portStatCacheStr, &portStatCacheMap); err != nil {
 		return nil, false
 	}
+	timestampClearedCounters := defaultTimestamp
+
+	if timestamp, ok := portStatCacheMap["time"]; ok {
+		var clearedCountersTS string
+		if err := json.Unmarshal(timestamp, &clearedCountersTS); err == nil && clearedCountersTS != "" {
+			timestampClearedCounters = clearedCountersTS
+		}
+	}
+
 	delete(portStatCacheMap, "time") // portstat cache json contains "time" as the top most element
 	output := make(map[string]InterfaceCountersSnapshot, len(portStatCacheMap))
 	for ifname, value := range portStatCacheMap {
@@ -503,6 +524,7 @@ func getPortStatCacheSnapshot() (map[string]InterfaceCountersSnapshot, bool) {
 		if err := json.Unmarshal(value, &snapshot); err != nil {
 			continue
 		}
+		snapshot.TimestampClearedCounters = timestampClearedCounters
 		output[ifname] = snapshot
 	}
 	if len(output) == 0 { // no interface had proper data
@@ -605,7 +627,6 @@ func projectErrorCounters(snapshot map[string]InterfaceCountersSnapshot) map[str
 
 func projectDetailedCounters(snapshot map[string]InterfaceCountersSnapshot) map[string]InterfaceCountersDetailedResponse {
 	output := make(map[string]InterfaceCountersDetailedResponse, len(snapshot))
-	timestamp := getTimestampClearedCounters()
 	for intf, value := range snapshot {
 		output[intf] = InterfaceCountersDetailedResponse{
 			TrimPkts:     value.TrimPkts,
@@ -643,8 +664,7 @@ func projectDetailedCounters(snapshot map[string]InterfaceCountersSnapshot) map[
 			RxFragments:  value.RxFragments,
 			RxUndersize:  value.RxUndersize,
 			RxOverruns:   value.RxOverruns,
-			// Not taken from snapshot
-			TimestampClearedCounters: timestamp,
+			TimestampClearedCounters: value.TimestampClearedCounters,
 		}
 	}
 	return output
@@ -736,28 +756,6 @@ func getRifNameMapping() (map[string]interface{}, error) {
 	}
 
 	return rifNameMap, nil
-}
-
-func getTimestampClearedCounters() string {
-	portStatCacheStr, err := common.GetDataFromHostCommand(portStatCacheCmd)
-	if err != nil {
-		log.Errorf("Unable to execute command: %v, got err: %v", portStatCacheStr, err)
-		return defaultTimestamp
-	}
-
-	var portStatCacheMap map[string]interface{}
-
-	err = json.Unmarshal([]byte(portStatCacheStr), &portStatCacheMap)
-	if err != nil {
-		log.Errorf("Error marshaling port stat cache: %v", err)
-		return defaultTimestamp
-	}
-
-	if timestamp, ok := portStatCacheMap["time"]; ok {
-		timestampStr := fmt.Sprintf("%v", timestamp)
-		return timestampStr
-	}
-	return defaultTimestamp
 }
 
 func calculateByteRate(rate string) string {

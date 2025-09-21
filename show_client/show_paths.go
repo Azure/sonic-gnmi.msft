@@ -614,6 +614,7 @@ func init() {
 		nil,
 		showCmdOptionDom,
 		sdc.UnimplementedOption(showCmdOptionNamespace),
+		showCmdOptionVerbose,
 	)
 	sdc.RegisterCliPath(
 		[]string{"SHOW", "interfaces", "transceiver", "info"},
@@ -622,6 +623,7 @@ func init() {
 		0,
 		1,
 		nil,
+		showCmdOptionVerbose,
 		sdc.UnimplementedOption(showCmdOptionNamespace),
 	)
 	// SHOW/watermark

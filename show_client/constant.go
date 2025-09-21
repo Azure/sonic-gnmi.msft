@@ -212,18 +212,6 @@ var SfpDomChannelMonitorMap = map[string]string{
 	"tx1power": "TXPower",
 }
 
-var SonicInterfacePrefixes = map[string]string{
-	"Ethernet-FrontPanel": "Ethernet",
-	"PortChannel":         "PortChannel",
-	"Vlan":                "Vlan",
-	"Loopback":            "Loopback",
-	"Ethernet-Backplane":  "Ethernet-BP",
-	"Ethernet-Inband":     "Ethernet-IB",
-	"Ethernet-Recirc":     "Ethernet-Rec",
-	"Ethernet-SubPort":    "Eth",
-	"PortChannel-SubPort": "Po",
-}
-
 const ExternalPort = "Ext"
 const InternalPort = "Int"
 const InbandPort = "Inb"

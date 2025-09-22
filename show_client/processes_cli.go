@@ -9,7 +9,14 @@ import (
 
 	log "github.com/golang/glog"
 	"github.com/sonic-net/sonic-gnmi/show_client/common"
+	"github.com/sonic-net/sonic-gnmi/show_client/helpers"
 	sdc "github.com/sonic-net/sonic-gnmi/sonic_data_client"
+)
+
+const (
+	topCommand    = "top -bn 1"
+	orderByCPU    = " -o %CPU"
+	orderByMemory = " -o %MEM"
 )
 
 // processEntry for STATE_DB PROCESS_STATS
@@ -30,8 +37,8 @@ type processEntry struct {
 func getProcessesRoot(args sdc.CmdArgs, options sdc.OptionMap) ([]byte, error) {
 	help := map[string]interface{}{
 		"subcommands": map[string]string{
-			"summary": "show/processes/summary: Show processses info",
-			"cpu":     "show/processes/cpu: Show processes CPU info",
+			"summary": "show/processes/summary: Show processes info",
+			"cpu":     "show/processes/cpu: Show processes information sorted by cpu usage",
 			"memory":  "show/processes/memory: Show processes information sorted by memory usage",
 		},
 	}
@@ -47,6 +54,16 @@ func getProcessesSummary(args sdc.CmdArgs, options sdc.OptionMap) ([]byte, error
 	}
 	entries := buildProcessEntries(processesSummary)
 	return json.Marshal(entries)
+}
+
+func getTopMemoryUsage(args sdc.CmdArgs, options sdc.OptionMap) ([]byte, error) {
+	cmdForProcessByMemory := topCommand + orderByMemory
+	return helpers.GetProcessesData(cmdForProcessByMemory)
+}
+
+func getProcessesCPU(args sdc.CmdArgs, options sdc.OptionMap) ([]byte, error) {
+	cmdForProcessByCPU := topCommand + orderByCPU
+	return helpers.GetProcessesData(cmdForProcessByCPU)
 }
 
 func buildProcessEntries(processesSummary map[string]interface{}) []processEntry {

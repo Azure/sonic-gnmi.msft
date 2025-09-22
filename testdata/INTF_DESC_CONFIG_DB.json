@@ -1,0 +1,41 @@
+{
+  "PORT|Ethernet0": {
+    "admin_status": "up",
+    "alias": "etp0",
+    "description": "ARISTA01T1:Ethernet1",
+    "fec": "rs",
+    "index": "0",
+    "lanes": "2304,2305,2306,2307",
+    "mtu": "9100",
+    "pfc_asym": "off",
+    "speed": "100000",
+    "tpid": "0x8100"
+  },
+  "PORT|Ethernet40": {
+    "admin_status": "up",
+    "alias": "etp10",
+    "description": "Servers4:eth0",
+    "fec": "rs",
+    "index": "10",
+    "lanes": "2048,2049,2050,2051",
+    "mtu": "9100",
+    "pfc_asym": "off",
+    "speed": "100000",
+    "tpid": "0x8100"
+  },
+  "PORTCHANNEL|PortChannel1": {
+    "admin_status": "up",
+    "lacp_key": "auto",
+    "mtu": "9100",
+    "tpid": "0x8100"
+  },
+  "PORTCHANNEL_MEMBER|PortChannel1|Ethernet0": {
+    "NULL": "NULL"
+  },
+  "PORTCHANNEL_MEMBER|PortChannel1|Ethernet40": {
+    "NULL": "NULL"
+  },
+  "VLAN_MEMBER|Vlan1|Ethernet120": {
+    "NULL": "NULL"
+  }
+}

@@ -75,7 +75,10 @@ var (
 			transFunc: v2rTranslate(v2rEthPortPGPeriodicWMs),
 		}, { // User watermarks for all queues of one or all Ethernet ports
 			path:      []string{"COUNTERS_DB", "USER_WATERMARKS", "Ethernet*", "Queues"},
-			transFunc: v2rTranslate(v2rEthPortQueueUserWMs),
+			transFunc: v2rTranslate(v2rEthPortQueueWMs),
+		}, { // Persistent watermarks for all queues of one or all Ethernet ports
+			path:      []string{"COUNTERS_DB", "PERSISTENT_WATERMARKS", "Ethernet*", "Queues"},
+			transFunc: v2rTranslate(v2rEthPortQueueWMs),
 		}, { // COUNTER_DB RATES Ethernet*
 			path:      []string{"COUNTERS_DB", "RATES", "Ethernet*"},
 			transFunc: v2rTranslate(v2rEthPortStats),
@@ -843,12 +846,14 @@ func v2rEthPortPGPeriodicWMs(paths []string) ([]tablePath, error) {
 }
 
 // Populate real data paths from paths like
-// [COUNTERS_DB USER_WATERMARKS Ethernet* Queues] or
-// [COUNTERS_DB USER_WATERMARKS Ethernet64 Queues]
-func v2rEthPortQueueUserWMs(paths []string) ([]tablePath, error) {
+// [COUNTERS_DB USER_WATERMARKS Ethernet* Queues],
+// [COUNTERS_DB PERSISTENT_WATERMARKS Ethernet* Queues],
+// [COUNTERS_DB USER_WATERMARKS Ethernet64 Queues], or
+// [COUNTERS_DB PERSISTENT_WATERMARKS Ethernet64 Queues]
+func v2rEthPortQueueWMs(paths []string) ([]tablePath, error) {
 	separator, _ := GetTableKeySeparator(paths[DbIdx], "")
 	var tblPaths []tablePath
-	if strings.HasSuffix(paths[KeyIdx], "*") { // user watermarks on all Ethernet ports
+	if strings.HasSuffix(paths[KeyIdx], "*") { // user or persistent watermarks on all Ethernet ports
 		for queue, oid := range countersQueueNameMap {
 			port_qindex := strings.Split(queue, separator)
 			namespace, err := getPortNamespace(port_qindex[0])
@@ -859,7 +864,7 @@ func v2rEthPortQueueUserWMs(paths []string) ([]tablePath, error) {
 			tblPath := buildTablePath(namespace, paths[DbIdx], paths[TblIdx], oid, separator, "", "", queue, "")
 			tblPaths = append(tblPaths, tblPath)
 		}
-	} else { // user watermarks on a single port
+	} else { // user or persistent watermarks on a single port
 		port := getSonicPortName(paths[KeyIdx])
 		namespace, err := getPortNamespace(port)
 		if err != nil {
@@ -875,7 +880,7 @@ func v2rEthPortQueueUserWMs(paths []string) ([]tablePath, error) {
 			tblPaths = append(tblPaths, tblPath)
 		}
 	}
-	log.V(6).Infof("v2rEthPortQueueUserWMs: %v", tblPaths)
+	log.V(6).Infof("v2rEthPortQueueWMs: %v", tblPaths)
 	return tblPaths, nil
 }
 

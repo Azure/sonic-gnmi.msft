@@ -204,7 +204,7 @@ func ConvertPmPrefixToThresholdPrefix(prefix string) string {
 }
 
 func querySfpPM(intf string) map[string]string {
-	firstSubport := getFirstSubPort(intf)
+	firstSubport := common.GetFirstSubPort(intf)
 	if firstSubport == "" {
 		log.Errorf("Unable to get first subport for %v while converting SFP status", intf)
 		return map[string]string{

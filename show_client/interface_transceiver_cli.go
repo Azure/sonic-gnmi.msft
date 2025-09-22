@@ -137,20 +137,15 @@ func getInterfaceTransceiverLpMode(args sdc.CmdArgs, options sdc.OptionMap) ([]b
 	return json.Marshal(entries)
 }
 
-func BeautifyPmField(prefix string, field float64, unit string) string {
-	if unit == "N/A" {
-		// ignore unit
-		unit = ""
-	}
-
+func BeautifyPmField(prefix string, field float64) string {
 	if prefix == "prefec_ber" {
 		if field != 0 {
-			return fmt.Sprintf("%.2f%v", field, unit)
+			return fmt.Sprintf("%.2f", field)
 		} else {
-			return fmt.Sprintf("0.0%v", unit)
+			return fmt.Sprintf("0.0")
 		}
 	} else {
-		return fmt.Sprintf("%f%v", field, unit)
+		return fmt.Sprintf("%f", field)
 	}
 }
 
@@ -204,7 +199,9 @@ func ConvertPmPrefixToThresholdPrefix(prefix string) string {
 }
 
 func querySfpPM(intf string) map[string]string {
-	firstSubport := common.GetFirstSubPort(intf)
+	pmr := &common.PortMappingRetriever{}
+	pmr.ReadPorttabMappings()
+	firstSubport := common.GetFirstSubPort(pmr, intf)
 	if firstSubport == "" {
 		log.Errorf("Unable to get first subport for %v while converting SFP status", intf)
 		return map[string]string{
@@ -220,7 +217,7 @@ func querySfpPM(intf string) map[string]string {
 	sfpPMDict, err := GetMapFromQueries(queries)
 	if err != nil {
 		log.Errorf("Failed to get PM dict from STATE_DB: %v", err)
-		return nil, err
+		return nil
 	}
 
 	// Query threshold info from STATE_DB
@@ -230,7 +227,7 @@ func querySfpPM(intf string) map[string]string {
 	sfpThresholdDict, err := GetMapFromQueries(queries)
 	if err != nil {
 		log.Errorf("Failed to get PM dict from STATE_DB: %v", err)
-		return nil, err
+		return nil
 	}
 
 	convertVdmFieldsToLegacyFields(firstSubport, sfpThresholdDict, CCMIS_VDM_THRESHOLD_TO_LEGACY_DOM_THRESHOLD_MAP, "THRESHOLD")
@@ -250,8 +247,8 @@ func querySfpPM(intf string) map[string]string {
 			for _, suffix := range ZR_PM_VALUE_KEY_SUFFIXS {
 				key := prefix + "_" + suffix
 				if val, ok := sfpPMDict[key]; ok {
-					if f, err := strconv.ParseFloat(val, 64); err == nil {
-						values = append(values, BeautifyPmField(prefix, f, unit))
+					if f, err := strconv.ParseFloat(fmt.Sprintf("%v", val), 64); err == nil {
+						values = append(values, BeautifyPmField(prefix, f))
 					} else {
 						values = append(values, "N/A")
 					}
@@ -265,8 +262,8 @@ func querySfpPM(intf string) map[string]string {
 			for _, suffix := range ZR_PM_THRESHOLD_KEY_SUFFIXS {
 				key := ConvertPmPrefixToThresholdPrefix(prefix) + suffix
 				if val, ok := sfpThresholdDict[key]; ok && val != "N/A" {
-					if f, err := strconv.ParseFloat(val, 64); err == nil {
-						thresholds = append(thresholds, BeautifyPmField(prefix, f, unit))
+					if f, err := strconv.ParseFloat(fmt.Sprintf("%v", val), 64); err == nil {
+						thresholds = append(thresholds, BeautifyPmField(prefix, f))
 					} else {
 						thresholds = append(thresholds, "N/A")
 					}
@@ -276,25 +273,39 @@ func querySfpPM(intf string) map[string]string {
 			}
 
 			// TCA checks
-			var tcaHigh, tcaLow bool
-			if len(values) > 2 && len(thresholds) > 0 && thresholds[0] != 0 {
-				tcaHigh = values[2] > thresholds[0]
+			var tcaHigh, tcaLow string
+			if len(values) > 2 && len(thresholds) > 0 && thresholds[0] != "N/A" {
+				l, _ := strconv.ParseFloat(values[2], 64)
+				r, _ := strconv.ParseFloat(thresholds[0], 64)
+				tcaHigh = fmt.Sprintf("%v", l > r)
+			} else {
+				tcaHigh = "N/A"
 			}
-			if len(values) > 0 && len(thresholds) > 2 && thresholds[2] != 0 {
-				tcaLow = values[0] < thresholds[2]
+			if len(values) > 0 && len(thresholds) > 2 && thresholds[2] != "N/A" {
+				l, _ := strconv.ParseFloat(values[0], 64)
+				r, _ := strconv.ParseFloat(thresholds[2], 64)
+				tcaLow = fmt.Sprintf("%v", l < r)
+			} else {
+				tcaLow = "N/A"
 			}
 
 			// Append fields
 			for _, field := range append(values, thresholds[0:2]...) {
 				row += field
+				if unit != "N/A" && field != "N/A" {
+					row += unit
+				}
 				row += ","
 			}
-			row += fmt.Sprintf("%v,", tcaHigh)
+			row += tcaHigh
 			for _, field := range thresholds[2:] {
 				row += field
+				if unit != "N/A" && field != "N/A" {
+					row += unit
+				}
 				row += ","
 			}
-			row += fmt.Sprintf("%v", tcaLow)
+			row += tcaLow
 
 			output[paramName] = row
 		}
@@ -313,7 +324,7 @@ func getInterfaceTransceiverPM(args sdc.CmdArgs, options sdc.OptionMap) ([]byte,
 
 	result := make([]map[string]string, 0)
 	if intf != "" {
-		if ok, _ := isValidPhysicalPort(intf); !ok {
+		if ok, _ := common.IsValidPhysicalPort(intf); !ok {
 			log.Errorf("Invalid interface: %v!", intf)
 			return nil, fmt.Errorf("Invalid interface: %v!", intf)
 		}
@@ -335,7 +346,7 @@ func getInterfaceTransceiverPM(args sdc.CmdArgs, options sdc.OptionMap) ([]byte,
 		ports = NatsortInterfaces(ports)
 
 		for _, p := range ports {
-			if ok, _ := isValidPhysicalPort(p); ok {
+			if ok, _ := common.IsValidPhysicalPort(p); ok {
 				result = append(result, querySfpPM(p))
 			}
 		}

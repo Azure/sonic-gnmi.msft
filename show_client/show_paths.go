@@ -633,4 +633,17 @@ func init() {
 		nil,
 		showCmdOptionVerbose,
 	)
+
+	//SHOW/arp
+	sdc.RegisterCliPath(
+		[]string{"SHOW", "arp"},
+		getArpTable,
+		"SHOW/arp/{ipaddress}[OPTIONS]: Show IP ARP table",
+		0,
+		2,
+		nil,
+		showCmdOptionSonicCliIfaceMode,
+		showCmdOptionIface,
+		showCmdOptionVerbose,
+	)
 }

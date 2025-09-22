@@ -3,6 +3,7 @@ package show_client
 import (
 	"encoding/json"
 	"fmt"
+	"strconv"
 	"strings"
 
 	log "github.com/golang/glog"
@@ -139,40 +140,240 @@ func getInterfaceTransceiverLpMode(args sdc.CmdArgs, options sdc.OptionMap) ([]b
 	return json.Marshal(entries)
 }
 
-func querySfpPM(intf string) map[string]string {
-	return map[string]string{
-		"name":   intf,
-		"status": "Transceiver performance monitoring not applicable",
+// Converts VDM fields to legacy fields
+func convertVdmFieldsToLegacyFields(intf string, dictToBeUpdated map[string]string, vdmToLegacyFieldMap map[string]string, vdmFieldType string) {
+	if dictToBeUpdated == nil {
+		return
 	}
-	// TODO: Implement the logic after we find a device that has transceiver performance monitoring enabled
-	// firstSubport := getFirstSubPort(intf)
-	// if firstSubport == "" {
-	// 	log.Errorf("Unable to get first subport for %v while converting SFP status", intf)
-	// 	return map[string]string{
-	// 		"name":   intf,
-	// 		"status": "Transceiver status info not applicable",
-	// 	}
-	// }
+	if vdmFieldType != "FLAG" && vdmFieldType != "THRESHOLD" {
+		return
+	}
 
-	// // Query PM info from STATE_DB
-	// queries := [][]string{
-	// 	{"STATE_DB", "TRANSCEIVER_PM", intf},
-	// }
-	// sfpPM, err := GetMapFromQueries(queries)
-	// if err != nil {
-	// 	log.Errorf("Failed to get PM dict from STATE_DB: %v", err)
-	// 	return nil, err
-	// }
+	// Fetch VDM dicts
+	queries := [][]string{
+		{"STATE_DB", fmt.Sprintf("TRANSCEIVER_VDM_HALARM_%s", vdmFieldType), intf},
+	}
+	vdmHAlarm, err := GetMapFromQueries(queries)
+	if err != nil {
+		log.Errorf("Failed to get VDM_HALARM dict from STATE_DB: %v", err)
+		return nil, err
+	}
+	queries = [][]string{
+		{"STATE_DB", fmt.Sprintf("TRANSCEIVER_VDM_LALARM_%s", vdmFieldType), intf},
+	}
+	vdmLAlarm, err := GetMapFromQueries(queries)
+	if err != nil {
+		log.Errorf("Failed to get VDM_HALARM dict from STATE_DB: %v", err)
+		return nil, err
+	}
+	queries = [][]string{
+		{"STATE_DB", fmt.Sprintf("TRANSCEIVER_VDM_HWARN_%s", vdmFieldType), intf},
+	}
+	vdmHWarn, err := GetMapFromQueries(queries)
+	if err != nil {
+		log.Errorf("Failed to get VDM_HALARM dict from STATE_DB: %v", err)
+		return nil, err
+	}
+	queries = [][]string{
+		{"STATE_DB", fmt.Sprintf("TRANSCEIVER_VDM_LWARN_%s", vdmFieldType), intf},
+	}
+	vdmLWarn, err := GetMapFromQueries(queries)
+	if err != nil {
+		log.Errorf("Failed to get VDM_HALARM dict from STATE_DB: %v", err)
+		return nil, err
+	}
 
-	// // Query threshold info from STATE_DB
-	// queries = [][]string{
-	// 	{"STATE_DB", "TRANSCEIVER_DOM_THRESHOLD", intf},
-	// }
-	// sfpThreshold, err := GetMapFromQueries(queries)
-	// if err != nil {
-	// 	log.Errorf("Failed to get PM dict from STATE_DB: %v", err)
-	// 	return nil, err
-	// }
+	vdmThresholdTypes := map[string]map[string]string{
+		"highalarm":   vdmHAlarm,
+		"lowalarm":    vdmLAlarm,
+		"highwarning": vdmHWarn,
+		"lowwarning":  vdmLWarn,
+	}
+
+	for vdmField, legacyPrefix := range vdmToLegacyFieldMap {
+		for thresholdType, vdmDict := range vdmThresholdTypes {
+			if val, ok := vdmDict[vdmField]; ok {
+				var legacyFieldName string
+				if vdmFieldType == "FLAG" {
+					legacyFieldName = fmt.Sprintf("%s%s_flag", legacyPrefix, thresholdType)
+				} else {
+					legacyFieldName = fmt.Sprintf("%s%s", legacyPrefix, thresholdType)
+				}
+				dictToBeUpdated[legacyFieldName] = val
+			}
+		}
+	}
+}
+
+func BeautifyPmField(prefix string, field float64, unit string) string {
+	if unit == "N/A" {
+		// ignore unit
+		unit = ""
+	}
+
+	if prefix == "prefec_ber" {
+		if field != 0 {
+			return fmt.Sprintf("%.2f%v", field, unit)
+		} else {
+			return fmt.Sprintf("0.0%v", unit)
+		}
+	} else {
+		return fmt.Sprintf("%f%v", field, unit)
+	}
+}
+
+const ZR_PM_NOT_APPLICABLE_STR = "Transceiver performance monitoring not applicable"
+
+var ZR_PM_INFO_MAP = map[string]struct {
+	Unit   string
+	Prefix string
+}{
+	"Tx Power":        {"dBm", "tx_power"},
+	"Rx Total Power":  {"dBm", "rx_tot_power"},
+	"Rx Signal Power": {"dBm", "rx_sig_power"},
+	"CD-short link":   {"ps/nm", "cd"},
+	"PDL":             {"dB", "pdl"},
+	"OSNR":            {"dB", "osnr"},
+	"eSNR":            {"dB", "esnr"},
+	"CFO":             {"MHz", "cfo"},
+	"DGD":             {"ps", "dgd"},
+	"SOPMD":           {"ps^2", "sopmd"},
+	"SOP ROC":         {"krad/s", "soproc"},
+	"Pre-FEC BER":     {"N/A", "prefec_ber"},
+	"Post-FEC BER":    {"N/A", "uncorr_frames"},
+	"EVM":             {"%", "evm"},
+}
+var ZR_PM_VALUE_KEY_SUFFIXS = []string{"min", "avg", "max"}
+var ZR_PM_THRESHOLD_KEY_SUFFIXS = []string{"highalarm", "highwarning", "lowalarm", "lowwarning"}
+var CCMIS_VDM_THRESHOLD_TO_LEGACY_DOM_THRESHOLD_MAP = map[string]string{
+	"rxtotpower1":                     "rxtotpower",
+	"rxsigpower1":                     "rxsigpower",
+	"cdshort1":                        "cdshort",
+	"pdl1":                            "pdl",
+	"osnr1":                           "osnr",
+	"esnr1":                           "esnr",
+	"cfo1":                            "cfo",
+	"dgd1":                            "dgd",
+	"sopmd1":                          "sopmd",
+	"soproc1":                         "soproc",
+	"prefec_ber_avg_media_input1":     "prefecber",
+	"errored_frames_avg_media_input1": "postfecber",
+	"evm1":                            "evm",
+}
+
+func ConvertPmPrefixToThresholdPrefix(prefix string) string {
+	if prefix == "uncorr_frames" {
+		return "postfecber"
+	} else if prefix == "cd" {
+		return "cdshort"
+	} else {
+		return strings.Replace(prefix, "_", "", 1)
+	}
+}
+
+func querySfpPM(intf string) map[string]string {
+	firstSubport := getFirstSubPort(intf)
+	if firstSubport == "" {
+		log.Errorf("Unable to get first subport for %v while converting SFP status", intf)
+		return map[string]string{
+			"interface":   intf,
+			"description": ZR_PM_NOT_APPLICABLE_STR,
+		}
+	}
+
+	// Query PM info from STATE_DB
+	queries := [][]string{
+		{"STATE_DB", "TRANSCEIVER_PM", intf},
+	}
+	sfpPMDict, err := GetMapFromQueries(queries)
+	if err != nil {
+		log.Errorf("Failed to get PM dict from STATE_DB: %v", err)
+		return nil, err
+	}
+
+	// Query threshold info from STATE_DB
+	queries = [][]string{
+		{"STATE_DB", "TRANSCEIVER_DOM_THRESHOLD", intf},
+	}
+	sfpThresholdDict, err := GetMapFromQueries(queries)
+	if err != nil {
+		log.Errorf("Failed to get PM dict from STATE_DB: %v", err)
+		return nil, err
+	}
+
+	convertVdmFieldsToLegacyFields(firstSubport, sfpThresholdDict, CCMIS_VDM_THRESHOLD_TO_LEGACY_DOM_THRESHOLD_MAP, "THRESHOLD")
+
+	if len(sfpPMDict) > 0 {
+		output := map[string]string{
+			"interface":   intf,
+			"description": "Min,Avg,Max,Threshold High Alarm,Threshold High Warning,Threshold Crossing Alert-High,Threshold Low Alarm,Threshold Low Warning,Threshold Crossing Alert-Low",
+		}
+		for paramName, info := range ZR_PM_INFO_MAP {
+			unit := info.Unit
+			prefix := info.Prefix
+			row := ""
+
+			// Collect values
+			var values = make([]string, len(ZR_PM_VALUE_KEY_SUFFIXS))
+			for _, suffix := range ZR_PM_VALUE_KEY_SUFFIXS {
+				key := prefix + "_" + suffix
+				if val, ok := sfpPMDict[key]; ok {
+					if f, err := strconv.ParseFloat(val, 64); err == nil {
+						values = append(values, BeautifyPmField(prefix, f, unit))
+					} else {
+						values = append(values, "N/A")
+					}
+				} else {
+					values = append(values, "N/A")
+				}
+			}
+
+			// Collect thresholds
+			var thresholds = make([]string, len(ZR_PM_THRESHOLD_KEY_SUFFIXS))
+			for _, suffix := range ZR_PM_THRESHOLD_KEY_SUFFIXS {
+				key := ConvertPmPrefixToThresholdPrefix(prefix) + suffix
+				if val, ok := sfpThresholdDict[key]; ok && val != "N/A" {
+					if f, err := strconv.ParseFloat(val, 64); err == nil {
+						thresholds = append(thresholds, BeautifyPmField(prefix, f, unit))
+					} else {
+						thresholds = append(thresholds, "N/A")
+					}
+				} else {
+					thresholds = append(thresholds, "N/A")
+				}
+			}
+
+			// TCA checks
+			var tcaHigh, tcaLow bool
+			if len(values) > 2 && len(thresholds) > 0 && thresholds[0] != 0 {
+				tcaHigh = values[2] > thresholds[0]
+			}
+			if len(values) > 0 && len(thresholds) > 2 && thresholds[2] != 0 {
+				tcaLow = values[0] < thresholds[2]
+			}
+
+			// Append fields
+			for _, field := range append(values, thresholds[0:2]...) {
+				row += field
+				row += ","
+			}
+			row += fmt.Sprintf("%v,", tcaHigh)
+			for _, field := range thresholds[2:] {
+				row += field
+				row += ","
+			}
+			row += fmt.Sprintf("%v", tcaLow)
+
+			output[paramName] = row
+		}
+
+		return output
+	} else {
+		return map[string]string{
+			"name":        intf,
+			"description": ZR_PM_NOT_APPLICABLE_STR,
+		}
+	}
 }
 
 func getInterfaceTransceiverPM(args sdc.CmdArgs, options sdc.OptionMap) ([]byte, error) {

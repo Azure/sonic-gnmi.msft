@@ -125,9 +125,11 @@ func TestGetTransceiverPM(t *testing.T) {
 			valTest:     true,
 			testInit: func() {
 				FlushDataSet(t, ApplDbNum)
+				FlushDataSet(t, ConfigDbNum)
 				FlushDataSet(t, StateDbNum)
 				AddDataSet(t, ApplDbNum, ApplDbFile)
-				AddDataSet(t, ApplDbNum, StateDbFile)
+				AddDataSet(t, ConfigDbNum, ConfigDbFile)
+				AddDataSet(t, StateDbNum, StateDbFile)
 			},
 		},
 	}

@@ -129,6 +129,7 @@ func init() {
 			"trim":          "show/interfaces/counters/trim: Show interface counters trim",
 		},
 		sdc.UnimplementedOption(showCmdOptionNamespace),
+		showCmdOptionPrintAll, 
 		showCmdOptionDisplay,
 		showCmdOptionInterfaces,
 		showCmdOptionPeriod,

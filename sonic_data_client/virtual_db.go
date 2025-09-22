@@ -157,6 +157,15 @@ func GetCountersQueueTypeMap() (map[string]string, error) {
 	return countersQueueTypeMap, nil
 }
 
+func ForceRefreshAliasMap() error {
+	var err error
+	alias2nameMap, name2aliasMap, port2namespaceMap, err = getAliasMap()
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
 func initCountersPortNameMap() error {
 	var err error
 	if len(countersPortNameMap) == 0 {

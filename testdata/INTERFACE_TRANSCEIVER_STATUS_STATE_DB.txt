@@ -1,0 +1,33 @@
+{
+  "TRANSCEIVER_STATUS|Ethernet0": {
+    "module_state": "ModuleReady"
+  },
+  "TRANSCEIVER_STATUS_SW|Ethernet0": {
+    "cmis_state": "READY"
+  },
+  "TRANSCEIVER_DOM_FLAG|Ethernet0": {
+    "temphighalarm_flag": "False",
+    "temphighwarning_flag": "False"
+  },
+
+  "TRANSCEIVER_STATUS|Ethernet4": {
+    "module_state": "ModuleReady",
+    "tx_disabled_channel": "0"
+  },
+  "TRANSCEIVER_DOM_FLAG|Ethernet4": {
+    "temphighalarm_flag": "False",
+    "temphighwarning_flag": "False"
+  },
+
+  "TRANSCEIVER_STATUS|Ethernet12": {
+    "foo": "1",
+    "bar": "2",
+    "baz": "3"
+  },
+
+  "TRANSCEIVER_STATUS|Ethernet16": {
+    "module_state": "ModuleReady",
+    "tuning_in_progress": "True",
+    "extra_dummy_key": "1"
+  }
+}

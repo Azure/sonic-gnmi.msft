@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	log "github.com/golang/glog"
+	"github.com/sonic-net/sonic-gnmi/show_client/common"
 )
 
 const fibRouteTable = "ROUTE_TABLE"
@@ -26,8 +27,8 @@ type fibResult struct {
 }
 
 func getFibEntries(filter string, wantIPv6 bool) ([]fibEntry, error) {
-	queries := [][]string{{ApplDb, fibRouteTable}}
-	msi, err := GetMapFromQueries(queries)
+	queries := [][]string{{common.ApplDb, fibRouteTable}}
+	msi, err := common.GetMapFromQueries(queries)
 	if err != nil {
 		log.Errorf("[show fib] failed to query %s: %v", fibRouteTable, err)
 		return nil, err
@@ -46,8 +47,8 @@ func getFibEntries(filter string, wantIPv6 bool) ([]fibEntry, error) {
 		if filter != "" && filter != prefix && filter != rawKey {
 			continue
 		}
-		nh := GetValueOrDefault(row, "nexthop", "")
-		ifn := GetValueOrDefault(row, "ifname", "")
+		nh := common.GetValueOrDefault(row, "nexthop", "")
+		ifn := common.GetValueOrDefault(row, "ifname", "")
 		out = append(out, fibEntry{
 			Vrf:     vrf,
 			Route:   prefix,

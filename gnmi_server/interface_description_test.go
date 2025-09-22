@@ -7,7 +7,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/agiledragon/gomonkey/v2"
 	pb "github.com/openconfig/gnmi/proto/gnmi"
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
@@ -33,26 +32,34 @@ func TestGetShowInterfaceDescription(t *testing.T) {
 	gClient := pb.NewGNMIClient(conn)
 	ctx, cancel := context.WithTimeout(context.Background(), QueryTimeout*time.Second)
 	defer cancel()
+	appDbFileName := "../testdata/INTF_DESC_APPL_DB.json"
+	configDbFileName := "../testdata/INTF_DESC_CONFIG_DB.json"
 
 	expectedRetValue := `
 {
     "Ethernet0": {
-        "Admin":"up","Alias":"etp0","Description":"etp0","Oper":"down"
+        "Admin":"up","Alias":"etp0","Description":"ARISTA01T1:Ethernet1","Oper":"up"
         },
-    "Ethernet1": {
-       "Admin":"up","Alias":"etp1","Description":"etp1","Oper":"down"
+    "Ethernet40": {
+       "Admin":"up","Alias":"etp10","Description":"Servers4:eth0","Oper":"up"
+        }
+}
+`
+	expectedSingleRetValue := `
+{
+    "Ethernet0": {
+        "Admin":"up","Alias":"etp0","Description":"ARISTA01T1:Ethernet1","Oper":"up"
         }
 }
 `
 	tests := []struct {
-		desc           string
-		pathTarget     string
-		textPbPath     string
-		wantRetCode    codes.Code
-		wantRespVal    interface{}
-		valTest        bool
-		mockOutputFile map[string]string
-		testInit       func()
+		desc        string
+		pathTarget  string
+		textPbPath  string
+		wantRetCode codes.Code
+		wantRespVal interface{}
+		valTest     bool
+		testInit    func()
 	}{
 		{
 			desc:       "query SHOW interfaces description NO DATA",
@@ -62,13 +69,26 @@ func TestGetShowInterfaceDescription(t *testing.T) {
                 elem: <name: "description" >
             `,
 			wantRetCode: codes.OK,
-			wantRespVal: []byte(expectedRetValue),
 			valTest:     false,
-			mockOutputFile: map[string]string{
-				"intfutil": "../testdata/interface_description.txt",
-			},
 			testInit: func() {
 				FlushDataSet(t, ConfigDbNum)
+			},
+		},
+		{
+			desc:       "query SHOW interface description with no interface option",
+			pathTarget: "SHOW",
+			textPbPath: `
+                elem: <name: "interfaces" >
+                elem: <name: "description" >
+            `,
+			wantRetCode: codes.OK,
+			wantRespVal: []byte(expectedRetValue),
+			valTest:     true,
+			testInit: func() {
+				FlushDataSet(t, ConfigDbNum)
+				FlushDataSet(t, ApplDbNum)
+				AddDataSet(t, ConfigDbNum, configDbFileName)
+				AddDataSet(t, ApplDbNum, appDbFileName)
 			},
 		},
 		{
@@ -79,13 +99,13 @@ func TestGetShowInterfaceDescription(t *testing.T) {
                 elem: <name: "description" key: { key: "interface" value: "Ethernet0" } >
             `,
 			wantRetCode: codes.OK,
-			wantRespVal: []byte(expectedRetValue),
+			wantRespVal: []byte(expectedSingleRetValue),
 			valTest:     true,
-			mockOutputFile: map[string]string{
-				"intfutil": "../testdata/interface_description.txt",
-			},
 			testInit: func() {
 				FlushDataSet(t, ConfigDbNum)
+				FlushDataSet(t, ApplDbNum)
+				AddDataSet(t, ConfigDbNum, configDbFileName)
+				AddDataSet(t, ApplDbNum, appDbFileName)
 			},
 		},
 	}
@@ -95,16 +115,8 @@ func TestGetShowInterfaceDescription(t *testing.T) {
 			test.testInit()
 		}
 
-		var patches *gomonkey.Patches
-		if len(test.mockOutputFile) > 0 {
-			patches = MockExecCmds(t, test.mockOutputFile)
-		}
-
 		t.Run(test.desc, func(t *testing.T) {
 			runTestGet(t, ctx, gClient, test.pathTarget, test.textPbPath, test.wantRetCode, test.wantRespVal, test.valTest)
 		})
-		if patches != nil {
-			patches.Reset()
-		}
 	}
 }

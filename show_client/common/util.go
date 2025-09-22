@@ -18,7 +18,7 @@ func GetValueOrDefault(values map[string]interface{}, key string, defaultValue s
 // GetNonZeroValueOrEmpty returns the string form of values[key] if it parses as a non-zero integer; otherwise an empty string.
 func GetNonZeroValueOrEmpty(values map[string]interface{}, key string) string {
 	if value, ok := values[key]; ok {
-		if intValue, err := strconv.ParseInt(fmt.Sprint(value), 10, 64); err == nil && intValue != 0 {
+		if intValue, err := strconv.ParseInt(fmt.Sprint(value), Base10, 64); err == nil && intValue != 0 {
 			return fmt.Sprint(value)
 		}
 	}

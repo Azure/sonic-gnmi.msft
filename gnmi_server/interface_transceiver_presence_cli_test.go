@@ -86,7 +86,8 @@ func TestShowInterfaceTransceiverPresence(t *testing.T) {
 			textPbPath: `
 				elem: <name: "interfaces" >
 				elem: <name: "transceiver" >
-				elem: <name: "presence" key: { key: "interface" value: "Ethernet0" } >
+				elem: <name: "presence" >
+				elem: <name: "Ethernet0">
 			`,
 			wantRetCode: codes.OK,
 			wantRespVal: []byte(intfTransPresDataWithIntf),
@@ -104,7 +105,8 @@ func TestShowInterfaceTransceiverPresence(t *testing.T) {
 			textPbPath: `
 				elem: <name: "interfaces" >
 				elem: <name: "transceiver" >
-				elem: <name: "presence" key: { key: "interface" value: "Ethernet1" } >
+				elem: <name: "presence" >
+				elem: <name: "Ethernet1">
 			`,
 			wantRetCode: codes.OK,
 			wantRespVal: []byte(intfTransPresDataWithNonExistentIntf),

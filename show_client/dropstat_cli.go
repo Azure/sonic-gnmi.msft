@@ -10,6 +10,7 @@ import (
 	"strings"
 
 	log "github.com/golang/glog"
+	"github.com/sonic-net/sonic-gnmi/show_client/common"
 	sdc "github.com/sonic-net/sonic-gnmi/sonic_data_client"
 )
 
@@ -98,7 +99,7 @@ func showPortDropCounts(group string, counterType string) map[string]map[string]
 	}
 
 	queries := [][]string{{"APPL_DB", "PORT_TABLE"}}
-	portTable, err := GetMapFromQueries(queries)
+	portTable, err := common.GetMapFromQueries(queries)
 	if err != nil {
 		log.Errorf("Unable to pull data for queries %v, got err %v", queries, err)
 		return nil
@@ -112,7 +113,7 @@ func showPortDropCounts(group string, counterType string) map[string]map[string]
 		row["State"] = state
 
 		for _, ctr := range counters {
-			diff := GetOrDefault(countsTable[port], ctr, int64(0)) - GetOrDefault(GetOrDefault(portDropCkpt, port, map[string]int64{}), ctr, int64(0))
+			diff := common.GetOrDefault(countsTable[port], ctr, int64(0)) - common.GetOrDefault(common.GetOrDefault(portDropCkpt, port, map[string]int64{}), ctr, int64(0))
 			alias, ok := headmap[ctr]
 			if !ok || alias == "" {
 				alias = ctr
@@ -185,7 +186,7 @@ func getCounts(counters []string, oid string) map[string]int64 {
 	res := make(map[string]int64, len(counters))
 
 	tableId := COUNTER_TABLE_PREFIX + oid
-	mapping, err := GetMapFromQueries([][]string{{"COUNTERS_DB", tableId}})
+	mapping, err := common.GetMapFromQueries([][]string{{"COUNTERS_DB", tableId}})
 	if err != nil || mapping == nil || len(mapping) == 0 {
 		return res
 	}
@@ -207,7 +208,7 @@ func getCounts(counters []string, oid string) map[string]int64 {
 // Drop counts are contained in a dictionary that maps counter name to its counts.
 func getCountsTable(counters []string, objectTable string) (map[string]map[string]int64, []string) {
 	out := make(map[string]map[string]int64)
-	mapping, err := GetMapFromQueries([][]string{{"COUNTERS_DB", objectTable}})
+	mapping, err := common.GetMapFromQueries([][]string{{"COUNTERS_DB", objectTable}})
 	if err != nil || mapping == nil || len(mapping) == 0 {
 		log.V(6).Infof("getCountsTable GetMapFromQueries returned err=%v", err)
 		return out, nil
@@ -240,7 +241,7 @@ func GetStatLookup(objectStatMap string) map[string]string {
 		return v
 	}
 
-	raw, err := GetMapFromQueries([][]string{{"COUNTERS_DB", objectStatMap}})
+	raw, err := common.GetMapFromQueries([][]string{{"COUNTERS_DB", objectStatMap}})
 	if err != nil || len(raw) == 0 {
 		statLookupCache[objectStatMap] = nil
 		return nil
@@ -318,7 +319,7 @@ func getAlias(counterName string) string {
 		return counterName
 	}
 
-	aliasVal := fmt.Sprint(GetOrDefault(aliasQuery, "alias", interface{}(counterName)))
+	aliasVal := fmt.Sprint(common.GetOrDefault(aliasQuery, "alias", interface{}(counterName)))
 	return aliasVal
 }
 
@@ -331,7 +332,7 @@ func inGroup(counterStat string, objectStatMap string, group string) bool {
 	}
 
 	// treat standard counters as not belonging to user groups
-	if ContainsString(stdPortRxCounters, counterStat) || ContainsString(stdPortTxCounters, counterStat) {
+	if common.ContainsString(stdPortRxCounters, counterStat) || common.ContainsString(stdPortTxCounters, counterStat) {
 		return false
 	}
 
@@ -340,7 +341,7 @@ func inGroup(counterStat string, objectStatMap string, group string) bool {
 		return false
 	}
 
-	return group == fmt.Sprint(GetOrDefault(group_query, "group", ""))
+	return group == fmt.Sprint(common.GetOrDefault(group_query, "group", ""))
 }
 
 // Checks whether the type of the given counter_stat is the same as counter_type.
@@ -350,10 +351,10 @@ func isType(counterStat string, objectStatMap string, counterType string) bool {
 		return true
 	}
 
-	if ContainsString(stdPortRxCounters, counterStat) {
+	if common.ContainsString(stdPortRxCounters, counterStat) {
 		return strings.EqualFold(counterType, "PORT_INGRESS_DROPS")
 	}
-	if ContainsString(stdPortTxCounters, counterStat) {
+	if common.ContainsString(stdPortTxCounters, counterStat) {
 		return strings.EqualFold(counterType, "PORT_EGRESS_DROPS")
 	}
 
@@ -362,7 +363,7 @@ func isType(counterStat string, objectStatMap string, counterType string) bool {
 		return false
 	}
 
-	return counterType == fmt.Sprint(GetOrDefault(typeQuery, "type", ""))
+	return counterType == fmt.Sprint(common.GetOrDefault(typeQuery, "type", ""))
 }
 
 // getEntry returns the CONFIG_DB DEBUG_COUNTER row for a given counterName.
@@ -381,7 +382,7 @@ func isType(counterStat string, objectStatMap string, counterType string) bool {
 // 7) "type"
 // 8) "PORT_INGRESS_DROPS"
 func getEntry(counterName string) (map[string]interface{}, bool) {
-	row, err := GetMapFromQueries([][]string{{"CONFIG_DB", "DEBUG_COUNTER", counterName}})
+	row, err := common.GetMapFromQueries([][]string{{"CONFIG_DB", "DEBUG_COUNTER", counterName}})
 	if err != nil || row == nil || len(row) == 0 {
 		return nil, false
 	}

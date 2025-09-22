@@ -37,6 +37,7 @@ func TestGetTransceiverPM(t *testing.T) {
 	defer cancel()
 
 	ApplDbFile := "../testdata/APPL_DB.json"
+	ConfigDbFile := "../testdata/CONFIG_DB.json"
 	StateDbFile := "../testdata/STATE_DB.json"
 	transceiverPM := `[{"name": "Ethernet0","description": "Transceiver performance monitoring not applicable"}, {"name": "Ethernet40","description": "Transceiver performance monitoring not applicable"},{"name": "Ethernet80","description": "Transceiver performance monitoring not applicable"},{"name": "Ethernet120","description": "Transceiver performance monitoring not applicable"}]`
 	transceiverPMPort := `[{"name": "Ethernet0","description": "Transceiver performance monitoring not applicable"}]`

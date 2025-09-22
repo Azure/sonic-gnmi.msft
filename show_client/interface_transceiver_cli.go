@@ -404,7 +404,8 @@ func getInterfaceTransceiverPM(args sdc.CmdArgs, options sdc.OptionMap) ([]byte,
 				result = append(result, querySfpPM(p))
 			}
 		}
-    
+	}
+
 	return json.Marshal(result)
 }
 

@@ -70,12 +70,12 @@ func TestShowClientOptions(t *testing.T) {
 			valTest:     true,
 		},
 		{
-			desc:       "query SHOW interfaces counters[interfaces=Ethernet0][help=False]",
+			desc:       "query SHOW interfaces counters[interface=Ethernet0][help=False]",
 			pathTarget: "SHOW",
 			textPbPath: `
 				elem: <name: "interfaces" >
 				elem: <name: "counters" 
-				      key: { key: "interfaces" value: "Ethernet0" }
+				      key: { key: "interface" value: "Ethernet0" }
 				      key: { key: "help" value: "false" }>
 			`,
 			wantRetCode: codes.OK,
@@ -90,37 +90,37 @@ func TestShowClientOptions(t *testing.T) {
 			},
 		},
 		{
-			desc:       "query SHOW interfaces[help=True] counters[interfaces=Ethernet0]",
+			desc:       "query SHOW interfaces[help=True] counters[interface=Ethernet0]",
 			pathTarget: "SHOW",
 			textPbPath: `
 				elem: <name: "interfaces"
 				      key: { key: "help" value: "true" }>
 				elem: <name: "counters" 
-				      key: { key: "interfaces" value: "Ethernet0" }>
+				      key: { key: "interface" value: "Ethernet0" }>
 			`,
 			wantRetCode: codes.OK,
 			wantRespVal: []byte(interfaceCountersSelectPorts),
 			valTest:     true,
 		},
 		{
-			desc:       "query SHOW interfaces[dummy=test] counters[interfaces=Ethernet0]",
+			desc:       "query SHOW interfaces[dummy=test] counters[interface=Ethernet0]",
 			pathTarget: "SHOW",
 			textPbPath: `
 				elem: <name: "interfaces"
 				      key: { key: "dummy" value: "test" }>
 				elem: <name: "counters" 
-				      key: { key: "interfaces" value: "Ethernet0" }>
+				      key: { key: "interface" value: "Ethernet0" }>
 			`,
 			wantRetCode: codes.OK,
 			wantRespVal: []byte(interfaceCountersSelectPorts),
 			valTest:     true,
 		},
 		{
-			desc:       "query SHOW interfaces[interfaces=Ethernet0] counters",
+			desc:       "query SHOW interfaces[interface=Ethernet0] counters",
 			pathTarget: "SHOW",
 			textPbPath: `
 				elem: <name: "interfaces"
-				      key: { key: "interfaces" value: "Ethernet0" }>
+				      key: { key: "interface" value: "Ethernet0" }>
 				elem: <name: "counters" >
 			`,
 			wantRetCode: codes.OK,
@@ -152,24 +152,24 @@ func TestShowClientOptions(t *testing.T) {
 			valTest:     true,
 		},
 		{
-			desc:       "query SHOW interfaces counters[interfaces-Ethernet0][period=foobar]",
+			desc:       "query SHOW interfaces counters[interface=Ethernet0][period=foobar]",
 			pathTarget: "SHOW",
 			textPbPath: `
 				elem: <name: "interfaces" >
 				elem: <name: "counters"
-				      key: { key: "interfaces" value: "Ethernet0" }
+				      key: { key: "interface" value: "Ethernet0" }
 				      key: { key: "period" value: "foobar" }>
 			`,
 			wantRetCode: codes.InvalidArgument,
 		},
 
 		{
-			desc:       "query SHOW interfaces counters[interfaces-Ethernet0][period=5][foo=bar]",
+			desc:       "query SHOW interfaces counters[interface=Ethernet0][period=5][foo=bar]",
 			pathTarget: "SHOW",
 			textPbPath: `
 				elem: <name: "interfaces" >
 				elem: <name: "counters"
-				      key: { key: "interfaces" value: "Ethernet0" }
+				      key: { key: "interface" value: "Ethernet0" }
 				      key: { key: "period" value: "5" }
 				      key: { key: "foo" value: "bar" }>
 			`,
@@ -185,12 +185,12 @@ func TestShowClientOptions(t *testing.T) {
 			wantRetCode: codes.InvalidArgument,
 		},
 		{
-			desc:       "query SHOW interfaces counters[interfaces-Ethernet0][period=5][namespace=all]",
+			desc:       "query SHOW interfaces counters[interface=Ethernet0][period=5][namespace=all]",
 			pathTarget: "SHOW",
 			textPbPath: `
 				elem: <name: "interfaces" >
 				elem: <name: "counters"
-				      key: { key: "interfaces" value: "Ethernet0" }
+				      key: { key: "interface" value: "Ethernet0" }
 				      key: { key: "period" value: "5" }
 				      key: { key: "namespace" value: "all" }>
 			`,

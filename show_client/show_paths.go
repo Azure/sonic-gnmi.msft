@@ -509,7 +509,7 @@ func init() {
 		0,
 		1,
 		nil,
-		showCmdOptionInterfaces,
+		showCmdOptionQueueInterfaces,
 		showCmdOptionDisplay,
 		showCmdOptionNonzero,
 		showCmdOptionAll,
@@ -526,7 +526,7 @@ func init() {
 		0,
 		1,
 		nil,
-		showCmdOptionInterfaces,
+		showCmdOptionQueueInterfaces,
 		showCmdOptionDisplay,
 		showCmdOptionNonzero,
 		sdc.UnimplementedOption(showCmdOptionVoq),
@@ -553,7 +553,7 @@ func init() {
 		0,
 		0,
 		nil,
-		showCmdOptionInterfaces,
+		showCmdOptionQueueInterfaces,
 		sdc.UnimplementedOption(showCmdOptionNamespace),
 		showCmdOptionJson,
 	)
@@ -564,7 +564,7 @@ func init() {
 		0,
 		0,
 		nil,
-		showCmdOptionInterfaces,
+		showCmdOptionQueueInterfaces,
 		sdc.UnimplementedOption(showCmdOptionNamespace),
 		showCmdOptionJson,
 	)
@@ -575,7 +575,7 @@ func init() {
 		0,
 		0,
 		nil,
-		showCmdOptionInterfaces,
+		showCmdOptionQueueInterfaces,
 		sdc.UnimplementedOption(showCmdOptionNamespace),
 		showCmdOptionJson,
 	)
@@ -598,7 +598,7 @@ func init() {
 		0,
 		0,
 		nil,
-		showCmdOptionInterfaces,
+		showCmdOptionQueueInterfaces,
 		sdc.UnimplementedOption(showCmdOptionNamespace),
 		showCmdOptionJson,
 	)
@@ -609,7 +609,7 @@ func init() {
 		0,
 		0,
 		nil,
-		showCmdOptionInterfaces,
+		showCmdOptionQueueInterfaces,
 		sdc.UnimplementedOption(showCmdOptionNamespace),
 		showCmdOptionJson,
 	)
@@ -620,7 +620,7 @@ func init() {
 		0,
 		0,
 		nil,
-		showCmdOptionInterfaces,
+		showCmdOptionQueueInterfaces,
 		sdc.UnimplementedOption(showCmdOptionNamespace),
 		showCmdOptionJson,
 	)

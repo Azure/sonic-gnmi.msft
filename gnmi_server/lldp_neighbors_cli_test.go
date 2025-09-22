@@ -164,7 +164,7 @@ func TestGetLLDPNeighbors(t *testing.T) {
 			ignoreValOrder: true,
 		},
 		{
-			desc:       "query SHOW lldp neighbors - normal device with specified interface name -path option SONIC_CLI_IFACE_MODE=alias",
+			desc:       "query SHOW lldp neighbors - normal device with specified interface alias -path option SONIC_CLI_IFACE_MODE=alias",
 			pathTarget: "SHOW",
 			textPbPath: `
 				elem: <name: "lldp" >
@@ -174,6 +174,21 @@ func TestGetLLDPNeighbors(t *testing.T) {
 			wantRetCode: codes.OK,
 			wantRespVal: []byte(expectedLLDPNeighborsWithIfAliasNameResponse),
 			valTest:     true,
+			mockOutputFile: map[string]string{
+				"docker": "../testdata/lldp/lldpctl_specified_interface_json.txt",
+			},
+			ignoreValOrder: true,
+		},
+		{
+			desc:       "query SHOW lldp neighbors - normal device with specified interface name -path option SONIC_CLI_IFACE_MODE=alias",
+			pathTarget: "SHOW",
+			textPbPath: `
+				elem: <name: "lldp" >
+				elem: <name: "neighbors" >
+                elem: <name: "Ethernet354" key: { key: "SONIC_CLI_IFACE_MODE" value: "alias" } >
+			`,
+			wantRetCode: codes.NotFound,
+			valTest:     false,
 			mockOutputFile: map[string]string{
 				"docker": "../testdata/lldp/lldpctl_specified_interface_json.txt",
 			},

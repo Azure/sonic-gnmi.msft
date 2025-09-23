@@ -362,7 +362,7 @@ func fetchFdbData() ([]BridgeMacEntry, error) {
 		} else if bvid, ok := fdb["bvid"]; ok {
 			vlanIDStr, err = getVlanIDFromBvid(bvid, bvidMap)
 			if err != nil || vlanIDStr == "" {
-				vlanIDStr = bvid // fallback
+				continue
 			}
 		} else {
 			continue

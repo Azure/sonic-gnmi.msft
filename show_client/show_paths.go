@@ -673,7 +673,7 @@ func init() {
 
 	sdc.RegisterCliPath(
 		[]string{"SHOW", "interfaces", "transceiver", "eeprom"},
-		getTransceiverEEPROM,
+		getTransceiverInfo,
 		"SHOW/interfaces/transceiver/eeprom[OPTIONS]: Show interface transceiver EEPROM information",
 		0,
 		1,

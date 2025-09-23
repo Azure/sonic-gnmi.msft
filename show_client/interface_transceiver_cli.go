@@ -131,31 +131,13 @@ func getEEPROM(args sdc.CmdArgs, options sdc.OptionMap) (map[string]interface{},
 	return intfEEPROM, nil
 }
 
-func getTransceiverEEPROM(args sdc.CmdArgs, options sdc.OptionMap) ([]byte, error) {
-	intfEEPROM, err := getEEPROM(args, options)
-	if err != nil {
-		return nil, err
-	}
-
-	data, err := json.Marshal(intfEEPROM)
-	if err != nil {
-		return nil, err
-	}
-	return data, nil
-}
-
-// Command "show interfaces transceiver info"
 func getTransceiverInfo(args sdc.CmdArgs, options sdc.OptionMap) ([]byte, error) {
 	intfEEPROM, err := getEEPROM(args, options)
 	if err != nil {
 		return nil, err
 	}
 
-	data, err := json.Marshal(intfEEPROM)
-	if err != nil {
-		return nil, err
-	}
-	return data, nil
+	return json.Marshal(intfEEPROM)
 }
 
 type portLpmode struct {

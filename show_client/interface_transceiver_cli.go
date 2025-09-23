@@ -233,6 +233,7 @@ func querySfpPM(intf string) map[string]string {
 	convertVdmFieldsToLegacyFields(firstSubport, sfpThresholdDict, CCMIS_VDM_THRESHOLD_TO_LEGACY_DOM_THRESHOLD_MAP, "THRESHOLD")
 
 	if len(sfpPMDict) > 0 {
+		log.Errorf("%v: %v", intf, sfpPMDict)
 		output := map[string]string{
 			"interface":   intf,
 			"description": "Min,Avg,Max,Threshold High Alarm,Threshold High Warning,Threshold Crossing Alert-High,Threshold Low Alarm,Threshold Low Warning,Threshold Crossing Alert-Low",
@@ -313,7 +314,7 @@ func querySfpPM(intf string) map[string]string {
 		return output
 	} else {
 		return map[string]string{
-			"name":        intf,
+			"interface":   intf,
 			"description": ZR_PM_NOT_APPLICABLE_STR,
 		}
 	}

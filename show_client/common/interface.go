@@ -158,7 +158,7 @@ func IsValidPhysicalPort(iface string) (bool, error) {
 }
 
 func IsRoleInternal(role string) bool {
-	return role == InternalPort || role == InbandPort || role == RecircPort || role == DpuConnectPort
+	return role != "Ext"
 }
 
 func IsFrontPanelPort(iface string, role string) bool {

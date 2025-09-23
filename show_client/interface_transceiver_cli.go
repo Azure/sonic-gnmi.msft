@@ -325,10 +325,6 @@ func getInterfaceTransceiverPM(args sdc.CmdArgs, options sdc.OptionMap) ([]byte,
 
 	result := make([]map[string]string, 0)
 	if intf != "" {
-		if ok, _ := common.IsValidPhysicalPort(intf); !ok {
-			log.Errorf("Invalid interface: %v!", intf)
-			return nil, fmt.Errorf("Invalid interface: %v!", intf)
-		}
 		result = append(result, querySfpPM(intf))
 	} else {
 		queries := [][]string{

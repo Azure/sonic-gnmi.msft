@@ -41,6 +41,7 @@ func TestGetTransceiverPM(t *testing.T) {
 	StateDbFile := "../testdata/STATE_DB.json"
 	transceiverPM := `[{"interface": "Ethernet0","description": "Transceiver performance monitoring not applicable"}, {"interface": "Ethernet40","description": "Transceiver performance monitoring not applicable"},{"interface": "Ethernet80","description": "Transceiver performance monitoring not applicable"},{"interface": "Ethernet120","description": "Transceiver performance monitoring not applicable"}]`
 	transceiverPMPort := `[{"interface": "Ethernet0","description": "Transceiver performance monitoring not applicable"}]`
+	transceiverPMNonExistPort := `[{"interface": "Ethernet1","description": "Transceiver performance monitoring not applicable"}]`
 	transceiverPMWithData := `[{"interface": "Ethernet0","description": "Min,Avg,Max,Threshold High Alarm,Threshold High Warning,Threshold Crossing Alert-High,Threshold Low Alarm,Threshold Low Warning,Threshold Crossing Alert-Low",
 	"Tx Power":        "-8.22dBm,-8.23dBm,-8.24dBm,-5.0dBm,-6.0dBm,False,-16.99dBm,-16.003dBm,False",
 	"Rx Total Power":  "-10.61dBm,-10.62dBm,-10.62dBm,2.0dBm,0.0dBm,False,-21.0dBm,-18.0dBm,False",
@@ -111,9 +112,12 @@ func TestGetTransceiverPM(t *testing.T) {
 				elem: <name: "pm" >
 				elem: <name: "Ethernet1">
 			`,
-			wantRetCode: codes.NotFound,
+			wantRetCode: codes.OK,
+			wantRespVal: []byte(transceiverPMNonExistPort),
+			valTest:     true,
 			testInit: func() {
 				AddDataSet(t, ApplDbNum, ApplDbFile)
+				AddDataSet(t, ConfigDbNum, ConfigDbFile)
 			},
 		},
 		{

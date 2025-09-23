@@ -154,11 +154,11 @@ func IsValidPhysicalPort(iface string) (bool, error) {
 		return false, err
 	}
 	role := GetFieldValueString(portTable, iface, DefaultMissingCounterValue, "role")
-	return role != DefaultMissingCounterValue && IsFrontPanelPort(iface, role), nil
+	return IsFrontPanelPort(iface, role), nil
 }
 
 func IsRoleInternal(role string) bool {
-	return role == InternalPort || role == InbandPort || role == RecircPort || role == DpuConnectPort
+	return role != DefaultMissingCounterValue && (role == InternalPort || role == InbandPort || role == RecircPort || role == DpuConnectPort)
 }
 
 func IsFrontPanelPort(iface string, role string) bool {

@@ -170,6 +170,26 @@ func TestGetLLDPNeighbors(t *testing.T) {
 			},
 		},
 		{
+			desc:       "query SHOW lldp neighbors - normal device - path option SONIC_CLI_IFACE_MODE=alias-No alias map - ForceRefreshAliasMap success",
+			pathTarget: "SHOW",
+			textPbPath: `
+				elem: <name: "lldp" >
+                elem: <name: "neighbors" key: { key: "SONIC_CLI_IFACE_MODE" value: "alias" } >
+			`,
+			wantRetCode: codes.OK,
+			wantRespVal: []byte(expectedLLDPNeighborsResponse),
+			valTest:     true,
+			mockOutputFile: map[string]string{
+				"docker": "../testdata/lldp/lldpctl_json.txt",
+			},
+			ignoreValOrder: true,
+			mockPatch: func() *gomonkey.Patches {
+				return gomonkey.ApplyFunc(sdc.ForceRefreshAliasMap, func() error {
+					return nil
+				})
+			},
+		},
+		{
 			desc:       "query SHOW lldp neighbors - normal device with specified interface name",
 			pathTarget: "SHOW",
 			textPbPath: `
@@ -203,6 +223,27 @@ func TestGetLLDPNeighbors(t *testing.T) {
 			mockPatch: func() *gomonkey.Patches {
 				return gomonkey.ApplyFunc(sdc.ForceRefreshAliasMap, func() error {
 					return fmt.Errorf("ForceRefreshAliasMap failed")
+				})
+			},
+		},
+		{
+			desc:       "query SHOW lldp neighbors - normal device with specified interface alias -path option SONIC_CLI_IFACE_MODE=alias-No alias map - ForceRefreshAliasMap success",
+			pathTarget: "SHOW",
+			textPbPath: `
+				elem: <name: "lldp" >
+				elem: <name: "neighbors" >
+                elem: <name: "etp354" key: { key: "SONIC_CLI_IFACE_MODE" value: "alias" } >
+			`,
+			wantRetCode: codes.NotFound,
+			wantRespVal: []byte(expectedLLDPNeighborsWithIfAliasNameResponse),
+			valTest:     false,
+			mockOutputFile: map[string]string{
+				"docker": "../testdata/lldp/lldpctl_specified_interface_json.txt",
+			},
+			ignoreValOrder: true,
+			mockPatch: func() *gomonkey.Patches {
+				return gomonkey.ApplyFunc(sdc.ForceRefreshAliasMap, func() error {
+					return nil
 				})
 			},
 		},

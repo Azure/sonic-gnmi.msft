@@ -2,6 +2,7 @@ package common
 
 import (
 	"fmt"
+	"net"
 	"sort"
 	"strconv"
 	"strings"
@@ -121,4 +122,22 @@ func SplitCompositeKey(k string) (string, string, bool) {
 		return parts[0], parts[1], true
 	}
 	return "", "", false
+}
+
+// ParseIPv4 validates the input string and returns the parsed IPv4 address or an error.
+func ParseIPv4(ipStr string) (net.IP, error) {
+	ip := net.ParseIP(ipStr)
+	if ip == nil || ip.To4() == nil {
+		return nil, fmt.Errorf("invalid IPv4 address: %s", ipStr)
+	}
+	return ip, nil
+}
+
+// ParseIPv6 validates the input string and returns the parsed IPv6 address or an error.
+func ParseIPv6(ipStr string) (net.IP, error) {
+	ip := net.ParseIP(ipStr)
+	if ip == nil || ip.To4() != nil {
+		return nil, fmt.Errorf("invalid IPv6 address: %s", ipStr)
+	}
+	return ip, nil
 }

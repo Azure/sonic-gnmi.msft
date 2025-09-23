@@ -172,6 +172,22 @@ func TestGetArpTable(t *testing.T) {
 				})
 			},
 		},
+		{
+			desc:       "query show arp with invalid IPv4 address",
+			pathTarget: "SHOW",
+			textPbPath: `
+			elem: <name: "arp" >
+			elem: <name: "10.0.0.999"
+			key: { key: "iface" value: "eth0" }
+			key: { key: "SONIC_CLI_IFACE_MODE" value: "alias" } >
+			`,
+			wantRetCode: codes.NotFound,
+			wantRespVal: nil,
+			valTest:     false,
+			testInit: func() *gomonkey.Patches {
+				return nil
+			},
+		},
 	}
 
 	for _, test := range tests {

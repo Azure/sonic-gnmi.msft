@@ -27,7 +27,11 @@ func getArpTable(args sdc.CmdArgs, options sdc.OptionMap) ([]byte, error) {
 	cmd := CmdPrefix
 
 	if len(args) > 0 && args[0] != "" {
-		cmd += " " + IPFlag + " " + args[0]
+		ip, err := common.ParseIPv4(args[0])
+		if err != nil {
+			return nil, err
+		}
+		cmd += " " + IPFlag + " " + ip.String()
 	}
 
 	if ifaceVal, ok := options["iface"]; ok {
@@ -60,6 +64,10 @@ func getArpTable(args sdc.CmdArgs, options sdc.OptionMap) ([]byte, error) {
 			strings.Contains(line, "Address") ||
 			strings.Contains(line, "Total number of entries") {
 			continue
+		}
+
+		for i := range fields {
+			fields[i] = strings.TrimSpace(fields[i])
 		}
 
 		entries = append(entries, ArpEntry{

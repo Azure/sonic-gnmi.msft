@@ -5,6 +5,7 @@ import (
 	"fmt"
 	log "github.com/golang/glog"
 	"github.com/sonic-net/sonic-gnmi/show_client/common"
+	sdc "github.com/sonic-net/sonic-gnmi/sonic_data_client"
 	"strconv"
 	"time"
 )
@@ -282,7 +283,7 @@ func getInterfaceCountersSnapshot(ifaces []string) (map[string]InterfaceCounters
 	}
 
 	queries = [][]string{
-		"STATE_DB", "PORT_TABLE"},
+		{"STATE_DB", "PORT_TABLE"},
 	}
 
 	statePortTable, err := common.GetMapFromQueries(queries)

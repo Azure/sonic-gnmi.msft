@@ -6,7 +6,6 @@ import (
 	"time"
 
 	log "github.com/golang/glog"
-	"github.com/sonic-net/sonic-gnmi/show_client/common"
 	sdc "github.com/sonic-net/sonic-gnmi/sonic_data_client"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -49,7 +48,7 @@ func getInterfaceCountersErrors(args sdc.CmdArgs, options sdc.OptionMap) ([]byte
 		return nil, err
 	}
 
-	finalSnapshot, err := snapshotWithOptionalDiff(ifaces, period, takeDiffSnapshot)
+	finalSnapshot, err := snapshotWithOptionalDiff(nil, period, takeDiffSnapshot)
 	if err != nil {
 		return nil, err
 	}
@@ -86,7 +85,7 @@ func getInterfaceCountersRates(args sdc.CmdArgs, options sdc.OptionMap) ([]byte,
 		return nil, err
 	}
 
-	finalSnapshot, err := snapshotWithOptionalDiff(ifaces, period, takeDiffSnapshot)
+	finalSnapshot, err := snapshotWithOptionalDiff(nil, period, takeDiffSnapshot)
 	if err != nil {
 		return nil, err
 	}
@@ -100,7 +99,7 @@ func getInterfaceCountersFecStats(args sdc.CmdArgs, options sdc.OptionMap) ([]by
 		return nil, err
 	}
 
-	finalSnapshot, err := snapshotWithOptionalDiff(ifaces, period, takeDiffSnapshot)
+	finalSnapshot, err := snapshotWithOptionalDiff(nil, period, takeDiffSnapshot)
 	if err != nil {
 		return nil, err
 	}

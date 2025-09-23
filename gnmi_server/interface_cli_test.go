@@ -119,6 +119,20 @@ func TestGetInterfaceCounters(t *testing.T) {
 			valTest:     true,
 		},
 		{
+			desc:       "query SHOW interfaces counters interfaces option via STATE_DB",
+			pathTarget: "SHOW",
+			textPbPath: `
+				elem: <name: "interfaces" >
+				elem: <name: "counters" key: { key: "interface" value: "Ethernet0" }>
+			`,
+			wantRetCode: codes.OK,
+			wantRespVal: []byte(interfaceCountersSelectPorts),
+			testInit: func() {
+				AddDataSet(t, StateDbNum, stateDBPortTableFileName)
+			},
+			valTest: true,
+		},
+		{
 			desc:       "query SHOW interfaces counters period option",
 			pathTarget: "SHOW",
 			textPbPath: `
@@ -358,20 +372,6 @@ func TestGetInterfaceCounters(t *testing.T) {
 			wantRespVal: []byte(interfaceCountersDetailedEth0CachePeriod),
 			valTest:     true,
 			mockSleep:   true,
-		},
-		{
-			desc:       "query SHOW interfaces counters interfaces option via STATE_DB",
-			pathTarget: "SHOW",
-			textPbPath: `
-				elem: <name: "interfaces" >
-				elem: <name: "counters" key: { key: "interface" value: "Ethernet0" }>
-			`,
-			wantRetCode: codes.OK,
-			wantRespVal: []byte(interfaceCountersSelectPorts),
-			testInit: func() {
-				AddDataSet(t, StateDbNum, stateDBPortTableFileName)
-			},
-			valTest:     true,
 		},
 	}
 

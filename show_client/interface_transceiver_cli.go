@@ -94,7 +94,6 @@ func getInterfaceTransceiverPresence(args sdc.CmdArgs, options sdc.OptionMap) ([
 	return json.Marshal(status)
 }
 
-// Command "show interfaces transceiver eeprom"
 func getEEPROM(args sdc.CmdArgs, options sdc.OptionMap) (map[string]interface{}, error) {
 	intf := args.At(0)
 

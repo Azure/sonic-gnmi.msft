@@ -6,7 +6,7 @@ import (
 	"strings"
 
 	log "github.com/golang/glog"
-	sccommon "github.com/sonic-net/sonic-gnmi/show_client/common"
+	"github.com/sonic-net/sonic-gnmi/show_client/common"
 	sdc "github.com/sonic-net/sonic-gnmi/sonic_data_client"
 )
 
@@ -121,7 +121,7 @@ func getEEPROM(args sdc.CmdArgs, options sdc.OptionMap) (map[string]interface{},
 		}
 
 		role := GetFieldValueString(portTable, iface, defaultMissingCounterValue, "role")
-		if sccommon.IsFrontPanelPort(iface, role) {
+		if common.IsFrontPanelPort(iface, role) {
 			intfEEPROM[iface] = convertInterfaceSfpInfoToCliOutputString(iface, dumpDom)
 		} else {
 			continue

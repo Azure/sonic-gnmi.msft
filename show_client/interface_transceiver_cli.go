@@ -121,7 +121,7 @@ func getEEPROM(args sdc.CmdArgs, options sdc.OptionMap) (map[string]interface{},
 		}
 
 		role := GetFieldValueString(portTable, iface, defaultMissingCounterValue, "role")
-		if isFrontPanelPort(iface, role) {
+		if IsFrontPanelPort(iface, role) {
 			intfEEPROM[iface] = convertInterfaceSfpInfoToCliOutputString(iface, dumpDom)
 		} else {
 			continue

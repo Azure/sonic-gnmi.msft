@@ -1,0 +1,54 @@
+{
+  "PORT|Ethernet0": {
+    "lanes": "29,30,31,32",
+    "description": "config_db:switch-01t1:port1",
+    "pfc_asym": "off",
+    "mtu": "9100",
+    "alias": "fortyGigE0/0",
+    "admin_status": "up",
+    "speed": "10000",
+    "index": "0"
+  },
+  "PORT|Ethernet4": {
+    "lanes": "25,26,27,28",
+    "description": "config_db:server1:port1",
+    "pfc_asym": "off",
+    "mtu": "9100",
+    "alias": "fortyGigE0/4",
+    "admin_status": "up",
+    "speed": "25000",
+    "mux_cable": "true",
+    "index": "1"
+  },
+  "PORT|Ethernet8": {
+    "lanes": "37,38,39,40",
+    "description": "config_db:Interface description",
+    "pfc_asym": "off",
+    "mtu": "9100",
+    "alias": "fortyGigE0/8",
+    "admin_status": "up",
+    "speed": "40000",
+    "mux_cable": "true",
+    "index": "2"
+  },
+  "PORT|Ethernet12": {
+    "index": "3",
+    "lanes": "41,42,43,44",
+    "alias": "fortyGigE0/12",
+    "admin_status": "up",
+    "speed": "100000",
+    "mtu": "9100",
+    "pfc_asym": "off",
+    "description": "config_db:placeholder"
+  },
+  "PORT|Ethernet16": {
+    "lanes": "17,18,19,20",
+    "description": "config_db:added for C-CMIS test",
+    "pfc_asym": "off",
+    "mtu": "9100",
+    "alias": "fortyGigE0/16",
+    "admin_status": "up",
+    "speed": "100000",
+    "index": "4"
+  }
+}

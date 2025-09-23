@@ -17,28 +17,28 @@ const (
 
 var countersQueueTypeMap map[string]string = make(map[string]string)
 
-func getQueueUserWatermarksSnapshot(ifaces []string, requestedQueueType int) (map[string]map[string]string, error) {
+func getQueueWatermarksSnapshot(ifaces []string, requestedQueueType int, watermarkType string) (map[string]map[string]string, error) {
 	var queries [][]string
 	if len(ifaces) == 0 {
-		// Need queue user watermarks for all interfaces
-		queries = append(queries, []string{"COUNTERS_DB", "USER_WATERMARKS", "Ethernet*", "Queues"})
+		// Need queue watermarks for all interfaces
+		queries = append(queries, []string{"COUNTERS_DB", watermarkType, "Ethernet*", "Queues"})
 	} else {
 		for _, iface := range ifaces {
-			queries = append(queries, []string{"COUNTERS_DB", "USER_WATERMARKS", iface, "Queues"})
+			queries = append(queries, []string{"COUNTERS_DB", watermarkType, iface, "Queues"})
 		}
 	}
 
-	queueUserWatermarks, err := common.GetMapFromQueries(queries)
+	queueWatermarks, err := common.GetMapFromQueries(queries)
 	if err != nil {
 		log.Errorf("Unable to pull data for queries %v, got err %v", queries, err)
 		return nil, err
 	}
 
-	response := make(map[string]map[string]string) // port => queue (e.g., UC0 or MC10) => user watermark
-	for queue, userWatermark := range queueUserWatermarks {
-		userWatermarkMap, ok := userWatermark.(map[string]interface{})
+	response := make(map[string]map[string]string) // port => queue (e.g., UC0 or MC10) => watermark
+	for queue, watermark := range queueWatermarks {
+		watermarkMap, ok := watermark.(map[string]interface{})
 		if !ok {
-			log.Warningf("Ignoring invalid user watermark %v for the queue %v", userWatermark, queue)
+			log.Warningf("Ignoring invalid watermark %v for the queue %v", watermark, queue)
 			continue
 		}
 		port_qindex := strings.Split(queue, countersDBSeparator)
@@ -51,13 +51,13 @@ func getQueueUserWatermarksSnapshot(ifaces []string, requestedQueueType int) (ma
 			continue
 		}
 		if requestedQueueType == ALL || (requestedQueueType == UNICAST && qtype == "UC") || (requestedQueueType == MULTICAST && qtype == "MC") {
-			response[port_qindex[0]][qtype+port_qindex[1]] = common.GetValueOrDefault(userWatermarkMap, "SAI_QUEUE_STAT_SHARED_WATERMARK_BYTES", common.DefaultMissingCounterValue)
+			response[port_qindex[0]][qtype+port_qindex[1]] = common.GetValueOrDefault(watermarkMap, "SAI_QUEUE_STAT_SHARED_WATERMARK_BYTES", common.DefaultMissingCounterValue)
 		}
 	}
 	return response, nil
 }
 
-func getQueueUserWatermarksCommon(options sdc.OptionMap, requestedQueueType int) ([]byte, error) {
+func getQueueWatermarksCommon(options sdc.OptionMap, requestedQueueType int, watermarkType string) ([]byte, error) {
 	if len(countersQueueTypeMap) == 0 {
 		var err error
 		countersQueueTypeMap, err = sdc.GetCountersQueueTypeMap()
@@ -67,15 +67,14 @@ func getQueueUserWatermarksCommon(options sdc.OptionMap, requestedQueueType int)
 		}
 	}
 
-	// TODO: Check this option
 	var ifaces []string
 	if interfaces, ok := options["interfaces"].Strings(); ok {
 		ifaces = interfaces
 	}
 
-	snapshot, err := getQueueUserWatermarksSnapshot(ifaces, requestedQueueType)
+	snapshot, err := getQueueWatermarksSnapshot(ifaces, requestedQueueType, watermarkType)
 	if err != nil {
-		log.Errorf("Unable to get queue user watermarks due to err: %v", err)
+		log.Errorf("Unable to get queue watermarks due to err: %v", err)
 		return nil, err
 	}
 
@@ -93,14 +92,37 @@ func getQueueUserWatermarks(args sdc.CmdArgs, options sdc.OptionMap) ([]byte, er
 	return json.Marshal(help)
 }
 
+func getQueuePersistentWatermarks(args sdc.CmdArgs, options sdc.OptionMap) ([]byte, error) {
+	help := map[string]interface{}{
+		"subcommands": map[string]string{
+			"all":       "show/queue/persistent-watermark/all",
+			"unicast":   "show/queue/persistent-watermark/unicast",
+			"multicast": "show/queue/persistent-watermark/multicast",
+		},
+	}
+	return json.Marshal(help)
+}
+
 func getQueueUserWatermarksAll(args sdc.CmdArgs, options sdc.OptionMap) ([]byte, error) {
-	return getQueueUserWatermarksCommon(options, ALL)
+	return getQueueWatermarksCommon(options, ALL, "USER_WATERMARKS")
 }
 
 func getQueueUserWatermarksUnicast(args sdc.CmdArgs, options sdc.OptionMap) ([]byte, error) {
-	return getQueueUserWatermarksCommon(options, UNICAST)
+	return getQueueWatermarksCommon(options, UNICAST, "USER_WATERMARKS")
 }
 
 func getQueueUserWatermarksMulticast(args sdc.CmdArgs, options sdc.OptionMap) ([]byte, error) {
-	return getQueueUserWatermarksCommon(options, MULTICAST)
+	return getQueueWatermarksCommon(options, MULTICAST, "USER_WATERMARKS")
+}
+
+func getQueuePersistentWatermarksAll(args sdc.CmdArgs, options sdc.OptionMap) ([]byte, error) {
+	return getQueueWatermarksCommon(options, ALL, "PERSISTENT_WATERMARKS")
+}
+
+func getQueuePersistentWatermarksUnicast(args sdc.CmdArgs, options sdc.OptionMap) ([]byte, error) {
+	return getQueueWatermarksCommon(options, UNICAST, "PERSISTENT_WATERMARKS")
+}
+
+func getQueuePersistentWatermarksMulticast(args sdc.CmdArgs, options sdc.OptionMap) ([]byte, error) {
+	return getQueueWatermarksCommon(options, MULTICAST, "PERSISTENT_WATERMARKS")
 }

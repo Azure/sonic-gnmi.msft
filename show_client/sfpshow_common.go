@@ -7,8 +7,12 @@ import (
 	"sort"
 	"strings"
 
+	log "github.com/golang/glog"
 	natural "github.com/maruel/natural"
+	"github.com/sonic-net/sonic-gnmi/show_client/common"
 )
+
+const TransceiverStatusNotApplicable = "Transceiver status info not applicable"
 
 func isTransceiverCmis(sfpInfoDict map[string]interface{}) bool {
 	if sfpInfoDict == nil {
@@ -26,8 +30,8 @@ func isTransceiverCCmis(sfpInfoDict map[string]interface{}) bool {
 	return ok
 }
 
-var CmisDataMap = mergeMaps(QsfpDataMap, QsfpCmisDeltaDataMap)
-var CCmisDataMap = mergeMaps(CmisDataMap, CCmisDeltaDataMap)
+var CmisDataMap = common.MergeMaps(QsfpDataMap, QsfpCmisDeltaDataMap)
+var CCmisDataMap = common.MergeMaps(CmisDataMap, CCmisDeltaDataMap)
 
 func getTransceiverDataMap(sfpInfoDict map[string]interface{}) map[string]string {
 	if sfpInfoDict == nil {
@@ -375,10 +379,10 @@ func convertInterfaceSfpInfoToCliOutputString(iface string, dumpDom bool) string
 	output := make(map[string]interface{})
 	var queries [][]string
 
-	pmr := &PortMappingRetriever{}
-	pmr.readPorttabMappings()
+	pmr := &common.PortMappingRetriever{}
+	pmr.ReadPorttabMappings()
 
-	firstPort := getFirstSubPort(pmr, iface)
+	firstPort := common.GetFirstSubPort(pmr, iface)
 	if firstPort == "" {
 		fmt.Printf("Error: Unable to get first subport for %s while converting SFP info\n", iface)
 		return "SFP EEPROM Not detected\n"
@@ -447,4 +451,184 @@ func convertInterfaceSfpInfoToCliOutputString(iface string, dumpDom bool) string
 		return "Error serializing SFP info\n"
 	}
 	return string(b)
+}
+
+func convertSfpStatusToOutputString(sfpStatus map[string]interface{}, statusMap map[string]string, orderedKeys []string) map[string]interface{} {
+	out := make(map[string]interface{})
+	for _, k := range orderedKeys {
+		label, ok := statusMap[k]
+		if !ok {
+			continue
+		}
+		val, present := sfpStatus[k]
+		if !present {
+			continue
+		}
+		out[label] = val
+	}
+	return out
+}
+
+func convertInterfaceSfpStatusToCliOutputString(iface string) string {
+	pmr := &common.PortMappingRetriever{}
+	pmr.ReadPorttabMappings()
+
+	firstSubport := common.GetFirstSubPort(pmr, iface)
+	if firstSubport == "" {
+		fmt.Printf("Error: Unable to get first subport for %s while converting SFP status\n", iface)
+		return fmt.Sprintf("%s\n", TransceiverStatusNotApplicable)
+	}
+
+	sfpStatusDict, _ := GetMapFromQueries([][]string{{StateDb, "TRANSCEIVER_STATUS", firstSubport}})
+	if len(sfpStatusDict) == 0 {
+		log.V(5).Infof("No sfp status for iface=%s firstSubport=%s", iface, firstSubport)
+		return fmt.Sprintf("%s\n", TransceiverStatusNotApplicable)
+	}
+
+	mergedSfpStatusDict := make(map[string]interface{})
+	for k, v := range sfpStatusDict {
+		mergedSfpStatusDict[k] = v
+	}
+
+	// Additional handling to ensure that the CLI output remains the same after restructuring the diagnostic data in the state DB
+	mergeList := []struct {
+		table string
+		key   string
+	}{
+		{"TRANSCEIVER_STATUS_SW", iface},
+		{"TRANSCEIVER_STATUS_FLAG", firstSubport},
+		{"TRANSCEIVER_DOM_FLAG", firstSubport},
+	}
+
+	for _, q := range mergeList {
+		if statusInDB, _ := GetMapFromQueries([][]string{{StateDb, q.table, q.key}}); len(statusInDB) != 0 {
+			for k, v := range statusInDB {
+				mergedSfpStatusDict[k] = v
+			}
+		}
+	}
+
+	if len(mergedSfpStatusDict) <= 2 {
+		return fmt.Sprintf("%s\n", TransceiverStatusNotApplicable)
+	}
+
+	output := make(map[string]interface{})
+
+	// Common section
+	qsfpMap := convertSfpStatusToOutputString(mergedSfpStatusDict, QsfpStatusMap, qsfpStatusOrder)
+	for k, v := range qsfpMap {
+		output[k] = v
+	}
+
+	// CMIS specific section
+	if _, has := mergedSfpStatusDict["module_state"]; has {
+		normalizeCmisFlagKeys(mergedSfpStatusDict)
+		convertVdmFieldsToLegacyFields(firstSubport, mergedSfpStatusDict, CmisVdmToLegacyStatusMap, "FLAG")
+		cmisMap := convertSfpStatusToOutputString(mergedSfpStatusDict, CmisStatusMap, cmisStatusOrder)
+		for k, v := range cmisMap {
+			output[k] = v
+		}
+	}
+
+	// C-CMIS specific section
+	if _, has := mergedSfpStatusDict["tuning_in_progress"]; has {
+		convertVdmFieldsToLegacyFields(firstSubport, mergedSfpStatusDict, CCmisVdmToLegacyStatusMap, "FLAG")
+		ccmisMap := convertSfpStatusToOutputString(mergedSfpStatusDict, CCmisStatusMap, ccmisStatusOrder)
+		for k, v := range ccmisMap {
+			output[k] = v
+		}
+	}
+
+	if len(output) <= 0 {
+		return fmt.Sprintf("%s\n", TransceiverStatusNotApplicable)
+	}
+
+	b, err := json.Marshal(output)
+	if err != nil {
+		return "Error serializing SFP status\n"
+	}
+	return string(b)
+}
+
+// Converts VDM fields from the database into legacy field names and updates the provided dictionary with the converted values.
+// This function ensures backward compatibility by mapping VDM fields to their corresponding
+// legacy field names based on the specified field type ('FLAG' or 'THRESHOLD').
+// Args:
+// 		interfaceName (str): The name of the interface for which VDM data is being retrieved.
+//      dictToBeUpdated (dict): The dictionary to be updated with the converted legacy field names and values.
+//      vdmToLegacyFieldMap (dict): A mapping of VDM field names to their corresponding legacy field name prefixes.
+//      vdmFieldType (str): Specifies the type of VDM fields to process. It can be either 'FLAG' or 'THRESHOLD'.
+
+func convertVdmFieldsToLegacyFields(interfaceName string,
+	dictToBeUpdated map[string]interface{},
+	vdmToLegacyFieldMap map[string]string,
+	vdmFieldType string) {
+
+	if dictToBeUpdated == nil {
+		return
+	}
+	if vdmFieldType != "FLAG" && vdmFieldType != "THRESHOLD" {
+		return
+	}
+
+	// Retrieve VDM data from the database
+	getVdmFromDB := func(prefix string) map[string]interface{} {
+		queries := [][]string{
+			{"STATE_DB", fmt.Sprintf("%s_%s", prefix, vdmFieldType), interfaceName},
+		}
+		m, err := GetMapFromQueries(queries)
+		if err != nil || m == nil {
+			return nil
+		}
+		return m
+	}
+
+	halarm := getVdmFromDB("TRANSCEIVER_VDM_HALARM")
+	lalarm := getVdmFromDB("TRANSCEIVER_VDM_LALARM")
+	hwarn := getVdmFromDB("TRANSCEIVER_VDM_HWARN")
+	lwarn := getVdmFromDB("TRANSCEIVER_VDM_LWARN")
+
+	vdmThresholdTypes := map[string]map[string]interface{}{
+		"highalarm":   halarm,
+		"lowalarm":    lalarm,
+		"highwarning": hwarn,
+		"lowwarning":  lwarn,
+	}
+
+	for vdmField, legacyPrefix := range vdmToLegacyFieldMap {
+		for threshType, vdmDict := range vdmThresholdTypes {
+			if vdmDict == nil {
+				continue
+			}
+			if val, ok := vdmDict[vdmField]; ok {
+				var legacyName string
+				if vdmFieldType == "FLAG" {
+					legacyName = fmt.Sprintf("%s%s_flag", legacyPrefix, threshType)
+				} else { // THRESHOLD
+					legacyName = fmt.Sprintf("%s%s", legacyPrefix, threshType)
+				}
+				dictToBeUpdated[legacyName] = val
+			}
+		}
+	}
+}
+
+func normalizeCmisFlagKeys(m map[string]interface{}) {
+	rules := [][2]string{
+		{"temphighalarm_flag", "tempHAlarm"},
+		{"temphighwarning_flag", "tempHWarn"},
+		{"templowwarning_flag", "tempLWarn"},
+		{"templowalarm_flag", "tempLAlarm"},
+		{"vcchighalarm_flag", "vccHAlarm"},
+		{"vcchighwarning_flag", "vccHWarn"},
+		{"vcclowwarning_flag", "vccLWarn"},
+		{"vcclowalarm_flag", "vccLAlarm"},
+	}
+	for _, r := range rules {
+		if v, ok := m[r[0]]; ok {
+			if _, exists := m[r[1]]; !exists {
+				m[r[1]] = v
+			}
+		}
+	}
 }

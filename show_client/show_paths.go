@@ -266,6 +266,17 @@ func init() {
 		nil,
 		showCmdOptionInterface, // TODO
 	)
+	sdc.RegisterCliPath(
+		[]string{"SHOW", "interfaces", "transceiver", "status"},
+		getInterfaceTransceiverStatus,
+		"SHOW/interfaces/transceiver/status/{INTERFACENAME}[OPTIONS]: Show interface transceiver status",
+		0,
+		1,
+		nil,
+		showCmdOptionSonicCliIfaceMode,
+		sdc.UnimplementedOption(showCmdOptionNamespace),
+		showCmdOptionVerbose,
+	)
 
 	// SHOW/ipv6
 	sdc.RegisterCliPath(
@@ -432,6 +443,15 @@ func init() {
 		nil,
 		showCmdOptionVerbose,
 	)
+	sdc.RegisterCliPath(
+		[]string{"SHOW", "processes", "cpu"},
+		getProcessesCPU,
+		"SHOW/processes/cpu[OPTIONS]: Show processes information sorted by cpu usage",
+		0,
+		0,
+		nil,
+		showCmdOptionVerbose,
+	)
 
 	// SHOW/queue
 	sdc.RegisterCliPath(
@@ -511,6 +531,52 @@ func init() {
 		sdc.UnimplementedOption(showCmdOptionNamespace),
 		showCmdOptionJson,
 	)
+	sdc.RegisterCliPath(
+		[]string{"SHOW", "queue", "persistent-watermark"},
+		getQueuePersistentWatermarks,
+		"SHOW/queue/persistent-watermark/COMMAND[OPTIONS]: Show persistent WM for queues",
+		0,
+		0,
+		map[string]string{
+			"all":       "show/queue/persistent-watermark/all",
+			"unicast":   "show/queue/persistent-watermark/unicast",
+			"multicast": "show/queue/persistent-watermark/multicast",
+		},
+	)
+	sdc.RegisterCliPath(
+		[]string{"SHOW", "queue", "persistent-watermark", "all"},
+		getQueuePersistentWatermarksAll,
+		"SHOW/queue/persistent-watermark/all[OPTIONS]: Show persistent WM for unicast and multicast queues",
+		0,
+		0,
+		nil,
+		showCmdOptionInterfaces,
+		sdc.UnimplementedOption(showCmdOptionNamespace),
+		showCmdOptionJson,
+	)
+	sdc.RegisterCliPath(
+		[]string{"SHOW", "queue", "persistent-watermark", "unicast"},
+		getQueuePersistentWatermarksUnicast,
+		"SHOW/queue/persistent-watermark/unicast[OPTIONS]: Show persistent WM for unicast queues",
+		0,
+		0,
+		nil,
+		showCmdOptionInterfaces,
+		sdc.UnimplementedOption(showCmdOptionNamespace),
+		showCmdOptionJson,
+	)
+	sdc.RegisterCliPath(
+		[]string{"SHOW", "queue", "persistent-watermark", "multicast"},
+		getQueuePersistentWatermarksMulticast,
+		"SHOW/queue/persistent-watermark/multicast[OPTIONS]: Show persistent WM for multicast queues",
+		0,
+		0,
+		nil,
+		showCmdOptionInterfaces,
+		sdc.UnimplementedOption(showCmdOptionNamespace),
+		showCmdOptionJson,
+	)
+
 	sdc.RegisterCliPath(
 		[]string{"SHOW", "ipv6", "prefix-list"},
 		getIPv6PrefixList,
@@ -635,6 +701,7 @@ func init() {
 		0,
 		nil,
 	)
+
 	sdc.RegisterCliPath(
 		[]string{"SHOW", "interfaces", "portchannel"},
 		getInterfacePortchannel,
@@ -649,6 +716,17 @@ func init() {
 		[]string{"SHOW", "ecn"},
 		getEcnProfiles,
 		"SHOW/ecn[OPTIONS]: Show ECN profiles",
+		0,
+		0,
+		nil,
+		showCmdOptionVerbose,
+	)
+
+	//SHOW/switch-trimming
+	sdc.RegisterCliPath(
+		[]string{"SHOW", "switch-trimming", "global"},
+		getSwitchTrimmingGlobalConfig,
+		"SHOW/switch-trimming/global[OPTIONS]: Show switch-trimming global config",
 		0,
 		0,
 		nil,

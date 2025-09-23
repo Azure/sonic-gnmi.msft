@@ -1,0 +1,14 @@
+{
+  "PORT_TABLE:Ethernet0": {
+    "state": "ok",
+    "netdev_oper_status": "up",
+    "admin_status": "up",
+    "mtu": "9100",
+    "supported_speeds": "40000,100000",
+    "supported_fecs": "none,rs",
+    "host_tx_ready": "true",
+    "NPU_SI_SETTINGS_SYNC_STATUS": "NPU_SI_SETTINGS_NOTIFIED",
+    "speed": "100000",
+    "fec": "rs"
+  }
+}

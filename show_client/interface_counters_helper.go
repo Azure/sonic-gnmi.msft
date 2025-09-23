@@ -6,6 +6,7 @@ import (
 	log "github.com/golang/glog"
 	"github.com/sonic-net/sonic-gnmi/show_client/common"
 	"strconv"
+	"time"
 )
 
 const (
@@ -280,6 +281,16 @@ func getInterfaceCountersSnapshot(ifaces []string) (map[string]InterfaceCounters
 		return nil, err
 	}
 
+	queries = [][]string{
+		"STATE_DB", "PORT_TABLE"},
+	}
+
+	statePortTable, err := common.GetMapFromQueries(queries)
+	if err != nil {
+		log.Errorf("Unable to pull data from queries %v, got err %v", queries, err)
+		statePortTable = map[string]interface{}{} // used for port speed, will default to APPL_DB if failure
+	}
+
 	validatedIfaces := []string{}
 
 	if len(ifaces) == 0 {
@@ -299,7 +310,7 @@ func getInterfaceCountersSnapshot(ifaces []string) (map[string]InterfaceCounters
 
 	for _, iface := range validatedIfaces {
 		state := computeState(iface, portTable)
-		portSpeed := GetFieldValueString(portTable, iface, common.DefaultMissingCounterValue, "speed")
+		portSpeed := computeSpeed(iface, statePortTable, portTable)
 		rxBps := GetFieldValueString(portRates, iface, common.DefaultMissingCounterValue, "RX_BPS")
 		txBps := GetFieldValueString(portRates, iface, common.DefaultMissingCounterValue, "TX_BPS")
 		rxPps := GetFieldValueString(portRates, iface, common.DefaultMissingCounterValue, "RX_PPS")
@@ -824,6 +835,15 @@ func calculateUtil(rate string, portSpeed string) string {
 	}
 	util := byteRate / (portRate * 1e6 / 8.0) * 100.0
 	return fmt.Sprintf("%.2f%%", util)
+}
+
+func computeSpeed(iface string, statePortTable, appPortTable map[string]interface{}) string {
+	speedFromState := GetFieldValueString(statePortTable, iface, common.DefaultMissingCounterValue, "speed")
+	operStatus := GetFieldValueString(appPortTable, iface, common.DefaultMissingCounterValue, "oper_status")
+	if speedFromState == common.DefaultMissingCounterValue || operStatus != "up" {
+		return GetFieldValueString(appPortTable, iface, common.DefaultMissingCounterValue, "speed")
+	}
+	return speedFromState
 }
 
 func computeState(iface string, portTable map[string]interface{}) string {

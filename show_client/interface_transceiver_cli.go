@@ -2,8 +2,8 @@ package show_client
 
 import (
 	"encoding/json"
-	"sort"
 	"fmt"
+	"sort"
 	"strings"
 
 	log "github.com/golang/glog"
@@ -122,24 +122,22 @@ func getEEPROM(args sdc.CmdArgs, options sdc.OptionMap) (map[string]interface{},
 			continue
 		}
 
-		ok, err := isValidPhysicalPort(iface)
-		if err != nil {
-			return nil, err
-		}
-		if ok {
+		role := GetFieldValueString(portTable, iface, defaultMissingCounterValue, "role")
+		if isFrontPanelPort(iface, role) {
 			intfEEPROM[iface] = convertInterfaceSfpInfoToCliOutputString(iface, dumpDom)
+		} else {
+			continue
 		}
+
 	}
 	return intfEEPROM, nil
 }
 
 func getTransceiverEEPROM(args sdc.CmdArgs, options sdc.OptionMap) ([]byte, error) {
-	intfEEPROM, _ := getEEPROM(args, options)
-	keys := make([]string, 0, len(intfEEPROM))
-	for key := range intfEEPROM {
-		keys = append(keys, key)
+	intfEEPROM, err := getEEPROM(args, options)
+	if err != nil {
+		return nil, err
 	}
-	sort.Sort(natural.StringSlice(keys))
 
 	data, err := json.Marshal(intfEEPROM)
 	if err != nil {
@@ -150,12 +148,10 @@ func getTransceiverEEPROM(args sdc.CmdArgs, options sdc.OptionMap) ([]byte, erro
 
 // Command "show interfaces transceiver info"
 func getTransceiverInfo(args sdc.CmdArgs, options sdc.OptionMap) ([]byte, error) {
-	intfEEPROM, _ := getEEPROM(args, options)
-	keys := make([]string, 0, len(intfEEPROM))
-	for key := range intfEEPROM {
-		keys = append(keys, key)
+	intfEEPROM, err := getEEPROM(args, options)
+	if err != nil {
+		return nil, err
 	}
-	sort.Sort(natural.StringSlice(keys))
 
 	data, err := json.Marshal(intfEEPROM)
 	if err != nil {

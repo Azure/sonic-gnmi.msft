@@ -389,10 +389,11 @@ func getNDP(args sdc.CmdArgs, options sdc.OptionMap) ([]byte, error) {
 
 	cmd := baseNdpCmd
 	if ip != "" {
-		if net.ParseIP(ip) != nil {
+		p := net.ParseIP(ip)
+		if p != nil && p.To4() == nil {
 			cmd += " " + ip
 		} else {
-			return nil, fmt.Errorf("invalid IP address: %s", ip)
+			return nil, fmt.Errorf("invalid IPv6 address: %s", ip)
 		}
 	}
 	if intf != "" {

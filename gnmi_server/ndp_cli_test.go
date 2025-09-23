@@ -141,6 +141,15 @@ func TestGetNDP(t *testing.T) {
 			wantRetCode: codes.NotFound,
 		},
 		{
+			desc:       "query SHOW ndp - ipv4 ipaddress",
+			pathTarget: "SHOW",
+			textPbPath: `
+				elem: <name: "ndp" >
+				elem: <name: "192.168.1.1" >
+			`,
+			wantRetCode: codes.NotFound,
+		},
+		{
 			desc:       "query SHOW ndp",
 			pathTarget: "SHOW",
 			textPbPath: `

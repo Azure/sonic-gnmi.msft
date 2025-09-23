@@ -9,7 +9,8 @@
     "mtu": "9100",
     "pfc_asym": "off",
     "speed": "100000",
-    "tpid": "0x8100"
+    "tpid": "0x8100",
+    "role": "Ext"
   },
   "PORT|Ethernet40": {
     "admin_status": "up",
@@ -21,7 +22,8 @@
     "mtu": "9100",
     "pfc_asym": "off",
     "speed": "100000",
-    "tpid": "0x8100"
+    "tpid": "0x8100",
+    "role": "Ext"
   },
   "PORT|Ethernet80": {
     "admin_status": "up",
@@ -33,7 +35,8 @@
     "mtu": "9100",
     "pfc_asym": "off",
     "speed": "100000",
-    "tpid": "0x8100"
+    "tpid": "0x8100",
+    "role": "Ext"
   },
   "PORT|Ethernet120": {
     "admin_status": "up",
@@ -45,7 +48,8 @@
     "mtu": "9100",
     "pfc_asym": "off",
     "speed": "100000",
-    "tpid": "0x8100"
+    "tpid": "0x8100",
+    "role": "Ext"
   },
   "PORTCHANNEL|PortChannel1": {
     "admin_status": "up",

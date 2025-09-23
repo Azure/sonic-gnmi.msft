@@ -11,8 +11,8 @@ import (
 )
 
 const (
-    path = "/usr/share/sonic/device/"
-    configFileName = "system_health_monitoring_config.json"
+	path           = "/usr/share/sonic/device/"
+	configFileName = "system_health_monitoring_config.json"
 )
 
 func getPlatformInfo() string {
@@ -22,25 +22,34 @@ func getPlatformInfo() string {
 		return nil, err
 	}
 	platformInfo, err := GetPlatformInfo(versionInfo)
-    
-    if err != nil {
-        log.Errorf("Failed to get Platform. Error:%v", err)
-        return ""
-    }
 
-    return platformInfo
+	if err != nil {
+		log.Errorf("Failed to get Platform. Error:%v", err)
+		return ""
+	}
+
+	return platformInfo
 }
 
-func isConfigExists() bool {
-    if platform := getPlatformInfo(); platform != "" {
-        fileFullPath := path + platform + configFileName
-        return common.FileExists(fileFullPath)
-    }
-    return false
+func checkSystemHealthConfig() (string, bool) {
+	if platform := getPlatformInfo(); platform != "" {
+		fileFullPath := path + platform + configFileName
+		return fileFullPath, common.FileExists(fileFullPath)
+	}
+	return "", false
 }
 
 func getSystemHealthSummary(args sdc.CmdArgs, options sdc.OptionMap) ([]byte, error) {
-    if !isConfigExists() {
-        return json.Marshal(map[string]string{"Response": "System health configuration file not found."})
-    }
+	if filePath, fileFound := checkSystemHealthConfig(); !fileFound {
+		return json.Marshal(map[string]string{"Response": "System health configuration file not found."})
+	}
+
+	configs, err := common.ReadJsonToMap(filePath)
+	if err != nil {
+		log.Errorf("Failed to get System-Health configs:%v", err)
+		return json.Marshal(map[string]string{"Response": "Invalid system health configurations."})
+	}
+
+	stats, err := helpers.ServiceAndHardwareHealthCheck(configs)
+
 }

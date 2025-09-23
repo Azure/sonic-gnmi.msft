@@ -142,10 +142,6 @@ func TestGetIPv6BGPNetwork(t *testing.T) {
 			"output": %q
 		}
 		`, content)
-
-		if err != nil {
-			t.Fatalf("failed to read file: %v", err)
-		}
 		runTestGet(t, ctx, gClient, "SHOW", textPbPath, codes.OK, wantRespVal, true)
 	})
 	patches.Reset()

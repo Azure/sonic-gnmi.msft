@@ -3,11 +3,9 @@ package show_client
 import (
 	"encoding/json"
 	"fmt"
-	"sort"
 	"strings"
 
 	log "github.com/golang/glog"
-	natural "github.com/maruel/natural"
 	"github.com/sonic-net/sonic-gnmi/show_client/common"
 	sdc "github.com/sonic-net/sonic-gnmi/sonic_data_client"
 )

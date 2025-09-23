@@ -370,7 +370,7 @@ func IsRj45Port(iface string) bool {
 	queries := [][]string{
 		{"STATE_DB", "TRANSCEIVER_INFO", iface},
 	}
-	sfpInfoDict, _ := GetMapFromQueries(queries)
+	sfpInfoDict, _ := common.GetMapFromQueries(queries)
 	portType, _ := sfpInfoDict["type"].(string)
 	return portType == "RJ45"
 }
@@ -391,12 +391,12 @@ func convertInterfaceSfpInfoToCliOutputString(iface string, dumpDom bool) string
 	queries = [][]string{
 		{"STATE_DB", "TRANSCEIVER_INFO", iface},
 	}
-	sfpInfoDict, _ := GetMapFromQueries(queries)
+	sfpInfoDict, _ := common.GetMapFromQueries(queries)
 
 	queries = [][]string{
 		{"STATE_DB", "TRANSCEIVER_FIRMWARE_INFO", iface},
 	}
-	sfpFirmwareInfoDict, _ := GetMapFromQueries(queries)
+	sfpFirmwareInfoDict, _ := common.GetMapFromQueries(queries)
 
 	if len(sfpInfoDict) != 0 {
 		isSfpCmis := isTransceiverCmis(sfpInfoDict)
@@ -410,7 +410,7 @@ func convertInterfaceSfpInfoToCliOutputString(iface string, dumpDom bool) string
 				queries = [][]string{
 					{"STATE_DB", "TRANSCEIVER_DOM_SENSOR", firstPort},
 				}
-				domInfoDict, err := GetMapFromQueries(queries)
+				domInfoDict, err := common.GetMapFromQueries(queries)
 				if err != nil {
 					domInfoDict = make(map[string]interface{})
 				}
@@ -418,7 +418,7 @@ func convertInterfaceSfpInfoToCliOutputString(iface string, dumpDom bool) string
 				queries = [][]string{
 					{"STATE_DB", "TRANSCEIVER_DOM_THRESHOLD", firstPort},
 				}
-				domThresholdDict, err := GetMapFromQueries(queries)
+				domThresholdDict, err := common.GetMapFromQueries(queries)
 				if err != nil {
 					domThresholdDict = make(map[string]interface{})
 				}
@@ -479,7 +479,7 @@ func convertInterfaceSfpStatusToCliOutputString(iface string) string {
 		return fmt.Sprintf("%s\n", TransceiverStatusNotApplicable)
 	}
 
-	sfpStatusDict, _ := GetMapFromQueries([][]string{{StateDb, "TRANSCEIVER_STATUS", firstSubport}})
+	sfpStatusDict, _ := common.GetMapFromQueries([][]string{{common.StateDb, "TRANSCEIVER_STATUS", firstSubport}})
 	if len(sfpStatusDict) == 0 {
 		log.V(5).Infof("No sfp status for iface=%s firstSubport=%s", iface, firstSubport)
 		return fmt.Sprintf("%s\n", TransceiverStatusNotApplicable)
@@ -501,7 +501,7 @@ func convertInterfaceSfpStatusToCliOutputString(iface string) string {
 	}
 
 	for _, q := range mergeList {
-		if statusInDB, _ := GetMapFromQueries([][]string{{StateDb, q.table, q.key}}); len(statusInDB) != 0 {
+		if statusInDB, _ := common.GetMapFromQueries([][]string{{common.StateDb, q.table, q.key}}); len(statusInDB) != 0 {
 			for k, v := range statusInDB {
 				mergedSfpStatusDict[k] = v
 			}
@@ -576,7 +576,7 @@ func convertVdmFieldsToLegacyFields(interfaceName string,
 		queries := [][]string{
 			{"STATE_DB", fmt.Sprintf("%s_%s", prefix, vdmFieldType), interfaceName},
 		}
-		m, err := GetMapFromQueries(queries)
+		m, err := common.GetMapFromQueries(queries)
 		if err != nil || m == nil {
 			return nil
 		}

@@ -35,6 +35,7 @@ func getQueueWatermarksSnapshot(ifaces []string, requestedQueueType int, waterma
 	}
 
 	response := make(map[string]map[string]string) // port => queue (e.g., UC0 or MC10) => watermark
+	countersDBSeparator := common.CountersDBSeparator()
 	for queue, watermark := range queueWatermarks {
 		watermarkMap, ok := watermark.(map[string]interface{})
 		if !ok {

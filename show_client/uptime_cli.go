@@ -2,8 +2,10 @@ package show_client
 
 import (
 	"encoding/json"
-	sdc "github.com/sonic-net/sonic-gnmi/sonic_data_client"
 	"strings"
+
+	"github.com/sonic-net/sonic-gnmi/show_client/common"
+	sdc "github.com/sonic-net/sonic-gnmi/sonic_data_client"
 )
 
 type uptimeResponse struct {
@@ -12,7 +14,7 @@ type uptimeResponse struct {
 
 func getUptime(args sdc.CmdArgs, options sdc.OptionMap) ([]byte, error) {
 	uptimeParam := []string{"-p"}
-	uptimeData := GetUptime(uptimeParam)
+	uptimeData := common.GetUptime(uptimeParam)
 
 	var uptimeResp uptimeResponse
 	uptimeResp.Uptime = strings.TrimSuffix(uptimeData, "\n")

@@ -42,7 +42,7 @@ func getTransceiverErrorStatus(args sdc.CmdArgs, options sdc.OptionMap) ([]byte,
 		}
 	}
 
-	data, err := GetDataFromQueries(queries)
+	data, err := common.GetDataFromQueries(queries)
 	if err != nil {
 		log.Errorf("Unable to get data from queries %v, got err: %v", queries, err)
 		return nil, err
@@ -107,7 +107,7 @@ func getEEPROM(args sdc.CmdArgs, options sdc.OptionMap) (map[string]interface{},
 		{"APPL_DB", "PORT_TABLE"},
 	}
 
-	portTable, err := GetMapFromQueries(queries)
+	portTable, err := common.GetMapFromQueries(queries)
 	if err != nil {
 		log.Errorf("Unable to pull data for queries %v, got err %v", queries, err)
 		return nil, err
@@ -119,7 +119,7 @@ func getEEPROM(args sdc.CmdArgs, options sdc.OptionMap) (map[string]interface{},
 			continue
 		}
 
-		role := GetFieldValueString(portTable, iface, defaultMissingCounterValue, "role")
+		role := common.GetFieldValueString(portTable, iface, common.DefaultMissingCounterValue, "role")
 		if common.IsFrontPanelPort(iface, role) {
 			intfEEPROM[iface] = convertInterfaceSfpInfoToCliOutputString(iface, dumpDom)
 		} else {
@@ -186,14 +186,14 @@ func getInterfaceTransceiverStatus(args sdc.CmdArgs, options sdc.OptionMap) ([]b
 	namingMode, _ := options[SonicCliIfaceMode].String()
 
 	// APPL_DB PORT_TABLE -> determine valid ports
-	portTable, err := GetMapFromQueries([][]string{{ApplDb, AppDBPortTable}})
+	portTable, err := common.GetMapFromQueries([][]string{{common.ApplDb, common.AppDBPortTable}})
 	if err != nil {
 		return nil, fmt.Errorf("failed to read PORT_TABLE: %w", err)
 	}
 
 	var ports []string
 	if intfArg != "" {
-		interfaceName, err := TryConvertInterfaceNameFromAlias(intfArg, namingMode)
+		interfaceName, err := common.TryConvertInterfaceNameFromAlias(intfArg, namingMode)
 		if err != nil {
 			return nil, fmt.Errorf("alias conversion failed for %s: %w", intfArg, err)
 		}
@@ -205,7 +205,7 @@ func getInterfaceTransceiverStatus(args sdc.CmdArgs, options sdc.OptionMap) ([]b
 		for p := range portTable {
 			ports = append(ports, p)
 		}
-		ports = NatsortInterfaces(ports)
+		ports = common.NatsortInterfaces(ports)
 	}
 
 	result := make(map[string]string, len(ports))

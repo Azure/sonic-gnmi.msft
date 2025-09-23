@@ -336,7 +336,7 @@ func getInterfacesDescription(args sdc.CmdArgs, options sdc.OptionMap) ([]byte, 
 	}
 
 	queries := [][]string{{"CONFIG_DB", "PORT"}}
-	interfaceConfig, err := GetMapFromQueries(queries)
+	interfaceConfig, err := common.GetMapFromQueries(queries)
 	if err != nil {
 		return []byte(""), err
 	}

@@ -77,7 +77,7 @@ func parseNDPOutput(output string, intf string) NeighborTable {
 	lines := strings.Split(strings.TrimSpace(output), "\n")
 	for _, line := range lines {
 		fields := strings.Fields(line)
-		if !ContainsString(fields, "lladdr") {
+		if !common.ContainsString(fields, "lladdr") {
 			continue
 		}
 
@@ -401,7 +401,7 @@ func getNDP(args sdc.CmdArgs, options sdc.OptionMap) ([]byte, error) {
 	}
 	log.V(6).Infof("Running command: %s", cmd)
 
-	cmdOutput, err := GetDataFromHostCommand(cmd)
+	cmdOutput, err := common.GetDataFromHostCommand(cmd)
 	if err != nil {
 		log.Errorf("Error getting NDP data: %v", err)
 		return nil, err

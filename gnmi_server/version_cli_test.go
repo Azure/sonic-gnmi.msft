@@ -20,6 +20,7 @@ import (
 	"google.golang.org/grpc/credentials"
 
 	show_client "github.com/sonic-net/sonic-gnmi/show_client"
+	sccommon "github.com/sonic-net/sonic-gnmi/show_client/common"
 )
 
 func saveEnv(key string) func() {
@@ -485,8 +486,8 @@ sonic_utilities: 1.2
 			return testTime
 		})
 
-		show_client.MachineConfPath = "../testdata/VERSION_MACHINE_CONF.conf"
-		show_client.HostDevicePath = "../testdata/"
+		sccommon.MachineConfPath = "../testdata/VERSION_MACHINE_CONF.conf"
+		sccommon.HostDevicePath = "../testdata/"
 
 		t.Run(test.desc, func(t *testing.T) {
 			runTestGet(t, ctx, gClient, test.pathTarget, test.textPbPath, test.wantRetCode, test.wantRespVal, test.valTest)

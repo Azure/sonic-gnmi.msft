@@ -78,10 +78,10 @@ func getQueueCountersMappingNonZero(queueCounters map[string]interface{}, onlyTr
 		// Only include non-zero counters
 		if onlyWred {
 			response[queue] = wredCountersResponseNonZero{
-				WREDDroppedPackets: GetNonZeroValueOrEmpty(countersMap, "SAI_QUEUE_STAT_WRED_DROPPED_PACKETS"),
-				WREDDroppedBytes:   GetNonZeroValueOrEmpty(countersMap, "SAI_QUEUE_STAT_WRED_DROPPED_BYTES"),
-				ECNMarkedPackets:   GetNonZeroValueOrEmpty(countersMap, "SAI_QUEUE_STAT_WRED_ECN_MARKED_PACKETS"),
-				ECNMarkedBytes:     GetNonZeroValueOrEmpty(countersMap, "SAI_QUEUE_STAT_WRED_ECN_MARKED_BYTES"),
+				WREDDroppedPackets: common.GetNonZeroValueOrEmpty(countersMap, "SAI_QUEUE_STAT_WRED_DROPPED_PACKETS"),
+				WREDDroppedBytes:   common.GetNonZeroValueOrEmpty(countersMap, "SAI_QUEUE_STAT_WRED_DROPPED_BYTES"),
+				ECNMarkedPackets:   common.GetNonZeroValueOrEmpty(countersMap, "SAI_QUEUE_STAT_WRED_ECN_MARKED_PACKETS"),
+				ECNMarkedBytes:     common.GetNonZeroValueOrEmpty(countersMap, "SAI_QUEUE_STAT_WRED_ECN_MARKED_BYTES"),
 			}
 		} else if onlyTrim {
 			response[queue] = trimCountersResponseNonZero{
@@ -122,10 +122,10 @@ func getQueueCountersMapping(queueCounters map[string]interface{}, onlyTrim bool
 		}
 		if onlyWred {
 			response[queue] = wredCountersResponse{
-				WREDDroppedPackets: GetValueOrDefault(countersMap, "SAI_QUEUE_STAT_WRED_DROPPED_PACKETS", common.DefaultMissingCounterValue),
-				WREDDroppedBytes:   GetValueOrDefault(countersMap, "SAI_QUEUE_STAT_WRED_DROPPED_BYTES", common.DefaultMissingCounterValue),
-				ECNMarkedPackets:   GetValueOrDefault(countersMap, "SAI_QUEUE_STAT_WRED_ECN_MARKED_PACKETS", common.DefaultMissingCounterValue),
-				ECNMarkedBytes:     GetValueOrDefault(countersMap, "SAI_QUEUE_STAT_WRED_ECN_MARKED_BYTES", common.DefaultMissingCounterValue),
+				WREDDroppedPackets: common.GetValueOrDefault(countersMap, "SAI_QUEUE_STAT_WRED_DROPPED_PACKETS", common.DefaultMissingCounterValue),
+				WREDDroppedBytes:   common.GetValueOrDefault(countersMap, "SAI_QUEUE_STAT_WRED_DROPPED_BYTES", common.DefaultMissingCounterValue),
+				ECNMarkedPackets:   common.GetValueOrDefault(countersMap, "SAI_QUEUE_STAT_WRED_ECN_MARKED_PACKETS", common.DefaultMissingCounterValue),
+				ECNMarkedBytes:     common.GetValueOrDefault(countersMap, "SAI_QUEUE_STAT_WRED_ECN_MARKED_BYTES", common.DefaultMissingCounterValue),
 			}
 		} else if onlyTrim {
 			response[queue] = trimCountersResponse{

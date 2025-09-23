@@ -3,6 +3,7 @@ package show_client
 import (
 	"encoding/json"
 	"fmt"
+
 	"github.com/sonic-net/sonic-gnmi/show_client/common"
 	sdc "github.com/sonic-net/sonic-gnmi/sonic_data_client"
 )
@@ -34,10 +35,10 @@ func getSwitchTrimmingGlobalConfig(args sdc.CmdArgs, options sdc.OptionMap) ([]b
 	}
 
 	response := SwitchTrimmingResponse{
-		Size:       GetValueOrDefault(row, "size", "N/A"),
-		DSCPValue:  GetValueOrDefault(row, "dscp_value", "N/A"),
-		TCValue:    GetValueOrDefault(row, "tc_value", "N/A"),
-		QueueIndex: GetValueOrDefault(row, "queue_index", "N/A"),
+		Size:       common.GetValueOrDefault(row, "size", "N/A"),
+		DSCPValue:  common.GetValueOrDefault(row, "dscp_value", "N/A"),
+		TCValue:    common.GetValueOrDefault(row, "tc_value", "N/A"),
+		QueueIndex: common.GetValueOrDefault(row, "queue_index", "N/A"),
 	}
 
 	return json.Marshal(response)

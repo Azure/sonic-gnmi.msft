@@ -12,7 +12,7 @@ import (
 	pb "github.com/openconfig/gnmi/proto/gnmi"
 
 	"github.com/agiledragon/gomonkey/v2"
-	show_client "github.com/sonic-net/sonic-gnmi/show_client"
+	sccommon "github.com/sonic-net/sonic-gnmi/show_client/common"
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
@@ -139,7 +139,7 @@ func TestGetIPv6Route(t *testing.T) {
 		t.Run(test.desc, func(t *testing.T) {
 			var allPatches []*gomonkey.Patches
 			// Patch multi-asic behavior
-			allPatches = append(allPatches, gomonkey.ApplyFunc(show_client.IsMultiAsic, func() bool { return test.multiAsic }))
+			allPatches = append(allPatches, gomonkey.ApplyFunc(sccommon.IsMultiAsic, func() bool { return test.multiAsic }))
 			if test.mockOutputFile != "" {
 				allPatches = append(allPatches, MockNSEnterOutput(t, test.mockOutputFile))
 			}

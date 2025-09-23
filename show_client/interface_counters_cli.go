@@ -22,37 +22,18 @@ func getInterfaceCounters(args sdc.CmdArgs, options sdc.OptionMap) ([]byte, erro
 		ifaces = interfaces
 	}
 
-	if periodValue, ok := options["period"].Int(); ok {
-		takeDiffSnapshot = true
-		period = periodValue
-	}
-
 	if getAllCounters, ok := options["printall"].Bool(); ok {
 		fetchAllCounters = getAllCounters
 	}
 
-	if period > common.MaxShowCommandPeriod || period < 0 {
-		return nil, fmt.Errorf("period value must be <= %v and non negative", common.MaxShowCommandPeriod)
-	}
-
-	oldSnapshot, err := getInterfaceCountersSnapshot(ifaces)
+	period, takeDiffSnapshot, err := validatePeriod(options)
 	if err != nil {
-		log.Errorf("Unable to get interfaces counter snapshot due to err: %v", err)
 		return nil, err
 	}
-	finalSnapshot := oldSnapshot
 
-	if takeDiffSnapshot && period > 0 {
-		time.Sleep(time.Duration(period) * time.Second)
-
-		newSnapshot, err := getInterfaceCountersSnapshot(ifaces)
-		if err != nil {
-			log.Errorf("Unable to get new interface counters snapshot due to err %v", err)
-			return nil, err
-		}
-
-		// Compare diff between snapshot
-		finalSnapshot = calculateDiffSnapshot(oldSnapshot, newSnapshot)
+	finalSnapshot, err := snapshotWithOptionalDiff(ifaces, period, takeDiffSnapshot)
+	if err != nil {
+		return nil, err
 	}
 
 	if fetchAllCounters {
@@ -63,36 +44,14 @@ func getInterfaceCounters(args sdc.CmdArgs, options sdc.OptionMap) ([]byte, erro
 }
 
 func getInterfaceCountersErrors(args sdc.CmdArgs, options sdc.OptionMap) ([]byte, error) {
-	period := 0
-	takeDiffSnapshot := false
-
-	if periodValue, ok := options["period"].Int(); ok {
-		takeDiffSnapshot = true
-		period = periodValue
-	}
-
-	if period > common.MaxShowCommandPeriod || period < 0 {
-		return nil, fmt.Errorf("period value must be <= %v and non negative", common.MaxShowCommandPeriod)
-	}
-
-	oldSnapshot, err := getInterfaceCountersSnapshot(nil)
+	period, takeDiffSnapshot, err := validatePeriod(options)
 	if err != nil {
-		log.Errorf("Unable to get interfaces counter snapshot due to err: %v", err)
 		return nil, err
 	}
-	finalSnapshot := oldSnapshot
 
-	if takeDiffSnapshot && period > 0 {
-		time.Sleep(time.Duration(period) * time.Second)
-
-		newSnapshot, err := getInterfaceCountersSnapshot(nil)
-		if err != nil {
-			log.Errorf("Unable to get new interface counters snapshot due to err %v", err)
-			return nil, err
-		}
-
-		// Compare diff between snapshot
-		finalSnapshot = calculateDiffSnapshot(oldSnapshot, newSnapshot)
+	finalSnapshot, err := snapshotWithOptionalDiff(ifaces, period, takeDiffSnapshot)
+	if err != nil {
+		return nil, err
 	}
 
 	return json.Marshal(projectErrorCounters(finalSnapshot))
@@ -108,105 +67,42 @@ func getInterfaceCountersTrim(args sdc.CmdArgs, options sdc.OptionMap) ([]byte, 
 		ifaces = []string{intf}
 	}
 
-	if periodValue, ok := options["period"].Int(); ok {
-		takeDiffSnapshot = true
-		period = periodValue
-	}
-
-	if period > common.MaxShowCommandPeriod || period < 0 {
-		return nil, fmt.Errorf("period value must be <= %v and non negative", common.MaxShowCommandPeriod)
-	}
-
-	oldSnapshot, err := getInterfaceCountersSnapshot(ifaces)
+	period, takeDiffSnapshot, err := validatePeriod(options)
 	if err != nil {
-		log.Errorf("Unable to get interfaces counter snapshot due to err: %v", err)
 		return nil, err
 	}
-	finalSnapshot := oldSnapshot
 
-	if takeDiffSnapshot && period > 0 {
-		time.Sleep(time.Duration(period) * time.Second)
-
-		newSnapshot, err := getInterfaceCountersSnapshot(ifaces)
-		if err != nil {
-			log.Errorf("Unable to get new interface counters snapshot due to err %v", err)
-			return nil, err
-		}
-
-		// Compare diff between snapshot
-		finalSnapshot = calculateDiffSnapshot(oldSnapshot, newSnapshot)
+	finalSnapshot, err := snapshotWithOptionalDiff(ifaces, period, takeDiffSnapshot)
+	if err != nil {
+		return nil, err
 	}
 
 	return json.Marshal(projectTrimCounters(finalSnapshot))
 }
 
 func getInterfaceCountersRates(args sdc.CmdArgs, options sdc.OptionMap) ([]byte, error) {
-	period := 0
-	takeDiffSnapshot := false
-
-	if periodValue, ok := options["period"].Int(); ok {
-		takeDiffSnapshot = true
-		period = periodValue
-	}
-
-	if period > common.MaxShowCommandPeriod || period < 0 {
-		return nil, fmt.Errorf("period value must be <= %v and non negative", common.MaxShowCommandPeriod)
-	}
-
-	oldSnapshot, err := getInterfaceCountersSnapshot(nil)
+	period, takeDiffSnapshot, err := validatePeriod(options)
 	if err != nil {
-		log.Errorf("Unable to get interfaces counter snapshot due to err: %v", err)
 		return nil, err
 	}
-	finalSnapshot := oldSnapshot
 
-	if takeDiffSnapshot && period > 0 {
-		time.Sleep(time.Duration(period) * time.Second)
-
-		newSnapshot, err := getInterfaceCountersSnapshot(nil)
-		if err != nil {
-			log.Errorf("Unable to get new interface counters snapshot due to err %v", err)
-			return nil, err
-		}
-
-		// Compare diff between snapshot
-		finalSnapshot = calculateDiffSnapshot(oldSnapshot, newSnapshot)
+	finalSnapshot, err := snapshotWithOptionalDiff(ifaces, period, takeDiffSnapshot)
+	if err != nil {
+		return nil, err
 	}
 
 	return json.Marshal(projectRateCounters(finalSnapshot))
 }
 
 func getInterfaceCountersFecStats(args sdc.CmdArgs, options sdc.OptionMap) ([]byte, error) {
-	period := 0
-	takeDiffSnapshot := false
-
-	if periodValue, ok := options["period"].Int(); ok {
-		takeDiffSnapshot = true
-		period = periodValue
-	}
-
-	if period > common.MaxShowCommandPeriod || period < 0 {
-		return nil, fmt.Errorf("period value must be <= %v and non negative", common.MaxShowCommandPeriod)
-	}
-
-	oldSnapshot, err := getInterfaceCountersSnapshot(nil)
+	period, takeDiffSnapshot, err := validatePeriod(options)
 	if err != nil {
-		log.Errorf("Unable to get interfaces counter snapshot due to err: %v", err)
 		return nil, err
 	}
-	finalSnapshot := oldSnapshot
 
-	if takeDiffSnapshot && period > 0 {
-		time.Sleep(time.Duration(period) * time.Second)
-
-		newSnapshot, err := getInterfaceCountersSnapshot(nil)
-		if err != nil {
-			log.Errorf("Unable to get new interface counters snapshot due to err %v", err)
-			return nil, err
-		}
-
-		// Compare diff between snapshot
-		finalSnapshot = calculateDiffSnapshot(oldSnapshot, newSnapshot)
+	finalSnapshot, err := snapshotWithOptionalDiff(ifaces, period, takeDiffSnapshot)
+	if err != nil {
+		return nil, err
 	}
 
 	return json.Marshal(projectFecStatCounters(finalSnapshot))
@@ -228,60 +124,33 @@ func getInterfaceCountersFecHistogram(args sdc.CmdArgs, options sdc.OptionMap) (
 }
 
 func getInterfaceCountersDetailed(args sdc.CmdArgs, options sdc.OptionMap) ([]byte, error) {
-	var ifaces []string
-	period := 0
-	takeDiffSnapshot := false
 	intf := args.At(0)
 
 	if intf == "" {
 		return nil, status.Errorf(codes.InvalidArgument, "No interface name passed")
 	}
 
-	ifaces = []string{intf}
+	ifaces := []string{intf}
 
-	if periodValue, ok := options["period"].Int(); ok {
-		takeDiffSnapshot = true
-		period = periodValue
-	}
-
-	if period > common.MaxShowCommandPeriod || period < 0 {
-		return nil, fmt.Errorf("period value must be <= %v and non negative", common.MaxShowCommandPeriod)
-	}
-
-	oldSnapshot, err := getInterfaceCountersSnapshot(ifaces)
+	period, takeDiffSnapshot, err := validatePeriod(options)
 	if err != nil {
-		log.Errorf("Unable to get interfaces counter snapshot due to err: %v", err)
 		return nil, err
 	}
-	finalSnapshot := oldSnapshot
 
-	if takeDiffSnapshot && period > 0 {
-		time.Sleep(time.Duration(period) * time.Second)
-
-		newSnapshot, err := getInterfaceCountersSnapshot(ifaces)
-		if err != nil {
-			log.Errorf("Unable to get new interface counters snapshot due to err %v", err)
-			return nil, err
-		}
-
-		// Compare diff between snapshot
-		finalSnapshot = calculateDiffSnapshot(oldSnapshot, newSnapshot)
+	finalSnapshot, err := snapshotWithOptionalDiff(ifaces, period, takeDiffSnapshot)
+	if err != nil {
+		return nil, err
 	}
 
 	return json.Marshal(projectDetailedCounters(finalSnapshot))
 }
 
 func getInterfaceRifCounters(args sdc.CmdArgs, options sdc.OptionMap) ([]byte, error) {
-	period := 0
 	interfaceName := args.At(0)
-	takeDiffSnapshot := false
-	if periodValue, ok := options["period"].Int(); ok {
-		takeDiffSnapshot = true
-		period = periodValue
-	}
 
-	if period > common.MaxShowCommandPeriod {
-		return nil, status.Errorf(codes.InvalidArgument, "period value must be <= %v", common.MaxShowCommandPeriod)
+	period, takeDiffSnapshot, err := validatePeriod(options)
+	if err != nil {
+		return nil, err
 	}
 
 	rifNameMap, err := getRifNameMapping()

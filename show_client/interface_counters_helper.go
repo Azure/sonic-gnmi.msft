@@ -214,6 +214,37 @@ type interfaceRifCounters struct {
 	TxOkBits     string `json:"TxOkBits"`
 }
 
+func validatePeriod(options sdc.OptionMap) (period int, takeDiffSnapshot bool, err error) {
+	if periodValue, ok := options["period"].Int(); ok {
+		takeDiffSnapshot = true
+		period = periodValue
+	}
+	if period > common.MaxShowCommandPeriod || period < 0 {
+		err = fmt.Errorf("period value must be <= %v and non negative", common.MaxShowCommandPeriod)
+		return
+	}
+	return
+}
+
+func snapshotWithOptionalDiff(ifaces []string, period int, takeDiffSnapshot bool) (map[string]InterfaceCountersSnapshot, error) {
+	oldSnapshot, err := getInterfaceCountersSnapshot(ifaces)
+	if err != nil {
+		log.Errorf("Unable to get interfaces counter snapshot due to err: %v", err)
+		return nil, err
+	}
+
+	if takeDiffSnapshot && period > 0 {
+		time.Sleep(time.Duration(period) * time.Second)
+		newSnapshot, err := getInterfaceCountersSnapshot(ifaces)
+		if err != nil {
+			log.Errorf("Unable to get new interface counters snapshot due to err %v", err)
+			return nil, err
+		}
+		return calculateDiffSnapshot(oldSnapshot, newSnapshot), nil
+	}
+	return oldSnapshot, nil
+}
+
 func getInterfaceCountersSnapshot(ifaces []string) (map[string]InterfaceCountersSnapshot, error) {
 	queries := [][]string{
 		{"COUNTERS_DB", "COUNTERS", "Ethernet*"},

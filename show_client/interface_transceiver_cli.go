@@ -198,7 +198,7 @@ func ConvertPmPrefixToThresholdPrefix(prefix string) string {
 	}
 }
 
-func formatSfpPM(intf string, sfpPMDict map[string]string, sfpThresholdDict map[string]string) map[string]string {
+func formatSfpPM(intf string, sfpPMDict map[string]interface{}, sfpThresholdDict map[string]interface{}) map[string]string {
 	pmr := &common.PortMappingRetriever{}
 	pmr.ReadPorttabMappings()
 	firstSubport := common.GetFirstSubPort(pmr, intf)
@@ -227,7 +227,7 @@ func formatSfpPM(intf string, sfpPMDict map[string]string, sfpThresholdDict map[
 			for _, suffix := range ZR_PM_VALUE_KEY_SUFFIXS {
 				key := prefix + "_" + suffix
 				if val, ok := sfpPMDict[key]; ok {
-					if f, err := strconv.ParseFloat(val, 64); err == nil {
+					if f, err := strconv.ParseFloat(fmt.Sprintf("%v", val), 64); err == nil {
 						values = append(values, BeautifyPmField(prefix, f))
 					} else {
 						values = append(values, "N/A")
@@ -242,7 +242,7 @@ func formatSfpPM(intf string, sfpPMDict map[string]string, sfpThresholdDict map[
 			for _, suffix := range ZR_PM_THRESHOLD_KEY_SUFFIXS {
 				key := ConvertPmPrefixToThresholdPrefix(prefix) + suffix
 				if val, ok := sfpThresholdDict[key]; ok && val != "N/A" {
-					if f, err := strconv.ParseFloat(val, 64); err == nil {
+					if f, err := strconv.ParseFloat(fmt.Sprintf("%v", val), 64); err == nil {
 						thresholds = append(thresholds, BeautifyPmField(prefix, f))
 					} else {
 						thresholds = append(thresholds, "N/A")
@@ -346,7 +346,7 @@ func getInterfaceTransceiverPM(args sdc.CmdArgs, options sdc.OptionMap) ([]byte,
 		if ok, _ := common.IsValidPhysicalPort(p); ok {
 			if val, ok := sfpPMDict[p]; ok {
 				dom, _ := sfpThresholdDict[p]
-				result = append(result, formatSfpPM(p, val, dom))
+				result = append(result, formatSfpPM(p, val.(map[string]interface{}), dom.(map[string]interface{})))
 			} else {
 				result = append(result, map[string]string{
 					"interface":   p,

@@ -223,7 +223,7 @@ func formatSfpPM(intf string, sfpPMDict map[string]interface{}, sfpThresholdDict
 			row := ""
 
 			// Collect values
-			var values = make([]string, len(ZR_PM_VALUE_KEY_SUFFIXS))
+			var values = make([]string, 0)
 			for _, suffix := range ZR_PM_VALUE_KEY_SUFFIXS {
 				key := prefix + "_" + suffix
 				if val, ok := sfpPMDict[key]; ok {
@@ -238,7 +238,7 @@ func formatSfpPM(intf string, sfpPMDict map[string]interface{}, sfpThresholdDict
 			}
 
 			// Collect thresholds
-			var thresholds = make([]string, len(ZR_PM_THRESHOLD_KEY_SUFFIXS))
+			var thresholds = make([]string, 0)
 			for _, suffix := range ZR_PM_THRESHOLD_KEY_SUFFIXS {
 				key := ConvertPmPrefixToThresholdPrefix(prefix) + suffix
 				if val, ok := sfpThresholdDict[key]; ok && val != "N/A" {
@@ -277,7 +277,7 @@ func formatSfpPM(intf string, sfpPMDict map[string]interface{}, sfpThresholdDict
 				}
 				row += ","
 			}
-			row += tcaHigh
+			row += tcaHigh + ","
 			for _, field := range thresholds[2:] {
 				row += field
 				if unit != "N/A" && field != "N/A" {

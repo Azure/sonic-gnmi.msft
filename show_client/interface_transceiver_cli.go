@@ -145,7 +145,7 @@ func BeautifyPmField(prefix string, field float64) string {
 			return fmt.Sprintf("0.0")
 		}
 	} else {
-		return fmt.Sprintf("%f", field)
+		return fmt.Sprintf("%.1f", field)
 	}
 }
 

@@ -140,12 +140,12 @@ func getInterfaceTransceiverLpMode(args sdc.CmdArgs, options sdc.OptionMap) ([]b
 func BeautifyPmField(prefix string, field float64) string {
 	if prefix == "prefec_ber" {
 		if field != 0 {
-			return fmt.Sprintf("%.2f", field)
+			return fmt.Sprintf("%.2E", field)
 		} else {
 			return fmt.Sprintf("0.0")
 		}
 	} else {
-		return fmt.Sprintf("%g", field)
+		return fmt.Sprintf(field)
 	}
 }
 
@@ -255,16 +255,24 @@ func formatSfpPM(intf string, sfpPMDict map[string]interface{}, sfpThresholdDict
 			// TCA checks
 			var tcaHigh, tcaLow string
 			if len(values) > 2 && len(thresholds) > 0 && thresholds[0] != "N/A" {
-				l, _ := strconv.ParseFloat(values[2], 64)
-				r, _ := strconv.ParseFloat(thresholds[0], 64)
-				tcaHigh = fmt.Sprintf("%v", l > r)
+				l, lerr := strconv.ParseFloat(values[2], 64)
+				r, rerr := strconv.ParseFloat(thresholds[0], 64)
+				if lerr == nil && rerr == nil {
+					tcaHigh = fmt.Sprintf("%v", l > r)
+				} else {
+					tcaHigh = "N/A"
+				}
 			} else {
 				tcaHigh = "N/A"
 			}
 			if len(values) > 0 && len(thresholds) > 2 && thresholds[2] != "N/A" {
-				l, _ := strconv.ParseFloat(values[0], 64)
-				r, _ := strconv.ParseFloat(thresholds[2], 64)
-				tcaLow = fmt.Sprintf("%v", l < r)
+				l, lerr := strconv.ParseFloat(values[0], 64)
+				r, rerr := strconv.ParseFloat(thresholds[2], 64)
+				if lerr == nil && rerr == nil {
+					tcaLow = fmt.Sprintf("%v", l < r)
+				} else {
+					tcaLow = "N/A"
+				}
 			} else {
 				tcaLow = "N/A"
 			}
@@ -308,7 +316,7 @@ func getInterfaceTransceiverPM(args sdc.CmdArgs, options sdc.OptionMap) ([]byte,
 	}
 	sfpPMDict, err := common.GetMapFromQueries(queries)
 	if err != nil {
-		log.Errorf("Failed to get PM dict from STATE_DB: %v")
+		log.Errorf("Failed to get PM dict from STATE_DB: %v", err)
 		return nil, err
 	}
 
@@ -345,8 +353,17 @@ func getInterfaceTransceiverPM(args sdc.CmdArgs, options sdc.OptionMap) ([]byte,
 	for _, p := range ports {
 		if ok, _ := common.IsValidPhysicalPort(p); ok {
 			if val, ok := sfpPMDict[p]; ok {
-				dom, _ := sfpThresholdDict[p]
-				result = append(result, formatSfpPM(p, val.(map[string]interface{}), dom.(map[string]interface{})))
+				t, _ := sfpThresholdDict[p]
+				pm, ok1 := val.(map[string]interface{})
+				dom, _ := t.(map[string]interface{}) // it is safe for dom to be nil
+				if ok1 {
+					result = append(result, formatSfpPM(p, pm, dom))
+				} else {
+					result = append(result, map[string]string{
+						"interface":   p,
+						"description": ZR_PM_NOT_APPLICABLE_STR,
+					})
+				}
 			} else {
 				result = append(result, map[string]string{
 					"interface":   p,

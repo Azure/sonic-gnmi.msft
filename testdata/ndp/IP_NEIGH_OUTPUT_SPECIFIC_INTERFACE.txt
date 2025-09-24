@@ -1,0 +1,3 @@
+fe80::a8f9:f4ff:fecb:d23f lladdr aa:f9:f4:cb:d2:3f router REACHABLE 
+fe80::4461:2ff:fe21:f lladdr 46:61:02:21:00:0f REACHABLE 
+fc00::176 lladdr aa:f9:f4:cb:d2:3f router REACHABLE 

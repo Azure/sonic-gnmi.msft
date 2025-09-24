@@ -1,0 +1,1 @@
+fc00::176 dev Ethernet60 lladdr aa:f9:f4:cb:d2:3f router REACHABLE 

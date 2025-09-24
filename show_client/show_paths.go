@@ -335,6 +335,17 @@ func init() {
 		nil,
 		showCmdOptionInterface, // TODO
 	)
+	sdc.RegisterCliPath(
+		[]string{"SHOW", "interfaces", "transceiver", "status"},
+		getInterfaceTransceiverStatus,
+		"SHOW/interfaces/transceiver/status/{INTERFACENAME}[OPTIONS]: Show interface transceiver status",
+		0,
+		1,
+		nil,
+		showCmdOptionSonicCliIfaceMode,
+		sdc.UnimplementedOption(showCmdOptionNamespace),
+		showCmdOptionVerbose,
+	)
 
 	// SHOW/ipv6
 	sdc.RegisterCliPath(
@@ -470,6 +481,18 @@ func init() {
 		showCmdOptionVerbose,
 	)
 
+	// SHOW/ndp
+	sdc.RegisterCliPath(
+		[]string{"SHOW", "ndp"},
+		getNDP,
+		"SHOW/ndp/{IP6ADDRESS}[OPTIONS]: Show IPv6 Neighbour table",
+		0,
+		1,
+		nil,
+		showCmdOptionIface,
+		showCmdOptionVerbose,
+	)
+
 	// SHOW/processes
 	sdc.RegisterCliPath(
 		[]string{"SHOW", "processes"},
@@ -496,6 +519,15 @@ func init() {
 		[]string{"SHOW", "processes", "summary"},
 		getProcessesSummary,
 		"SHOW/processes/summary[OPTIONS]: Show processes info",
+		0,
+		0,
+		nil,
+		showCmdOptionVerbose,
+	)
+	sdc.RegisterCliPath(
+		[]string{"SHOW", "processes", "cpu"},
+		getProcessesCPU,
+		"SHOW/processes/cpu[OPTIONS]: Show processes information sorted by cpu usage",
 		0,
 		0,
 		nil,
@@ -720,6 +752,27 @@ func init() {
 		showCmdOptionVerbose,
 	)
 
+	sdc.RegisterCliPath(
+		[]string{"SHOW", "interfaces", "transceiver", "eeprom"},
+		getTransceiverInfo,
+		"SHOW/interfaces/transceiver/eeprom[OPTIONS]: Show interface transceiver EEPROM information",
+		0,
+		1,
+		nil,
+		showCmdOptionDom,
+		sdc.UnimplementedOption(showCmdOptionNamespace),
+		showCmdOptionVerbose,
+	)
+	sdc.RegisterCliPath(
+		[]string{"SHOW", "interfaces", "transceiver", "info"},
+		getTransceiverInfo,
+		"SHOW/interfaces/transceiver/info[OPTIONS]: Show interface transceiver information",
+		0,
+		1,
+		nil,
+		showCmdOptionVerbose,
+		sdc.UnimplementedOption(showCmdOptionNamespace),
+	)
 	// SHOW/watermark
 	sdc.RegisterCliPath(
 		[]string{"SHOW", "watermark", "telemetry", "interval"},
@@ -759,5 +812,17 @@ func init() {
 		0,
 		nil,
 		showCmdOptionVerbose,
+	)
+
+	//SHOW/arp
+	sdc.RegisterCliPath(
+		[]string{"SHOW", "arp"},
+		getArpTable,
+		"SHOW/arp/{ipaddress}[OPTIONS]: Show IP ARP table",
+		0,
+		2,
+		nil,
+		showCmdOptionSonicCliIfaceMode,
+		showCmdOptionIface,
 	)
 }

@@ -1,0 +1,59 @@
+fc00::176 dev Ethernet60 lladdr aa:f9:f4:cb:d2:3f router REACHABLE 
+fc00::8e dev PortChannel1012 lladdr 0a:a7:34:ab:d6:36 router REACHABLE 
+fe80::bace:f6ff:fee5:500d dev Vlan1000 lladdr b8:ce:f6:e5:50:0d REACHABLE 
+fe80::18f0:6aff:feaf:2f10 dev PortChannel1010 lladdr 1a:f0:6a:af:2f:10 router STALE 
+fe80::34df:24ff:fedc:6018 dev PortChannel1011 lladdr 36:df:24:dc:60:18 REACHABLE 
+fe80::4c91:80ff:fe58:1fc9 dev PortChannel108 lladdr 4e:91:80:58:1f:c9 router STALE 
+fe80::6a8b:f4ff:fe87:9ddc dev Vlan1000 lladdr 68:8b:f4:87:9d:dc router STALE 
+fe80::bace:f6ff:fee5:5005 dev Vlan1000 lladdr b8:ce:f6:e5:50:05 REACHABLE 
+fe80::bace:f6ff:fee5:501a dev Vlan1000 lladdr b8:ce:f6:e5:50:1a REACHABLE 
+fe80::549b:d3ff:fe02:7017 dev PortChannel1010 lladdr 56:9b:d3:02:70:17 REACHABLE 
+fe80::547b:d0ff:fe0d:6 dev PortChannel102 lladdr 56:7b:d0:0d:00:06 REACHABLE 
+fe80::bace:f6ff:fee5:5001 dev Vlan1000 lladdr b8:ce:f6:e5:50:01 REACHABLE 
+fe80::bace:f6ff:fee5:5012 dev Vlan1000 lladdr b8:ce:f6:e5:50:12 REACHABLE 
+fe80::3476:c2ff:fe09:b011 dev Ethernet68 lladdr 36:76:c2:09:b0:11 REACHABLE 
+fe80::8a7:34ff:feab:d636 dev PortChannel1012 lladdr 0a:a7:34:ab:d6:36 router STALE 
+fc00::172 dev Ethernet56 lladdr 2a:04:4b:71:b3:08 router REACHABLE 
+fc00::72 dev PortChannel102 lladdr 1e:ad:cf:d3:5e:ea router REACHABLE 
+fe80::1cd1:69ff:fe80:9095 dev PortChannel106 lladdr 1e:d1:69:80:90:95 router STALE 
+fc00::17a dev Ethernet64 lladdr f2:c0:27:b9:a5:9e router REACHABLE 
+fe80::bace:f6ff:fee5:500a dev Vlan1000 lladdr b8:ce:f6:e5:50:0a REACHABLE 
+fc00::82 dev PortChannel109 lladdr 22:c8:2e:4a:74:f1 router REACHABLE 
+fc00::17e dev Ethernet68 lladdr f2:e4:b5:13:2b:49 router REACHABLE 
+fe80::bace:f6ff:fee5:501b dev Vlan1000 lladdr b8:ce:f6:e5:50:1b REACHABLE 
+fc00::7a dev PortChannel106 lladdr 1e:d1:69:80:90:95 router REACHABLE 
+fe80::cc75:6fff:fe59:7c85 dev eth0 lladdr dc:f4:01:e6:54:a9 router REACHABLE 
+fe80::bace:f6ff:fee5:5002 dev Vlan1000 lladdr b8:ce:f6:e5:50:02 REACHABLE 
+2a01:111:e210:b000::a40:f779 dev eth0 lladdr 86:cd:79:2c:8e:0f REACHABLE 
+fc00::86 dev PortChannel1010 lladdr 1a:f0:6a:af:2f:10 router REACHABLE 
+fe80::bace:f6ff:fee5:5013 dev Vlan1000 lladdr b8:ce:f6:e5:50:13 REACHABLE 
+fe80::2e0:ecff:fe83:b80f dev eth0 lladdr 00:e0:ec:83:b8:0f router REACHABLE 
+fe80::f0e4:b5ff:fe13:2b49 dev Ethernet68 lladdr f2:e4:b5:13:2b:49 router STALE 
+fc00::76 dev PortChannel104 lladdr 0a:c7:f3:af:e0:b5 router REACHABLE 
+fe80::106f:a5ff:fe37:2007 dev PortChannel104 lladdr 12:6f:a5:37:20:07 STALE 
+fe80::2804:4bff:fe71:b308 dev Ethernet56 lladdr 2a:04:4b:71:b3:08 router STALE 
+fe80::c05f:8bff:fe44:8008 dev PortChannel106 lladdr c2:5f:8b:44:80:08 REACHABLE 
+fe80::bace:f6ff:fee5:500b dev Vlan1000 lladdr b8:ce:f6:e5:50:0b REACHABLE 
+2a01:111:e210:b000::a40:f66f dev eth0 lladdr dc:f4:01:e6:54:a9 router REACHABLE 
+fe80::1c02:63ff:fe1e:5019 dev PortChannel1012 lladdr 1e:02:63:1e:50:19 REACHABLE 
+fe80::8c7:f3ff:feaf:e0b5 dev PortChannel104 lladdr 0a:c7:f3:af:e0:b5 router STALE 
+fe80::bace:f6ff:fee5:501c dev Vlan1000 lladdr b8:ce:f6:e5:50:1c REACHABLE 
+fc00::8a dev PortChannel1011 lladdr 0a:30:af:ca:e2:73 router REACHABLE 
+fe80::bace:f6ff:fee5:5003 dev Vlan1000 lladdr b8:ce:f6:e5:50:03 REACHABLE 
+fe80::20c8:2eff:fe4a:74f1 dev PortChannel109 lladdr 22:c8:2e:4a:74:f1 router STALE 
+fe80::bace:f6ff:fee5:5014 dev Vlan1000 lladdr b8:ce:f6:e5:50:14 REACHABLE 
+fe80::830:afff:feca:e273 dev PortChannel1011 lladdr 0a:30:af:ca:e2:73 router STALE 
+fe80::f0c0:27ff:feb9:a59e dev Ethernet64 lladdr f2:c0:27:b9:a5:9e router STALE 
+fe80::1cad:cfff:fed3:5eea dev PortChannel102 lladdr 1e:ad:cf:d3:5e:ea router STALE 
+fc00::7e dev PortChannel108 lladdr 4e:91:80:58:1f:c9 router REACHABLE 
+fe80::b5:a2ff:feb1:5010 dev Ethernet64 lladdr 02:b5:a2:b1:50:10 REACHABLE 
+fe80::d45d:10ff:fef9:8016 dev PortChannel109 lladdr d6:5d:10:f9:80:16 REACHABLE 
+fe80::f043:f0ff:feb7:2009 dev PortChannel108 lladdr f2:43:f0:b7:20:09 REACHABLE 
+fe80::bace:f6ff:fee5:500c dev Vlan1000 lladdr b8:ce:f6:e5:50:0c REACHABLE 
+fe80::c0b0:6eff:fea4:c00e dev Ethernet56 lladdr c2:b0:6e:a4:c0:0e REACHABLE 
+fe80::bace:f6ff:fee5:501d dev Vlan1000 lladdr b8:ce:f6:e5:50:1d REACHABLE 
+fe80::a8f9:f4ff:fecb:d23f dev Ethernet60 lladdr aa:f9:f4:cb:d2:3f router STALE 
+fe80::ecf0:64ff:fea8:600f dev Ethernet60 lladdr ee:f0:64:a8:60:0f REACHABLE 
+fe80::bace:f6ff:fee5:5004 dev Vlan1000 lladdr b8:ce:f6:e5:50:04 REACHABLE 
+fe80::bace:f6ff:fee5:5000 dev Vlan1000 lladdr b8:ce:f6:e5:50:00 REACHABLE 
+fe80::bace:f6ff:fee5:5015 dev Vlan1000 lladdr b8:ce:f6:e5:50:15 REACHABLE

@@ -14,7 +14,7 @@ import (
 // This command is only supported on single-ASIC devices. It directly
 // returns the JSON output from vtysh.
 func getIPv6Route(args sdc.CmdArgs, options sdc.OptionMap) ([]byte, error) {
-	if IsMultiAsic() {
+	if common.IsMultiAsic() {
 		log.Errorf("Attempted to execute 'show ipv6 route' on a multi-ASIC platform")
 		return nil, fmt.Errorf("'show ipv6 route' is not supported on multi-ASIC platforms")
 	}

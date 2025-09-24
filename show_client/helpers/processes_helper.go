@@ -1,4 +1,4 @@
-package show_client
+package helpers
 
 import (
 	"bufio"
@@ -8,7 +8,6 @@ import (
 
 	log "github.com/golang/glog"
 	"github.com/sonic-net/sonic-gnmi/show_client/common"
-	sdc "github.com/sonic-net/sonic-gnmi/sonic_data_client"
 )
 
 // Struct to hold individual process details
@@ -37,21 +36,18 @@ type TopProcessMemoryResponse struct {
 	Processes   []TopProcessResponse `json:"processes"`
 }
 
-const (
-	topMemoryCommand     = "top -bn 1 -o %MEM"
-	countOfProcessFields = 12
-)
+const countOfProcessFields = 12
 
 func cleanPrefix(line, prefix string) string {
 	return strings.TrimSpace(strings.TrimPrefix(line, prefix))
 }
 
-func parseProcessLine(line string) (*TopProcessResponse, error) {
+func parseProcessLine(line string) (*common.TopProcessData, error) {
 	fields := strings.Fields(line)
 	if len(fields) < countOfProcessFields {
 		return nil, fmt.Errorf("invalid process line: %q", line)
 	}
-	return &TopProcessResponse{
+	return &common.TopProcessData{
 		PID:     fields[0],
 		User:    fields[1],
 		PR:      fields[2],
@@ -67,13 +63,8 @@ func parseProcessLine(line string) (*TopProcessResponse, error) {
 	}, nil
 }
 
-func getTopMemoryUsage(args sdc.CmdArgs, options sdc.OptionMap) ([]byte, error) {
-	output, err := common.GetDataFromHostCommand(topMemoryCommand)
+func LoadProcessesDataFromCmdOutput(output string) ([]byte, error) {
 
-	if err != nil {
-		log.Errorf("Unable to execute top command: %v", err)
-		return nil, fmt.Errorf("GetDataFromHostCommand errored out")
-	}
 	if strings.TrimSpace(output) == "" {
 		log.Errorf("Got empty output for top command")
 		return nil, fmt.Errorf("Got empty output for top command")
@@ -82,7 +73,7 @@ func getTopMemoryUsage(args sdc.CmdArgs, options sdc.OptionMap) ([]byte, error) 
 	scanner := bufio.NewScanner(strings.NewReader(string(output)))
 	var (
 		uptime, tasks, cpuUsage, memoryUsage, swapUsage string
-		processes                                       []TopProcessResponse
+		processes                                       []common.TopProcessData
 		startParsing                                    bool
 	)
 
@@ -119,7 +110,7 @@ func getTopMemoryUsage(args sdc.CmdArgs, options sdc.OptionMap) ([]byte, error) 
 		return nil, fmt.Errorf("incomplete top output: missing uptime or processes")
 	}
 
-	response := TopProcessMemoryResponse{
+	response := common.TopProcessCompleteResponse{
 		Uptime:      uptime,
 		Tasks:       tasks,
 		CPUUsage:    cpuUsage,
@@ -129,4 +120,13 @@ func getTopMemoryUsage(args sdc.CmdArgs, options sdc.OptionMap) ([]byte, error) 
 	}
 
 	return json.MarshalIndent(response, "", "  ")
+}
+
+func GetProcessesData(processCmd string) ([]byte, error) {
+	processDetails, err := common.GetDataFromHostCommand(processCmd)
+	if err != nil {
+		return []byte(""), err
+	}
+
+	return LoadProcessesDataFromCmdOutput(processDetails)
 }

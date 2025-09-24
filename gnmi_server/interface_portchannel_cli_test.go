@@ -36,6 +36,7 @@ func TestShowInterfacePortchannel(t *testing.T) {
 	lagMemberTableStateFile := "../testdata/LAG_MEMBER_TABLE_STATE_EXPECTED.txt"
 	lagMemberTableApplFile := "../testdata/LAG_MEMBER_TABLE_APPL_EXPECTED.txt"
 	portAliasFile := "../testdata/PORT_ALIAS_EXPECTED.txt"
+	fallbackPortchannelFile := "../testdata/PORTCHANNEL_CONFIG_ONLY_FALLBACK.txt"
 
 	tests := []struct {
 		desc       string
@@ -81,6 +82,23 @@ func TestShowInterfacePortchannel(t *testing.T) {
 			wantCode: codes.OK,
 			wantVal:  `{"101":{"Team Dev":"PortChannel101","Protocol":{"name":"LACP","active":true,"operational_status":"up"},"Ports":[{"name":"etp1","selected":true,"status":"enabled","in_sync":true}]},"102":{"Team Dev":"PortChannel102","Protocol":{"name":"LACP","active":true,"operational_status":"down"},"Ports":[{"name":"etp1","selected":false,"status":"disabled","in_sync":true}]},"103":{"Team Dev":"PortChannel103","Protocol":{"name":"LACP","active":false,"operational_status":"up"},"Ports":[{"name":"etp1","selected":true,"status":"enabled","in_sync":true},{"name":"etp2","selected":false,"status":"disabled","in_sync":true}]}}`,
 			valTest:  true,
+		},
+		{
+			desc: "fallback status: only config DB present (no state/appl) -> oper_status=N/A",
+			init: func() {
+				FlushDataSet(t, ConfigDbNum)
+				FlushDataSet(t, StateDbNum)
+				FlushDataSet(t, ApplDbNum)
+				AddDataSet(t, ConfigDbNum, fallbackPortchannelFile)
+			},
+			textPbPath: `
+				elem: <name: "interfaces">
+				elem: <name: "portchannel">
+			`,
+			wantCode: codes.OK,
+			// active=false (no state), operational_status becomes "N/A" (line 133), no members
+			wantVal: `{"201":{"Team Dev":"PortChannel201","Protocol":{"name":"LACP","active":false,"operational_status":"N/A"},"Ports":[]}}`,
+			valTest: true,
 		},
 	}
 

@@ -30,6 +30,7 @@ const (
 	showCmdOptionSonicCliIfaceModeDesc = "[SONIC_CLI_IFACE_MODE=TEXT] Filter by sonic interface naming mode (eg alias/default)"
 	showCmdOptionPrintAllDesc          = "[printall=true] Show all counters"
 	showCmdOptionAllDesc               = "[all=true] No-op since all queue counters are shown by default"
+	showCmdOptionIfaceDesc             = "[iface=TEXT] Filter by interface name"
 )
 
 // Option keys
@@ -194,5 +195,11 @@ var (
 		"voq",
 		showCmdOptionUnimplementedDesc,
 		sdc.BoolValue,
+	)
+
+	showCmdOptionIface = sdc.NewShowCmdOption(
+		"iface",
+		showCmdOptionIfaceDesc,
+		sdc.StringValue,
 	)
 )

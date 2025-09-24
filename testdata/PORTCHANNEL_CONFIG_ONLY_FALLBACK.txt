@@ -1,0 +1,6 @@
+{
+  "PORTCHANNEL|PortChannel201": {
+    "admin_status": "up",
+    "mtu": "9100"
+  }
+}

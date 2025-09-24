@@ -2,6 +2,7 @@ package show_client
 
 import (
 	"encoding/json"
+	"fmt"
 	"strings"
 
 	log "github.com/golang/glog"
@@ -41,7 +42,7 @@ func getTransceiverErrorStatus(args sdc.CmdArgs, options sdc.OptionMap) ([]byte,
 		}
 	}
 
-	data, err := GetDataFromQueries(queries)
+	data, err := common.GetDataFromQueries(queries)
 	if err != nil {
 		log.Errorf("Unable to get data from queries %v, got err: %v", queries, err)
 		return nil, err
@@ -93,6 +94,51 @@ func getInterfaceTransceiverPresence(args sdc.CmdArgs, options sdc.OptionMap) ([
 	return json.Marshal(status)
 }
 
+func getEEPROM(args sdc.CmdArgs, options sdc.OptionMap) (map[string]interface{}, error) {
+	intf := args.At(0)
+
+	var dumpDom bool
+	if v, ok := options["dom"].Bool(); ok {
+		dumpDom = v
+	}
+
+	var queries [][]string
+	queries = [][]string{
+		{"APPL_DB", "PORT_TABLE"},
+	}
+
+	portTable, err := common.GetMapFromQueries(queries)
+	if err != nil {
+		log.Errorf("Unable to pull data for queries %v, got err %v", queries, err)
+		return nil, err
+	}
+
+	intfEEPROM := make(map[string]interface{})
+	for iface := range portTable {
+		if intf != "" && iface != intf {
+			continue
+		}
+
+		role := common.GetFieldValueString(portTable, iface, common.DefaultMissingCounterValue, "role")
+		if common.IsFrontPanelPort(iface, role) {
+			intfEEPROM[iface] = convertInterfaceSfpInfoToCliOutputString(iface, dumpDom)
+		} else {
+			continue
+		}
+
+	}
+	return intfEEPROM, nil
+}
+
+func getTransceiverInfo(args sdc.CmdArgs, options sdc.OptionMap) ([]byte, error) {
+	intfEEPROM, err := getEEPROM(args, options)
+	if err != nil {
+		return nil, err
+	}
+
+	return json.Marshal(intfEEPROM)
+}
+
 type portLpmode struct {
 	Port   string `json:"Port"`
 	Lpmode string `json:"Low-power Mode"`
@@ -133,4 +179,44 @@ func getInterfaceTransceiverLpMode(args sdc.CmdArgs, options sdc.OptionMap) ([]b
 	}
 
 	return json.Marshal(entries)
+}
+
+func getInterfaceTransceiverStatus(args sdc.CmdArgs, options sdc.OptionMap) ([]byte, error) {
+	intfArg := args.At(0)
+	namingMode, _ := options[SonicCliIfaceMode].String()
+
+	// APPL_DB PORT_TABLE -> determine valid ports
+	portTable, err := common.GetMapFromQueries([][]string{{common.ApplDb, common.AppDBPortTable}})
+	if err != nil {
+		return nil, fmt.Errorf("failed to read PORT_TABLE: %w", err)
+	}
+
+	var ports []string
+	if intfArg != "" {
+		interfaceName, err := common.TryConvertInterfaceNameFromAlias(intfArg, namingMode)
+		if err != nil {
+			return nil, fmt.Errorf("alias conversion failed for %s: %w", intfArg, err)
+		}
+		if _, ok := portTable[interfaceName]; !ok {
+			return nil, fmt.Errorf("invalid interface name %s", intfArg)
+		}
+		ports = []string{interfaceName}
+	} else {
+		for p := range portTable {
+			ports = append(ports, p)
+		}
+		ports = common.NatsortInterfaces(ports)
+	}
+
+	result := make(map[string]string, len(ports))
+
+	for _, p := range ports {
+		if ok, _ := common.IsValidPhysicalPort(p); !ok {
+			continue
+		}
+		statusStr := convertInterfaceSfpStatusToCliOutputString(p)
+		result[p] = statusStr
+	}
+
+	return json.Marshal(result)
 }

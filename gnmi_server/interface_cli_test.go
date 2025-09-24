@@ -380,7 +380,7 @@ func TestGetInterfaceCounters(t *testing.T) {
 			textPbPath: `
 				elem: <name: "interfaces" >
 				elem: <name: "counters" >
-				elem: <name: "rates" >>
+				elem: <name: "rates" >
 			`,
 			testInit: func() {
 				AddDataSet(t, ApplDbNum, portRatesThreeFileName)

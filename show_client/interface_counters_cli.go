@@ -189,18 +189,18 @@ func getInterfaceRifCounters(args sdc.CmdArgs, options sdc.OptionMap) ([]byte, e
 		}
 
 		diffInterfaceRifCounters := interfaceRifCounters{
-			RxOkPackets:  calculateDiffClampZero(oldInterfaceRifCountersMap[interfaceName].RxOkPackets, newInterfaceRifCounters.RxOkPackets),
+			RxOkPackets:  calculateDiff(oldInterfaceRifCountersMap[interfaceName].RxOkPackets, newInterfaceRifCounters.RxOkPackets, false),
 			RxBps:        newInterfaceRifCounters.RxBps,
 			RxPps:        newInterfaceRifCounters.RxPps,
-			RxErrPackets: calculateDiffClampZero(oldInterfaceRifCountersMap[interfaceName].RxErrPackets, newInterfaceRifCounters.RxErrPackets),
-			TxOkPackets:  calculateDiffClampZero(oldInterfaceRifCountersMap[interfaceName].TxOkPackets, newInterfaceRifCounters.TxOkPackets),
+			RxErrPackets: calculateDiff(oldInterfaceRifCountersMap[interfaceName].RxErrPackets, newInterfaceRifCounters.RxErrPackets, false),
+			TxOkPackets:  calculateDiff(oldInterfaceRifCountersMap[interfaceName].TxOkPackets, newInterfaceRifCounters.TxOkPackets, false),
 			TxBps:        newInterfaceRifCounters.TxBps,
 			TxPps:        newInterfaceRifCounters.TxPps,
-			TxErrPackets: calculateDiffClampZero(oldInterfaceRifCountersMap[interfaceName].TxErrPackets, newInterfaceRifCounters.TxErrPackets),
-			RxErrBits:    calculateDiffClampZero(oldInterfaceRifCountersMap[interfaceName].RxErrBits, newInterfaceRifCounters.RxErrBits),
-			TxErrBits:    calculateDiffClampZero(oldInterfaceRifCountersMap[interfaceName].TxErrBits, newInterfaceRifCounters.TxErrBits),
-			RxOkBits:     calculateDiffClampZero(oldInterfaceRifCountersMap[interfaceName].RxOkBits, newInterfaceRifCounters.RxOkBits),
-			TxOkBits:     calculateDiffClampZero(oldInterfaceRifCountersMap[interfaceName].TxOkBits, newInterfaceRifCounters.TxOkBits),
+			TxErrPackets: calculateDiff(oldInterfaceRifCountersMap[interfaceName].TxErrPackets, newInterfaceRifCounters.TxErrPackets, false),
+			RxErrBits:    calculateDiff(oldInterfaceRifCountersMap[interfaceName].RxErrBits, newInterfaceRifCounters.RxErrBits, false),
+			TxErrBits:    calculateDiff(oldInterfaceRifCountersMap[interfaceName].TxErrBits, newInterfaceRifCounters.TxErrBits, false),
+			RxOkBits:     calculateDiff(oldInterfaceRifCountersMap[interfaceName].RxOkBits, newInterfaceRifCounters.RxOkBits, false),
+			TxOkBits:     calculateDiff(oldInterfaceRifCountersMap[interfaceName].TxOkBits, newInterfaceRifCounters.TxOkBits, false),
 		}
 
 		diffInterfaceRifCountersMap[interfaceName] = diffInterfaceRifCounters

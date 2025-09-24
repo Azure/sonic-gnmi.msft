@@ -53,7 +53,7 @@ func TestGetInterfaceCounters(t *testing.T) {
 	interfaceCountersDiff := `{"Ethernet0":{"State":"U","RxOk":"11658","RxBps":"21.39 B/s","RxUtil":"0.00%","RxErr":"0","RxDrp":"76","RxOvr":"0","TxOk":"11270","TxBps":"634.00 KB/s","TxUtil":"0.01%","TxErr":"0","TxDrp":"0","TxOvr":"0"}}`
 	interfaceCountersAllPrintall := `{"Ethernet0":{"State":"U","RxOk":"149903","RxBps":"25.12 B/s","RxPps":"0.18/s","RxUtil":"0.00%","RxErr":"0","RxDrp":"957","RxOvr":"0","TxOk":"144782","TxBps":"773.23 KB/s","TxPps":"0.27/s","TxUtil":"0.01%","TxErr":"0","TxDrp":"2","TxOvr":"0","TrimPkts":"7","TrimSent":"1","TrimDrp":"0"},"Ethernet40":{"State":"U","RxOk":"7295","RxBps":"0.00 B/s","RxPps":"0.00/s","RxUtil":"0.00%","RxErr":"0","RxDrp":"0","RxOvr":"0","TxOk":"50184","TxBps":"633.66 KB/s","TxPps":"0.10/s","TxUtil":"0.01%","TxErr":"0","TxDrp":"1","TxOvr":"0","TrimPkts":"N/A","TrimSent":"N/A","TrimDrp":"N/A"},"Ethernet80":{"State":"U","RxOk":"76555","RxBps":"0.37 B/s","RxPps":"0.00/s","RxUtil":"0.00%","RxErr":"0","RxDrp":"0","RxOvr":"0","TxOk":"144767","TxBps":"631.94 KB/s","TxPps":"0.04/s","TxUtil":"0.01%","TxErr":"0","TxDrp":"1","TxOvr":"0","TrimPkts":"N/A","TrimSent":"N/A","TrimDrp":"N/A"}}`
 	interfaceCountersPrintallEth0 := `{"Ethernet0":{"State":"U","RxOk":"149903","RxBps":"25.12 B/s","RxPps":"0.18/s","RxUtil":"0.00%","RxErr":"0","RxDrp":"957","RxOvr":"0","TxOk":"144782","TxBps":"773.23 KB/s","TxPps":"0.27/s","TxUtil":"0.01%","TxErr":"0","TxDrp":"2","TxOvr":"0","TrimPkts":"7","TrimSent":"1","TrimDrp":"0"}}`
-	interfaceCountersPrintallEth0Period := `{"Ethernet0":{"State":"U","RxOk":"11658","RxBps":"21.39 B/s","RxPps":"0.09/s","RxUtil":"0.00%","RxErr":"0","RxDrp":"76","RxOvr":"0","TxOk":"11270","TxBps":"634.00 KB/s","TxPps":"0.11/s","TxUtil":"0.01%","TxErr":"0","TxDrp":"0","TxOvr":"0","TrimPkts":"2","TrimSent":"2","TrimDrp":"1"}}}`
+	interfaceCountersPrintallEth0Period := `{"Ethernet0":{"State":"U","RxOk":"11658","RxBps":"21.39 B/s","RxPps":"0.09/s","RxUtil":"0.00%","RxErr":"0","RxDrp":"76","RxOvr":"0","TxOk":"11270","TxBps":"634.00 KB/s","TxPps":"0.11/s","TxUtil":"0.01%","TxErr":"0","TxDrp":"0","TxOvr":"0","TrimPkts":"2","TrimSent":"2","TrimDrp":"1"}}`
 	interfaceCountersErrorsAll := `{"Ethernet0":{"State":"U","RxErr":"0","RxDrp":"957","RxOvr":"0","TxErr":"0","TxDrp":"2","TxOvr":"0"},"Ethernet40":{"State":"U","RxErr":"0","RxDrp":"0","RxOvr":"0","TxErr":"0","TxDrp":"1","TxOvr":"0"},"Ethernet80":{"State":"U","RxErr":"0","RxDrp":"0","RxOvr":"0","TxErr":"0","TxDrp":"1","TxOvr":"0"}}`
 	interfaceCountersErrorsAllPeriod := `{"Ethernet0":{"State":"U","RxErr":"0","RxDrp":"76","RxOvr":"0","TxErr":"0","TxDrp":"0","TxOvr":"0"},"Ethernet40":{"State":"U","RxErr":"0","RxDrp":"0","RxOvr":"0","TxErr":"0","TxDrp":"0","TxOvr":"0"},"Ethernet80":{"State":"U","RxErr":"0","RxDrp":"0","RxOvr":"0","TxErr":"0","TxDrp":"0","TxOvr":"0"}}`
 	interfaceCountersTrimAll := `{"Ethernet0":{"State":"U","TrimPkts":"7","TrimSent":"1","TrimDrp":"0"},"Ethernet40":{"State":"U","TrimPkts":"N/A","TrimSent":"N/A","TrimDrp":"N/A"},"Ethernet80":{"State":"U","TrimPkts":"N/A","TrimSent":"N/A","TrimDrp":"N/A"}}`
@@ -65,8 +65,8 @@ func TestGetInterfaceCounters(t *testing.T) {
 	interfaceCountersFecStatsAllPeriod := `{"Ethernet0":{"State":"U","FecCorr":"0","FecUncorr":"0","FecSymbolErr":"0","FecPreBer":"4.70e+07","FecPostBer":"0.00e+00"},"Ethernet40":{"State":"U","FecCorr":"0","FecUncorr":"0","FecSymbolErr":"0","FecPreBer":"4.70e+07","FecPostBer":"0.00e+00"},"Ethernet80":{"State":"U","FecCorr":"0","FecUncorr":"0","FecSymbolErr":"0","FecPreBer":"4.70e+07","FecPostBer":"0.00e+00"}}`
 	interfaceCountersFecHistogramEth0 := `[{"BinIndex":"BIN0","Codewords":"20113191987857"},{"BinIndex":"BIN1","Codewords":"0"},{"BinIndex":"BIN2","Codewords":"0"},{"BinIndex":"BIN3","Codewords":"0"},{"BinIndex":"BIN4","Codewords":"0"},{"BinIndex":"BIN5","Codewords":"0"},{"BinIndex":"BIN6","Codewords":"0"},{"BinIndex":"BIN7","Codewords":"0"},{"BinIndex":"BIN8","Codewords":"0"},{"BinIndex":"BIN9","Codewords":"0"},{"BinIndex":"BIN10","Codewords":"0"},{"BinIndex":"BIN11","Codewords":"0"},{"BinIndex":"BIN12","Codewords":"0"},{"BinIndex":"BIN13","Codewords":"0"},{"BinIndex":"BIN14","Codewords":"0"},{"BinIndex":"BIN15","Codewords":"0"}]`
 	interfaceCountersDetailedEth0NoCache := `{"Ethernet0":{"TrimPkts":"7","TrimSent":"1","TrimDrp":"0","Rx64":"2","Rx65_127":"81146","Rx128_255":"68687","Rx256_511":"0","Rx512_1023":"3","Rx1024_1518":"2","Rx1519_2047":"0","Rx2048_4095":"N/A","Rx4096_9216":"N/A","Rx9217_16383":"N/A","Tx64":"1","Tx65_127":"76016","Tx128_255":"34346","Tx256_511":"34331","Tx512_1023":"0","Tx1024_1518":"0","Tx1519_2047":"13","Tx2048_4095":"N/A","Tx4096_9216":"N/A","Tx9217_16383":"N/A","RxAll":"149903","RxUnicast":"80654","RxMulticast":"69249","RxBroadcast":"0","TxAll":"144782","TxUnicast":"144782","TxMulticast":"0","TxBroadcast":"0","RxJabbers":"N/A","RxFragments":"N/A","RxUndersize":"0","RxOverruns":"N/A","TimestampClearedCounters":"None"}}`
-	interfaceCountersDetailedEth0Cache := `{"Ethernet0":{"TrimPkts":"N/A","TrimSent":"N/A","TrimDrp":"N/A","Rx64":"N/A","Rx65_127":"N/A","Rx128_255":"N/A","Rx256_511":"N/A","Rx512_1023":"0","Rx1024_1518":"0","Rx1519_2047":"N/A","Rx2048_4095":"N/A","Rx4096_9216":"N/A","Rx9217_16383":"N/A","Tx64":"N/A","Tx65_127":"N/A","Tx128_255":"N/A","Tx256_511":"34330","Tx512_1023":"0","Tx1024_1518":"N/A","Tx1519_2047":"11","Tx2048_4095":"N/A","Tx4096_9216":"N/A","Tx9217_16383":"N/A","RxAll":"N/A","RxUnicast":"N/A","RxMulticast":"N/A","RxBroadcast":"N/A","TxAll":"N/A","TxUnicast":"N/A","TxMulticast":"0","TxBroadcast":"0","RxJabbers":"N/A","RxFragments":"N/A","RxUndersize":"0","RxOverruns":"N/A","TimestampClearedCounters":"2025-09-21T18:45:04.083017"}}`
-	interfaceCountersDetailedEth0CachePeriod := `{"Ethernet0":{"TrimPkts":"N/A","TrimSent":"N/A","TrimDrp":"N/A","Rx64":"N/A","Rx65_127":"N/A","Rx128_255":"N/A","Rx256_511":"N/A","Rx512_1023":"0","Rx1024_1518":"0","Rx1519_2047":"N/A","Rx2048_4095":"N/A","Rx4096_9216":"N/A","Rx9217_16383":"N/A","Tx64":"N/A","Tx65_127":"N/A","Tx128_255":"N/A","Tx256_511":"2672","Tx512_1023":"0","Tx1024_1518":"N/A","Tx1519_2047":"0","Tx2048_4095":"N/A","Tx4096_9216":"N/A","Tx9217_16383":"N/A","RxAll":"N/A","RxUnicast":"N/A","RxMulticast":"N/A","RxBroadcast":"N/A","TxAll":"N/A","TxUnicast":"N/A","TxMulticast":"0","TxBroadcast":"0","RxJabbers":"N/A","RxFragments":"N/A","RxUndersize":"0","RxOverruns":"N/A","TimestampClearedCounters":"2025-09-21T18:45:04.083017"}}`
+	interfaceCountersDetailedEth0Cache := `{"Ethernet0":{"TrimPkts":"7","TrimSent":"1","TrimDrp":"0","Rx64":"0","Rx65_127":"0","Rx128_255":"0","Rx256_511":"0","Rx512_1023":"0","Rx1024_1518":"0","Rx1519_2047":"0","Rx2048_4095":"N/A","Rx4096_9216":"N/A","Rx9217_16383":"N/A","Tx64":"0","Tx65_127":"0","Tx128_255":"0","Tx256_511":"34330","Tx512_1023":"0","Tx1024_1518":"0","Tx1519_2047":"11","Tx2048_4095":"N/A","Tx4096_9216":"N/A","Tx9217_16383":"N/A","RxAll":"0","RxUnicast":"0","RxMulticast":"0","RxBroadcast":"0","TxAll":"0","TxUnicast":"0","TxMulticast":"0","TxBroadcast":"0","RxJabbers":"N/A","RxFragments":"N/A","RxUndersize":"0","RxOverruns":"N/A","TimestampClearedCounters":"2025-09-21T18:45:04.083017"}}`
+	interfaceCountersDetailedEth0CachePeriod := `{"Ethernet0":{"TrimPkts":"2","TrimSent":"2","TrimDrp":"1","Rx64":"0","Rx65_127":"0","Rx128_255":"0","Rx256_511":"0","Rx512_1023":"0","Rx1024_1518":"0","Rx1519_2047":"0","Rx2048_4095":"N/A","Rx4096_9216":"N/A","Rx9217_16383":"N/A","Tx64":"0","Tx65_127":"0","Tx128_255":"0","Tx256_511":"2672","Tx512_1023":"0","Tx1024_1518":"0","Tx1519_2047":"0","Tx2048_4095":"N/A","Tx4096_9216":"N/A","Tx9217_16383":"N/A","RxAll":"0","RxUnicast":"0","RxMulticast":"0","RxBroadcast":"0","TxAll":"0","TxUnicast":"0","TxMulticast":"0","TxBroadcast":"0","RxJabbers":"N/A","RxFragments":"N/A","RxUndersize":"0","RxOverruns":"N/A","TimestampClearedCounters":"2025-09-21T18:45:04.083017"}}`
 	portStatCacheJSON := `{"time":"2025-09-21T18:45:04.083017","Ethernet0":{"rx_ok":"163588","rx_err":"0","rx_drop":"1042","rx_ovr":"0","tx_ok":"158164","tx_err":"0","tx_drop":"1","tx_ovr":"0","rx_byt":"21752387","tx_byt":"790069589049","rx_64":"6","rx_65_127":"88534","rx_128_255":"74911","rx_256_511":"1","rx_512_1023":"3","rx_1024_1518":"2","rx_1519_2047":"5","rx_2048_4095":"N/A","rx_4096_9216":"N/A","rx_9217_16383":"N/A","rx_uca":"88066","rx_mca":"75521","rx_bca":"1","rx_all":"163588","tx_64":"5","tx_65_127":"83139","tx_128_255":"74928","tx_256_511":"1","tx_512_1023":"0","tx_1024_1518":"1","tx_1519_2047":"2","tx_2048_4095":"N/A","tx_4096_9216":"N/A","tx_9217_16383":"N/A","tx_uca":"158164","tx_mca":"0","tx_bca":"0","tx_all":"158164","rx_jbr":"N/A","rx_frag":"N/A","rx_usize":"0","rx_ovrrun":"N/A","fec_corr":"0","fec_uncorr":"0","fec_symbol_err":"0","wred_grn_drp_pkt":"N/A","wred_ylw_drp_pkt":"N/A","wred_red_drp_pkt":"N/A","wred_tot_drp_pkt":"N/A","trim":"N/A"},"Ethernet40":{"rx_ok":"7963","rx_err":"0","rx_drop":"0","rx_ovr":"0","tx_ok":"54826","tx_err":"0","tx_drop":"1","tx_ovr":"0","rx_byt":"832246","tx_byt":"790047128811","rx_64":"0","rx_65_127":"7963","rx_128_255":"0","rx_256_511":"0","rx_512_1023":"0","rx_1024_1518":"0","rx_1519_2047":"0","rx_2048_4095":"N/A","rx_4096_9216":"N/A","rx_9217_16383":"N/A","rx_uca":"7963","rx_mca":"0","rx_bca":"0","rx_all":"7963","tx_64":"1","tx_65_127":"17348","tx_128_255":"28","tx_256_511":"37449","tx_512_1023":"0","tx_1024_1518":"0","tx_1519_2047":"0","tx_2048_4095":"N/A","tx_4096_9216":"N/A","tx_9217_16383":"N/A","tx_uca":"54826","tx_mca":"0","tx_bca":"0","tx_all":"54826","rx_jbr":"N/A","rx_frag":"N/A","rx_usize":"0","rx_ovrrun":"N/A","fec_corr":"0","fec_uncorr":"0","fec_symbol_err":"0","wred_grn_drp_pkt":"N/A","wred_ylw_drp_pkt":"N/A","wred_red_drp_pkt":"N/A","wred_tot_drp_pkt":"N/A","trim":"N/A"},"Ethernet80":{"rx_ok":"83480","rx_err":"0","rx_drop":"0","rx_ovr":"0","tx_ok":"158320","tx_err":"0","tx_drop":"1","tx_ovr":"0","rx_byt":"13348940","tx_byt":"790055614701","rx_64":"0","rx_65_127":"8577","rx_128_255":"74903","rx_256_511":"0","rx_512_1023":"0","rx_1024_1518":"0","rx_1519_2047":"0","rx_2048_4095":"N/A","rx_4096_9216":"N/A","rx_9217_16383":"N/A","rx_uca":"7966","rx_mca":"75514","rx_bca":"0","rx_all":"83480","tx_64":"2","tx_65_127":"83161","tx_128_255":"74955","tx_256_511":"1","tx_512_1023":"1","tx_1024_1518":"0","tx_1519_2047":"14","tx_2048_4095":"N/A","tx_4096_9216":"N/A","tx_9217_16383":"N/A","tx_uca":"158320","tx_mca":"0","tx_bca":"0","tx_all":"158320","rx_jbr":"N/A","rx_frag":"N/A","rx_usize":"0","rx_ovrrun":"N/A","fec_corr":"0","fec_uncorr":"0","fec_symbol_err":"0","wred_grn_drp_pkt":"N/A","wred_ylw_drp_pkt":"N/A","wred_red_drp_pkt":"N/A","wred_tot_drp_pkt":"N/A","trim":"N/A"}}`
 
 	ResetDataSetsAndMappings(t)
@@ -258,6 +258,22 @@ func TestGetInterfaceCounters(t *testing.T) {
 			valTest:     true,
 		},
 		{
+			desc:       "SHOW interfaces counters rates with RXUTIL/TXUTIL in data",
+			pathTarget: "SHOW",
+			textPbPath: `
+				elem: <name: "interfaces" >
+				elem: <name: "counters" >
+				elem: <name: "rates" >
+			`,
+			testInit: func() {
+				AddDataSet(t, CountersDbNum, portCountersFileName)
+				AddDataSet(t, CountersDbNum, portRatesThreeFileName)
+			},
+			wantRetCode: codes.OK,
+			wantRespVal: []byte(interfaceCountersRatesAll),
+			valTest:     true,
+		},
+		{
 			desc:       "SHOW interfaces counters rates all ports with period",
 			pathTarget: "SHOW",
 			textPbPath: `
@@ -371,22 +387,6 @@ func TestGetInterfaceCounters(t *testing.T) {
 			},
 			wantRetCode: codes.OK,
 			wantRespVal: []byte(interfaceCountersDetailedEth0CachePeriod),
-			valTest:     true,
-			mockSleep:   true,
-		},
-		{
-			desc:       "SHOW interfaces counters rates with RXUTIL/TXUTIL in data",
-			pathTarget: "SHOW",
-			textPbPath: `
-				elem: <name: "interfaces" >
-				elem: <name: "counters" >
-				elem: <name: "rates" >
-			`,
-			testInit: func() {
-				AddDataSet(t, ApplDbNum, portRatesThreeFileName)
-			},
-			wantRetCode: codes.OK,
-			wantRespVal: []byte(interfaceCountersRatesAll),
 			valTest:     true,
 			mockSleep:   true,
 		},

@@ -125,7 +125,6 @@ type InterfaceCountersAllResponse struct {
 	TrimPkts string
 	TrimSent string
 	TrimDrp  string
-
 }
 
 type InterfaceCountersErrorsResponse struct {
@@ -154,7 +153,7 @@ type InterfaceCountersTrimResponse struct {
 	State    string
 	TrimPkts string
 	TrimSent string
-	TrimDrp
+	TrimDrp  string
 }
 
 type InterfaceCountersFecStatsResponse struct {
@@ -479,60 +478,60 @@ func calculateDiffSnapshot(oldSnapshot map[string]InterfaceCountersSnapshot, new
 		}
 		diffResponse[iface] = InterfaceCountersSnapshot{
 			State:                    newResp.State,
-			RxOk:                     calculateDiff(oldResp.RxOk, newResp.RxOk, common.DefaultMissingCounterValue, false),
-			RxErr:                    calculateDiff(oldResp.RxErr, newResp.RxErr, common.DefaultMissingCounterValue, false),
-			RxDrp:                    calculateDiff(oldResp.RxDrp, newResp.RxDrp, common.DefaultMissingCounterValue, false),
-			RxOvr:                    calculateDiff(oldResp.RxOvr, newResp.RxOvr, common.DefaultMissingCounterValue, false),
-			TxOk:                     calculateDiff(oldResp.TxOk, newResp.TxOk, common.DefaultMissingCounterValue, false),
-			TxErr:                    calculateDiff(oldResp.TxErr, newResp.TxErr, common.DefaultMissingCounterValue, false),
-			TxDrp:                    calculateDiff(oldResp.TxDrp, newResp.TxDrp, common.DefaultMissingCounterValue, false),
-			TxOvr:                    calculateDiff(oldResp.TxOvr, newResp.TxOvr, common.DefaultMissingCounterValue, false),
+			RxOk:                     calculateDiff(oldResp.RxOk, newResp.RxOk, false),
+			RxErr:                    calculateDiff(oldResp.RxErr, newResp.RxErr, false),
+			RxDrp:                    calculateDiff(oldResp.RxDrp, newResp.RxDrp, false),
+			RxOvr:                    calculateDiff(oldResp.RxOvr, newResp.RxOvr, false),
+			TxOk:                     calculateDiff(oldResp.TxOk, newResp.TxOk, false),
+			TxErr:                    calculateDiff(oldResp.TxErr, newResp.TxErr, false),
+			TxDrp:                    calculateDiff(oldResp.TxDrp, newResp.TxDrp, false),
+			TxOvr:                    calculateDiff(oldResp.TxOvr, newResp.TxOvr, false),
 			RxBps:                    newResp.RxBps,
 			RxPps:                    newResp.RxPps,
 			RxUtil:                   newResp.RxUtil,
 			TxBps:                    newResp.TxBps,
 			TxPps:                    newResp.TxPps,
 			TxUtil:                   newResp.TxUtil,
-			FecCorr:                  calculateDiff(oldResp.FecCorr, newResp.FecCorr, common.DefaultMissingCounterValue, false),
-			FecUncorr:                calculateDiff(oldResp.FecUncorr, newResp.FecUncorr, common.DefaultMissingCounterValue, false),
-			FecSymbolErr:             calculateDiff(oldResp.FecSymbolErr, newResp.FecSymbolErr, common.DefaultMissingCounterValue, false),
+			FecCorr:                  calculateDiff(oldResp.FecCorr, newResp.FecCorr, false),
+			FecUncorr:                calculateDiff(oldResp.FecUncorr, newResp.FecUncorr, false),
+			FecSymbolErr:             calculateDiff(oldResp.FecSymbolErr, newResp.FecSymbolErr, false),
 			FecPreBer:                newResp.FecPreBer,
 			FecPostBer:               newResp.FecPostBer,
-			TrimPkts:                 calculateDiff(oldResp.TrimPkts, newResp.TrimPkts, common.DefaultMissingCounterValue, false),
-			TrimSent:                 calculateDiff(oldResp.TrimSent, newResp.TrimSent, common.DefaultMissingCounterValue, false),
-			TrimDrp:                  calculateDiff(oldResp.TrimDrp, newResp.TrimDrp, common.DefaultMissingCounterValue, true),
-			Rx64:                     calculateDiff(oldResp.Rx64, newResp.Rx64, common.DefaultMissingCounterValue, false),
-			Rx65_127:                 calculateDiff(oldResp.Rx65_127, newResp.Rx65_127, common.DefaultMissingCounterValue, false),
-			Rx128_255:                calculateDiff(oldResp.Rx128_255, newResp.Rx128_255, common.DefaultMissingCounterValue, false),
-			Rx256_511:                calculateDiff(oldResp.Rx256_511, newResp.Rx256_511, common.DefaultMissingCounterValue, false),
-			Rx512_1023:               calculateDiff(oldResp.Rx512_1023, newResp.Rx512_1023, common.DefaultMissingCounterValue, false),
-			Rx1024_1518:              calculateDiff(oldResp.Rx1024_1518, newResp.Rx1024_1518, common.DefaultMissingCounterValue, false),
-			Rx1519_2047:              calculateDiff(oldResp.Rx1519_2047, newResp.Rx1519_2047, common.DefaultMissingCounterValue, false),
-			Rx2048_4095:              calculateDiff(oldResp.Rx2048_4095, newResp.Rx2048_4095, common.DefaultMissingCounterValue, false),
-			Rx4096_9216:              calculateDiff(oldResp.Rx4096_9216, newResp.Rx4096_9216, common.DefaultMissingCounterValue, false),
-			Rx9217_16383:             calculateDiff(oldResp.Rx9217_16383, newResp.Rx9217_16383, common.DefaultMissingCounterValue, false),
-			Tx64:                     calculateDiff(oldResp.Tx64, newResp.Tx64, common.DefaultMissingCounterValue, false),
-			Tx65_127:                 calculateDiff(oldResp.Tx65_127, newResp.Tx65_127, common.DefaultMissingCounterValue, false),
-			Tx128_255:                calculateDiff(oldResp.Tx128_255, newResp.Tx128_255, common.DefaultMissingCounterValue, false),
-			Tx256_511:                calculateDiff(oldResp.Tx256_511, newResp.Tx256_511, common.DefaultMissingCounterValue, false),
-			Tx512_1023:               calculateDiff(oldResp.Tx512_1023, newResp.Tx512_1023, common.DefaultMissingCounterValue, false),
-			Tx1024_1518:              calculateDiff(oldResp.Tx1024_1518, newResp.Tx1024_1518, common.DefaultMissingCounterValue, false),
-			Tx1519_2047:              calculateDiff(oldResp.Tx1519_2047, newResp.Tx1519_2047, common.DefaultMissingCounterValue, false),
-			Tx2048_4095:              calculateDiff(oldResp.Tx2048_4095, newResp.Tx2048_4095, common.DefaultMissingCounterValue, false),
-			Tx4096_9216:              calculateDiff(oldResp.Tx4096_9216, newResp.Tx4096_9216, common.DefaultMissingCounterValue, false),
-			Tx9217_16383:             calculateDiff(oldResp.Tx9217_16383, newResp.Tx9217_16383, common.DefaultMissingCounterValue, false),
-			RxAll:                    calculateDiff(oldResp.RxAll, newResp.RxAll, common.DefaultMissingCounterValue, false),
-			RxUnicast:                calculateDiff(oldResp.RxUnicast, newResp.RxUnicast, common.DefaultMissingCounterValue, false),
-			RxMulticast:              calculateDiff(oldResp.RxMulticast, newResp.RxMulticast, common.DefaultMissingCounterValue, false),
-			RxBroadcast:              calculateDiff(oldResp.RxBroadcast, newResp.RxBroadcast, common.DefaultMissingCounterValue, false),
-			TxAll:                    calculateDiff(oldResp.TxAll, newResp.TxAll, common.DefaultMissingCounterValue, false),
-			TxUnicast:                calculateDiff(oldResp.TxUnicast, newResp.TxUnicast, common.DefaultMissingCounterValue, false),
-			TxMulticast:              calculateDiff(oldResp.TxMulticast, newResp.TxMulticast, common.DefaultMissingCounterValue, false),
-			TxBroadcast:              calculateDiff(oldResp.TxBroadcast, newResp.TxBroadcast, common.DefaultMissingCounterValue, false),
-			RxJabbers:                calculateDiff(oldResp.RxJabbers, newResp.RxJabbers, common.DefaultMissingCounterValue, false),
-			RxFragments:              calculateDiff(oldResp.RxFragments, newResp.RxFragments, common.DefaultMissingCounterValue, false),
-			RxUndersize:              calculateDiff(oldResp.RxUndersize, newResp.RxUndersize, common.DefaultMissingCounterValue, false),
-			RxOverruns:               calculateDiff(oldResp.RxOverruns, newResp.RxOverruns, common.DefaultMissingCounterValue, false),
+			TrimPkts:                 calculateDiff(oldResp.TrimPkts, newResp.TrimPkts, false),
+			TrimSent:                 calculateDiff(oldResp.TrimSent, newResp.TrimSent, false),
+			TrimDrp:                  calculateDiff(oldResp.TrimDrp, newResp.TrimDrp, true),
+			Rx64:                     calculateDiff(oldResp.Rx64, newResp.Rx64, false),
+			Rx65_127:                 calculateDiff(oldResp.Rx65_127, newResp.Rx65_127, false),
+			Rx128_255:                calculateDiff(oldResp.Rx128_255, newResp.Rx128_255, false),
+			Rx256_511:                calculateDiff(oldResp.Rx256_511, newResp.Rx256_511, false),
+			Rx512_1023:               calculateDiff(oldResp.Rx512_1023, newResp.Rx512_1023, false),
+			Rx1024_1518:              calculateDiff(oldResp.Rx1024_1518, newResp.Rx1024_1518, false),
+			Rx1519_2047:              calculateDiff(oldResp.Rx1519_2047, newResp.Rx1519_2047, false),
+			Rx2048_4095:              calculateDiff(oldResp.Rx2048_4095, newResp.Rx2048_4095, false),
+			Rx4096_9216:              calculateDiff(oldResp.Rx4096_9216, newResp.Rx4096_9216, false),
+			Rx9217_16383:             calculateDiff(oldResp.Rx9217_16383, newResp.Rx9217_16383, false),
+			Tx64:                     calculateDiff(oldResp.Tx64, newResp.Tx64, false),
+			Tx65_127:                 calculateDiff(oldResp.Tx65_127, newResp.Tx65_127, false),
+			Tx128_255:                calculateDiff(oldResp.Tx128_255, newResp.Tx128_255, false),
+			Tx256_511:                calculateDiff(oldResp.Tx256_511, newResp.Tx256_511, false),
+			Tx512_1023:               calculateDiff(oldResp.Tx512_1023, newResp.Tx512_1023, false),
+			Tx1024_1518:              calculateDiff(oldResp.Tx1024_1518, newResp.Tx1024_1518, false),
+			Tx1519_2047:              calculateDiff(oldResp.Tx1519_2047, newResp.Tx1519_2047, false),
+			Tx2048_4095:              calculateDiff(oldResp.Tx2048_4095, newResp.Tx2048_4095, false),
+			Tx4096_9216:              calculateDiff(oldResp.Tx4096_9216, newResp.Tx4096_9216, false),
+			Tx9217_16383:             calculateDiff(oldResp.Tx9217_16383, newResp.Tx9217_16383, false),
+			RxAll:                    calculateDiff(oldResp.RxAll, newResp.RxAll, false),
+			RxUnicast:                calculateDiff(oldResp.RxUnicast, newResp.RxUnicast, false),
+			RxMulticast:              calculateDiff(oldResp.RxMulticast, newResp.RxMulticast, false),
+			RxBroadcast:              calculateDiff(oldResp.RxBroadcast, newResp.RxBroadcast, false),
+			TxAll:                    calculateDiff(oldResp.TxAll, newResp.TxAll, false),
+			TxUnicast:                calculateDiff(oldResp.TxUnicast, newResp.TxUnicast, false),
+			TxMulticast:              calculateDiff(oldResp.TxMulticast, newResp.TxMulticast, false),
+			TxBroadcast:              calculateDiff(oldResp.TxBroadcast, newResp.TxBroadcast, false),
+			RxJabbers:                calculateDiff(oldResp.RxJabbers, newResp.RxJabbers, false),
+			RxFragments:              calculateDiff(oldResp.RxFragments, newResp.RxFragments, false),
+			RxUndersize:              calculateDiff(oldResp.RxUndersize, newResp.RxUndersize, false),
+			RxOverruns:               calculateDiff(oldResp.RxOverruns, newResp.RxOverruns, false),
 			FecErrCWs:                newResp.FecErrCWs,
 			TimestampClearedCounters: getTimestampClearedCounters(oldResp.TimestampClearedCounters, newResp.TimestampClearedCounters),
 		}
@@ -749,7 +748,6 @@ func projectFecHistogramCounters(snapshot map[string]InterfaceCountersSnapshot) 
 	return nil
 }
 
-
 func calculateDiff(oldValue, newValue string, raw bool) string {
 	if newValue == common.DefaultMissingCounterValue {
 		return common.DefaultMissingCounterValue
@@ -898,7 +896,7 @@ func formatUtil(rate string) string {
 	return fmt.Sprintf("%.2f%%", utilRate)
 }
 
-func computeUtil(utilRate string, byteRate string, portSpeed string) {
+func computeUtil(utilRate string, byteRate string, portSpeed string) string {
 	if utilRate == common.DefaultMissingCounterValue {
 		return calculateUtil(byteRate, portSpeed)
 	} else {

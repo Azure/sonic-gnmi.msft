@@ -632,3 +632,64 @@ func normalizeCmisFlagKeys(m map[string]interface{}) {
 		}
 	}
 }
+
+func BeautifyPmField(prefix string, field float64) string {
+	if prefix == "prefec_ber" {
+		if field != 0 {
+			return fmt.Sprintf("%.2E", field)
+		} else {
+			return fmt.Sprintf("0.0")
+		}
+	} else {
+		return fmt.Sprint(field)
+	}
+}
+
+const ZR_PM_NOT_APPLICABLE_STR = "Transceiver performance monitoring not applicable"
+
+var ZR_PM_INFO_MAP = map[string]struct {
+	Unit   string
+	Prefix string
+}{
+	"Tx Power":        {"dBm", "tx_power"},
+	"Rx Total Power":  {"dBm", "rx_tot_power"},
+	"Rx Signal Power": {"dBm", "rx_sig_power"},
+	"CD-short link":   {"ps/nm", "cd"},
+	"PDL":             {"dB", "pdl"},
+	"OSNR":            {"dB", "osnr"},
+	"eSNR":            {"dB", "esnr"},
+	"CFO":             {"MHz", "cfo"},
+	"DGD":             {"ps", "dgd"},
+	"SOPMD":           {"ps^2", "sopmd"},
+	"SOP ROC":         {"krad/s", "soproc"},
+	"Pre-FEC BER":     {"N/A", "prefec_ber"},
+	"Post-FEC BER":    {"N/A", "uncorr_frames"},
+	"EVM":             {"%", "evm"},
+}
+var ZR_PM_VALUE_KEY_SUFFIXS = []string{"min", "avg", "max"}
+var ZR_PM_THRESHOLD_KEY_SUFFIXS = []string{"highalarm", "highwarning", "lowalarm", "lowwarning"}
+var CCMIS_VDM_THRESHOLD_TO_LEGACY_DOM_THRESHOLD_MAP = map[string]string{
+	"rxtotpower1":                     "rxtotpower",
+	"rxsigpower1":                     "rxsigpower",
+	"cdshort1":                        "cdshort",
+	"pdl1":                            "pdl",
+	"osnr1":                           "osnr",
+	"esnr1":                           "esnr",
+	"cfo1":                            "cfo",
+	"dgd1":                            "dgd",
+	"sopmd1":                          "sopmd",
+	"soproc1":                         "soproc",
+	"prefec_ber_avg_media_input1":     "prefecber",
+	"errored_frames_avg_media_input1": "postfecber",
+	"evm1":                            "evm",
+}
+
+func ConvertPmPrefixToThresholdPrefix(prefix string) string {
+	if prefix == "uncorr_frames" {
+		return "postfecber"
+	} else if prefix == "cd" {
+		return "cdshort"
+	} else {
+		return strings.Replace(prefix, "_", "", -1)
+	}
+}

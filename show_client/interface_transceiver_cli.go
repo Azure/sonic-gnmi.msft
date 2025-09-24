@@ -145,7 +145,7 @@ func BeautifyPmField(prefix string, field float64) string {
 			return fmt.Sprintf("0.0")
 		}
 	} else {
-		return fmt.Sprintf("%.1f", field)
+		return fmt.Sprintf("%g", field)
 	}
 }
 
@@ -194,7 +194,7 @@ func ConvertPmPrefixToThresholdPrefix(prefix string) string {
 	} else if prefix == "cd" {
 		return "cdshort"
 	} else {
-		return strings.Replace(prefix, "_", "", 1)
+		return strings.Replace(prefix, "_", "", -1)
 	}
 }
 

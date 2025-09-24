@@ -59,19 +59,19 @@ func TestGetIPv6InterfacesCLI(t *testing.T) {
 		{
 			desc: "show ipv6 interface --namespace all (invalid in single-ASIC)",
 			textPbPath: `
-				elem: <name: "ipv6" >
-				elem: <name: "interfaces" >
-				opt: <key: "namespace" value: "all" >
-			`,
+					elem: <name: "ipv6" >
+					elem: <name: "interfaces"
+					      key: { key: "namespace" value: "all" } >
+				`,
 			wantRetCode: codes.NotFound,
 		},
 		{
 			desc: "show ipv6 interface --display all",
 			textPbPath: `
-				elem: <name: "ipv6" >
-				elem: <name: "interfaces" >
-				opt: <key: "display" value: "all" >
-			`,
+					elem: <name: "ipv6" >
+					elem: <name: "interfaces"
+					      key: { key: "display" value: "all" } >
+				`,
 			wantRetCode: codes.OK,
 		},
 	}

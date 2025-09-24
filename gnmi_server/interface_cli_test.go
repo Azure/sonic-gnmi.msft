@@ -45,19 +45,20 @@ func TestGetInterfaceCounters(t *testing.T) {
 	portCountersTwoFileName := "../testdata/PORT_COUNTERS_TWO.txt"
 	portRatesFileName := "../testdata/PORT_RATES.txt"
 	portRatesTwoFileName := "../testdata/PORT_RATES_TWO.txt"
+	portRatesThreeFileName := "../testdata/PORT_RATES_THREE.txt"
 	portTableFileName := "../testdata/PORT_TABLE.txt"
 	stateDBPortTableFileName := "../testdata/INTERFACE_COUNTERS_STATE_PORT_TABLE.txt"
 	interfaceCountersAll := `{"Ethernet0":{"State":"U","RxOk":"149903","RxBps":"25.12 B/s","RxUtil":"0.00%","RxErr":"0","RxDrp":"957","RxOvr":"0","TxOk":"144782","TxBps":"773.23 KB/s","TxUtil":"0.01%","TxErr":"0","TxDrp":"2","TxOvr":"0"},"Ethernet40":{"State":"U","RxOk":"7295","RxBps":"0.00 B/s","RxUtil":"0.00%","RxErr":"0","RxDrp":"0","RxOvr":"0","TxOk":"50184","TxBps":"633.66 KB/s","TxUtil":"0.01%","TxErr":"0","TxDrp":"1","TxOvr":"0"},"Ethernet80":{"State":"U","RxOk":"76555","RxBps":"0.37 B/s","RxUtil":"0.00%","RxErr":"0","RxDrp":"0","RxOvr":"0","TxOk":"144767","TxBps":"631.94 KB/s","TxUtil":"0.01%","TxErr":"0","TxDrp":"1","TxOvr":"0"}}`
 	interfaceCountersSelectPorts := `{"Ethernet0":{"State":"U","RxOk":"149903","RxBps":"25.12 B/s","RxUtil":"0.00%","RxErr":"0","RxDrp":"957","RxOvr":"0","TxOk":"144782","TxBps":"773.23 KB/s","TxUtil":"0.01%","TxErr":"0","TxDrp":"2","TxOvr":"0"}}`
 	interfaceCountersDiff := `{"Ethernet0":{"State":"U","RxOk":"11658","RxBps":"21.39 B/s","RxUtil":"0.00%","RxErr":"0","RxDrp":"76","RxOvr":"0","TxOk":"11270","TxBps":"634.00 KB/s","TxUtil":"0.01%","TxErr":"0","TxDrp":"0","TxOvr":"0"}}`
-	interfaceCountersAllPrintall := `{"Ethernet0":{"State":"U","RxOk":"149903","RxBps":"25.12 B/s","RxPps":"0.18/s","RxUtil":"0.00%","RxErr":"0","RxDrp":"957","RxOvr":"0","TxOk":"144782","TxBps":"773.23 KB/s","TxPps":"0.27/s","TxUtil":"0.01%","TxErr":"0","TxDrp":"2","TxOvr":"0","TrimPkts":"7"},"Ethernet40":{"State":"U","RxOk":"7295","RxBps":"0.00 B/s","RxPps":"0.00/s","RxUtil":"0.00%","RxErr":"0","RxDrp":"0","RxOvr":"0","TxOk":"50184","TxBps":"633.66 KB/s","TxPps":"0.10/s","TxUtil":"0.01%","TxErr":"0","TxDrp":"1","TxOvr":"0","TrimPkts":"N/A"},"Ethernet80":{"State":"U","RxOk":"76555","RxBps":"0.37 B/s","RxPps":"0.00/s","RxUtil":"0.00%","RxErr":"0","RxDrp":"0","RxOvr":"0","TxOk":"144767","TxBps":"631.94 KB/s","TxPps":"0.04/s","TxUtil":"0.01%","TxErr":"0","TxDrp":"1","TxOvr":"0","TrimPkts":"N/A"}}`
-	interfaceCountersPrintallEth0 := `{"Ethernet0":{"State":"U","RxOk":"149903","RxBps":"25.12 B/s","RxPps":"0.18/s","RxUtil":"0.00%","RxErr":"0","RxDrp":"957","RxOvr":"0","TxOk":"144782","TxBps":"773.23 KB/s","TxPps":"0.27/s","TxUtil":"0.01%","TxErr":"0","TxDrp":"2","TxOvr":"0","TrimPkts":"7"}}`
-	interfaceCountersPrintallEth0Period := `{"Ethernet0":{"State":"U","RxOk":"11658","RxBps":"21.39 B/s","RxPps":"0.09/s","RxUtil":"0.00%","RxErr":"0","RxDrp":"76","RxOvr":"0","TxOk":"11270","TxBps":"634.00 KB/s","TxPps":"0.11/s","TxUtil":"0.01%","TxErr":"0","TxDrp":"0","TxOvr":"0","TrimPkts":"2"}}`
+	interfaceCountersAllPrintall := `{"Ethernet0":{"State":"U","RxOk":"149903","RxBps":"25.12 B/s","RxPps":"0.18/s","RxUtil":"0.00%","RxErr":"0","RxDrp":"957","RxOvr":"0","TxOk":"144782","TxBps":"773.23 KB/s","TxPps":"0.27/s","TxUtil":"0.01%","TxErr":"0","TxDrp":"2","TxOvr":"0","TrimPkts":"7","TrimSent":"1","TrimDrp":"0"},"Ethernet40":{"State":"U","RxOk":"7295","RxBps":"0.00 B/s","RxPps":"0.00/s","RxUtil":"0.00%","RxErr":"0","RxDrp":"0","RxOvr":"0","TxOk":"50184","TxBps":"633.66 KB/s","TxPps":"0.10/s","TxUtil":"0.01%","TxErr":"0","TxDrp":"1","TxOvr":"0","TrimPkts":"N/A","TrimSent":"N/A","TrimDrp":"N/A"},"Ethernet80":{"State":"U","RxOk":"76555","RxBps":"0.37 B/s","RxPps":"0.00/s","RxUtil":"0.00%","RxErr":"0","RxDrp":"0","RxOvr":"0","TxOk":"144767","TxBps":"631.94 KB/s","TxPps":"0.04/s","TxUtil":"0.01%","TxErr":"0","TxDrp":"1","TxOvr":"0","TrimPkts":"N/A","TrimSent":"N/A","TrimDrp":"N/A"}}`
+	interfaceCountersPrintallEth0 := `{"Ethernet0":{"State":"U","RxOk":"149903","RxBps":"25.12 B/s","RxPps":"0.18/s","RxUtil":"0.00%","RxErr":"0","RxDrp":"957","RxOvr":"0","TxOk":"144782","TxBps":"773.23 KB/s","TxPps":"0.27/s","TxUtil":"0.01%","TxErr":"0","TxDrp":"2","TxOvr":"0","TrimPkts":"7","TrimSent":"1","TrimDrp":"0"}}`
+	interfaceCountersPrintallEth0Period := `{"Ethernet0":{"State":"U","RxOk":"11658","RxBps":"21.39 B/s","RxPps":"0.09/s","RxUtil":"0.00%","RxErr":"0","RxDrp":"76","RxOvr":"0","TxOk":"11270","TxBps":"634.00 KB/s","TxPps":"0.11/s","TxUtil":"0.01%","TxErr":"0","TxDrp":"0","TxOvr":"0","TrimPkts":"2","TrimSent":"2","TrimDrp":"1"}}}`
 	interfaceCountersErrorsAll := `{"Ethernet0":{"State":"U","RxErr":"0","RxDrp":"957","RxOvr":"0","TxErr":"0","TxDrp":"2","TxOvr":"0"},"Ethernet40":{"State":"U","RxErr":"0","RxDrp":"0","RxOvr":"0","TxErr":"0","TxDrp":"1","TxOvr":"0"},"Ethernet80":{"State":"U","RxErr":"0","RxDrp":"0","RxOvr":"0","TxErr":"0","TxDrp":"1","TxOvr":"0"}}`
 	interfaceCountersErrorsAllPeriod := `{"Ethernet0":{"State":"U","RxErr":"0","RxDrp":"76","RxOvr":"0","TxErr":"0","TxDrp":"0","TxOvr":"0"},"Ethernet40":{"State":"U","RxErr":"0","RxDrp":"0","RxOvr":"0","TxErr":"0","TxDrp":"0","TxOvr":"0"},"Ethernet80":{"State":"U","RxErr":"0","RxDrp":"0","RxOvr":"0","TxErr":"0","TxDrp":"0","TxOvr":"0"}}`
-	interfaceCountersTrimAll := `{"Ethernet0":{"State":"U","TrimPkts":"7"},"Ethernet40":{"State":"U","TrimPkts":"N/A"},"Ethernet80":{"State":"U","TrimPkts":"N/A"}}`
-	interfaceCountersTrimEth0 := `{"Ethernet0":{"State":"U","TrimPkts":"7"}}`
-	interfaceCountersTrimEth0Period := `{"Ethernet0":{"State":"U","TrimPkts":"2"}}`
+	interfaceCountersTrimAll := `{"Ethernet0":{"State":"U","TrimPkts":"7","TrimSent":"1","TrimDrp":"0"},"Ethernet40":{"State":"U","TrimPkts":"N/A","TrimSent":"N/A","TrimDrp":"N/A"},"Ethernet80":{"State":"U","TrimPkts":"N/A","TrimSent":"N/A","TrimDrp":"N/A"}}`
+	interfaceCountersTrimEth0 := `{"Ethernet0":{"State":"U","TrimPkts":"7","TrimSent":"1","TrimDrp":"0"}}`
+	interfaceCountersTrimEth0Period := `{"Ethernet0":{"State":"U","TrimPkts":"2","TrimSent":"2","TrimDrp":"1"}}`
 	interfaceCountersRatesAll := `{"Ethernet0":{"State":"U","RxOk":"149903","RxBps":"25.12 B/s","RxPps":"0.18/s","RxUtil":"0.00%","TxOk":"144782","TxBps":"773.23 KB/s","TxPps":"0.27/s","TxUtil":"0.01%"},"Ethernet40":{"State":"U","RxOk":"7295","RxBps":"0.00 B/s","RxPps":"0.00/s","RxUtil":"0.00%","TxOk":"50184","TxBps":"633.66 KB/s","TxPps":"0.10/s","TxUtil":"0.01%"},"Ethernet80":{"State":"U","RxOk":"76555","RxBps":"0.37 B/s","RxPps":"0.00/s","RxUtil":"0.00%","TxOk":"144767","TxBps":"631.94 KB/s","TxPps":"0.04/s","TxUtil":"0.01%"}}`
 	interfaceCountersRatesAllPeriod := `{"Ethernet0":{"State":"U","RxOk":"11658","RxBps":"21.39 B/s","RxPps":"0.09/s","RxUtil":"0.00%","TxOk":"11270","TxBps":"634.00 KB/s","TxPps":"0.11/s","TxUtil":"0.01%"},"Ethernet40":{"State":"U","RxOk":"568","RxBps":"0.00 B/s","RxPps":"0.00/s","RxUtil":"0.00%","TxOk":"3893","TxBps":"631.47 KB/s","TxPps":"0.00/s","TxUtil":"0.01%"},"Ethernet80":{"State":"U","RxOk":"5980","RxBps":"4.60 B/s","RxPps":"0.03/s","RxUtil":"0.00%","TxOk":"11313","TxBps":"634.75 KB/s","TxPps":"0.03/s","TxUtil":"0.01%"}}`
 	interfaceCountersFecStatsAll := `{"Ethernet0":{"State":"U","FecCorr":"0","FecUncorr":"0","FecSymbolErr":"0","FecPreBer":"0.00e+00","FecPostBer":"0.00e+00"},"Ethernet40":{"State":"U","FecCorr":"0","FecUncorr":"0","FecSymbolErr":"0","FecPreBer":"0.00e+00","FecPostBer":"0.00e+00"},"Ethernet80":{"State":"U","FecCorr":"0","FecUncorr":"0","FecSymbolErr":"0","FecPreBer":"0.00e+00","FecPostBer":"0.00e+00"}}`
@@ -370,6 +371,22 @@ func TestGetInterfaceCounters(t *testing.T) {
 			},
 			wantRetCode: codes.OK,
 			wantRespVal: []byte(interfaceCountersDetailedEth0CachePeriod),
+			valTest:     true,
+			mockSleep:   true,
+		},
+		{
+			desc:       "SHOW interfaces counters rates with RXUTIL/TXUTIL in data",
+			pathTarget: "SHOW",
+			textPbPath: `
+				elem: <name: "interfaces" >
+				elem: <name: "counters" >
+				elem: <name: "rates" >>
+			`,
+			testInit: func() {
+				AddDataSet(t, ApplDbNum, portRatesThreeFileName)
+			},
+			wantRetCode: codes.OK,
+			wantRespVal: []byte(interfaceCountersRatesAll),
 			valTest:     true,
 			mockSleep:   true,
 		},

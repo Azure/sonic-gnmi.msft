@@ -306,7 +306,7 @@ func getInterfaceTransceiverPM(args sdc.CmdArgs, options sdc.OptionMap) ([]byte,
 	queries := [][]string{
 		{"STATE_DB", "TRANSCEIVER_PM", intf},
 	}
-	sfpPMDict, err := GetMapFromQueries(queries)
+	sfpPMDict, err := common.GetMapFromQueries(queries)
 	if err != nil {
 		log.Errorf("Failed to get PM dict from STATE_DB: %v")
 		return nil, err
@@ -316,7 +316,7 @@ func getInterfaceTransceiverPM(args sdc.CmdArgs, options sdc.OptionMap) ([]byte,
 	queries = [][]string{
 		{"STATE_DB", "TRANSCEIVER_DOM_THRESHOLD"},
 	}
-	sfpThresholdDict, err := GetMapFromQueries(queries)
+	sfpThresholdDict, err := common.GetMapFromQueries(queries)
 	if err != nil {
 		log.Errorf("Failed to get PM dict from STATE_DB: %v", err)
 		return nil, err
@@ -328,9 +328,9 @@ func getInterfaceTransceiverPM(args sdc.CmdArgs, options sdc.OptionMap) ([]byte,
 		ports = append(ports, intf)
 	} else {
 		queries := [][]string{
-			{"APPL_DB", AppDBPortTable},
+			{"APPL_DB", common.AppDBPortTable},
 		}
-		portTable, err := GetMapFromQueries(queries)
+		portTable, err := common.GetMapFromQueries(queries)
 		if err != nil {
 			log.Errorf("Failed to get interface list from APPL_DB: %v", err)
 			return nil, err
@@ -339,7 +339,7 @@ func getInterfaceTransceiverPM(args sdc.CmdArgs, options sdc.OptionMap) ([]byte,
 		for key := range portTable {
 			ports = append(ports, key)
 		}
-		ports = NatsortInterfaces(ports)
+		ports = common.NatsortInterfaces(ports)
 	}
 
 	for _, p := range ports {

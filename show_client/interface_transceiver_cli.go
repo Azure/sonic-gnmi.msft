@@ -198,7 +198,7 @@ func ConvertPmPrefixToThresholdPrefix(prefix string) string {
 	}
 }
 
-func querySfpPM(intf string) map[string]string {
+func formatSfpPM(intf string, sfpPMDict map[string]string, sfpThresholdDict map[string]string) map[string]string {
 	pmr := &common.PortMappingRetriever{}
 	pmr.ReadPorttabMappings()
 	firstSubport := common.GetFirstSubPort(pmr, intf)
@@ -210,30 +210,9 @@ func querySfpPM(intf string) map[string]string {
 		}
 	}
 
-	// Query PM info from STATE_DB
-	queries := [][]string{
-		{"STATE_DB", "TRANSCEIVER_PM", intf},
-	}
-	sfpPMDict, err := GetMapFromQueries(queries)
-	if err != nil {
-		log.Errorf("Failed to get PM dict from STATE_DB: %v", err)
-		return nil
-	}
-
-	// Query threshold info from STATE_DB
-	queries = [][]string{
-		{"STATE_DB", "TRANSCEIVER_DOM_THRESHOLD", intf},
-	}
-	sfpThresholdDict, err := GetMapFromQueries(queries)
-	if err != nil {
-		log.Errorf("Failed to get PM dict from STATE_DB: %v", err)
-		return nil
-	}
-
 	convertVdmFieldsToLegacyFields(firstSubport, sfpThresholdDict, CCMIS_VDM_THRESHOLD_TO_LEGACY_DOM_THRESHOLD_MAP, "THRESHOLD")
 
 	if len(sfpPMDict) > 0 {
-		log.Errorf("%v: %v", intf, sfpPMDict)
 		output := map[string]string{
 			"interface":   intf,
 			"description": "Min,Avg,Max,Threshold High Alarm,Threshold High Warning,Threshold Crossing Alert-High,Threshold Low Alarm,Threshold Low Warning,Threshold Crossing Alert-Low",
@@ -248,7 +227,7 @@ func querySfpPM(intf string) map[string]string {
 			for _, suffix := range ZR_PM_VALUE_KEY_SUFFIXS {
 				key := prefix + "_" + suffix
 				if val, ok := sfpPMDict[key]; ok {
-					if f, err := strconv.ParseFloat(fmt.Sprintf("%v", val), 64); err == nil {
+					if f, err := strconv.ParseFloat(val, 64); err == nil {
 						values = append(values, BeautifyPmField(prefix, f))
 					} else {
 						values = append(values, "N/A")
@@ -263,7 +242,7 @@ func querySfpPM(intf string) map[string]string {
 			for _, suffix := range ZR_PM_THRESHOLD_KEY_SUFFIXS {
 				key := ConvertPmPrefixToThresholdPrefix(prefix) + suffix
 				if val, ok := sfpThresholdDict[key]; ok && val != "N/A" {
-					if f, err := strconv.ParseFloat(fmt.Sprintf("%v", val), 64); err == nil {
+					if f, err := strconv.ParseFloat(val, 64); err == nil {
 						thresholds = append(thresholds, BeautifyPmField(prefix, f))
 					} else {
 						thresholds = append(thresholds, "N/A")
@@ -323,9 +302,30 @@ func querySfpPM(intf string) map[string]string {
 func getInterfaceTransceiverPM(args sdc.CmdArgs, options sdc.OptionMap) ([]byte, error) {
 	intf := args.At(0)
 
+	// Query PM info from STATE_DB
+	queries := [][]string{
+		{"STATE_DB", "TRANSCEIVER_PM", intf},
+	}
+	sfpPMDict, err := GetMapFromQueries(queries)
+	if err != nil {
+		log.Errorf("Failed to get PM dict from STATE_DB: %v")
+		return nil, err
+	}
+
+	// Query threshold info from STATE_DB
+	queries = [][]string{
+		{"STATE_DB", "TRANSCEIVER_DOM_THRESHOLD"},
+	}
+	sfpThresholdDict, err := GetMapFromQueries(queries)
+	if err != nil {
+		log.Errorf("Failed to get PM dict from STATE_DB: %v", err)
+		return nil, err
+	}
+
 	result := make([]map[string]string, 0)
+	ports := []string{}
 	if intf != "" {
-		result = append(result, querySfpPM(intf))
+		ports = append(ports, intf)
 	} else {
 		queries := [][]string{
 			{"APPL_DB", AppDBPortTable},
@@ -336,15 +336,22 @@ func getInterfaceTransceiverPM(args sdc.CmdArgs, options sdc.OptionMap) ([]byte,
 			return nil, err
 		}
 
-		ports := make([]string, 0, len(portTable))
 		for key := range portTable {
 			ports = append(ports, key)
 		}
 		ports = NatsortInterfaces(ports)
+	}
 
-		for _, p := range ports {
-			if ok, _ := common.IsValidPhysicalPort(p); ok {
-				result = append(result, querySfpPM(p))
+	for _, p := range ports {
+		if ok, _ := common.IsValidPhysicalPort(p); ok {
+			if val, ok := sfpPMDict[p]; ok {
+				dom, _ := sfpThresholdDict[p]
+				result = append(result, formatSfpPM(p, val, dom))
+			} else {
+				result = append(result, map[string]string{
+					"interface":   p,
+					"description": ZR_PM_NOT_APPLICABLE_STR,
+				})
 			}
 		}
 	}

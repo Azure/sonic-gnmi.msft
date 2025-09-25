@@ -2,9 +2,10 @@ package show_client
 
 import (
 	"encoding/json"
+	"strings"
+
 	"github.com/sonic-net/sonic-gnmi/show_client/common"
 	sdc "github.com/sonic-net/sonic-gnmi/sonic_data_client"
-	"strings"
 )
 
 // Struct to represent each ARP entry
@@ -23,7 +24,11 @@ var (
 )
 
 func getArpTable(args sdc.CmdArgs, options sdc.OptionMap) ([]byte, error) {
-	namingMode, _ := options[SonicCliIfaceMode].String()
+	namingModeStr, _ := options[SonicCliIfaceMode].String()
+	namingMode, err := common.ParseInterfaceNamingMode(namingModeStr)
+	if err != nil {
+		return nil, err
+	}
 	cmd := CmdPrefix
 
 	if len(args) > 0 && args[0] != "" {

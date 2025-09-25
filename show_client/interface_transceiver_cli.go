@@ -183,7 +183,12 @@ func getInterfaceTransceiverLpMode(args sdc.CmdArgs, options sdc.OptionMap) ([]b
 
 func getInterfaceTransceiverStatus(args sdc.CmdArgs, options sdc.OptionMap) ([]byte, error) {
 	intfArg := args.At(0)
-	namingMode, _ := options[SonicCliIfaceMode].String()
+	namingModeStr, _ := options[SonicCliIfaceMode].String()
+	namingMode, err := common.ParseInterfaceNamingMode(namingModeStr)
+	if err != nil {
+		log.Errorf("Failed to parse interface naming mode %s: %v", namingModeStr, err)
+		return nil, err
+	}
 
 	// APPL_DB PORT_TABLE -> determine valid ports
 	portTable, err := common.GetMapFromQueries([][]string{{common.ApplDb, common.AppDBPortTable}})

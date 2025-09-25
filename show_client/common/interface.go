@@ -13,9 +13,17 @@ import (
 )
 
 const (
-	Alias                      = "alias"
-	VlanSubInterfaceSeparator  = '.'
+	vlanSubInterfaceSeparator  = '.'
 	defaultCountersDBSeparator = ":"
+)
+
+type InterfaceNamingMode string
+
+func (m InterfaceNamingMode) String() string { return string(m) }
+
+const (
+	Default InterfaceNamingMode = "default"
+	Alias   InterfaceNamingMode = "alias"
 )
 
 var (
@@ -96,40 +104,53 @@ func GetNameForInterfaceAlias(intfAlias string) string {
 	}
 }
 
-func GetInterfaceNamingMode(namingMode string) string {
-	if namingMode != "" {
-		return namingMode
+// ParseInterfaceNamingMode parses a string to InterfaceNamingMode.
+// Valid values are "", "default", and "alias" (case-insensitive).
+// The empty string is treated as "default".
+func ParseInterfaceNamingMode(s string) (InterfaceNamingMode, error) {
+	s = strings.ToLower(strings.TrimSpace(s))
+	switch s {
+	case "":
+		return Default, nil
+	case string(Default):
+		return Default, nil
+	case string(Alias):
+		return Alias, nil
+	default:
+		return "", fmt.Errorf("invalid InterfaceNamingMode %q (valid: %v)", s, []InterfaceNamingMode{Default, Alias})
 	}
-	return "default"
 }
 
-// GetInterfaceNameForDisplay returns alias when SONIC_CLI_IFACE_MODE=alias; otherwise the name.
+// GetInterfaceNameForDisplay returns interface name for display according to naming mode.
+// The input port name is the SONiC interface name.
 // It also preserves VLAN sub-interface suffix like Ethernet0.100.
-func GetInterfaceNameForDisplay(name string, namingMode string) string {
+func GetInterfaceNameForDisplay(name string, namingMode InterfaceNamingMode) string {
 	if name == "" {
 		return name
 	}
-	if interfaceNamingMode := GetInterfaceNamingMode(namingMode); interfaceNamingMode != Alias {
+
+	if namingMode == Default {
 		return name
 	}
 
 	nameToAlias := sdc.PortToAliasNameMap()
 
 	base, suffix := name, ""
-	if i := strings.IndexByte(name, VlanSubInterfaceSeparator); i >= 0 {
+	if i := strings.IndexByte(name, vlanSubInterfaceSeparator); i >= 0 {
 		base, suffix = name[:i], name[i:] // keep .<vlan>
 	}
 
 	if alias, ok := nameToAlias[base]; ok {
 		return alias + suffix
 	}
+
 	return name
 }
 
 // TryConvertInterfaceNameFromAlias tries to convert an interface alias to its interface name.
 // If naming mode is "alias", attempts conversion; if conversion fails, returns error.
-func TryConvertInterfaceNameFromAlias(interfaceName string, namingMode string) (string, error) {
-	if GetInterfaceNamingMode(namingMode) == Alias {
+func TryConvertInterfaceNameFromAlias(interfaceName string, namingMode InterfaceNamingMode) (string, error) {
+	if namingMode == Alias {
 		alias := interfaceName
 		aliasMap := sdc.AliasToPortNameMap()
 		if itfName, ok := aliasMap[alias]; ok {

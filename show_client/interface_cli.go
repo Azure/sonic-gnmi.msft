@@ -778,7 +778,12 @@ func getInterfaceStatus(args sdc.CmdArgs, options sdc.OptionMap) ([]byte, error)
 
 func getInterfaceAlias(args sdc.CmdArgs, options sdc.OptionMap) ([]byte, error) {
 	intf := args.At(0)
-	namingMode, _ := options[SonicCliIfaceMode].String()
+	namingModeStr, _ := options[SonicCliIfaceMode].String()
+	namingMode, err := common.ParseInterfaceNamingMode(namingModeStr)
+	if err != nil {
+		log.Errorf("Failed to parse interface naming mode %s: %v", namingModeStr, err)
+		return nil, status.Errorf(codes.InvalidArgument, "Invalid interface naming mode %q", namingModeStr)
+	}
 
 	// Read CONFIG_DB.PORT
 	queries := [][]string{{"CONFIG_DB", "PORT"}}
@@ -825,7 +830,12 @@ func getInterfaceAlias(args sdc.CmdArgs, options sdc.OptionMap) ([]byte, error) 
 }
 
 func getInterfaceSwitchportConfig(args sdc.CmdArgs, options sdc.OptionMap) ([]byte, error) {
-	namingMode, _ := options[SonicCliIfaceMode].String()
+	namingModeStr, _ := options[SonicCliIfaceMode].String()
+	namingMode, err := common.ParseInterfaceNamingMode(namingModeStr)
+	if err != nil {
+		log.Errorf("Failed to parse interface naming mode %s: %v", namingModeStr, err)
+		return nil, status.Errorf(codes.InvalidArgument, "Invalid interface naming mode %q", namingModeStr)
+	}
 
 	// Read CONFIG_DB tables
 	portTbl, err := common.GetMapFromQueries([][]string{{"CONFIG_DB", "PORT"}})
@@ -906,7 +916,12 @@ func getInterfaceSwitchportConfig(args sdc.CmdArgs, options sdc.OptionMap) ([]by
 }
 
 func getInterfaceSwitchportStatus(args sdc.CmdArgs, options sdc.OptionMap) ([]byte, error) {
-	namingMode, _ := options[SonicCliIfaceMode].String()
+	namingModeStr, _ := options[SonicCliIfaceMode].String()
+	namingMode, err := common.ParseInterfaceNamingMode(namingModeStr)
+	if err != nil {
+		log.Errorf("Failed to parse interface naming mode %s: %v", namingModeStr, err)
+		return nil, status.Errorf(codes.InvalidArgument, "Invalid interface naming mode %q", namingModeStr)
+	}
 
 	// Read CONFIG_DB tables
 	portTbl, err := common.GetMapFromQueries([][]string{{"CONFIG_DB", "PORT"}})
@@ -994,7 +1009,12 @@ func IsInterfaceInPortchannel(portchannelMemberTable map[string]interface{}, int
 
 func getInterfaceFlap(args sdc.CmdArgs, options sdc.OptionMap) ([]byte, error) {
 	intf := args.At(0)
-	namingMode, _ := options[SonicCliIfaceMode].String()
+	namingModeStr, _ := options[SonicCliIfaceMode].String()
+	namingMode, err := common.ParseInterfaceNamingMode(namingModeStr)
+	if err != nil {
+		log.Errorf("Failed to parse interface naming mode %s: %v", namingModeStr, err)
+		return nil, status.Errorf(codes.InvalidArgument, "Invalid interface naming mode %q", namingModeStr)
+	}
 
 	// Query APPL_DB PORT_TABLE
 	queries := [][]string{
@@ -1070,7 +1090,12 @@ func getInterfaceFlap(args sdc.CmdArgs, options sdc.OptionMap) ([]byte, error) {
 // 6) "BackEndLeafRouter"
 func getInterfaceNeighborExpected(args sdc.CmdArgs, options sdc.OptionMap) ([]byte, error) {
 	intf := args.At(0)
-	namingMode, _ := options[SonicCliIfaceMode].String()
+	namingModeStr, _ := options[SonicCliIfaceMode].String()
+	namingMode, err := common.ParseInterfaceNamingMode(namingModeStr)
+	if err != nil {
+		log.Errorf("Failed to parse interface naming mode %s: %v", namingModeStr, err)
+		return nil, status.Errorf(codes.InvalidArgument, "Invalid interface naming mode %q", namingModeStr)
+	}
 
 	neighborTbl, err := common.GetMapFromQueries([][]string{{"CONFIG_DB", "DEVICE_NEIGHBOR"}})
 	if err != nil {
@@ -1148,9 +1173,13 @@ func getInterfaceNeighborExpected(args sdc.CmdArgs, options sdc.OptionMap) ([]by
 }
 
 func getInterfaceNamingMode(args sdc.CmdArgs, options sdc.OptionMap) ([]byte, error) {
-	namingMode, _ := options[SonicCliIfaceMode].String()
+	namingModeStr, _ := options[SonicCliIfaceMode].String()
+	namingMode, err := common.ParseInterfaceNamingMode(namingModeStr)
+	if err != nil {
+		log.Errorf("Failed to parse interface naming mode %s: %v", namingModeStr, err)
+		return nil, status.Errorf(codes.InvalidArgument, "Invalid interface naming mode %q", namingModeStr)
+	}
 
-	namingMode = common.GetInterfaceNamingMode(namingMode)
-	namingModeResp := namingModeResponse{NamingMode: namingMode}
+	namingModeResp := namingModeResponse{NamingMode: namingMode.String()}
 	return json.Marshal(namingModeResp)
 }

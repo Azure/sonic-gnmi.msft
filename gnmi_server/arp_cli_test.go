@@ -8,7 +8,7 @@ import (
 
 	"github.com/agiledragon/gomonkey/v2"
 	pb "github.com/openconfig/gnmi/proto/gnmi"
-	common "github.com/sonic-net/sonic-gnmi/show_client/common"
+	sccommon "github.com/sonic-net/sonic-gnmi/show_client/common"
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
@@ -69,7 +69,7 @@ func TestGetArpTable(t *testing.T) {
 			wantRespVal: []byte(expectedArp),
 			valTest:     true,
 			testInit: func() *gomonkey.Patches {
-				return gomonkey.ApplyFunc(common.GetDataFromHostCommand, func(cmd string) (string, error) {
+				return gomonkey.ApplyFunc(sccommon.GetDataFromHostCommand, func(cmd string) (string, error) {
 					return `
 					Address    MacAddress    Iface    Vlan
 					---------  ------------  -------  ------
@@ -93,7 +93,7 @@ func TestGetArpTable(t *testing.T) {
 			valTest:     true,
 			testInit: func() *gomonkey.Patches {
 				patches := gomonkey.NewPatches()
-				patches.ApplyFunc(common.GetDataFromHostCommand, func(cmd string) (string, error) {
+				patches.ApplyFunc(sccommon.GetDataFromHostCommand, func(cmd string) (string, error) {
 					return `
 					Address    MacAddress    Iface    Vlan
 					---------  ------------  -------  ------
@@ -101,8 +101,8 @@ func TestGetArpTable(t *testing.T) {
 					Total number of entries 1
 					`, nil
 				})
-				patches.ApplyFunc(common.TryConvertInterfaceNameFromAlias, func(interfaceName string, namingMode string) (string, error) {
-					if interfaceName == "Ethernet0" && namingMode == "alias" {
+				patches.ApplyFunc(sccommon.TryConvertInterfaceNameFromAlias, func(interfaceName string, namingMode sccommon.InterfaceNamingMode) (string, error) {
+					if interfaceName == "Ethernet0" && namingMode == sccommon.Alias {
 						return "eth0", nil
 					}
 					return "", fmt.Errorf("mocked conversion failure")
@@ -124,7 +124,7 @@ func TestGetArpTable(t *testing.T) {
 			valTest:     false,
 			testInit: func() *gomonkey.Patches {
 				patches := gomonkey.NewPatches()
-				patches.ApplyFunc(common.GetDataFromHostCommand, func(cmd string) (string, error) {
+				patches.ApplyFunc(sccommon.GetDataFromHostCommand, func(cmd string) (string, error) {
 					return `
 					Address    MacAddress    Iface    Vlan
 					---------  ------------  -------  ------
@@ -132,7 +132,7 @@ func TestGetArpTable(t *testing.T) {
 					Total number of entries 1
 					`, nil
 				})
-				patches.ApplyFunc(common.TryConvertInterfaceNameFromAlias, func(interfaceName string, namingMode string) (string, error) {
+				patches.ApplyFunc(sccommon.TryConvertInterfaceNameFromAlias, func(interfaceName string, namingMode sccommon.InterfaceNamingMode) (string, error) {
 					return "", fmt.Errorf("Cannot find interface name for alias %s", interfaceName)
 				})
 				return patches
@@ -148,7 +148,7 @@ func TestGetArpTable(t *testing.T) {
 			wantRespVal: []byte(`{"arp_entries":[]}`),
 			valTest:     true,
 			testInit: func() *gomonkey.Patches {
-				return gomonkey.ApplyFunc(common.GetDataFromHostCommand, func(cmd string) (string, error) {
+				return gomonkey.ApplyFunc(sccommon.GetDataFromHostCommand, func(cmd string) (string, error) {
 					return `
 					Address    MacAddress    Iface    Vlan
 					---------  ------------  -------  ------
@@ -167,7 +167,7 @@ func TestGetArpTable(t *testing.T) {
 			wantRespVal: nil,
 			valTest:     false,
 			testInit: func() *gomonkey.Patches {
-				return gomonkey.ApplyFunc(common.GetDataFromHostCommand, func(cmd string) (string, error) {
+				return gomonkey.ApplyFunc(sccommon.GetDataFromHostCommand, func(cmd string) (string, error) {
 					return "", fmt.Errorf("simulated command failure")
 				})
 			},

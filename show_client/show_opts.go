@@ -1,6 +1,7 @@
 package show_client
 
 import (
+	"github.com/sonic-net/sonic-gnmi/show_client/common"
 	sdc "github.com/sonic-net/sonic-gnmi/sonic_data_client"
 )
 
@@ -176,7 +177,9 @@ var (
 	showCmdOptionSonicCliIfaceMode = sdc.NewShowCmdOption(
 		SonicCliIfaceMode,
 		showCmdOptionSonicCliIfaceModeDesc,
-		sdc.StringValue,
+		sdc.EnumValue,
+		common.Default.String(),
+		common.Alias.String(),
 	)
 
 	showCmdOptionPrintAll = sdc.NewShowCmdOption(

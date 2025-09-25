@@ -30,35 +30,6 @@ type NamespacesByRole struct {
 	Fabric   []string
 }
 
-// Logger defines a simple logging interface that can be implemented by callers
-// to integrate with their own logging framework (e.g., glog, zerolog, slog).
-type Logger interface {
-	Infof(format string, args ...any)
-	Warnf(format string, args ...any)
-	Debugf(format string, args ...any)
-}
-
-// DBQueryFunc defines the signature for a function that can query the SONiC DB.
-// This allows callers to inject their own database client implementation.
-type DBQueryFunc func(q [][]string) (map[string]interface{}, error)
-
-// Dependencies holds all the external dependencies required by the ipinterfaces package.
-// This struct is passed to the main functions, making dependencies explicit.
-type Dependencies struct {
-	Logger  Logger
-	DBQuery DBQueryFunc
-}
-
-// noOpLogger is a logger that discards all messages.
-type noOpLogger struct{}
-
-func (l *noOpLogger) Infof(format string, args ...any)  {}
-func (l *noOpLogger) Warnf(format string, args ...any)  {}
-func (l *noOpLogger) Debugf(format string, args ...any) {}
-
-// DiscardLogger is a ready-to-use logger instance that performs no actions.
-var DiscardLogger Logger = &noOpLogger{}
-
 // GetInterfacesOptions holds the optional parameters for the GetIPInterfaces function.
 // A nil pointer is valid and will result in default behavior.
 type GetInterfacesOptions struct {

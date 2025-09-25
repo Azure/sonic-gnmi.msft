@@ -3,6 +3,9 @@ package ipinterfaces
 import (
 	"fmt"
 	"net"
+
+	log "github.com/golang/glog"
+	"github.com/sonic-net/sonic-gnmi/show_client/common"
 )
 
 const (
@@ -15,12 +18,12 @@ const (
 // GetIPInterfaces returns IP interface details for the selected namespaces.
 // addressFamily: "ipv4" or "ipv6" (required)
 // opts: may be nil.
-func GetIPInterfaces(deps Dependencies, addressFamily string, opts *GetInterfacesOptions) ([]IPInterfaceDetail, error) {
+func GetIPInterfaces(addressFamily string, opts *GetInterfacesOptions) ([]IPInterfaceDetail, error) {
 	if addressFamily != AddressFamilyIPv4 && addressFamily != AddressFamilyIPv6 {
 		return nil, fmt.Errorf("unsupported address family: %s", addressFamily)
 	}
 
-	nsList, err := resolveNamespaceSelection(deps.Logger, deps.DBQuery, opts)
+	nsList, err := resolveNamespaceSelection(opts)
 	if err != nil {
 		return nil, err
 	}
@@ -36,7 +39,7 @@ func GetIPInterfaces(deps Dependencies, addressFamily string, opts *GetInterface
 			dispOptVal = *opts.Display
 		}
 	}
-	deps.Logger.Infof(
+	log.Infof(
 		"GetIPInterfaces(family=%s namespace_opt=%s display_opt=%s) from namespaces '%v':",
 		addressFamily, nsOptVal, dispOptVal, nsList,
 	)
@@ -45,10 +48,10 @@ func GetIPInterfaces(deps Dependencies, addressFamily string, opts *GetInterface
 	for _, ns := range nsList {
 		interfacesInNs, err := getInterfacesInNamespace(ns, addressFamily)
 		if err != nil {
-			deps.Logger.Warnf("could not get interfaces for namespace '%s': %v", ns, err)
+			log.Warningf("could not get interfaces for namespace '%s': %v", ns, err)
 			continue
 		}
-		deps.Logger.Debugf("Fetched %d interfaces in namespace %s", len(interfacesInNs), ns)
+		log.V(6).Infof("Fetched %d interfaces in namespace %s", len(interfacesInNs), ns)
 		for _, iface := range interfacesInNs {
 			if shouldSkipInterface(iface.Name, opts) {
 				// Placeholder: currently always false. TODO implement display-based filtering.
@@ -81,10 +84,10 @@ func GetIPInterfaces(deps Dependencies, addressFamily string, opts *GetInterface
 	for _, v := range interfaceMap {
 		all = append(all, *v)
 	}
-	deps.Logger.Infof("Aggregated %d interfaces across namespaces", len(all))
+	log.Infof("Aggregated %d interfaces across namespaces", len(all))
 
-	if err := enrichWithBGPData(deps.Logger, deps.DBQuery, all); err != nil {
-		deps.Logger.Warnf("failed to enrich with BGP data: %v", err)
+	if err := enrichWithBGPData(all); err != nil {
+		log.Warningf("failed to enrich with BGP data: %v", err)
 	}
 	return all, nil
 }
@@ -93,7 +96,7 @@ func GetIPInterfaces(deps Dependencies, addressFamily string, opts *GetInterface
 // - Single ASIC: always [defaultNamespace]
 // - Multi ASIC + explicit namespace (pointer not nil): validate & return specified namespace
 // - Multi ASIC + auto (pointer nil): return namespaces per display
-func resolveNamespaceSelection(logger Logger, dbQuery DBQueryFunc, opts *GetInterfacesOptions) ([]string, error) {
+func resolveNamespaceSelection(opts *GetInterfacesOptions) ([]string, error) {
 	var namespaceOption *string
 	var displayOption *string
 	if opts != nil {
@@ -101,10 +104,7 @@ func resolveNamespaceSelection(logger Logger, dbQuery DBQueryFunc, opts *GetInte
 		displayOption = opts.Display
 	}
 
-	isMultiASIC, err := IsMultiASIC(dbQuery)
-	if err != nil {
-		return nil, err
-	}
+	isMultiASIC := common.IsMultiAsic()
 
 	if !isMultiASIC { // single ASIC
 		if namespaceOption != nil && *namespaceOption != defaultNamespace {
@@ -113,7 +113,7 @@ func resolveNamespaceSelection(logger Logger, dbQuery DBQueryFunc, opts *GetInte
 		return []string{defaultNamespace}, nil
 	}
 
-	namespacesByRole, err := GetAllNamespaces(logger, dbQuery)
+	namespacesByRole, err := GetAllNamespaces()
 	if err != nil {
 		return nil, fmt.Errorf("failed to get namespaces: %w", err)
 	}
@@ -121,7 +121,7 @@ func resolveNamespaceSelection(logger Logger, dbQuery DBQueryFunc, opts *GetInte
 	var nsList []string
 	if namespaceOption != nil { // explicit namespace
 		ns := *namespaceOption
-		if !containsString(namespacesByRole.Frontend, ns) && !containsString(namespacesByRole.Backend, ns) && !containsString(namespacesByRole.Fabric, ns) {
+		if !common.ContainsString(namespacesByRole.Frontend, ns) && !common.ContainsString(namespacesByRole.Backend, ns) && !common.ContainsString(namespacesByRole.Fabric, ns) {
 			return nil, fmt.Errorf("unknown namespace %s", ns)
 		}
 		nsList = []string{ns}
@@ -148,16 +148,16 @@ func resolveNamespaceSelection(logger Logger, dbQuery DBQueryFunc, opts *GetInte
 	return nsList, nil
 }
 
-func enrichWithBGPData(logger Logger, dbQuery DBQueryFunc, interfaces []IPInterfaceDetail) error {
-	bgpNeighbors, err := getBGPNeighborsFromDB(logger, dbQuery, defaultNamespace)
+func enrichWithBGPData(interfaces []IPInterfaceDetail) error {
+	bgpNeighbors, err := getBGPNeighborsFromDB(defaultNamespace)
 	if err != nil {
-		logger.Warnf("failed to get BGP neighbors from default namespace: %v", err)
+		log.Warningf("failed to get BGP neighbors from default namespace: %v", err)
 		return nil
 	}
-	logger.Debugf("Enriching interfaces with %d BGP neighbors from default namespace", len(bgpNeighbors))
+	log.V(6).Infof("Enriching interfaces with %d BGP neighbors from default namespace", len(bgpNeighbors))
 	// Dump BGP neighbor map keys for debugging correlation issues
 	for k, info := range bgpNeighbors {
-		logger.Debugf("Dump BGP_NEIGHBOR map: local_addr=%s -> neighbor_ip=%s name=%s", k, info.NeighborIP, info.Name)
+		log.V(6).Infof("Dump BGP_NEIGHBOR map: local_addr=%s -> neighbor_ip=%s name=%s", k, info.NeighborIP, info.Name)
 	}
 	for i := range interfaces {
 		iface := &interfaces[i]
@@ -165,14 +165,14 @@ func enrichWithBGPData(logger Logger, dbQuery DBQueryFunc, interfaces []IPInterf
 			ipDetail := &iface.IPAddresses[j]
 			addr, _, err := net.ParseCIDR(ipDetail.Address)
 			if err != nil {
-				logger.Debugf("Skipping unparsable address %q for interface %s", ipDetail.Address, iface.Name)
+				log.V(6).Infof("Skipping unparsable address %q for interface %s", ipDetail.Address, iface.Name)
 				continue
 			}
 			ipStr := addr.String()
 			if neighborInfo, ok := bgpNeighbors[ipStr]; ok {
 				ipDetail.BGPNeighborIP = neighborInfo.NeighborIP
 				ipDetail.BGPNeighborName = neighborInfo.Name
-				logger.Debugf("Matched %s -> neighbor %s (%s)", ipStr, neighborInfo.NeighborIP, neighborInfo.Name)
+				log.V(6).Infof("Matched %s -> neighbor %s (%s)", ipStr, neighborInfo.NeighborIP, neighborInfo.Name)
 			}
 		}
 	}

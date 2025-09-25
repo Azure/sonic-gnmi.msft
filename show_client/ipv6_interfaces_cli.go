@@ -5,29 +5,15 @@ import (
 	"fmt"
 
 	log "github.com/golang/glog"
-	"github.com/sonic-net/sonic-gnmi/internal/ipinterfaces"
-	"github.com/sonic-net/sonic-gnmi/show_client/common"
+	"github.com/sonic-net/sonic-gnmi/show_client/helpers/ipinterfaces"
 	sdc "github.com/sonic-net/sonic-gnmi/sonic_data_client"
 )
-
-// glogAdapter provides a thin wrapper around glog to satisfy the ipinterfaces.Logger interface.
-type glogAdapter struct{}
-
-func (g *glogAdapter) Infof(format string, args ...any)  { log.Infof(format, args...) }
-func (g *glogAdapter) Warnf(format string, args ...any)  { log.Warningf(format, args...) }
-func (g *glogAdapter) Debugf(format string, args ...any) { log.V(6).Infof(format, args...) }
 
 // getIPv6Interfaces is the handler for the "show ipv6 interfaces" command.
 // It uses the ipinterfaces library to get all interface details and returns them
 // as a JSON byte slice.
 func getIPv6Interfaces(args sdc.CmdArgs, options sdc.OptionMap) ([]byte, error) {
 	log.V(2).Info("Executing 'show ipv6 interfaces' command via ipinterfaces library.")
-
-	// Instantiate the provider with its dependencies.
-	deps := ipinterfaces.Dependencies{
-		Logger:  &glogAdapter{},
-		DBQuery: common.GetMapFromQueries,
-	}
 
 	// Extract optional namespace and display options from validated options.
 	opts := &ipinterfaces.GetInterfacesOptions{}
@@ -38,7 +24,7 @@ func getIPv6Interfaces(args sdc.CmdArgs, options sdc.OptionMap) ([]byte, error) 
 		opts.Display = &dv
 	}
 
-	allIPv6Interfaces, err := ipinterfaces.GetIPInterfaces(deps, ipinterfaces.AddressFamilyIPv6, opts)
+	allIPv6Interfaces, err := ipinterfaces.GetIPInterfaces(ipinterfaces.AddressFamilyIPv6, opts)
 	if err != nil {
 		nsLog := "<auto>"
 		if opts.Namespace != nil {

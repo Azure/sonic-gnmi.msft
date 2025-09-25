@@ -47,6 +47,8 @@ import (
 	log "github.com/golang/glog"
 	"github.com/sonic-net/sonic-gnmi/show_client/common"
 	sdc "github.com/sonic-net/sonic-gnmi/sonic_data_client"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 )
 
 // lldpNeighborsResponse represents the response structure for show lldp neighbors command.
@@ -109,7 +111,7 @@ type neighborsLLDPMed struct {
 }
 
 // Extracts the LLDP neighbors entries from the LLDP data.
-func extractAllNeighborsEntry(data lldpData, namingMode string) map[string]lldpNeighborsEntry {
+func extractAllNeighborsEntry(data lldpData, namingMode common.InterfaceNamingMode) map[string]lldpNeighborsEntry {
 	neighbors := make(map[string]lldpNeighborsEntry)
 
 	for _, entry := range data.LLDP {
@@ -256,9 +258,14 @@ func extractNeighborsEntry(iface interfaceEntry) lldpNeighborsEntry {
 func getLLDPNeighbors(args sdc.CmdArgs, options sdc.OptionMap) ([]byte, error) {
 	// Get interface name from args, if provided, default to ""
 	ifaceName := args.At(0)
-	namingMode, _ := options[SonicCliIfaceMode].String()
+	namingModeStr, _ := options[SonicCliIfaceMode].String()
+	namingMode, err := common.ParseInterfaceNamingMode(namingModeStr)
+	if err != nil {
+		log.Errorf("Failed to parse interface naming mode %s: %v", namingModeStr, err)
+		return nil, status.Errorf(codes.InvalidArgument, "Invalid interface naming mode %q", namingModeStr)
+	}
 
-	if ifaceName != "" && namingMode == "alias" {
+	if ifaceName != "" && namingMode == common.Alias {
 		intf, err := common.TryConvertInterfaceNameFromAlias(ifaceName, namingMode)
 		if err != nil {
 			log.Errorf("Failed to get interface name from alias: %s, Error: %v", ifaceName, err)

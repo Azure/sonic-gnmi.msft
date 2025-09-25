@@ -133,6 +133,15 @@ func TestGetLLDPTable(t *testing.T) {
 			},
 			ignoreValOrder: true,
 		},
+		{
+			desc:       "query SHOW lldp table - normal device - path option SONIC_CLI_IFACE_MODE=wrongNameMode",
+			pathTarget: "SHOW",
+			textPbPath: `
+				elem: <name: "lldp" >
+				elem: <name: "table" key: { key: "SONIC_CLI_IFACE_MODE" value: "wrongNameMode" } >
+			`,
+			wantRetCode: codes.InvalidArgument,
+		},
 	}
 
 	for _, test := range tests {

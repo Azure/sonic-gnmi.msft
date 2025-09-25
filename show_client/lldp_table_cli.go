@@ -23,6 +23,8 @@ import (
 	log "github.com/golang/glog"
 	sdc "github.com/sonic-net/sonic-gnmi/sonic_data_client"
 	"github.com/sonic-net/sonic-gnmi/show_client/common"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 )
 
 // lldpTableResponse represents the response structure for show lldp table command.
@@ -64,7 +66,7 @@ func parseEnabledCapabilityCodes(enabledCapabilities []string) string {
 }
 
 // Extracts the LLDP table entries from the LLDP data.
-func extractAllTableEntries(data lldpData, namingMode string) []lldpTableEntry {
+func extractAllTableEntries(data lldpData, namingMode common.InterfaceNamingMode) []lldpTableEntry {
 	neighbors := make([]lldpTableEntry, 0)
 
 	for _, entry := range data.LLDP {
@@ -118,7 +120,12 @@ func extractTableEntry(iface interfaceEntry) lldpTableEntry {
 }
 
 func getLLDPTable(args sdc.CmdArgs, options sdc.OptionMap) ([]byte, error) {
-	namingMode, _ := options[SonicCliIfaceMode].String()
+	namingModeStr, _ := options[SonicCliIfaceMode].String()
+	namingMode, err := common.ParseInterfaceNamingMode(namingModeStr)
+	if err != nil {
+		log.Errorf("Failed to parse interface naming mode %s: %v", namingModeStr, err)
+		return nil, status.Errorf(codes.InvalidArgument, "Invalid interface naming mode %q", namingModeStr)
+	}
 
 	// get lldp data
 	data, err := getLLDPDataFromHostCommand("")

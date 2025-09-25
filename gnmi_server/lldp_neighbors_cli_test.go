@@ -197,6 +197,16 @@ func TestGetLLDPNeighbors(t *testing.T) {
 			ignoreValOrder: true,
 		},
 		{
+			desc:       "query SHOW lldp neighbors - normal device with specified interface alias -path option SONIC_CLI_IFACE_MODE=wrongNameMode",
+			pathTarget: "SHOW",
+			textPbPath: `
+				elem: <name: "lldp" >
+				elem: <name: "neighbors" >
+                elem: <name: "etp354" key: { key: "SONIC_CLI_IFACE_MODE" value: "wrongNameMode" } >
+			`,
+			wantRetCode: codes.InvalidArgument,
+		},
+		{
 			desc:       "query SHOW lldp neighbors - normal device with specified interface alias -path option SONIC_CLI_IFACE_MODE=alias",
 			pathTarget: "SHOW",
 			textPbPath: `

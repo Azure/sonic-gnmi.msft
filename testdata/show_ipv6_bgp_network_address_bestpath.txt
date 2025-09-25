@@ -1,0 +1,8 @@
+BGP routing table entry for 20c0:a800:0:592::/64, version 6547
+Paths: (2 available, best #1, table default)
+  Advertised to non peer-group peers:
+  fc00::82 fc00::86
+  65100 65200 64611 68001
+    fc00::82 from fc00::82 (100.1.0.33)
+      Origin IGP, valid, external, multipath, best (Older Path)
+      Last update: Wed Sep 17 18:12:40 2025

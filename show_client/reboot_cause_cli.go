@@ -21,7 +21,7 @@ func getRebootCauseHistory(args sdc.CmdArgs, options sdc.OptionMap) ([]byte, err
 	queries := [][]string{
 		{"STATE_DB", "REBOOT_CAUSE"},
 	}
-	data, err := GetDataFromQueries(queries)
+	data, err := common.GetDataFromQueries(queries)
 	if err != nil {
 		log.Errorf("Unable to get data from queries %v, got err: %v", queries, err)
 		return nil, err

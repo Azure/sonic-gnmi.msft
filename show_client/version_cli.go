@@ -41,20 +41,20 @@ func getVersion(args sdc.CmdArgs, options sdc.OptionMap) ([]byte, error) {
 		log.Errorf("Failed to read version info from %s: %v", SonicVersionYamlPath, errorInVersionInfo)
 		return nil, errorInVersionInfo
 	}
-	platformInfo, errorInPlatformInfo := GetPlatformInfo(versionInfo)
+	platformInfo, errorInPlatformInfo := common.GetPlatformInfo(versionInfo)
 	if errorInPlatformInfo != nil {
 		log.Errorf("Failed to get platform info: %v", errorInPlatformInfo)
 		return nil, errorInPlatformInfo
 	}
-	chassisInfo, errorChassisInfo := GetChassisInfo()
+	chassisInfo, errorChassisInfo := common.GetChassisInfo()
 	if errorChassisInfo != nil {
 		log.Errorf("Failed to get chassis info: %v", errorChassisInfo)
 		return nil, errorChassisInfo
 	}
-	uptime := GetUptime(nil)
+	uptime := common.GetUptime(nil)
 	sysDate := time.Now()
 	var jsonDockerInfoBuf bytes.Buffer
-	if errDockerInfo := json.Indent(&jsonDockerInfoBuf, []byte(GetDockerInfo()), "", " "); errDockerInfo != nil {
+	if errDockerInfo := json.Indent(&jsonDockerInfoBuf, []byte(common.GetDockerInfo()), "", " "); errDockerInfo != nil {
 		log.Errorf("Failed to get docker info: %v", errDockerInfo)
 	}
 	dockerInfo := json.RawMessage(jsonDockerInfoBuf.Bytes())

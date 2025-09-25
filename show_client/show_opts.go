@@ -1,6 +1,7 @@
 package show_client
 
 import (
+	"github.com/sonic-net/sonic-gnmi/show_client/common"
 	sdc "github.com/sonic-net/sonic-gnmi/sonic_data_client"
 )
 
@@ -8,7 +9,8 @@ const (
 	showCmdOptionUnimplementedDesc     = "UNIMPLEMENTED"
 	showCmdOptionDisplayDesc           = "[display=all] No-op since no-multi-asic support"
 	showCmdOptionVerboseDesc           = "[verbose=true] Enable verbose output"
-	showCmdOptionInterfacesDesc        = "[interfaces=TEXT] Filter by interfaces name" // TODO: Change from interfaces to interface
+	showCmdOptionQueueInterfacesDesc   = "[interfaces=TEXT] Filter by interfaces name"
+	showCmdOptionInterfacesDesc        = "[interface=TEXT] Filter by interfaces name"
 	showCmdOptionInterfaceDesc         = "[interface=TEXT] Filter by single interface name"
 	showCmdOptionPortDesc              = "[port=TEXT] Filter by single port name"
 	showCmdOptionVlanDesc              = "[vlan=INTEGER] Filter by VLAN ID"
@@ -27,7 +29,9 @@ const (
 	showCmdOptionIPV6AddressDesc       = "[ipaddress=TEXT] Filter by IPv6 address"
 	showCmdOptionInfoTypeDesc          = "[info_type=TEXT] Filter by information type"
 	showCmdOptionSonicCliIfaceModeDesc = "[SONIC_CLI_IFACE_MODE=TEXT] Filter by sonic interface naming mode (eg alias/default)"
+	showCmdOptionPrintAllDesc          = "[printall=true] Show all counters"
 	showCmdOptionAllDesc               = "[all=true] No-op since all queue counters are shown by default"
+	showCmdOptionIfaceDesc             = "[iface=TEXT] Filter by interface name"
 )
 
 // Option keys
@@ -55,8 +59,14 @@ var (
 		sdc.StringValue,
 	)
 
+	showCmdOptionQueueInterfaces = sdc.NewShowCmdOption(
+		"interfaces",
+		showCmdOptionQueueInterfacesDesc,
+		sdc.StringSliceValue,
+	)
+
 	showCmdOptionInterfaces = sdc.NewShowCmdOption(
-		"interfaces", // TODO: Change to interface
+		"interface",
 		showCmdOptionInterfacesDesc,
 		sdc.StringSliceValue,
 	)
@@ -167,7 +177,15 @@ var (
 	showCmdOptionSonicCliIfaceMode = sdc.NewShowCmdOption(
 		SonicCliIfaceMode,
 		showCmdOptionSonicCliIfaceModeDesc,
-		sdc.StringValue,
+		sdc.EnumValue,
+		common.Default.String(),
+		common.Alias.String(),
+	)
+
+	showCmdOptionPrintAll = sdc.NewShowCmdOption(
+		"printall",
+		showCmdOptionPrintAllDesc,
+		sdc.BoolValue,
 	)
 
 	showCmdOptionAll = sdc.NewShowCmdOption(
@@ -180,5 +198,11 @@ var (
 		"voq",
 		showCmdOptionUnimplementedDesc,
 		sdc.BoolValue,
+	)
+
+	showCmdOptionIface = sdc.NewShowCmdOption(
+		"iface",
+		showCmdOptionIfaceDesc,
+		sdc.StringValue,
 	)
 )

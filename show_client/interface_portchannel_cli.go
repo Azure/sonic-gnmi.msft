@@ -47,7 +47,11 @@ New JSON schema per PortChannel (key = numeric ID without 'PortChannel' prefix):
 	}
 */
 func getInterfacePortchannel(args sdc.CmdArgs, options sdc.OptionMap) ([]byte, error) {
-	namingMode, _ := options[SonicCliIfaceMode].String()
+	namingModeStr, _ := options[SonicCliIfaceMode].String()
+	namingMode, err := common.ParseInterfaceNamingMode(namingModeStr)
+	if err != nil {
+		return nil, err
+	}
 	cfgPC, err := common.GetMapFromQueries([][]string{{"CONFIG_DB", "PORTCHANNEL"}})
 	if err != nil {
 		return nil, err
@@ -75,7 +79,7 @@ func getInterfacePortchannel(args sdc.CmdArgs, options sdc.OptionMap) ([]byte, e
 		applLag:     applLag,
 		stateLagMem: stateLagMember,
 		applLagMem:  applLagMember,
-		aliasMode:   (namingMode == "alias"),
+		aliasMode:   (namingMode == common.Alias),
 	}
 
 	result := ts.getTeamshowResult(namingMode)
@@ -156,7 +160,7 @@ func (t *teamShow) getPortchannelMemberStatus(pc, member string) (bool, string) 
 }
 
 // Structured members list
-func (t *teamShow) getPortchannelMembers(pc string, namingMode string) []map[string]interface{} {
+func (t *teamShow) getPortchannelMembers(pc string, namingMode common.InterfaceNamingMode) []map[string]interface{} {
 	prefix := pc + "|"
 	var members []string
 	for k := range t.stateLagMem {
@@ -197,7 +201,7 @@ func getTeamID(team string) string {
 }
 
 // Build final structured result
-func (t *teamShow) getTeamshowResult(namingMode string) map[string]map[string]interface{} {
+func (t *teamShow) getTeamshowResult(namingMode common.InterfaceNamingMode) map[string]map[string]interface{} {
 	names := t.getPortchannelNames()
 	res := make(map[string]map[string]interface{}, len(names))
 	for _, pc := range names {

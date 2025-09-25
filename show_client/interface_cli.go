@@ -1,13 +1,11 @@
 package show_client
 
 import (
-	"bufio"
 	"encoding/json"
 	"fmt"
 	"math"
 	"strconv"
 	"strings"
-	"time"
 
 	"sort"
 
@@ -19,9 +17,10 @@ import (
 )
 
 const (
-	interfaceOption        = " -i "
-	interfaceDescStartLine = "Interface"
-	descriptionDataSize    = 5
+	oper_field  = "oper_status"
+	admin_field = "admin_status"
+	alias_field = "alias"
+	desc_field  = "description"
 )
 
 type interfaceDescriptionDetails struct {
@@ -33,250 +32,8 @@ type interfaceDescriptionDetails struct {
 
 type interfaceDescription map[string]interfaceDescriptionDetails
 
-type InterfaceCountersResponse struct {
-	State  string
-	RxOk   string
-	RxBps  string
-	RxUtil string
-	RxErr  string
-	RxDrp  string
-	RxOvr  string
-	TxOk   string
-	TxBps  string
-	TxUtil string
-	TxErr  string
-	TxDrp  string
-	TxOvr  string
-}
-
 type namingModeResponse struct {
 	NamingMode string `json:"naming_mode"`
-}
-
-func calculateDiffReturnDefault(oldCounter, newCounter, defaultValue string) string {
-	if oldCounter == defaultValue || newCounter == defaultValue {
-		return defaultValue
-	}
-	oldV, err := strconv.ParseInt(oldCounter, common.Base10, 64)
-	if err != nil {
-		return defaultValue
-	}
-	newV, err := strconv.ParseInt(newCounter, common.Base10, 64)
-	if err != nil || newV < oldV { // guard reset/rollover
-		return defaultValue
-	}
-	return strconv.FormatInt(newV-oldV, common.Base10)
-}
-
-func calculateByteRate(rate string) string {
-	if rate == common.DefaultMissingCounterValue {
-		return common.DefaultMissingCounterValue
-	}
-	rateFloatValue, err := strconv.ParseFloat(rate, 64)
-	if err != nil {
-		return common.DefaultMissingCounterValue
-	}
-	var formatted string
-	switch {
-	case rateFloatValue > 10*1e6:
-		formatted = fmt.Sprintf("%.2f MB", rateFloatValue/1e6)
-	case rateFloatValue > 10*1e3:
-		formatted = fmt.Sprintf("%.2f KB", rateFloatValue/1e3)
-	default:
-		formatted = fmt.Sprintf("%.2f B", rateFloatValue)
-	}
-
-	return formatted + "/s"
-}
-
-func calculateUtil(rate string, portSpeed string) string {
-	if rate == common.DefaultMissingCounterValue || portSpeed == common.DefaultMissingCounterValue {
-		return common.DefaultMissingCounterValue
-	}
-	byteRate, err := strconv.ParseFloat(rate, 64)
-	if err != nil {
-		return common.DefaultMissingCounterValue
-	}
-	portRate, err := strconv.ParseFloat(portSpeed, 64)
-	if err != nil {
-		return common.DefaultMissingCounterValue
-	}
-	util := byteRate / (portRate * 1e6 / 8.0) * 100.0
-	return fmt.Sprintf("%.2f%%", util)
-}
-
-func computeState(iface string, portTable map[string]interface{}) string {
-	entry, ok := portTable[iface].(map[string]interface{})
-	if !ok {
-		return "X"
-	}
-	adminStatus := fmt.Sprint(entry["admin_status"])
-	operStatus := fmt.Sprint(entry["oper_status"])
-
-	switch {
-	case adminStatus == "down":
-		return "X"
-	case adminStatus == "up" && operStatus == "up":
-		return "U"
-	case adminStatus == "up" && operStatus == "down":
-		return "D"
-	default:
-		return "X"
-	}
-}
-
-func getInterfaceCounters(args sdc.CmdArgs, options sdc.OptionMap) ([]byte, error) {
-	var ifaces []string
-	period := 0
-	takeDiffSnapshot := false
-
-	if interfaces, ok := options["interfaces"].Strings(); ok {
-		ifaces = interfaces
-	}
-
-	if periodValue, ok := options["period"].Int(); ok {
-		takeDiffSnapshot = true
-		period = periodValue
-	}
-
-	if period > common.MaxShowCommandPeriod {
-		return nil, fmt.Errorf("period value must be <= %v", common.MaxShowCommandPeriod)
-	}
-
-	oldSnapshot, err := getInterfaceCountersSnapshot(ifaces)
-	if err != nil {
-		log.Errorf("Unable to get interfaces counter snapshot due to err: %v", err)
-		return nil, err
-	}
-
-	if !takeDiffSnapshot {
-		return json.Marshal(oldSnapshot)
-	}
-
-	time.Sleep(time.Duration(period) * time.Second)
-
-	newSnapshot, err := getInterfaceCountersSnapshot(ifaces)
-	if err != nil {
-		log.Errorf("Unable to get new interface counters snapshot due to err %v", err)
-		return nil, err
-	}
-
-	// Compare diff between snapshot
-	diffSnapshot := calculateDiffSnapshot(oldSnapshot, newSnapshot)
-
-	return json.Marshal(diffSnapshot)
-}
-
-func getInterfaceCountersSnapshot(ifaces []string) (map[string]InterfaceCountersResponse, error) {
-	queries := [][]string{
-		{"COUNTERS_DB", "COUNTERS", "Ethernet*"},
-	}
-
-	aliasCountersOutput, err := common.GetMapFromQueries(queries)
-	if err != nil {
-		log.Errorf("Unable to pull data for queries %v, got err %v", queries, err)
-		return nil, err
-	}
-
-	portCounters := common.RemapAliasToPortName(aliasCountersOutput)
-
-	queries = [][]string{
-		{"COUNTERS_DB", "RATES", "Ethernet*"},
-	}
-
-	aliasRatesOutput, err := common.GetMapFromQueries(queries)
-	if err != nil {
-		log.Errorf("Unable to pull data for queries %v, got err %v", queries, err)
-		return nil, err
-	}
-
-	portRates := common.RemapAliasToPortName(aliasRatesOutput)
-
-	queries = [][]string{
-		{"APPL_DB", "PORT_TABLE"},
-	}
-
-	portTable, err := common.GetMapFromQueries(queries)
-	if err != nil {
-		log.Errorf("Unable to pull data for queries %v, got err %v", queries, err)
-		return nil, err
-	}
-
-	validatedIfaces := []string{}
-
-	if len(ifaces) == 0 {
-		for port, _ := range portCounters {
-			validatedIfaces = append(validatedIfaces, port)
-		}
-	} else { // Validate
-		for _, iface := range ifaces {
-			_, found := portCounters[iface]
-			if found { // Drop none valid interfaces
-				validatedIfaces = append(validatedIfaces, iface)
-			}
-		}
-	}
-
-	response := make(map[string]InterfaceCountersResponse, len(ifaces))
-
-	for _, iface := range validatedIfaces {
-		state := computeState(iface, portTable)
-		portSpeed := common.GetFieldValueString(portTable, iface, common.DefaultMissingCounterValue, "speed")
-		rxBps := common.GetFieldValueString(portRates, iface, common.DefaultMissingCounterValue, "RX_BPS")
-		txBps := common.GetFieldValueString(portRates, iface, common.DefaultMissingCounterValue, "TX_BPS")
-
-		response[iface] = InterfaceCountersResponse{
-			State:  state,
-			RxOk:   common.GetSumFields(portCounters, iface, common.DefaultMissingCounterValue, "SAI_PORT_STAT_IF_IN_UCAST_PKTS", "SAI_PORT_STAT_IF_IN_NON_UCAST_PKTS"),
-			RxBps:  calculateByteRate(rxBps),
-			RxUtil: calculateUtil(rxBps, portSpeed),
-			RxErr:  common.GetFieldValueString(portCounters, iface, common.DefaultMissingCounterValue, "SAI_PORT_STAT_IF_IN_ERRORS"),
-			RxDrp:  common.GetFieldValueString(portCounters, iface, common.DefaultMissingCounterValue, "SAI_PORT_STAT_IF_IN_DISCARDS"),
-			RxOvr:  common.GetFieldValueString(portCounters, iface, common.DefaultMissingCounterValue, "SAI_PORT_STAT_ETHER_RX_OVERSIZE_PKTS"),
-			TxOk:   common.GetSumFields(portCounters, iface, common.DefaultMissingCounterValue, "SAI_PORT_STAT_IF_OUT_UCAST_PKTS", "SAI_PORT_STAT_IF_OUT_NON_UCAST_PKTS"),
-			TxBps:  calculateByteRate(txBps),
-			TxUtil: calculateUtil(txBps, portSpeed),
-			TxErr:  common.GetFieldValueString(portCounters, iface, common.DefaultMissingCounterValue, "SAI_PORT_STAT_IF_OUT_ERRORS"),
-			TxDrp:  common.GetFieldValueString(portCounters, iface, common.DefaultMissingCounterValue, "SAI_PORT_STAT_IF_OUT_DISCARDS"),
-			TxOvr:  common.GetFieldValueString(portCounters, iface, common.DefaultMissingCounterValue, "SAI_PORT_STAT_ETHER_TX_OVERSIZE_PKTS"),
-		}
-	}
-	return response, nil
-}
-
-func calculateDiffSnapshot(oldSnapshot map[string]InterfaceCountersResponse, newSnapshot map[string]InterfaceCountersResponse) map[string]InterfaceCountersResponse {
-	diffResponse := make(map[string]InterfaceCountersResponse, len(newSnapshot))
-
-	for iface, newResp := range newSnapshot {
-		oldResp, found := oldSnapshot[iface]
-		if !found {
-			oldResp = InterfaceCountersResponse{
-				RxOk:  "0",
-				RxErr: "0",
-				RxDrp: "0",
-				TxOk:  "0",
-				TxErr: "0",
-				TxDrp: "0",
-				TxOvr: "0",
-			}
-		}
-		diffResponse[iface] = InterfaceCountersResponse{
-			State:  newResp.State,
-			RxOk:   calculateDiffReturnDefault(oldResp.RxOk, newResp.RxOk, common.DefaultMissingCounterValue),
-			RxBps:  newResp.RxBps,
-			RxUtil: newResp.RxUtil,
-			RxErr:  calculateDiffReturnDefault(oldResp.RxErr, newResp.RxErr, common.DefaultMissingCounterValue),
-			RxDrp:  calculateDiffReturnDefault(oldResp.RxDrp, newResp.RxDrp, common.DefaultMissingCounterValue),
-			RxOvr:  calculateDiffReturnDefault(oldResp.RxOvr, newResp.RxOvr, common.DefaultMissingCounterValue),
-			TxOk:   calculateDiffReturnDefault(oldResp.TxOk, newResp.TxOk, common.DefaultMissingCounterValue),
-			TxBps:  newResp.TxBps,
-			TxUtil: newResp.TxUtil,
-			TxErr:  calculateDiffReturnDefault(oldResp.TxErr, newResp.TxErr, common.DefaultMissingCounterValue),
-			TxDrp:  calculateDiffReturnDefault(oldResp.TxDrp, newResp.TxDrp, common.DefaultMissingCounterValue),
-			TxOvr:  calculateDiffReturnDefault(oldResp.TxOvr, newResp.TxOvr, common.DefaultMissingCounterValue),
-		}
-	}
-	return diffResponse
 }
 
 var allPortErrors = [][]string{
@@ -296,55 +53,59 @@ var allPortErrors = [][]string{
 	{"no_rx_reachability_count", "no_rx_reachability_time"},
 }
 
-func loadDescriptionFromCmdOutput(data string) interfaceDescription {
-	scanner := bufio.NewScanner(strings.NewReader(data))
-	var processStart bool
+func loadDescriptionFromInterfaceDetails(interfaceConfig map[string]interface{}, interfaceDetails map[string]interface{}, interfaceName string) interfaceDescription {
 	description := make(interfaceDescription)
+	var parsedKey string
 
-	for scanner.Scan() {
-		line := scanner.Text()
-		if !processStart {
-			if strings.HasPrefix(strings.TrimSpace(line), interfaceDescStartLine) {
-				processStart = true
-				scanner.Scan()
+	for key, details := range interfaceDetails {
+		splitKeys := strings.SplitN(key, ":", 2)
+		if len(splitKeys) > 0 {
+			parsedKey = strings.TrimSpace(splitKeys[0])
+		} else {
+			continue
+		}
+
+		if interfaceName != "" && parsedKey != interfaceName {
+			continue
+		}
+
+		if _, ok := interfaceConfig[parsedKey]; ok {
+			if detailsMap, retValue := details.(map[string]interface{}); retValue {
+				description[parsedKey] = interfaceDescriptionDetails{
+					Oper:        detailsMap[oper_field].(string),
+					Admin:       detailsMap[admin_field].(string),
+					Alias:       detailsMap[alias_field].(string),
+					Description: detailsMap[desc_field].(string),
+				}
 			}
-			continue
-		}
-
-		fields := strings.Fields(line)
-		if len(fields) < descriptionDataSize {
-			continue
-		}
-
-		description[fields[0]] = interfaceDescriptionDetails{
-			Oper:        fields[1],
-			Admin:       fields[2],
-			Alias:       fields[3],
-			Description: strings.Join(fields[4:], " "),
 		}
 	}
+
 	return description
 }
 
 func getInterfacesDescription(args sdc.CmdArgs, options sdc.OptionMap) ([]byte, error) {
-	cmdForInterfaceDesc := "intfutil -c description"
-	// TODO
 	intf, ok := options["interface"].String()
+	var interfaceName string
+
 	if ok {
-		interfaceName := common.GetNameForInterfaceAlias(intf)
-		if interfaceName != "" {
-			cmdForInterfaceDesc += interfaceOption + interfaceName
-		} else {
-			cmdForInterfaceDesc += interfaceOption + intf
-		}
+		interfaceName = intf
 	}
 
-	interfaceDescStr, err := common.GetDataFromHostCommand(cmdForInterfaceDesc)
+	queries := [][]string{{"CONFIG_DB", "PORT"}}
+	interfaceConfig, err := common.GetMapFromQueries(queries)
 	if err != nil {
 		return []byte(""), err
 	}
 
-	interfaceDesc := loadDescriptionFromCmdOutput(interfaceDescStr)
+	queries = [][]string{{"APPL_DB", "PORT_TABLE"}}
+
+	interfaceDetails, err := common.GetMapFromQueries(queries)
+	if err != nil {
+		return []byte(""), err
+	}
+
+	interfaceDesc := loadDescriptionFromInterfaceDetails(interfaceConfig, interfaceDetails, interfaceName)
 
 	return json.Marshal(interfaceDesc)
 }
@@ -1017,7 +778,12 @@ func getInterfaceStatus(args sdc.CmdArgs, options sdc.OptionMap) ([]byte, error)
 
 func getInterfaceAlias(args sdc.CmdArgs, options sdc.OptionMap) ([]byte, error) {
 	intf := args.At(0)
-	namingMode, _ := options[SonicCliIfaceMode].String()
+	namingModeStr, _ := options[SonicCliIfaceMode].String()
+	namingMode, err := common.ParseInterfaceNamingMode(namingModeStr)
+	if err != nil {
+		log.Errorf("Failed to parse interface naming mode %s: %v", namingModeStr, err)
+		return nil, status.Errorf(codes.InvalidArgument, "Invalid interface naming mode %q", namingModeStr)
+	}
 
 	// Read CONFIG_DB.PORT
 	queries := [][]string{{"CONFIG_DB", "PORT"}}
@@ -1064,7 +830,12 @@ func getInterfaceAlias(args sdc.CmdArgs, options sdc.OptionMap) ([]byte, error) 
 }
 
 func getInterfaceSwitchportConfig(args sdc.CmdArgs, options sdc.OptionMap) ([]byte, error) {
-	namingMode, _ := options[SonicCliIfaceMode].String()
+	namingModeStr, _ := options[SonicCliIfaceMode].String()
+	namingMode, err := common.ParseInterfaceNamingMode(namingModeStr)
+	if err != nil {
+		log.Errorf("Failed to parse interface naming mode %s: %v", namingModeStr, err)
+		return nil, status.Errorf(codes.InvalidArgument, "Invalid interface naming mode %q", namingModeStr)
+	}
 
 	// Read CONFIG_DB tables
 	portTbl, err := common.GetMapFromQueries([][]string{{"CONFIG_DB", "PORT"}})
@@ -1145,7 +916,12 @@ func getInterfaceSwitchportConfig(args sdc.CmdArgs, options sdc.OptionMap) ([]by
 }
 
 func getInterfaceSwitchportStatus(args sdc.CmdArgs, options sdc.OptionMap) ([]byte, error) {
-	namingMode, _ := options[SonicCliIfaceMode].String()
+	namingModeStr, _ := options[SonicCliIfaceMode].String()
+	namingMode, err := common.ParseInterfaceNamingMode(namingModeStr)
+	if err != nil {
+		log.Errorf("Failed to parse interface naming mode %s: %v", namingModeStr, err)
+		return nil, status.Errorf(codes.InvalidArgument, "Invalid interface naming mode %q", namingModeStr)
+	}
 
 	// Read CONFIG_DB tables
 	portTbl, err := common.GetMapFromQueries([][]string{{"CONFIG_DB", "PORT"}})
@@ -1233,7 +1009,12 @@ func IsInterfaceInPortchannel(portchannelMemberTable map[string]interface{}, int
 
 func getInterfaceFlap(args sdc.CmdArgs, options sdc.OptionMap) ([]byte, error) {
 	intf := args.At(0)
-	namingMode, _ := options[SonicCliIfaceMode].String()
+	namingModeStr, _ := options[SonicCliIfaceMode].String()
+	namingMode, err := common.ParseInterfaceNamingMode(namingModeStr)
+	if err != nil {
+		log.Errorf("Failed to parse interface naming mode %s: %v", namingModeStr, err)
+		return nil, status.Errorf(codes.InvalidArgument, "Invalid interface naming mode %q", namingModeStr)
+	}
 
 	// Query APPL_DB PORT_TABLE
 	queries := [][]string{
@@ -1309,7 +1090,12 @@ func getInterfaceFlap(args sdc.CmdArgs, options sdc.OptionMap) ([]byte, error) {
 // 6) "BackEndLeafRouter"
 func getInterfaceNeighborExpected(args sdc.CmdArgs, options sdc.OptionMap) ([]byte, error) {
 	intf := args.At(0)
-	namingMode, _ := options[SonicCliIfaceMode].String()
+	namingModeStr, _ := options[SonicCliIfaceMode].String()
+	namingMode, err := common.ParseInterfaceNamingMode(namingModeStr)
+	if err != nil {
+		log.Errorf("Failed to parse interface naming mode %s: %v", namingModeStr, err)
+		return nil, status.Errorf(codes.InvalidArgument, "Invalid interface naming mode %q", namingModeStr)
+	}
 
 	neighborTbl, err := common.GetMapFromQueries([][]string{{"CONFIG_DB", "DEVICE_NEIGHBOR"}})
 	if err != nil {
@@ -1387,9 +1173,13 @@ func getInterfaceNeighborExpected(args sdc.CmdArgs, options sdc.OptionMap) ([]by
 }
 
 func getInterfaceNamingMode(args sdc.CmdArgs, options sdc.OptionMap) ([]byte, error) {
-	namingMode, _ := options[SonicCliIfaceMode].String()
+	namingModeStr, _ := options[SonicCliIfaceMode].String()
+	namingMode, err := common.ParseInterfaceNamingMode(namingModeStr)
+	if err != nil {
+		log.Errorf("Failed to parse interface naming mode %s: %v", namingModeStr, err)
+		return nil, status.Errorf(codes.InvalidArgument, "Invalid interface naming mode %q", namingModeStr)
+	}
 
-	namingMode = common.GetInterfaceNamingMode(namingMode)
-	namingModeResp := namingModeResponse{NamingMode: namingMode}
+	namingModeResp := namingModeResponse{NamingMode: namingMode.String()}
 	return json.Marshal(namingModeResp)
 }

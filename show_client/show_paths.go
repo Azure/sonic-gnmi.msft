@@ -129,18 +129,87 @@ func init() {
 			"trim":          "show/interfaces/counters/trim: Show interface counters trim",
 		},
 		sdc.UnimplementedOption(showCmdOptionNamespace),
+		showCmdOptionPrintAll, 
 		showCmdOptionDisplay,
 		showCmdOptionInterfaces,
 		showCmdOptionPeriod,
 		showCmdOptionJson,
 		showCmdOptionVerbose,
 	)
-
-	// SHOW/interfaces/counters/rif
+	sdc.RegisterCliPath(
+		[]string{"SHOW", "interfaces", "counters", "detailed"},
+		getInterfaceCountersDetailed,
+		"SHOW/interfaces/counters/detailed/INTERFACE_NAME[OPTIONS]: Show interface counters detailed",
+		1,
+		1,
+		nil,
+		showCmdOptionPeriod,
+		showCmdOptionVerbose,
+	)
+	sdc.RegisterCliPath(
+		[]string{"SHOW", "interfaces", "counters", "errors"},
+		getInterfaceCountersErrors,
+		"SHOW/interfaces/counters/errors[OPTIONS]: Show interface counters errors",
+		0,
+		0,
+		nil,
+		sdc.UnimplementedOption(showCmdOptionNamespace),
+		showCmdOptionDisplay,
+		showCmdOptionPeriod,
+		showCmdOptionJson,
+		showCmdOptionVerbose,
+	)
+	sdc.RegisterCliPath(
+		[]string{"SHOW", "interfaces", "counters", "fec-histogram"},
+		getInterfaceCountersFecHistogram,
+		"SHOW/interfaces/counters/fec-histogram/INTERFACE_NAME[OPTIONS]: Show interface counters fec-histogram",
+		1,
+		1,
+		nil,
+		sdc.UnimplementedOption(showCmdOptionNamespace),
+		showCmdOptionDisplay,
+	)
+	sdc.RegisterCliPath(
+		[]string{"SHOW", "interfaces", "counters", "fec-stats"},
+		getInterfaceCountersFecStats,
+		"SHOW/interfaces/counters/fec-stats[OPTIONS]: Show interface counters fec-stats",
+		0,
+		0,
+		nil,
+		sdc.UnimplementedOption(showCmdOptionNamespace),
+		showCmdOptionDisplay,
+		showCmdOptionPeriod,
+		showCmdOptionJson,
+		showCmdOptionVerbose,
+	)
+	sdc.RegisterCliPath(
+		[]string{"SHOW", "interfaces", "counters", "rates"},
+		getInterfaceCountersRates,
+		"SHOW/interfaces/counters/rates[OPTIONS]: Show interface counters rates",
+		0,
+		0,
+		nil,
+		sdc.UnimplementedOption(showCmdOptionNamespace),
+		showCmdOptionDisplay,
+		showCmdOptionPeriod,
+		showCmdOptionJson,
+		showCmdOptionVerbose,
+	)
 	sdc.RegisterCliPath(
 		[]string{"SHOW", "interfaces", "counters", "rif"},
 		getInterfaceRifCounters,
 		"SHOW/interfaces/counters/rif/{INTERFACENAME}[OPTIONS]",
+		0,
+		1,
+		nil,
+		showCmdOptionPeriod,
+		showCmdOptionJson,
+		showCmdOptionVerbose,
+	)
+	sdc.RegisterCliPath(
+		[]string{"SHOW", "interfaces", "counters", "trim"},
+		getInterfaceCountersTrim,
+		"SHOW/interfaces/counters/trim/{INTERFACE_NAME}[OPTIONS]: Show interface counters trim",
 		0,
 		1,
 		nil,
@@ -264,7 +333,27 @@ func init() {
 		0,
 		1,
 		nil,
-		showCmdOptionInterface, // TODO
+		showCmdOptionVerbose,
+	)
+	sdc.RegisterCliPath(
+		[]string{"SHOW", "interfaces", "transceiver", "pm"},
+		getInterfaceTransceiverPM,
+		"SHOW/interfaces/transceiver/pm/{INTERFACENAME}[OPTIONS]: Show interface transceiver performance monitoring",
+		0,
+		1,
+		nil,
+		sdc.UnimplementedOption(showCmdOptionNamespace),
+  )
+  sdc.RegisterCliPath(
+		[]string{"SHOW", "interfaces", "transceiver", "status"},
+		getInterfaceTransceiverStatus,
+		"SHOW/interfaces/transceiver/status/{INTERFACENAME}[OPTIONS]: Show interface transceiver status",
+		0,
+		1,
+		nil,
+		showCmdOptionSonicCliIfaceMode,
+		sdc.UnimplementedOption(showCmdOptionNamespace),
+		showCmdOptionVerbose,
 	)
 
 	// SHOW/ipv6
@@ -403,6 +492,18 @@ func init() {
 		showCmdOptionVerbose,
 	)
 
+	// SHOW/ndp
+	sdc.RegisterCliPath(
+		[]string{"SHOW", "ndp"},
+		getNDP,
+		"SHOW/ndp/{IP6ADDRESS}[OPTIONS]: Show IPv6 Neighbour table",
+		0,
+		1,
+		nil,
+		showCmdOptionIface,
+		showCmdOptionVerbose,
+	)
+
 	// SHOW/processes
 	sdc.RegisterCliPath(
 		[]string{"SHOW", "processes"},
@@ -434,6 +535,15 @@ func init() {
 		nil,
 		showCmdOptionVerbose,
 	)
+	sdc.RegisterCliPath(
+		[]string{"SHOW", "processes", "cpu"},
+		getProcessesCPU,
+		"SHOW/processes/cpu[OPTIONS]: Show processes information sorted by cpu usage",
+		0,
+		0,
+		nil,
+		showCmdOptionVerbose,
+	)
 
 	// SHOW/queue
 	sdc.RegisterCliPath(
@@ -443,7 +553,7 @@ func init() {
 		0,
 		1,
 		nil,
-		showCmdOptionInterfaces,
+		showCmdOptionQueueInterfaces,
 		showCmdOptionDisplay,
 		showCmdOptionNonzero,
 		showCmdOptionAll,
@@ -460,7 +570,7 @@ func init() {
 		0,
 		1,
 		nil,
-		showCmdOptionInterfaces,
+		showCmdOptionQueueInterfaces,
 		showCmdOptionDisplay,
 		showCmdOptionNonzero,
 		sdc.UnimplementedOption(showCmdOptionVoq),
@@ -487,7 +597,7 @@ func init() {
 		0,
 		0,
 		nil,
-		showCmdOptionInterfaces,
+		showCmdOptionQueueInterfaces,
 		sdc.UnimplementedOption(showCmdOptionNamespace),
 		showCmdOptionJson,
 	)
@@ -498,7 +608,7 @@ func init() {
 		0,
 		0,
 		nil,
-		showCmdOptionInterfaces,
+		showCmdOptionQueueInterfaces,
 		sdc.UnimplementedOption(showCmdOptionNamespace),
 		showCmdOptionJson,
 	)
@@ -509,10 +619,56 @@ func init() {
 		0,
 		0,
 		nil,
-		showCmdOptionInterfaces,
+		showCmdOptionQueueInterfaces,
 		sdc.UnimplementedOption(showCmdOptionNamespace),
 		showCmdOptionJson,
 	)
+	sdc.RegisterCliPath(
+		[]string{"SHOW", "queue", "persistent-watermark"},
+		getQueuePersistentWatermarks,
+		"SHOW/queue/persistent-watermark/COMMAND[OPTIONS]: Show persistent WM for queues",
+		0,
+		0,
+		map[string]string{
+			"all":       "show/queue/persistent-watermark/all",
+			"unicast":   "show/queue/persistent-watermark/unicast",
+			"multicast": "show/queue/persistent-watermark/multicast",
+		},
+	)
+	sdc.RegisterCliPath(
+		[]string{"SHOW", "queue", "persistent-watermark", "all"},
+		getQueuePersistentWatermarksAll,
+		"SHOW/queue/persistent-watermark/all[OPTIONS]: Show persistent WM for unicast and multicast queues",
+		0,
+		0,
+		nil,
+		showCmdOptionQueueInterfaces,
+		sdc.UnimplementedOption(showCmdOptionNamespace),
+		showCmdOptionJson,
+	)
+	sdc.RegisterCliPath(
+		[]string{"SHOW", "queue", "persistent-watermark", "unicast"},
+		getQueuePersistentWatermarksUnicast,
+		"SHOW/queue/persistent-watermark/unicast[OPTIONS]: Show persistent WM for unicast queues",
+		0,
+		0,
+		nil,
+		showCmdOptionQueueInterfaces,
+		sdc.UnimplementedOption(showCmdOptionNamespace),
+		showCmdOptionJson,
+	)
+	sdc.RegisterCliPath(
+		[]string{"SHOW", "queue", "persistent-watermark", "multicast"},
+		getQueuePersistentWatermarksMulticast,
+		"SHOW/queue/persistent-watermark/multicast[OPTIONS]: Show persistent WM for multicast queues",
+		0,
+		0,
+		nil,
+		showCmdOptionQueueInterfaces,
+		sdc.UnimplementedOption(showCmdOptionNamespace),
+		showCmdOptionJson,
+	)
+
 	sdc.RegisterCliPath(
 		[]string{"SHOW", "ipv6", "prefix-list"},
 		getIPv6PrefixList,
@@ -607,6 +763,27 @@ func init() {
 		showCmdOptionVerbose,
 	)
 
+	sdc.RegisterCliPath(
+		[]string{"SHOW", "interfaces", "transceiver", "eeprom"},
+		getTransceiverInfo,
+		"SHOW/interfaces/transceiver/eeprom[OPTIONS]: Show interface transceiver EEPROM information",
+		0,
+		1,
+		nil,
+		showCmdOptionDom,
+		sdc.UnimplementedOption(showCmdOptionNamespace),
+		showCmdOptionVerbose,
+	)
+	sdc.RegisterCliPath(
+		[]string{"SHOW", "interfaces", "transceiver", "info"},
+		getTransceiverInfo,
+		"SHOW/interfaces/transceiver/info[OPTIONS]: Show interface transceiver information",
+		0,
+		1,
+		nil,
+		showCmdOptionVerbose,
+		sdc.UnimplementedOption(showCmdOptionNamespace),
+	)
 	// SHOW/watermark
 	sdc.RegisterCliPath(
 		[]string{"SHOW", "watermark", "telemetry", "interval"},
@@ -616,6 +793,7 @@ func init() {
 		0,
 		nil,
 	)
+
 	sdc.RegisterCliPath(
 		[]string{"SHOW", "interfaces", "portchannel"},
 		getInterfacePortchannel,
@@ -634,5 +812,28 @@ func init() {
 		0,
 		nil,
 		showCmdOptionVerbose,
+	)
+
+	//SHOW/switch-trimming
+	sdc.RegisterCliPath(
+		[]string{"SHOW", "switch-trimming", "global"},
+		getSwitchTrimmingGlobalConfig,
+		"SHOW/switch-trimming/global[OPTIONS]: Show switch-trimming global config",
+		0,
+		0,
+		nil,
+		showCmdOptionVerbose,
+	)
+
+	//SHOW/arp
+	sdc.RegisterCliPath(
+		[]string{"SHOW", "arp"},
+		getArpTable,
+		"SHOW/arp/{ipaddress}[OPTIONS]: Show IP ARP table",
+		0,
+		2,
+		nil,
+		showCmdOptionSonicCliIfaceMode,
+		showCmdOptionIface,
 	)
 }

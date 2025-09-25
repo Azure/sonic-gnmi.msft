@@ -3,6 +3,7 @@ package common
 import (
 	"fmt"
 	"sort"
+	"strconv"
 	"strings"
 	"sync"
 
@@ -12,9 +13,17 @@ import (
 )
 
 const (
-	Alias                      = "alias"
-	VlanSubInterfaceSeparator  = '.'
+	vlanSubInterfaceSeparator  = '.'
 	defaultCountersDBSeparator = ":"
+)
+
+type InterfaceNamingMode string
+
+func (m InterfaceNamingMode) String() string { return string(m) }
+
+const (
+	Default InterfaceNamingMode = "default"
+	Alias   InterfaceNamingMode = "alias"
 )
 
 var (
@@ -95,39 +104,52 @@ func GetNameForInterfaceAlias(intfAlias string) string {
 	}
 }
 
-func GetInterfaceNamingMode(namingMode string) string {
-	if namingMode != "" {
-		return namingMode
+// ParseInterfaceNamingMode parses a string to InterfaceNamingMode.
+// Valid values are "", "default", and "alias" (case-insensitive).
+// The empty string is treated as "default".
+func ParseInterfaceNamingMode(s string) (InterfaceNamingMode, error) {
+	s = strings.ToLower(strings.TrimSpace(s))
+	switch s {
+	case "":
+		return Default, nil
+	case string(Default):
+		return Default, nil
+	case string(Alias):
+		return Alias, nil
+	default:
+		return "", fmt.Errorf("invalid InterfaceNamingMode %q (valid: %v)", s, []InterfaceNamingMode{Default, Alias})
 	}
-	return "default"
 }
 
-// GetInterfaceNameForDisplay returns alias when SONIC_CLI_IFACE_MODE=alias; otherwise the name.
+// GetInterfaceNameForDisplay returns interface name for display according to naming mode.
+// The input port name is the SONiC interface name.
 // It also preserves VLAN sub-interface suffix like Ethernet0.100.
-func GetInterfaceNameForDisplay(name string, namingMode string) string {
+func GetInterfaceNameForDisplay(name string, namingMode InterfaceNamingMode) string {
 	if name == "" {
 		return name
 	}
-	if interfaceNamingMode := GetInterfaceNamingMode(namingMode); interfaceNamingMode != Alias {
+
+	if namingMode == Default {
 		return name
 	}
 
 	nameToAlias := sdc.PortToAliasNameMap()
 	base, suffix := name, ""
-	if i := strings.IndexByte(name, VlanSubInterfaceSeparator); i >= 0 {
+	if i := strings.IndexByte(name, vlanSubInterfaceSeparator); i >= 0 {
 		base, suffix = name[:i], name[i:] // keep .<vlan>
 	}
 
 	if alias, ok := nameToAlias[base]; ok {
 		return alias + suffix
 	}
+
 	return name
 }
 
 // TryConvertInterfaceNameFromAlias tries to convert an interface alias to its interface name.
 // If naming mode is "alias", attempts conversion; if conversion fails, returns error.
-func TryConvertInterfaceNameFromAlias(interfaceName string, namingMode string) (string, error) {
-	if GetInterfaceNamingMode(namingMode) == Alias {
+func TryConvertInterfaceNameFromAlias(interfaceName string, namingMode InterfaceNamingMode) (string, error) {
+	if namingMode == Alias {
 		alias := interfaceName
 		aliasMap := sdc.AliasToPortNameMap()
 
@@ -141,4 +163,126 @@ func TryConvertInterfaceNameFromAlias(interfaceName string, namingMode string) (
 		}
 	}
 	return interfaceName, nil
+}
+
+func IsValidPhysicalPort(iface string) (bool, error) {
+	queries := [][]string{
+		{"APPL_DB", "PORT_TABLE"},
+	}
+	portTable, err := GetMapFromQueries(queries)
+	if err != nil {
+		log.Errorf("Unable to pull data for queries %v, got err %v", queries, err)
+		return false, err
+	}
+	role := GetFieldValueString(portTable, iface, DefaultMissingCounterValue, "role")
+	return IsFrontPanelPort(iface, role), nil
+}
+
+func IsRoleInternal(role string) bool {
+	return role != DefaultMissingCounterValue && (role == InternalPort || role == InbandPort || role == RecircPort || role == DpuConnectPort)
+}
+
+func IsFrontPanelPort(iface string, role string) bool {
+	if !strings.HasPrefix(iface, SonicInterfacePrefixes["Ethernet-FrontPanel"]) {
+		return false
+	}
+	if strings.HasPrefix(iface, SonicInterfacePrefixes["Ethernet-Backplane"]) || strings.HasPrefix(iface, SonicInterfacePrefixes["Ethernet-Inband"]) || strings.HasPrefix(iface, SonicInterfacePrefixes["Ethernet-Recirc"]) {
+		return false
+	}
+	if strings.Contains(iface, ".") {
+		return false
+	}
+	return !IsRoleInternal(role)
+}
+
+type PortMappingRetriever struct {
+	logicalToPhysical map[string][]int
+	physicalToLogic   map[int][]string
+	err               error
+}
+
+// This funtion is used to get all ports on device, and then, returns two maps -- logic ports to physical ports and physical ports to logic ports
+// To get all ports, the function is https://github.com/sonic-net/sonic-buildimage/blob/master/src/sonic-config-engine/portconfig.py#L171
+// We can see from the code that, first, we try to get all ports from config db, if the connection is not available, we will use other methods to get ports
+func (pmr *PortMappingRetriever) ReadPorttabMappings() {
+	logicalToPhysical := make(map[string][]int)
+	physicalToLogic := make(map[int][]string)
+	logical := []string{}
+
+	queries := [][]string{
+		{"CONFIG_DB", "PORT"},
+	}
+	portTable, err := GetMapFromQueries(queries)
+	if err != nil {
+		log.Errorf("Unable to pull data for queries %v, got err %v", queries, err)
+		pmr.err = err
+		return
+	}
+	for iface := range portTable {
+		if IsFrontPanelPort(iface, GetFieldValueString(portTable, iface, DefaultMissingCounterValue, "role")) {
+			logical = append(logical, iface)
+		}
+	}
+
+	sort.Sort(natural.StringSlice(logical))
+
+	for _, intfName := range logical {
+		fpPortIndex := 1
+		if v, ok := portTable[intfName].(map[string]interface{}); ok {
+			if idx, exists := v["index"]; exists {
+				if indexStr, ok := idx.(string); ok {
+					if val, err := strconv.Atoi(indexStr); err == nil {
+						fpPortIndex = val
+					}
+				}
+			}
+			logicalToPhysical[intfName] = []int{fpPortIndex}
+		}
+
+		if _, ok := physicalToLogic[fpPortIndex]; !ok {
+			physicalToLogic[fpPortIndex] = []string{intfName}
+		} else {
+			physicalToLogic[fpPortIndex] = append(physicalToLogic[fpPortIndex], intfName)
+		}
+	}
+
+	pmr.logicalToPhysical = logicalToPhysical
+	pmr.physicalToLogic = physicalToLogic
+	pmr.err = nil
+}
+
+func GetLogicalToPhysical(pmr *PortMappingRetriever, logicalPort string) []int {
+	if pmr.err != nil {
+		return nil
+	}
+	return pmr.logicalToPhysical[logicalPort]
+}
+
+func GetPhysicalToLogic(pmr *PortMappingRetriever, physicalPort int) []string {
+	if pmr.err != nil {
+		return nil
+	}
+	return pmr.physicalToLogic[physicalPort]
+}
+
+func GetFirstSubPort(pmr *PortMappingRetriever, logicalPort string) string {
+	physicalPort := GetLogicalToPhysical(pmr, logicalPort)
+	if len(physicalPort) != 0 {
+		logicalPortList := GetPhysicalToLogic(pmr, physicalPort[0])
+		if len(logicalPortList) != 0 {
+			return logicalPortList[0]
+		}
+	}
+	return ""
+}
+
+func MergeMaps(a, b map[string]string) map[string]string {
+	result := make(map[string]string)
+	for k, v := range a {
+		result[k] = v
+	}
+	for k, v := range b {
+		result[k] = v
+	}
+	return result
 }

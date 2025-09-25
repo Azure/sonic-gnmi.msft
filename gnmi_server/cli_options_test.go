@@ -42,7 +42,7 @@ func TestShowClientOptions(t *testing.T) {
 	portRatesFileName := "../testdata/PORT_RATES.txt"
 	portTableFileName := "../testdata/PORT_TABLE.txt"
 
-	showInterfaceCountersHelp := `{"options":{"display":"[display=all] No-op since no-multi-asic support","help":"[help=true]Show this message","interfaces":"[interfaces=TEXT] Filter by interfaces name","json":"[json=true] No-op since response is in json format","namespace":"UNIMPLEMENTED","period":"[period=INTEGER] Display statistics over a specified period (in seconds)","verbose":"[verbose=true] Enable verbose output"},"subcommands":{"detailed":"show/interfaces/counters/detailed: Show interface counters detailed","errors":"show/interfaces/counters/errors: Show interface counters errors","fec-histogram":"show/interfaces/counters/fec-histogram: Show interface counters fec-histogram","fec-stats":"show/interfaces/counters/fec-stats: Show interface counters rates","rates":"show/interfaces/counters/rates: Show interface counters rates","rif":"show/interfaces/counters/rif: Show interface counters rif","trim":"show/interfaces/counters/trim: Show interface counters trim"},"usage":{"desc":"SHOW/interfaces/counters[OPTIONS]: Show interface counters"}}`
+	showInterfaceCountersHelp := `{"options":{"display":"[display=all] No-op since no-multi-asic support","help":"[help=true]Show this message","interface":"[interface=TEXT] Filter by interfaces name","json":"[json=true] No-op since response is in json format","namespace":"UNIMPLEMENTED","period":"[period=INTEGER] Display statistics over a specified period (in seconds)","printall":"[printall=true] Show all counters","verbose":"[verbose=true] Enable verbose output"},"subcommands":{"detailed":"show/interfaces/counters/detailed: Show interface counters detailed","errors":"show/interfaces/counters/errors: Show interface counters errors","fec-histogram":"show/interfaces/counters/fec-histogram: Show interface counters fec-histogram","fec-stats":"show/interfaces/counters/fec-stats: Show interface counters rates","rates":"show/interfaces/counters/rates: Show interface counters rates","rif":"show/interfaces/counters/rif: Show interface counters rif","trim":"show/interfaces/counters/trim: Show interface counters trim"},"usage":{"desc":"SHOW/interfaces/counters[OPTIONS]: Show interface counters"}}`
 	interfaceCountersSelectPorts := `{"Ethernet0":{"State":"U","RxOk":"149903","RxBps":"25.12 B/s","RxUtil":"0.00%","RxErr":"0","RxDrp":"957","RxOvr":"0","TxOk":"144782","TxBps":"773.23 KB/s","TxUtil":"0.01%","TxErr":"0","TxDrp":"2","TxOvr":"0"}}`
 	interfaceCountersAll := `{"Ethernet0":{"State":"U","RxOk":"149903","RxBps":"25.12 B/s","RxUtil":"0.00%","RxErr":"0","RxDrp":"957","RxOvr":"0","TxOk":"144782","TxBps":"773.23 KB/s","TxUtil":"0.01%","TxErr":"0","TxDrp":"2","TxOvr":"0"},"Ethernet40":{"State":"U","RxOk":"7295","RxBps":"0.00 B/s","RxUtil":"0.00%","RxErr":"0","RxDrp":"0","RxOvr":"0","TxOk":"50184","TxBps":"633.66 KB/s","TxUtil":"0.01%","TxErr":"0","TxDrp":"1","TxOvr":"0"},"Ethernet80":{"State":"U","RxOk":"76555","RxBps":"0.37 B/s","RxUtil":"0.00%","RxErr":"0","RxDrp":"0","RxOvr":"0","TxOk":"144767","TxBps":"631.94 KB/s","TxUtil":"0.01%","TxErr":"0","TxDrp":"1","TxOvr":"0"}}`
 	intfErrorsEmpty := `[{"Port Errors": "oper error status","Count": "0","Last timestamp(UTC)": "Never"},{"Port Errors": "mac local fault","Count": "0","Last timestamp(UTC)": "Never"},{"Port Errors": "mac remote fault","Count": "0","Last timestamp(UTC)": "Never"},{"Port Errors": "fec sync loss","Count": "0","Last timestamp(UTC)": "Never"},{"Port Errors": "fec alignment loss","Count": "0","Last timestamp(UTC)": "Never"},{"Port Errors": "high ser error","Count": "0","Last timestamp(UTC)": "Never"},{"Port Errors": "high ber error","Count": "0","Last timestamp(UTC)": "Never"},{"Port Errors": "data unit crc error","Count": "0","Last timestamp(UTC)": "Never"},{"Port Errors": "data unit misalignment error","Count": "0","Last timestamp(UTC)": "Never"},{"Port Errors": "signal local error","Count": "0","Last timestamp(UTC)": "Never"},{"Port Errors": "crc rate","Count": "0","Last timestamp(UTC)": "Never"},{"Port Errors": "data unit size","Count": "0","Last timestamp(UTC)": "Never"},{"Port Errors": "code group error","Count": "0","Last timestamp(UTC)": "Never"},{"Port Errors": "no rx reachability","Count": "0","Last timestamp(UTC)": "Never"}]`
@@ -70,12 +70,12 @@ func TestShowClientOptions(t *testing.T) {
 			valTest:     true,
 		},
 		{
-			desc:       "query SHOW interfaces counters[interfaces=Ethernet0][help=False]",
+			desc:       "query SHOW interfaces counters[interface=Ethernet0][help=False]",
 			pathTarget: "SHOW",
 			textPbPath: `
 				elem: <name: "interfaces" >
 				elem: <name: "counters" 
-				      key: { key: "interfaces" value: "Ethernet0" }
+				      key: { key: "interface" value: "Ethernet0" }
 				      key: { key: "help" value: "false" }>
 			`,
 			wantRetCode: codes.OK,
@@ -90,37 +90,37 @@ func TestShowClientOptions(t *testing.T) {
 			},
 		},
 		{
-			desc:       "query SHOW interfaces[help=True] counters[interfaces=Ethernet0]",
+			desc:       "query SHOW interfaces[help=True] counters[interface=Ethernet0]",
 			pathTarget: "SHOW",
 			textPbPath: `
 				elem: <name: "interfaces"
 				      key: { key: "help" value: "true" }>
 				elem: <name: "counters" 
-				      key: { key: "interfaces" value: "Ethernet0" }>
+				      key: { key: "interface" value: "Ethernet0" }>
 			`,
 			wantRetCode: codes.OK,
 			wantRespVal: []byte(interfaceCountersSelectPorts),
 			valTest:     true,
 		},
 		{
-			desc:       "query SHOW interfaces[dummy=test] counters[interfaces=Ethernet0]",
+			desc:       "query SHOW interfaces[dummy=test] counters[interface=Ethernet0]",
 			pathTarget: "SHOW",
 			textPbPath: `
 				elem: <name: "interfaces"
 				      key: { key: "dummy" value: "test" }>
 				elem: <name: "counters" 
-				      key: { key: "interfaces" value: "Ethernet0" }>
+				      key: { key: "interface" value: "Ethernet0" }>
 			`,
 			wantRetCode: codes.OK,
 			wantRespVal: []byte(interfaceCountersSelectPorts),
 			valTest:     true,
 		},
 		{
-			desc:       "query SHOW interfaces[interfaces=Ethernet0] counters",
+			desc:       "query SHOW interfaces[interface=Ethernet0] counters",
 			pathTarget: "SHOW",
 			textPbPath: `
 				elem: <name: "interfaces"
-				      key: { key: "interfaces" value: "Ethernet0" }>
+				      key: { key: "interface" value: "Ethernet0" }>
 				elem: <name: "counters" >
 			`,
 			wantRetCode: codes.OK,
@@ -152,24 +152,24 @@ func TestShowClientOptions(t *testing.T) {
 			valTest:     true,
 		},
 		{
-			desc:       "query SHOW interfaces counters[interfaces-Ethernet0][period=foobar]",
+			desc:       "query SHOW interfaces counters[interface=Ethernet0][period=foobar]",
 			pathTarget: "SHOW",
 			textPbPath: `
 				elem: <name: "interfaces" >
 				elem: <name: "counters"
-				      key: { key: "interfaces" value: "Ethernet0" }
+				      key: { key: "interface" value: "Ethernet0" }
 				      key: { key: "period" value: "foobar" }>
 			`,
 			wantRetCode: codes.InvalidArgument,
 		},
 
 		{
-			desc:       "query SHOW interfaces counters[interfaces-Ethernet0][period=5][foo=bar]",
+			desc:       "query SHOW interfaces counters[interface=Ethernet0][period=5][foo=bar]",
 			pathTarget: "SHOW",
 			textPbPath: `
 				elem: <name: "interfaces" >
 				elem: <name: "counters"
-				      key: { key: "interfaces" value: "Ethernet0" }
+				      key: { key: "interface" value: "Ethernet0" }
 				      key: { key: "period" value: "5" }
 				      key: { key: "foo" value: "bar" }>
 			`,
@@ -185,12 +185,12 @@ func TestShowClientOptions(t *testing.T) {
 			wantRetCode: codes.InvalidArgument,
 		},
 		{
-			desc:       "query SHOW interfaces counters[interfaces-Ethernet0][period=5][namespace=all]",
+			desc:       "query SHOW interfaces counters[interface=Ethernet0][period=5][namespace=all]",
 			pathTarget: "SHOW",
 			textPbPath: `
 				elem: <name: "interfaces" >
 				elem: <name: "counters"
-				      key: { key: "interfaces" value: "Ethernet0" }
+				      key: { key: "interface" value: "Ethernet0" }
 				      key: { key: "period" value: "5" }
 				      key: { key: "namespace" value: "all" }>
 			`,

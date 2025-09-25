@@ -39,6 +39,7 @@ func TestShowInterfaceTransceiverStatus(t *testing.T) {
 	// Testdata files
 	applDbFile := "../testdata/INTERFACE_TRANSCEIVER_STATUS_APPL_PORT_TABLE.txt"
 	stateDbFile := "../testdata/INTERFACE_TRANSCEIVER_STATUS_STATE_DB.txt"
+	vdmFlagStateDbFile := "../testdata/INTERFACE_TRANSCEIVER_STATUS_VDM_FLAG_STATE_DB.txt"
 	configDbFile := "../testdata/INTERFACE_TRANSCEIVER_STATUS_CONFIG_DB.txt"
 
 	notApplicable := "Transceiver status info not applicable\n"
@@ -115,7 +116,7 @@ func TestShowInterfaceTransceiverStatus(t *testing.T) {
 			},
 		},
 		{
-			desc: "single interface Ethernet0 (CMIS)",
+			desc: "single interface Ethernet0 (CMIS with VDM flags -> legacy prefecber/postfecber *_flag fields)",
 			path: `
               elem: <name: "interfaces">
               elem: <name: "transceiver">
@@ -129,10 +130,24 @@ func TestShowInterfaceTransceiverStatus(t *testing.T) {
 				AddDataSet(t, ApplDbNum, applDbFile)
 				AddDataSet(t, StateDbNum, stateDbFile)
 				AddDataSet(t, ConfigDbNum, configDbFile)
+				AddDataSet(t, StateDbNum, vdmFlagStateDbFile)
 			},
 			wantCode: codes.OK,
 			want: map[string]interface{}{
-				"Ethernet0": cmisExpected,
+				"Ethernet0": map[string]string{
+					"CMIS State (SW)":               "READY",
+					"Current module state":          "ModuleReady",
+					"Temperature high alarm flag":   "False",
+					"Temperature high warning flag": "False",
+					"Prefec ber high alarm flag":    "1e-6",
+					"Prefec ber high warning flag":  "2e-6",
+					"Prefec ber low alarm flag":     "3e-6",
+					"Prefec ber low warning flag":   "4e-6",
+					"Postfec ber high alarm flag":   "5",
+					"Postfec ber high warning flag": "6",
+					"Postfec ber low alarm flag":    "7",
+					"Postfec ber low warning flag":  "8",
+				},
 			},
 		},
 		{
@@ -225,6 +240,21 @@ func TestShowInterfaceTransceiverStatus(t *testing.T) {
 				AddDataSet(t, ApplDbNum, applDbFile)
 			},
 			wantCode: codes.NotFound,
+		},
+		{
+			desc: "invalid subinterface Ethernet0.10 (not in PORT_TABLE) -> NotFound",
+			path: `
+              elem: <name: "interfaces">
+              elem: <name: "transceiver">
+              elem: <name: "status">
+              elem: <name: "Ethernet0.10">
+            `,
+			init: func() {
+				FlushDataSet(t, ApplDbNum)
+				AddDataSet(t, ApplDbNum, applDbFile)
+			},
+			wantCode: codes.NotFound,
+			want:     nil,
 		},
 	}
 

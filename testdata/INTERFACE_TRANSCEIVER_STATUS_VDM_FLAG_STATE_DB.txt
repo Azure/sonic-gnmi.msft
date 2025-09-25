@@ -1,0 +1,18 @@
+{
+  "TRANSCEIVER_VDM_HALARM_FLAG|Ethernet0": {
+    "prefec_ber_avg_media_input1": "1e-6",
+    "errored_frames_avg_media_input1": "5"
+  },
+  "TRANSCEIVER_VDM_HWARN_FLAG|Ethernet0": {
+    "prefec_ber_avg_media_input1": "2e-6",
+    "errored_frames_avg_media_input1": "6"
+  },
+  "TRANSCEIVER_VDM_LALARM_FLAG|Ethernet0": {
+    "prefec_ber_avg_media_input1": "3e-6",
+    "errored_frames_avg_media_input1": "7"
+  },
+  "TRANSCEIVER_VDM_LWARN_FLAG|Ethernet0": {
+    "prefec_ber_avg_media_input1": "4e-6",
+    "errored_frames_avg_media_input1": "8"
+  }
+}

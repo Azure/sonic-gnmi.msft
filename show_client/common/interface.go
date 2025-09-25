@@ -134,6 +134,7 @@ func GetInterfaceNameForDisplay(name string, namingMode InterfaceNamingMode) str
 	}
 
 	nameToAlias := sdc.PortToAliasNameMap()
+
 	base, suffix := name, ""
 	if i := strings.IndexByte(name, vlanSubInterfaceSeparator); i >= 0 {
 		base, suffix = name[:i], name[i:] // keep .<vlan>
@@ -152,7 +153,6 @@ func TryConvertInterfaceNameFromAlias(interfaceName string, namingMode Interface
 	if namingMode == Alias {
 		alias := interfaceName
 		aliasMap := sdc.AliasToPortNameMap()
-
 		if itfName, ok := aliasMap[alias]; ok {
 			interfaceName = itfName
 		}

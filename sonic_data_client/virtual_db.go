@@ -157,12 +157,6 @@ func GetCountersQueueTypeMap() (map[string]string, error) {
 	return countersQueueTypeMap, nil
 }
 
-func ForceRefreshAliasMap() error {
-	var err error
-	alias2nameMap, name2aliasMap, port2namespaceMap, err = getAliasMap()
-	return err
-}
-
 func initCountersPortNameMap() error {
 	var err error
 	if len(countersPortNameMap) == 0 {
@@ -792,6 +786,9 @@ func ClearMappings() {
 }
 
 func AliasToPortNameMap() map[string]string {
+	// Ensure alias map is initialized
+	initAliasMap()
+
 	output := make(map[string]string, len(alias2nameMap))
 	for alias, portName := range alias2nameMap {
 		output[alias] = portName
@@ -800,6 +797,9 @@ func AliasToPortNameMap() map[string]string {
 }
 
 func PortToAliasNameMap() map[string]string {
+	// Ensure alias map is initialized
+	initAliasMap()
+	
 	output := make(map[string]string, len(name2aliasMap))
 	for portName, alias := range name2aliasMap {
 		output[portName] = alias

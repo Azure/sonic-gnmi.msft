@@ -4,7 +4,6 @@ package gnmi
 // Tests SHOW lldp neighbors
 
 import (
-	"fmt"
 	"crypto/tls"
 	"io/ioutil"
 	"testing"
@@ -88,7 +87,7 @@ func TestGetLLDPNeighbors(t *testing.T) {
 		valTest        bool
 		mockOutputFile map[string]string
 		ignoreValOrder bool
-		mockPatch   func() *gomonkey.Patches
+		initAliasMap    bool
 	}{
 		{
 			desc:       "query SHOW lldp neighbors - empty json output",
@@ -148,6 +147,7 @@ func TestGetLLDPNeighbors(t *testing.T) {
 				"docker": "../testdata/lldp/lldpctl_json.txt",
 			},
 			ignoreValOrder: true,
+			initAliasMap:  true,
 		},
 		{
 			desc:       "query SHOW lldp neighbors - normal device - path option SONIC_CLI_IFACE_MODE=alias-No alias map",
@@ -163,31 +163,6 @@ func TestGetLLDPNeighbors(t *testing.T) {
 				"docker": "../testdata/lldp/lldpctl_json.txt",
 			},
 			ignoreValOrder: true,
-			mockPatch: func() *gomonkey.Patches {
-				return gomonkey.ApplyFunc(sdc.ForceRefreshAliasMap, func() error {
-					return fmt.Errorf("ForceRefreshAliasMap failed")
-				})
-			},
-		},
-		{
-			desc:       "query SHOW lldp neighbors - normal device - path option SONIC_CLI_IFACE_MODE=alias-No alias map - ForceRefreshAliasMap success",
-			pathTarget: "SHOW",
-			textPbPath: `
-				elem: <name: "lldp" >
-                elem: <name: "neighbors" key: { key: "SONIC_CLI_IFACE_MODE" value: "alias" } >
-			`,
-			wantRetCode: codes.OK,
-			wantRespVal: []byte(expectedLLDPNeighborsResponse),
-			valTest:     true,
-			mockOutputFile: map[string]string{
-				"docker": "../testdata/lldp/lldpctl_json.txt",
-			},
-			ignoreValOrder: true,
-			mockPatch: func() *gomonkey.Patches {
-				return gomonkey.ApplyFunc(sdc.ForceRefreshAliasMap, func() error {
-					return nil
-				})
-			},
 		},
 		{
 			desc:       "query SHOW lldp neighbors - normal device with specified interface name",
@@ -220,32 +195,6 @@ func TestGetLLDPNeighbors(t *testing.T) {
 				"docker": "../testdata/lldp/lldpctl_specified_interface_json.txt",
 			},
 			ignoreValOrder: true,
-			mockPatch: func() *gomonkey.Patches {
-				return gomonkey.ApplyFunc(sdc.ForceRefreshAliasMap, func() error {
-					return fmt.Errorf("ForceRefreshAliasMap failed")
-				})
-			},
-		},
-		{
-			desc:       "query SHOW lldp neighbors - normal device with specified interface alias -path option SONIC_CLI_IFACE_MODE=alias-No alias map - ForceRefreshAliasMap success",
-			pathTarget: "SHOW",
-			textPbPath: `
-				elem: <name: "lldp" >
-				elem: <name: "neighbors" >
-                elem: <name: "etp354" key: { key: "SONIC_CLI_IFACE_MODE" value: "alias" } >
-			`,
-			wantRetCode: codes.NotFound,
-			wantRespVal: []byte(expectedLLDPNeighborsWithIfAliasNameResponse),
-			valTest:     false,
-			mockOutputFile: map[string]string{
-				"docker": "../testdata/lldp/lldpctl_specified_interface_json.txt",
-			},
-			ignoreValOrder: true,
-			mockPatch: func() *gomonkey.Patches {
-				return gomonkey.ApplyFunc(sdc.ForceRefreshAliasMap, func() error {
-					return nil
-				})
-			},
 		},
 		{
 			desc:       "query SHOW lldp neighbors - normal device with specified interface alias -path option SONIC_CLI_IFACE_MODE=alias",
@@ -262,6 +211,7 @@ func TestGetLLDPNeighbors(t *testing.T) {
 				"docker": "../testdata/lldp/lldpctl_specified_interface_json.txt",
 			},
 			ignoreValOrder: true,
+			initAliasMap:  true,
 		},
 		{
 			desc:       "query SHOW lldp neighbors - normal device with specified interface name -path option SONIC_CLI_IFACE_MODE=alias",
@@ -277,6 +227,7 @@ func TestGetLLDPNeighbors(t *testing.T) {
 				"docker": "../testdata/lldp/lldpctl_specified_interface_json.txt",
 			},
 			ignoreValOrder: true,
+			initAliasMap:  true,
 		},
 		{
 			desc:       "query SHOW lldp neighbors - normal device with non-existing interface name",
@@ -298,13 +249,11 @@ func TestGetLLDPNeighbors(t *testing.T) {
 
 	for _, test := range tests {	
 		var patchesSlice []*gomonkey.Patches
-
-		if test.mockPatch != nil {
-			patchesSlice = append(patchesSlice, test.mockPatch())
+		if test.initAliasMap == false {
 			patchesSlice = append(patchesSlice, gomonkey.ApplyFunc(sdc.PortToAliasNameMap, func() map[string]string {
 				return map[string]string{}
 			}))
-		
+
 			patchesSlice = append(patchesSlice, gomonkey.ApplyFunc(sdc.AliasToPortNameMap, func() map[string]string {
 				return map[string]string{}
 			}))
@@ -318,7 +267,7 @@ func TestGetLLDPNeighbors(t *testing.T) {
 					"Ethernet356": "etp356",
 				}
 			}))
-		
+
 			patchesSlice = append(patchesSlice, gomonkey.ApplyFunc(sdc.AliasToPortNameMap, func() map[string]string {
 				return map[string]string{
 					"etp0": "eth0",

@@ -113,21 +113,6 @@ func GetInterfaceNameForDisplay(name string, namingMode string) string {
 	}
 
 	nameToAlias := sdc.PortToAliasNameMap()
-	if len(nameToAlias) == 0 {
-		log.Warningf("Port to alias map is empty, try to refresh alias map")
-		err := sdc.ForceRefreshAliasMap()
-		if err != nil {
-			log.Errorf("Failed to refresh alias map: %v", err)
-			return name
-		}
-
-		nameToAlias = sdc.PortToAliasNameMap()
-		if len(nameToAlias) == 0 {
-			log.Errorf("Port to alias map is still empty after refresh, return the original interface name %s", name)
-			return name
-		}
-	}
-
 	base, suffix := name, ""
 	if i := strings.IndexByte(name, VlanSubInterfaceSeparator); i >= 0 {
 		base, suffix = name[:i], name[i:] // keep .<vlan>
@@ -145,18 +130,6 @@ func TryConvertInterfaceNameFromAlias(interfaceName string, namingMode string) (
 	if GetInterfaceNamingMode(namingMode) == Alias {
 		alias := interfaceName
 		aliasMap := sdc.AliasToPortNameMap()
-		if len(aliasMap) == 0 {
-			log.Warningf("Alias to port name map is empty, try to refresh alias map")
-			err := sdc.ForceRefreshAliasMap()
-			if err != nil {
-				return interfaceName, fmt.Errorf("Failed to refresh alias map: %v", err)
-			}
-
-			aliasMap = sdc.AliasToPortNameMap()
-			if len(aliasMap) == 0 {
-				return interfaceName, fmt.Errorf("Alias to port name map is still empty after refresh, return the original interface name %s", interfaceName)
-			}
-		}
 
 		if itfName, ok := aliasMap[alias]; ok {
 			interfaceName = itfName

@@ -129,7 +129,7 @@ func init() {
 			"trim":          "show/interfaces/counters/trim: Show interface counters trim",
 		},
 		sdc.UnimplementedOption(showCmdOptionNamespace),
-		showCmdOptionPrintAll, 
+		showCmdOptionPrintAll,
 		showCmdOptionDisplay,
 		showCmdOptionInterfaces,
 		showCmdOptionPeriod,
@@ -263,7 +263,6 @@ func init() {
 		0,
 		1,
 		nil,
-		showCmdOptionInterface, // TODO: Take as arg not option
 		showCmdOptionSonicCliIfaceMode,
 	)
 	sdc.RegisterCliPath(
@@ -343,8 +342,8 @@ func init() {
 		1,
 		nil,
 		sdc.UnimplementedOption(showCmdOptionNamespace),
-  )
-  sdc.RegisterCliPath(
+	)
+	sdc.RegisterCliPath(
 		[]string{"SHOW", "interfaces", "transceiver", "status"},
 		getInterfaceTransceiverStatus,
 		"SHOW/interfaces/transceiver/status/{INTERFACENAME}[OPTIONS]: Show interface transceiver status",

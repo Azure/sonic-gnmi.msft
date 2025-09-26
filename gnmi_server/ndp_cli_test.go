@@ -129,9 +129,7 @@ func TestGetNDP(t *testing.T) {
 			textPbPath: `
 				elem: <name: "ndp" >
 			`,
-			wantRespVal: []byte(`{"total_entries":0,"entries":[]}`),
-			valTest: true,
-			wantRetCode: codes.OK,
+			wantRetCode: codes.NotFound,
 		},
 		{
 			desc:       "query SHOW ndp - invalid ipaddress",

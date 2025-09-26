@@ -826,7 +826,7 @@ func init() {
 	//SHOW/arp
 	sdc.RegisterCliPath(
 		[]string{"SHOW", "arp"},
-		getArpTable,
+		getARP,
 		"SHOW/arp/{ipaddress}[OPTIONS]: Show IP ARP table",
 		0,
 		2,

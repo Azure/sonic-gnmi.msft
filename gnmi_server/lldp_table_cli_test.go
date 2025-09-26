@@ -16,6 +16,7 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/credentials"
+	sdc "github.com/sonic-net/sonic-gnmi/sonic_data_client"
 )
 
 func TestGetLLDPTable(t *testing.T) {
@@ -54,6 +55,13 @@ func TestGetLLDPTable(t *testing.T) {
 	expectedLLDPTableResponse, err := ioutil.ReadFile(expectedLLDPTableResponseFileName)
 	if err != nil {
 		t.Fatalf("Failed to read file %v err: %v", expectedLLDPTableResponseFileName, err)
+	}
+
+	// Expected output for normal device with path option SONIC_CLI_IFACE_MODE=alias
+	expectedLLDPTableResponseAliasFileName := "../testdata/lldp/Expected_show_lldp_table_alias_response.txt"
+	expectedLLDPTableResponseAlias, err := ioutil.ReadFile(expectedLLDPTableResponseAliasFileName)
+	if err != nil {
+		t.Fatalf("Failed to read file %v err: %v", expectedLLDPTableResponseAliasFileName, err)
 	}
 
 	tests := []struct {
@@ -110,19 +118,53 @@ func TestGetLLDPTable(t *testing.T) {
 			},
 			ignoreValOrder: true,
 		},
+		{
+			desc:       "query SHOW lldp table - normal device - path option SONIC_CLI_IFACE_MODE=alias",
+			pathTarget: "SHOW",
+			textPbPath: `
+				elem: <name: "lldp" >
+				elem: <name: "table" key: { key: "SONIC_CLI_IFACE_MODE" value: "alias" } >
+			`,
+			wantRetCode: codes.OK,
+			wantRespVal: []byte(expectedLLDPTableResponseAlias),
+			valTest:     true,
+			mockOutputFile: map[string]string{
+				"docker": "../testdata/lldp/lldpctl_json.txt",
+			},
+			ignoreValOrder: true,
+		},
+		{
+			desc:       "query SHOW lldp table - normal device - path option SONIC_CLI_IFACE_MODE=wrongNameMode",
+			pathTarget: "SHOW",
+			textPbPath: `
+				elem: <name: "lldp" >
+				elem: <name: "table" key: { key: "SONIC_CLI_IFACE_MODE" value: "wrongNameMode" } >
+			`,
+			wantRetCode: codes.InvalidArgument,
+		},
 	}
 
 	for _, test := range tests {
-		var patches *gomonkey.Patches
+		var patchesSlice []*gomonkey.Patches
+		patchesSlice = append(patchesSlice, gomonkey.ApplyFunc(sdc.PortToAliasNameMap, func() map[string]string {
+			return map[string]string{
+				"eth0": "etp0",
+				"Ethernet353": "etp353",
+				"Ethernet354": "etp354",
+				"Ethernet355": "etp355",
+				"Ethernet356": "etp356",
+			}
+		}))
+
 		if len(test.mockOutputFile) > 0 {
-			patches = MockExecCmds(t, test.mockOutputFile)
+			patchesSlice = append(patchesSlice, MockExecCmds(t, test.mockOutputFile))
 		}
 
 		t.Run(test.desc, func(t *testing.T) {
 			runTestGet(t, ctx, gClient, test.pathTarget, test.textPbPath, test.wantRetCode, test.wantRespVal, test.valTest, test.ignoreValOrder)
 		})
 
-		if patches != nil {
+		for _, patches := range patchesSlice {
 			patches.Reset()
 		}
 	}

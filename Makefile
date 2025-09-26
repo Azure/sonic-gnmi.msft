@@ -159,7 +159,7 @@ endif
 	sudo CGO_LDFLAGS="$(CGO_LDFLAGS)" CGO_CXXFLAGS="$(CGO_CXXFLAGS)" $(GO) test -race -coverprofile=coverage-data.txt -covermode=atomic -mod=vendor -v github.com/sonic-net/sonic-gnmi/sonic_data_client
 	sudo CGO_LDFLAGS="$(CGO_LDFLAGS)" CGO_CXXFLAGS="$(CGO_CXXFLAGS)" $(GO) test -race -coverprofile=coverage-dbus.txt -covermode=atomic -mod=vendor -v github.com/sonic-net/sonic-gnmi/sonic_service_client
 	sudo CGO_LDFLAGS="$(CGO_LDFLAGS)" CGO_CXXFLAGS="$(CGO_CXXFLAGS)" $(TESTENV) $(GO) test -race -coverprofile=coverage-translutils.txt -covermode=atomic -mod=vendor -v github.com/sonic-net/sonic-gnmi/transl_utils
-	sudo CGO_LDFLAGS="$(CGO_LDFLAGS)" CGO_CXXFLAGS="$(CGO_CXXFLAGS)" $(GO) test -gcflags=all=-l -race -coverprofile=coverage-ipinterfaces.txt -covermode=atomic -mod=vendor -v github.com/sonic-net/sonic-gnmi/internal/ipinterfaces
+	sudo CGO_LDFLAGS="$(CGO_LDFLAGS)" CGO_CXXFLAGS="$(CGO_CXXFLAGS)" $(GO) test -gcflags=all=-l -race -coverprofile=coverage-ipinterfaces.txt -covermode=atomic -mod=vendor -v github.com/sonic-net/sonic-gnmi/show_client/helpers/ipinterfaces
 
 	$(GO) install github.com/axw/gocov/gocov@v1.1.0
 	$(GO) install github.com/AlekSi/gocov-xml@latest

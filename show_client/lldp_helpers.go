@@ -102,10 +102,16 @@ type unknownTLV struct {
 	Value   string `json:"value"`
 }
 
-// get full lldp data via docker exec lldp lldpctl -f json0
-func getLLDPDataFromHostCommand() (lldpData, error) {
-	log.V(2).Infof("Start to get lldp data from lldpctl")
+// get full lldp data via docker exec lldp lldpctl -f json0 {interfaceName}
+func getLLDPDataFromHostCommand(ifaceName string) (lldpData, error) {
 	lldpShowJsonCommand := "docker exec lldp lldpctl -f json0"
+
+	if ifaceName != "" {
+		lldpShowJsonCommand = lldpShowJsonCommand + " " + ifaceName
+	}
+
+	log.V(2).Infof("Start to get lldp data from lldpctl, command: %s", lldpShowJsonCommand)
+	// Execute the command to get lldp data in json format
 	lldpOutput, err := common.GetDataFromHostCommand(lldpShowJsonCommand)
 	if err != nil {
 		log.Errorf("Unable to successfully execute command %v, get err %v", lldpShowJsonCommand, err)

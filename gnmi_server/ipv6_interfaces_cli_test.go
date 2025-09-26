@@ -11,7 +11,7 @@ import (
 	pb "github.com/openconfig/gnmi/proto/gnmi"
 
 	"github.com/agiledragon/gomonkey/v2"
-	"github.com/sonic-net/sonic-gnmi/internal/ipinterfaces"
+	"github.com/sonic-net/sonic-gnmi/show_client/helpers/ipinterfaces"
 
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
@@ -98,7 +98,7 @@ func TestGetIPv6InterfacesCLIMixedBGPFields(t *testing.T) {
 	defer ResetDataSetsAndMappings(t)
 
 	// Deterministic dataset: one enriched, two defaulted ("N/A") after CLI backfill.
-	patches := gomonkey.ApplyFunc(ipinterfaces.GetIPInterfaces, func(deps ipinterfaces.Dependencies, addressFamily string, opts *ipinterfaces.GetInterfacesOptions) ([]ipinterfaces.IPInterfaceDetail, error) {
+	patches := gomonkey.ApplyFunc(ipinterfaces.GetIPInterfaces, func(addressFamily string, opts *ipinterfaces.GetInterfacesOptions) ([]ipinterfaces.IPInterfaceDetail, error) {
 		return []ipinterfaces.IPInterfaceDetail{
 			{Name: "Ethernet8", AdminStatus: "up", OperStatus: "up", Master: "", IPAddresses: []ipinterfaces.IPAddressDetail{
 				{Address: "fc00::1/64", BGPNeighborIP: "aa00::1", BGPNeighborName: "ARISTA01T1"}, // enriched

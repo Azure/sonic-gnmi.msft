@@ -45,7 +45,10 @@ import (
 	"fmt"
 
 	log "github.com/golang/glog"
+	"github.com/sonic-net/sonic-gnmi/show_client/common"
 	sdc "github.com/sonic-net/sonic-gnmi/sonic_data_client"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 )
 
 // lldpNeighborsResponse represents the response structure for show lldp neighbors command.
@@ -108,13 +111,13 @@ type neighborsLLDPMed struct {
 }
 
 // Extracts the LLDP neighbors entries from the LLDP data.
-func extractAllNeighborsEntry(data lldpData) map[string]lldpNeighborsEntry {
+func extractAllNeighborsEntry(data lldpData, namingMode common.InterfaceNamingMode) map[string]lldpNeighborsEntry {
 	neighbors := make(map[string]lldpNeighborsEntry)
 
 	for _, entry := range data.LLDP {
 		for _, iface := range entry.Interface {
-			neighbor := extractNeighborsEntry(iface)
-			neighbors[iface.Name] = neighbor
+			iface.Name = common.GetInterfaceNameForDisplay(iface.Name, namingMode)
+			neighbors[iface.Name] = extractNeighborsEntry(iface)
 		}
 	}
 
@@ -255,25 +258,30 @@ func extractNeighborsEntry(iface interfaceEntry) lldpNeighborsEntry {
 func getLLDPNeighbors(args sdc.CmdArgs, options sdc.OptionMap) ([]byte, error) {
 	// Get interface name from args, if provided, default to ""
 	ifaceName := args.At(0)
+	namingModeStr, _ := options[SonicCliIfaceMode].String()
+	namingMode, err := common.ParseInterfaceNamingMode(namingModeStr)
+	if err != nil {
+		log.Errorf("Failed to parse interface naming mode %s: %v", namingModeStr, err)
+		return nil, status.Errorf(codes.InvalidArgument, "Invalid interface naming mode %q", namingModeStr)
+	}
 
-	data, err := getLLDPDataFromHostCommand()
+	if ifaceName != "" && namingMode == common.Alias {
+		intf, err := common.TryConvertInterfaceNameFromAlias(ifaceName, namingMode)
+		if err != nil {
+			log.Errorf("Failed to get interface name from alias: %s, Error: %v", ifaceName, err)
+			return nil, err
+		}
+		ifaceName = intf
+	}
+
+	data, err := getLLDPDataFromHostCommand(ifaceName)
 	if err != nil {
 		log.Errorf("Failed to get lldp data, get err %v", err)
 		return nil, err
 	}
 
 	// parse neighbors summary from full lldp data
-	neighbors := extractAllNeighborsEntry(data)
-
-	// If interface name is provided, filter to return only that interface
-	if ifaceName != "" {
-		if entry, ok := neighbors[ifaceName]; ok {
-			neighbors = map[string]lldpNeighborsEntry{ifaceName: entry}
-		} else {
-			// Interface name provided but not found; return empty map
-			neighbors = make(map[string]lldpNeighborsEntry)
-		}
-	}
+	neighbors := extractAllNeighborsEntry(data, namingMode)
 
 	// create response structure
 	var response = lldpNeighborsResponse{

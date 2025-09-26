@@ -2,26 +2,27 @@ package ipinterfaces
 
 import (
 	"fmt"
-	"reflect"
 	"testing"
+
+	"github.com/agiledragon/gomonkey/v2"
+	"github.com/sonic-net/sonic-gnmi/show_client/common"
 )
 
 func TestGetBGPNeighbors_DefaultNamespace_OK(t *testing.T) {
-	var captured [][]string
-	dbQuery := func(q [][]string) (map[string]interface{}, error) {
-		captured = q
-		return map[string]interface{}{
-			"10.0.0.2": map[string]interface{}{"local_addr": "192.0.2.1", "name": "peer1"},
-		}, nil
-	}
+	p := gomonkey.ApplyFunc(common.GetMapFromQueries, func(q [][]string) (map[string]interface{}, error) {
+		// Expect exactly [["CONFIG_DB", "BGP_NEIGHBOR"]]
+		if len(q) == 1 && len(q[0]) == 2 && q[0][0] == "CONFIG_DB" && q[0][1] == "BGP_NEIGHBOR" {
+			return map[string]interface{}{
+				"10.0.0.2": map[string]interface{}{"local_addr": "192.0.2.1", "name": "peer1"},
+			}, nil
+		}
+		return nil, fmt.Errorf("unexpected query: %v", q)
+	})
+	defer p.Reset()
 
-	got, err := getBGPNeighborsFromDB(DiscardLogger, dbQuery, "")
+	got, err := getBGPNeighborsFromDB("")
 	if err != nil {
 		t.Fatalf("getBGPNeighborsFromDB error: %v", err)
-	}
-	wantQuery := [][]string{{"CONFIG_DB", "BGP_NEIGHBOR"}}
-	if !reflect.DeepEqual(captured, wantQuery) {
-		t.Fatalf("query mismatch: got %v want %v", captured, wantQuery)
 	}
 	if len(got) != 1 {
 		t.Fatalf("neighbors len: got %d want 1", len(got))
@@ -36,22 +37,21 @@ func TestGetBGPNeighbors_DefaultNamespace_OK(t *testing.T) {
 }
 
 func TestGetBGPNeighbors_NonDefaultNamespace_OK(t *testing.T) {
-	var captured [][]string
-	dbQuery := func(q [][]string) (map[string]interface{}, error) {
-		captured = q
-		return map[string]interface{}{
-			"10.0.0.3": map[string]interface{}{"local_addr": "192.0.2.2", "name": "peer2"},
-			"10.0.0.4": map[string]interface{}{"local_addr": "192.0.2.3", "name": "peer3"},
-		}, nil
-	}
+	p := gomonkey.ApplyFunc(common.GetMapFromQueries, func(q [][]string) (map[string]interface{}, error) {
+		// Expect exactly [["CONFIG_DB/asic1", "BGP_NEIGHBOR"]]
+		if len(q) == 1 && len(q[0]) == 2 && q[0][0] == "CONFIG_DB/asic1" && q[0][1] == "BGP_NEIGHBOR" {
+			return map[string]interface{}{
+				"10.0.0.3": map[string]interface{}{"local_addr": "192.0.2.2", "name": "peer2"},
+				"10.0.0.4": map[string]interface{}{"local_addr": "192.0.2.3", "name": "peer3"},
+			}, nil
+		}
+		return nil, fmt.Errorf("unexpected query: %v", q)
+	})
+	defer p.Reset()
 
-	got, err := getBGPNeighborsFromDB(DiscardLogger, dbQuery, "asic1")
+	got, err := getBGPNeighborsFromDB("asic1")
 	if err != nil {
 		t.Fatalf("getBGPNeighborsFromDB error: %v", err)
-	}
-	wantPrefix := "CONFIG_DB/asic1"
-	if len(captured) != 1 || len(captured[0]) != 2 || captured[0][0] != wantPrefix || captured[0][1] != "BGP_NEIGHBOR" {
-		t.Fatalf("query mismatch: got %v", captured)
 	}
 	if len(got) != 2 {
 		t.Fatalf("neighbors len: got %d want 2", len(got))
@@ -62,7 +62,7 @@ func TestGetBGPNeighbors_NonDefaultNamespace_OK(t *testing.T) {
 }
 
 func TestGetBGPNeighbors_SkipInvalidEntries(t *testing.T) {
-	dbQuery := func(q [][]string) (map[string]interface{}, error) {
+	p := gomonkey.ApplyFunc(common.GetMapFromQueries, func(q [][]string) (map[string]interface{}, error) {
 		return map[string]interface{}{
 			// Missing local_addr -> should be skipped
 			"10.0.0.5": map[string]interface{}{"name": "peerX"},
@@ -71,9 +71,10 @@ func TestGetBGPNeighbors_SkipInvalidEntries(t *testing.T) {
 			// Valid entry
 			"10.0.0.7": map[string]interface{}{"local_addr": "192.0.2.7", "name": "peer7"},
 		}, nil
-	}
+	})
+	defer p.Reset()
 
-	got, err := getBGPNeighborsFromDB(DiscardLogger, dbQuery, "")
+	got, err := getBGPNeighborsFromDB("")
 	if err != nil {
 		t.Fatalf("getBGPNeighborsFromDB error: %v", err)
 	}
@@ -87,28 +88,26 @@ func TestGetBGPNeighbors_SkipInvalidEntries(t *testing.T) {
 }
 
 func TestGetBGPNeighbors_Error(t *testing.T) {
-	dbQuery := func(q [][]string) (map[string]interface{}, error) { return nil, fmt.Errorf("db error") }
+	p := gomonkey.ApplyFunc(common.GetMapFromQueries, func(q [][]string) (map[string]interface{}, error) {
+		return nil, fmt.Errorf("db error")
+	})
+	defer p.Reset()
 
-	got, err := getBGPNeighborsFromDB(DiscardLogger, dbQuery, "asic2")
+	got, err := getBGPNeighborsFromDB("asic2")
 	if err == nil {
 		t.Fatalf("expected error, got nil, result=%v", got)
 	}
 }
 
-func TestGetBGPNeighbors_DBQueryNil_Error(t *testing.T) {
-	if _, err := getBGPNeighborsFromDB(DiscardLogger, nil, ""); err == nil {
-		t.Fatalf("expected error when DBQuery is nil")
-	}
-}
-
 func TestGetBGPNeighbors_NameNonString_Coerced(t *testing.T) {
-	dbQuery := func(q [][]string) (map[string]interface{}, error) {
+	p := gomonkey.ApplyFunc(common.GetMapFromQueries, func(q [][]string) (map[string]interface{}, error) {
 		return map[string]interface{}{
 			"203.0.113.2": map[string]interface{}{"local_addr": "192.0.2.9", "name": 12345},
 		}, nil
-	}
+	})
+	defer p.Reset()
 
-	got, err := getBGPNeighborsFromDB(DiscardLogger, dbQuery, "")
+	got, err := getBGPNeighborsFromDB("")
 	if err != nil {
 		t.Fatalf("getBGPNeighborsFromDB error: %v", err)
 	}
@@ -120,13 +119,14 @@ func TestGetBGPNeighbors_NameNonString_Coerced(t *testing.T) {
 }
 
 func TestGetBGPNeighbors_MalformedKey_Skipped(t *testing.T) {
-	dbQuery := func(q [][]string) (map[string]interface{}, error) {
+	p := gomonkey.ApplyFunc(common.GetMapFromQueries, func(q [][]string) (map[string]interface{}, error) {
 		return map[string]interface{}{
-			"BGP_NEIGHBOR": map[string]interface{}{"local_addr": "192.0.2.20", "name": "peer"}, // no delimiter
+			"BGP_NEIGHBOR": map[string]interface{}{"local_addr": "192.0.2.20", "name": "peer"}, // not an IP -> skipped
 		}, nil
-	}
+	})
+	defer p.Reset()
 
-	got, err := getBGPNeighborsFromDB(DiscardLogger, dbQuery, "")
+	got, err := getBGPNeighborsFromDB("")
 	if err != nil {
 		t.Fatalf("getBGPNeighborsFromDB error: %v", err)
 	}

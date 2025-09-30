@@ -1,28 +1,28 @@
 package show_client
 
 import (
-        "encoding/json"
-	    "fmt"
-	    "net"
-        "strconv"
-        "strings"
+	"encoding/json"
+	"fmt"
+	"net"
+	"strconv"
+	"strings"
 
-        log "github.com/golang/glog"
-        "github.com/sonic-net/sonic-gnmi/show_client/common"
-        sdc "github.com/sonic-net/sonic-gnmi/sonic_data_client"
+	log "github.com/golang/glog"
+	"github.com/sonic-net/sonic-gnmi/show_client/common"
+	sdc "github.com/sonic-net/sonic-gnmi/sonic_data_client"
 )
 
 type NeighborEntry struct {
-        Address    string `json:"address"`     // IP address (IPv4 or IPv6)
-        MacAddress string `json:"mac_address"` // MAC address of the neighbor
-        Iface      string `json:"iface"`       // Interface name (e.g., Ethernet64, eth0)
-        Vlan       string `json:"vlan"`        // VLAN ID (or "-" if not applicable)
-        Status     string `json:"status"`      // Neighbor state (REACHABLE, STALE, etc.)
+	Address    string `json:"address"`     // IP address (IPv4 or IPv6)
+	MacAddress string `json:"mac_address"` // MAC address of the neighbor
+	Iface      string `json:"iface"`       // Interface name (e.g., Ethernet64, eth0)
+	Vlan       string `json:"vlan"`        // VLAN ID (or "-" if not applicable)
+	Status     string `json:"status"`      // Neighbor state (REACHABLE, STALE, etc.)
 }
 
 type NeighborTable struct {
-        TotalEntries int             `json:"total_entries"` // Number of entries
-        Entries      []NeighborEntry `json:"entries"`       // List of neighbor entries
+	TotalEntries int             `json:"total_entries"` // Number of entries
+	Entries      []NeighborEntry `json:"entries"`       // List of neighbor entries
 }
 
 const oidPrefixLen = len("oid:0x")
@@ -32,12 +32,12 @@ show ndp [OPTIONS] [IP6ADDRESS] -> nbrshow -6 [-ip IPADDR] [-if IFACE] -> ip -6 
 admin@str4-7060x6-512-1:~$ show ndp --help
 Usage: show ndp [OPTIONS] [IP6ADDRESS]
 
-  Show IPv6 Neighbour table
+Show IPv6 Neighbour table
 
 Options:
-  -if, --iface TEXT
-  --verbose          Enable verbose output
-  -h, -?, --help     Show this message and exit.
+-if, --iface TEXT
+--verbose          Enable verbose output
+-h, -?, --help     Show this message and exit.
 admin@str4-7060x6-512-1:~$ /bin/ip -6 neigh show fc00::5a2 dev Ethernet360 lladdr 0a:80:32:98:97:95 router REACHABLE fe80::d494:e8ff:fe96:e188 dev Ethernet392 lladdr d6:94:e8:96:e1:88 REACHABLE fc00::202 dev Ethernet128 lladdr a6:da:cf:f5:6a:e6 router REACHABLE fe80::7a5f:6cff:fe30:d7dc dev Vlan1000 lladdr 78:5f:6c:30:d7:dc router STALE fe80::bace:f6ff:fee5:51c0 dev Vlan1000 lladdr b8:ce:f6:e5:51:c0 REACHABLE fe80::acaf:aeff:fe2e:4080 dev Ethernet128 lladdr ae:af:ae:2e:40:80 REACHABLE fe80::bace:f6ff:fee5:51c8 dev Vlan1000 lladdr b8:ce:f6:e5:51:c8 REACHABLE fe80::7c4f:56ff:feb2:61b8 dev Ethernet440 lladdr 7e:4f:56:b2:61:b8
 admin@str4-7060x6-512-2:~$ show ndp
 Address                       MacAddress         Iface           Vlan    Status
@@ -54,82 +54,82 @@ fc00::2e2                     a6:f0:40:18:a6:a5  Ethernet208     -       REACHAB
 
 // show ndp is read from 'ip -6 neigh show' output from kernel
 var (
-        baseNdpCmd = "/bin/ip -6 neigh show"
+	baseNdpCmd = "/bin/ip -6 neigh show"
 )
 
 func parseNDPOutput(output string, intf string) NeighborTable {
-        table := NeighborTable{}
+	table := NeighborTable{}
 
-        // Fetch FDB entries
-        bridgeMacList, err := common.FetchFDBData()
-        if err != nil {
-                log.Warningf("Failed to fetch FDB data: %v", err)
-                bridgeMacList = []common.BridgeMacEntry{} // fallback to empty
-        }
+	// Fetch FDB entries
+	bridgeMacList, err := common.FetchFDBData()
+	if err != nil {
+		log.Warningf("Failed to fetch FDB data: %v", err)
+		bridgeMacList = []common.BridgeMacEntry{} // fallback to empty
+	}
 
-        lines := strings.Split(strings.TrimSpace(output), "\n")
-        for _, line := range lines {
-                fields := strings.Fields(line)
-                if !common.ContainsString(fields, "lladdr") {
-                        continue
-                }
+	lines := strings.Split(strings.TrimSpace(output), "\n")
+	for _, line := range lines {
+		fields := strings.Fields(line)
+		if !common.ContainsString(fields, "lladdr") {
+			continue
+		}
 
-                var address, mac, iface, vlan, status string
-                address = fields[0]
+		var address, mac, iface, vlan, status string
+		address = fields[0]
 
-                // Extract iface and mac
-                for i := 0; i < len(fields); i++ {
-                        if fields[i] == "dev" && i+1 < len(fields) {
-                                iface = fields[i+1]
-                        }
-                        if fields[i] == "lladdr" && i+1 < len(fields) {
-                                mac = strings.ToUpper(fields[i+1])
-                        }
-                }
+		// Extract iface and mac
+		for i := 0; i < len(fields); i++ {
+			if fields[i] == "dev" && i+1 < len(fields) {
+				iface = fields[i+1]
+			}
+			if fields[i] == "lladdr" && i+1 < len(fields) {
+				mac = strings.ToUpper(fields[i+1])
+			}
+		}
 
-                // When iface is explicitly specified, the kernel output omits the 'dev <iface>' field
-                if iface == "" && intf != "" {
-                        iface = intf
-                }
+		// When iface is explicitly specified, the kernel output omits the 'dev <iface>' field
+		if iface == "" && intf != "" {
+			iface = intf
+		}
 
-                // Derive VLAN from interface name if it starts with "Vlan"
-                vlan = "-"
-                vlanID := 0
-                if strings.HasPrefix(iface, "Vlan") {
-                        vlanNumStr := strings.TrimPrefix(iface, "Vlan")
-                        if n, err := strconv.Atoi(vlanNumStr); err == nil {
-                                vlanID = n
-                                vlan = strconv.Itoa(n)
-                        }
-                }
+		// Derive VLAN from interface name if it starts with "Vlan"
+		vlan = "-"
+		vlanID := 0
+		if strings.HasPrefix(iface, "Vlan") {
+			vlanNumStr := strings.TrimPrefix(iface, "Vlan")
+			if n, err := strconv.Atoi(vlanNumStr); err == nil {
+				vlanID = n
+				vlan = strconv.Itoa(n)
+			}
+		}
 
-                // Try to match FDB entry to replace iface
-                if vlanID != 0 && mac != "" {
-                        for _, fdb := range bridgeMacList {
-                                if fdb.VlanID == vlanID && strings.EqualFold(fdb.Mac, mac) {
-                                        iface = fdb.IfName
-                                        vlan = strconv.Itoa(fdb.VlanID)
-                                        break
-                                }
-                        }
-                }
+		// Try to match FDB entry to replace iface
+		if vlanID != 0 && mac != "" {
+			for _, fdb := range bridgeMacList {
+				if fdb.VlanID == vlanID && strings.EqualFold(fdb.Mac, mac) {
+					iface = fdb.IfName
+					vlan = strconv.Itoa(fdb.VlanID)
+					break
+				}
+			}
+		}
 
-                // Get Status (last field)
-                status = fields[len(fields)-1]
+		// Get Status (last field)
+		status = fields[len(fields)-1]
 
-                entry := NeighborEntry{
-                        Address:    address,
-                        MacAddress: mac,
-                        Iface:      iface,
-                        Vlan:       vlan,
-                        Status:     status,
-                }
+		entry := NeighborEntry{
+			Address:    address,
+			MacAddress: mac,
+			Iface:      iface,
+			Vlan:       vlan,
+			Status:     status,
+		}
 
-                table.Entries = append(table.Entries, entry)
-        }
+		table.Entries = append(table.Entries, entry)
+	}
 
-        table.TotalEntries = len(table.Entries)
-        return table
+	table.TotalEntries = len(table.Entries)
+	return table
 }
 
 func getNDP(args sdc.CmdArgs, options sdc.OptionMap) ([]byte, error) {

@@ -129,8 +129,63 @@ func checkByMonit(config map[string]interface, stats map[string]interface) {
 	}
 }
 
-// Only stub, real logic should call DB and run container checks
-func (sc *ServiceChecker) checkServices(config *Config, logger Logger) {
+func getExpectedRunningContainers(featureTable map[string]interface) (map[string]struct{}, map[string]string) {
+	expectedRunningContainers := make(map[string]struct{})
+	containerFeatureDict := make(map[string]string)
+
+	runAllInstanceList := map[string]struct{}{
+		"database": {},
+		"bgp":      {},
+	}
+
+	containerList := []string{}
+	for containerName := range featureTable {
+		if containerName == "frr_bmp" {
+			continue
+		}
+		// slim image does not have telemetry container and corresponding docker image
+		if containerName == "telemetry" {
+			if !common.CheckDockerImageExist("docker-sonic-telemetry") {
+				if !common.CheckDockerImageExist("docker-sonic-gnmi") {
+					log.Errorf("Ignoring telemetry container check on image which has no corresponding docker image")
+				} else {
+					containerList = append(containerList, "gnmi")
+				}
+				continue
+			}
+		}
+		containerList = append(containerList, containerName)
+	}
+
+	for _, containerName := range containerList {
+        //TODO: convert below obj
+		featureEntry := featureTable[containerName]
+		state := featureEntry["state"]
+		if state != "disabled" && state != "always_disabled" {
+			if common.IsMultiAsic() {
+                log.Errorf("Currently multi ASIC not supported."
+			} else {
+				expectedRunningContainers[containerName] = struct{}{}
+				containerFeatureDict[containerName] = containerName
+			}
+		}
+	}
+
+	if device_info.IsSupervisor() || device_info.IsDisaggregatedChassis() {
+		expectedRunningContainers["database-chassis"] = struct{}{}
+		containerFeatureDict["database-chassis"] = "database"
+	}
+
+	return expectedRunningContainers, containerFeatureDict
+}
+
+func checkServices(config map[string]interface) {
+
+    queries : = {}
+    featureData, err := //GetFeatureList
+
+    expectedRunningContainer, containerFeature := getExpectedRunningContainer(featureData)
+
 	// Minimal stub for demo: just mark system as ok if any critical process exists
 	if len(sc.containerCriticalProcesses) == 0 {
 		SetStat("Service", "system", "no critical process found", STATUS_NOT_OK)

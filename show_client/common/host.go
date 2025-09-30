@@ -30,6 +30,50 @@ const (
 var hwInfoDict map[string]interface{}
 var hwInfoOnce sync.Once
 
+func GetPlatformConfigFilePath() {
+	candidate := filepath.Join(containerPlatformPath, platformEnvConfFile)
+	if FileExists(candidate) {
+		return candidate
+	}
+
+	// 2. Check host device path with platform
+	platform := GetPlatform()
+	if platform != "" {
+		candidate = filepath.Join(HostDevicePath, platform, platformEnvConfFile)
+		if FileExists(candidate) {
+			return candidate
+		}
+	}
+
+	// Not found
+	return ""
+}
+
+func GetPlatformEnvConfig(varName string) (string, bool) {
+    platformConfigFilePath := GetPlatformConfigFilePath()
+	if platformConfigFilePath == "" {
+		return "", false 
+	}
+	file, err := os.Open(platformConfigFilePath)
+	if err != nil {
+		return "", false
+	}
+	defer file.Close()
+	scanner := bufio.NewScanner(file)
+	for scanner.Scan() {
+		line := scanner.Text()
+		tokens := strings.SplitN(line, "=", 2)
+		if len(tokens) < 2 {
+			continue
+		}
+		if strings.ToLower(tokens[0]) == varName {
+            return tokens[1], true
+		}
+	}
+	return "", false 
+
+}
+
 func GetChassisInfo() (map[string]string, error) {
 	chassisDict := make(map[string]string)
 	queries := [][]string{
@@ -77,6 +121,11 @@ func GetDockerInfo() string {
 	}
 
 	return cmdOutput
+}
+
+func CheckDockerImageExist(imageName string) bool {
+    allImagesData := GetDockerInfo()
+    return strings.Contains(allImagesData, imageName)
 }
 
 func GetPlatformInfo(versionInfo map[string]interface{}) (map[string]interface{}, error) {

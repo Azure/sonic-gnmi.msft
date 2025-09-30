@@ -389,12 +389,17 @@ func getNDP(args sdc.CmdArgs, options sdc.OptionMap) ([]byte, error) {
 
 	cmd := baseNdpCmd
 	if ip != "" {
-		p := net.ParseIP(ip)
-		if p != nil && p.To4() == nil {
-			cmd += " " + ip
+		if addr, _, err := net.ParseCIDR(ip); err == nil {
+			if addr.To4() != nil {
+				return nil, fmt.Errorf("IPv4 prefixes not allowed: %s", ip)
+			}
 		} else {
-			return nil, fmt.Errorf("invalid IPv6 address: %s", ip)
+			p := net.ParseIP(ip)
+			if p == nil || p.To4() != nil {
+				return nil, fmt.Errorf("invalid IPv6 address: %s", ip)
+			}
 		}
+		cmd += " " + ip
 	}
 	if intf != "" {
 		cmd += " dev " + intf

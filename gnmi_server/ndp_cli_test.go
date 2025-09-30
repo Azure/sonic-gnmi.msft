@@ -150,6 +150,15 @@ func TestGetNDP(t *testing.T) {
 			wantRetCode: codes.NotFound,
 		},
 		{
+			desc:       "query SHOW ndp - ipv4 ipaddress prefix",
+			pathTarget: "SHOW",
+			textPbPath: `
+				elem: <name: "ndp" >
+				elem: <name: "192.168.1.1/64" >
+			`,
+			wantRetCode: codes.NotFound,
+		},
+		{
 			desc:       "query SHOW ndp",
 			pathTarget: "SHOW",
 			textPbPath: `
@@ -194,6 +203,24 @@ func TestGetNDP(t *testing.T) {
 			wantRespVal: []byte(specificIPAddressNDPExpectedOutput),
 			valTest:     true,
 			mockFile:    specificIPAddressFileName,
+			testInit: func() {
+				FlushDataSet(t, CountersDbNum)
+				FlushDataSet(t, AsicDbNum)
+				AddDataSet(t, CountersDbNum, countersDBFileName)
+				AddDataSet(t, AsicDbNum, asicDBFileName)
+			},
+		},
+		{
+			desc:       "query SHOW ndp - specific ipaddress with prefix",
+			pathTarget: "SHOW",
+			textPbPath: `
+				elem: <name: "ndp">
+				elem: <name: "::/0" >
+			`,
+			wantRetCode: codes.OK,
+			wantRespVal: []byte(ndpExpectedOutput),
+			valTest:     true,
+			mockFile:    ipNeighShowFileName,
 			testInit: func() {
 				FlushDataSet(t, CountersDbNum)
 				FlushDataSet(t, AsicDbNum)

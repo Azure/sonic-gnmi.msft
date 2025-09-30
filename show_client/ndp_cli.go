@@ -131,40 +131,47 @@ func parseNDPOutput(output string, intf string) NeighborTable {
 }
 
 func getNDP(args sdc.CmdArgs, options sdc.OptionMap) ([]byte, error) {
-        intf, _ := options["iface"].String()
+	intf, _ := options["iface"].String()
+	ip := args.At(0)
 
-        cmd := baseNdpCmd
-        if len(args) > 0 && args[0] != "" {
-                ip, err := common.ParseIPv6(args[0])
-                if err != nil {
-                        return nil, err
-                }
-                cmd += " " + ip.String()
-        }
-        if intf != "" {
-                cmd += " dev " + intf
-        }
-        log.V(6).Infof("Running command: %s", cmd)
+	cmd := baseNdpCmd
+	if ip != "" {
+		if addr, _, err := net.ParseCIDR(ip); err == nil {
+			if addr.To4() != nil {
+				return nil, fmt.Errorf("IPv4 prefixes not allowed: %s", ip)
+			}
+		} else {
+			p := net.ParseIP(ip)
+			if p == nil || p.To4() != nil {
+				return nil, fmt.Errorf("invalid IPv6 address: %s", ip)
+			}
+		}
+		cmd += " " + ip
+	}
+	if intf != "" {
+		cmd += " dev " + intf
+	}
+	log.V(6).Infof("Running command: %s", cmd)
 
-        cmdOutput, err := common.GetDataFromHostCommand(cmd)
-        if err != nil {
-                log.Errorf("Error getting NDP data: %v", err)
-                return nil, err
-        }
+	cmdOutput, err := common.GetDataFromHostCommand(cmd)
+	if err != nil {
+		log.Errorf("Error getting NDP data: %v", err)
+		return nil, err
+	}
 
-        // If cmdOutput is empty
-        if strings.TrimSpace(cmdOutput) == "" {
-                return []byte(`{"total_entries":0,"entries":[]}`), nil
-        }
+	// If cmdOutput is empty
+	if strings.TrimSpace(cmdOutput) == "" {
+		return []byte(`{"total_entries":0,"entries":[]}`), nil
+	}
 
-        log.V(6).Infof("ndp output: %s", cmdOutput)
-        // Parse the output
-        table := parseNDPOutput(cmdOutput, intf)
-        log.V(6).Infof("parsed table: %v", table)
-        // Convert to JSON
-        jsonData, err := json.Marshal(table)
-        if err != nil {
-                return nil, err
-        }
-        return jsonData, nil
+	log.V(6).Infof("ndp output: %s", cmdOutput)
+	// Parse the output
+	table := parseNDPOutput(cmdOutput, intf)
+	log.V(6).Infof("parsed table: %v", table)
+	// Convert to JSON
+	jsonData, err := json.Marshal(table)
+	if err != nil {
+		return nil, err
+	}
+	return jsonData, nil
 }

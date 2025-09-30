@@ -74,6 +74,80 @@ func GetPlatformEnvConfig(varName string) (string, bool) {
 
 }
 
+func IsExpectedValue(val string, expectedVal string) {
+    if strings.TrimSpace(val) == expectedVal {
+        return true
+    }
+    
+    return false
+
+}
+
+func IsSupervisor() bool {
+    val, found := GetPlatformEnvConfig("supervisor")
+    if !found {
+        return found
+    }
+    return IsExpectedValue(val, "1")
+}
+
+func IsDisaggregatedChassis() bool {
+    val, found := GetPlatformEnvConfig("disaggregated_chassis")
+    if !found {
+        return found
+    }
+    return IsExpectedValue(val, "1")
+}
+
+func GetExpectedRunningContainers(featureTable map[string]interface) (map[string]struct{}, map[string]string) {
+	expectedRunningContainers := make(map[string]struct{})
+	containerFeatureDict := make(map[string]string)
+
+	runAllInstanceList := map[string]struct{}{
+		"database": {},
+		"bgp":      {},
+	}
+
+	containerList := []string{}
+	for containerName := range featureTable {
+		if containerName == "frr_bmp" {
+			continue
+		}
+		// slim image does not have telemetry container and corresponding docker image
+		if containerName == "telemetry" {
+			if !common.CheckDockerImageExist("docker-sonic-telemetry") {
+				if !common.CheckDockerImageExist("docker-sonic-gnmi") {
+					log.Errorf("Ignoring telemetry container check on image which has no corresponding docker image")
+				} else {
+					containerList = append(containerList, "gnmi")
+				}
+				continue
+			}
+		}
+		containerList = append(containerList, containerName)
+	}
+
+	for _, containerName := range containerList {
+		featureEntry := featureTable[containerName].(map[string]interface)
+		state := featureEntry["state"].(string)
+		if state != "disabled" && state != "always_disabled" {
+			if common.IsMultiAsic() {
+                log.Errorf("Currently multi ASIC not supported.")
+			} else {
+				expectedRunningContainers[containerName] = struct{}{}
+				containerFeatureDict[containerName] = containerName
+			}
+		}
+	}
+
+	if IsSupervisor() || IsDisaggregatedChassis() {
+		expectedRunningContainers["database-chassis"] = struct{}{}
+		containerFeatureDict["database-chassis"] = "database"
+	}
+
+	return expectedRunningContainers, containerFeatureDict
+}
+
 func GetChassisInfo() (map[string]string, error) {
 	chassisDict := make(map[string]string)
 	queries := [][]string{
@@ -279,4 +353,15 @@ func GetAsicPresenceList() []int {
 		}
 	}
 	return asicsList
+}
+
+func GetDockerRunningContainers() []string {
+	cmdOutput, err := GetDataFromHostCommand(`bash -o pipefail -c 'docker ps --format "{{.Names}}",`)
+
+	if err != nil {
+		return []string{} 
+	}
+
+	runningProcesses := strings.Splic(cmdOutput,",")
+    return runningProcesses
 }

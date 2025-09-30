@@ -25,6 +25,8 @@ const (
 	platformEnvVar        = "PLATFORM"
 	chassisInfoKey        = "chassis 1"
 	space                 = " "
+    DockerInspectCmd = "docker inspect "
+    DockerInspectDirCmd = " --format \"{{{{.GraphDriver.Data.MergedDir}}}}\""
 )
 
 var hwInfoDict map[string]interface{}
@@ -355,13 +357,70 @@ func GetAsicPresenceList() []int {
 	return asicsList
 }
 
-func GetDockerRunningContainers() []string {
+func GetDockerRunningContainers() map[string]struct{} {
 	cmdOutput, err := GetDataFromHostCommand(`bash -o pipefail -c 'docker ps --format "{{.Names}}",`)
 
 	if err != nil {
 		return []string{} 
 	}
 
-	runningProcesses := strings.Splic(cmdOutput,",")
-    return runningProcesses
+	runningContainerSlice := strings.Splice(cmdOutput,",")
+    runningContainer := map[string]struct{}
+
+    for _, containerName := range runningContainerSlice {
+        runningContainer[containerName] = struct{}{}
+    }
+    return runningContainer
+}
+
+func GetContainerFolder(containerName string) string {
+    cmd = DockerInspectCmd + containerName + DockerInspectDirCmd
+    output, err := GetDataFromHostCommand(cmd)
+
+    if err != nil {
+        return ""
+    }
+    return strings.TrimSpace(output)
+}
+
+func GetContainerCriticalProcesses(runningContainer []string) (map[string]interface, map[string]struct{}) {
+    criticalProcesses := make(map[string]interface)
+    badProcesses := make(map[string]struct{}
+
+    for _, container := range runningContainer {
+        containerFolder = GetContainerFolder(container)
+        if containerFolder != "" {
+            criticalProcessesFile := filepath.Join(containerFolder, "etc/supervisor/critical_processes")
+            if !FileExists(criticalProcessesFile) {
+                criticalProcesses[container] = []string{}
+                continue
+            }
+
+            data, err := GetDataFromFile(criticalProcessesFile)
+            if err != nil {
+                criticalProcesses[container] = []string{}
+                continue
+            }
+
+            processList := []string{}
+
+            re := regexp.MustCompile(`^\s*(?:(.+):(.*))*\s*$`)
+            content := string(data)
+	        lines := strings.Split(content, "\n")
+            for _, line := range lines {
+                match := re.FindStringSubmatch(line)
+                if len(match) > 1 && match[1] != "" {
+			        identifierKey := strings.TrimSpace(match[2])
+			        identifierValue := strings.TrimSpace(match[3]) //
+
+			        if identifierKey == "program" && identifierValue != "" {
+                        processList.append(processList, identifierValue)
+                    }
+                } else {
+                   badProcesses[container] = struct{}{} 
+                }
+            }
+        }
+    }
+    return criticalProcesses, badProcesses
 }

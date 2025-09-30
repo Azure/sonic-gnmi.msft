@@ -138,15 +138,29 @@ func checkServices(config map[string]interface, stats map[string]interface) {
 	} 
 
     expectedRunningContainers, containerFeature := common.GetExpectedRunningContainers(featureData)
-    runningContainers := common.GetDockerRunningContainers()
-    //CriticalProcesses.
+    currentRunningContainers := common.GetDockerRunningContainers()
+    containerCriticalProcesses, badProcesses := common.GetContainerCriticalProcesses(currentRunningContainers)
 
-	// Minimal stub for demo: just mark system as ok if any critical process exists
-	if len(sc.containerCriticalProcesses) == 0 {
-		SetStat("Service", "system", "no critical process found", STATUS_NOT_OK)
-		return
-	}
-	SetStat("Service", "system", "", STATUS_OK)
+    for expectedRunningContainer := range expectedRunningContainers {
+        if _, exists := currentRunningContainers[expectedRunningContainer]; !exists {
+            SetStat("Service", expectedRunningContainer, "Container " + expectedRunningContainer + " is not running", STATUS_NOT_OK)
+        }
+    }
+
+    if len(containerCriticalProcesses) < 1 {
+        SetStat("Service", expectedRunningContainer, "no critical process found", STATUS_NOT_OK)
+    }
+
+    for container, criticalProcesses := range containerCriticalProcesses {
+        status := common.CheckProcessesStatus(container, criticalProcesses)
+        SetStat("Service", container, "no critical process found", STATUS_NOT_OK)
+    }
+
+    for badContainer, _ := range badProcesses {
+        SetStat("Service", container, "no critical process found", STATUS_NOT_OK)
+    }
+	
+    SetStat("Service", "system", "", STATUS_OK)
 }
 
 var EXPECT_STATUS_DICT = map[string]string{

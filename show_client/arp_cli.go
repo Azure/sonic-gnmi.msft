@@ -1,32 +1,32 @@
 package show_client
 
 import (
-        "encoding/json"
-        "regexp"
-        "sort"
+	"encoding/json"
+	"regexp"
+	"sort"
 	"strconv"
-        "strings"
+	"strings"
 
-        "github.com/sonic-net/sonic-gnmi/show_client/common"
-        sdc "github.com/sonic-net/sonic-gnmi/sonic_data_client"
+	"github.com/sonic-net/sonic-gnmi/show_client/common"
+	sdc "github.com/sonic-net/sonic-gnmi/sonic_data_client"
 )
 
 type ARPEntry struct {
-        Address    string `json:"address"`
-        MacAddress string `json:"mac_address"`
-        Iface      string `json:"iface"`
-        Vlan       string `json:"vlan"`
+	Address    string `json:"address"`
+	MacAddress string `json:"mac_address"`
+	Iface      string `json:"iface"`
+	Vlan       string `json:"vlan"`
 }
 
 type ARPResponse struct {
-        Entries         []ARPEntry `json:"entries"`
-        TotalEntryCount int        `json:"total_entries"`
+	Entries         []ARPEntry `json:"entries"`
+	TotalEntryCount int        `json:"total_entries"`
 }
 
 var (
-        CmdPrefix         = "/usr/sbin/arp -n"
-        IFaceFlag         = "-i"
-        OutputFieldsCount = 4
+	CmdPrefix         = "/usr/sbin/arp -n"
+	IFaceFlag         = "-i"
+	OutputFieldsCount = 4
 )
 
 func getARP(args sdc.CmdArgs, options sdc.OptionMap) ([]byte, error) {
@@ -62,7 +62,7 @@ func getARP(args sdc.CmdArgs, options sdc.OptionMap) ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
-	if strings.TrimSpace(rawOutput) == ""{
+	if strings.TrimSpace(rawOutput) == "" {
 		return []byte(`{"entries":[],"total_entries":0}`), nil
 	}
 	nbrdata := parseNbrData(rawOutput)
@@ -86,7 +86,6 @@ func getARP(args sdc.CmdArgs, options sdc.OptionMap) ([]byte, error) {
 	if response.Entries == nil {
 		response.Entries = []ARPEntry{}
 	}
-
 
 	return json.Marshal(response)
 }

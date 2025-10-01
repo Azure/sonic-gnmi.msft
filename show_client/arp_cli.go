@@ -2,6 +2,7 @@ package show_client
 
 import (
 	"encoding/json"
+	"fmt"
 	"regexp"
 	"sort"
 	"strconv"
@@ -24,9 +25,8 @@ type ARPResponse struct {
 }
 
 var (
-	CmdPrefix         = "/usr/sbin/arp -n"
-	IFaceFlag         = "-i"
-	OutputFieldsCount = 4
+	CmdPrefix = "/usr/sbin/arp -n"
+	IFaceFlag = "-i"
 )
 
 func getARP(args sdc.CmdArgs, options sdc.OptionMap) ([]byte, error) {
@@ -67,12 +67,12 @@ func getARP(args sdc.CmdArgs, options sdc.OptionMap) ([]byte, error) {
 	}
 	nbrdata := parseNbrData(rawOutput)
 
-	bridgeMacList, err := common.FetchFDBData()
+	fdbEntries, err := common.FetchFDBData()
 	if err != nil {
 		return nil, err
 	}
 
-	entries := mergeNbrWithFDB(nbrdata, bridgeMacList)
+	entries := mergeNbrWithFDB(nbrdata, fdbEntries)
 
 	sort.Slice(entries, func(i, j int) bool {
 		return entries[i].Address < entries[j].Address
@@ -92,37 +92,56 @@ func getARP(args sdc.CmdArgs, options sdc.OptionMap) ([]byte, error) {
 
 func parseNbrData(output string) [][]string {
 	var nbrdata [][]string
-	for _, line := range strings.Split(output, "\n")[1:] {
+	lines := strings.Split(output, "\n")
+	for _, line := range lines[1:] {
 		if !strings.Contains(line, "ether") {
 			continue
 		}
-		var ent []string
 		fields := strings.Fields(line)
-		for i := 0; i < len(fields); i += 2 {
-			ent = append(ent, fields[i])
+		if len(fields) < 5 {
+			continue
 		}
-		nbrdata = append(nbrdata, ent)
+		var address, mac, iface string
+		address = fields[0]
+		for i, f := range fields {
+			if f == "ether" && i+1 < len(fields) {
+				mac = fields[i+1]
+			}
+		}
+		iface = fields[len(fields)-1]
+		nbrdata = append(nbrdata, []string{address, mac, iface})
 	}
 	return nbrdata
 }
 
-func mergeNbrWithFDB(nbrdata [][]string, bridgeMacList []common.BridgeMacEntry) []ARPEntry {
+func mergeNbrWithFDB(nbrdata [][]string, fdbEntries []common.BridgeMacEntry) []ARPEntry {
 	var output []ARPEntry
+	vlanRe := regexp.MustCompile(`^Vlan(\d+)$`)
+
+	// Build lookup map: key = "vlanID|MAC", value = IfName
+	lookup := make(map[string]string)
+	for _, fdb := range fdbEntries {
+		key := fmt.Sprintf("%d|%s", fdb.VlanID, strings.ToUpper(fdb.Mac))
+		lookup[key] = fdb.IfName
+	}
 
 	for _, ent := range nbrdata {
-		vlan := "-"
-		if strings.Contains(ent[2], "Vlan") {
-			re := regexp.MustCompile(`\d+`)
-			vlanMatch := re.FindString(ent[2])
-			vlanid := vlanMatch
-			mac := strings.ToUpper(ent[1])
+		if len(ent) < 3 {
+			continue
+		}
 
-			port := "-"
-			for _, fdb := range bridgeMacList {
-				if strconv.Itoa(fdb.VlanID) == vlanid && strings.ToUpper(fdb.Mac) == mac {
-					port = fdb.IfName
-					break
-				}
+		vlan := "-"
+		if vlanRe.MatchString(ent[2]) {
+			match := vlanRe.FindStringSubmatch(ent[2])
+			if len(match) < 2 {
+				continue
+			}
+			vlanid := match[1]
+			mac := strings.ToUpper(ent[1])
+			key := fmt.Sprintf("%s|%s", vlanid, mac)
+			port, ok := lookup[key]
+			if !ok {
+				port = "-"
 			}
 
 			entry := ARPEntry{

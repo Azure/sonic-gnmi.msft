@@ -16,19 +16,18 @@ type BridgeMacEntry struct {
 	IfName string
 }
 
-const oidPrefixLen = len("oid:0x")
+const oidPrefix = "oid:0x"
 
 func FetchFDBData() ([]BridgeMacEntry, error) {
 	queries := [][]string{
 		{"ASIC_DB", "ASIC_STATE:SAI_OBJECT_TYPE_FDB_ENTRY:*"},
 	}
 
-	// "ASIC_STATE:SAI_OBJECT_TYPE_FDB_ENTRY:{\"bvid\":\"oid:0x2600000000063f\",\"mac\":\"B8:CE:F6:E5:50:05\",\"switch_id\":\"oid:0x21000000000000\"}"
-	brPortStr, err := GetMapFromQueries(queries)
+	fdbEntries, err := GetMapFromQueries(queries)
 	if err != nil {
 		return nil, err
 	}
-	log.V(6).Infof("FDB_ENTRY list: %v", brPortStr)
+	log.V(6).Infof("FDB_ENTRY list: %v", fdbEntries)
 
 	ifOidMap, err := getInterfaceOidMap()
 	if err != nil {
@@ -52,31 +51,28 @@ func FetchFDBData() ([]BridgeMacEntry, error) {
 
 	bridgeMacList := []BridgeMacEntry{}
 
-	// fdbKey is like SAI_OBJECT_TYPE_FDB_ENTRY:{"bvid":"oid:0x2600000000063f","mac":"B8:CE:F6:E5:50:05","switch_id":"oid:0x21000000000000"}
-	for fdbKey, entryData := range brPortStr {
-		// Split at first colon to separate top-level type from JSON
+	for fdbKey, entryData := range fdbEntries {
 		idx := strings.Index(fdbKey, ":")
 		if idx == -1 || idx+1 >= len(fdbKey) {
 			continue
 		}
-		fdbJSON := fdbKey[idx+1:] // everything after the first colon
+		fdbJSON := fdbKey[idx+1:]
 
 		fdb := map[string]string{}
 		if err := json.Unmarshal([]byte(fdbJSON), &fdb); err != nil {
 			continue
 		}
 
-		// Attributes map
 		ent, ok := entryData.(map[string]interface{})
 		if !ok {
 			continue
 		}
 
 		brPortOidRaw, ok := ent["SAI_FDB_ENTRY_ATTR_BRIDGE_PORT_ID"].(string)
-		if !ok || len(brPortOidRaw) <= oidPrefixLen {
+		if !ok || !strings.HasPrefix(brPortOidRaw, oidPrefix) {
 			continue
 		}
-		brPortOid := brPortOidRaw[oidPrefixLen:]
+		brPortOid := strings.TrimPrefix(brPortOidRaw, oidPrefix)
 
 		portID, ok := ifBrOidMap[brPortOid]
 		if !ok {
@@ -132,7 +128,6 @@ func getInterfaceOidMap() (map[string]string, error) {
 		return nil, err
 	}
 
-	// SONiC interface regex patterns
 	ethRe := regexp.MustCompile(`^Ethernet(\d+)$`)
 	lagRe := regexp.MustCompile(`^PortChannel(\d+)$`)
 	vlanRe := regexp.MustCompile(`^Vlan(\d+)$`)
@@ -140,7 +135,6 @@ func getInterfaceOidMap() (map[string]string, error) {
 
 	ifOidMap := make(map[string]string)
 
-	// helper closure to check valid names
 	isValidIfName := func(name string) bool {
 		return ethRe.MatchString(name) ||
 			lagRe.MatchString(name) ||
@@ -150,20 +144,20 @@ func getInterfaceOidMap() (map[string]string, error) {
 
 	for portName, oidVal := range portMap {
 		oidStr, ok := oidVal.(string)
-		if !ok || len(oidStr) <= oidPrefixLen {
+		if !ok || !strings.HasPrefix(oidStr, oidPrefix) {
 			continue
 		}
 		if isValidIfName(portName) {
-			ifOidMap[oidStr[oidPrefixLen:]] = portName
+			ifOidMap[strings.TrimPrefix(oidStr, oidPrefix)] = portName
 		}
 	}
 	for lagName, oidVal := range lagMap {
 		oidStr, ok := oidVal.(string)
-		if !ok || len(oidStr) <= oidPrefixLen {
+		if !ok || !strings.HasPrefix(oidStr, oidPrefix) {
 			continue
 		}
 		if isValidIfName(lagName) {
-			ifOidMap[oidStr[oidPrefixLen:]] = lagName
+			ifOidMap[strings.TrimPrefix(oidStr, oidPrefix)] = lagName
 		}
 	}
 
@@ -174,29 +168,23 @@ func getBridgePortMap() (map[string]string, error) {
 	queries := [][]string{
 		{"ASIC_DB", "ASIC_STATE:SAI_OBJECT_TYPE_BRIDGE_PORT:*"},
 	}
-	brPortStr, err := GetMapFromQueries(queries)
+	fdbEntries, err := GetMapFromQueries(queries)
 	if err != nil {
 		return nil, err
 	}
-	log.V(6).Infof("SAI_OBJECT_TYPE_BRIDGE_PORT data from query: %v", brPortStr)
+	log.V(6).Infof("SAI_OBJECT_TYPE_BRIDGE_PORT data from query: %v", fdbEntries)
 
 	ifBrOidMap := make(map[string]string)
 
-	// key SAI_OBJECT_TYPE_BRIDGE_PORT:oid:0x2600000000063f
-	for key, val := range brPortStr {
+	for key, val := range fdbEntries {
 		parts := strings.SplitN(key, ":", 2)
-		if len(parts) < 2 {
+		if len(parts) < 2 || !strings.HasPrefix(parts[1], oidPrefix) {
 			continue
 		}
-		if len(parts[1]) < oidPrefixLen {
-			// not long enough to contain "oid:0x...", skip
-			continue
-		}
-		bridgePortOid := parts[1][oidPrefixLen:] // strip "oid:0x"
+		bridgePortOid := strings.TrimPrefix(parts[1], oidPrefix)
 
 		attrs, ok := val.(map[string]string)
 		if !ok {
-			// sometimes it might be map[string]interface{}, so try that
 			if m, ok2 := val.(map[string]interface{}); ok2 {
 				attrs = make(map[string]string)
 				for k, v := range m {
@@ -207,13 +195,12 @@ func getBridgePortMap() (map[string]string, error) {
 				continue
 			}
 		}
-		// attrs is map[string]string
+
 		portIdRaw, ok := attrs["SAI_BRIDGE_PORT_ATTR_PORT_ID"]
-		if !ok {
+		if !ok || !strings.HasPrefix(portIdRaw, oidPrefix) {
 			continue
 		}
-		portId := portIdRaw[oidPrefixLen:] // strip "oid:0x"
-		// Map bridge port OID to port ID
+		portId := strings.TrimPrefix(portIdRaw, oidPrefix)
 		ifBrOidMap[bridgePortOid] = portId
 	}
 	return ifBrOidMap, nil
@@ -237,7 +224,7 @@ func buildBvidToVlanMap() (map[string]string, error) {
 			continue
 		}
 
-		bvid := strings.TrimPrefix(key, prefix) // "oid:..."
+		bvid := strings.TrimPrefix(key, prefix)
 
 		ent, ok := val.(map[string]interface{})
 		if !ok {

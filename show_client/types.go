@@ -71,7 +71,7 @@ type NeighborCapabilities struct {
 	SoftwareVersion                 map[string]string   `json:"softwareVersion"`
 	GracefulRestart                 string              `json:"gracefulRestart"`
 	GracefulRestartRemoteTimerMsecs int                 `json:"gracefulRestartRemoteTimerMsecs"`
-	AddressFamiliesByPeer           string              `json:"addressFamiliesByPeer"`
+	AddressFamiliesByPeer           json.RawMessage     `json:"addressFamiliesByPeer"`
 }
 
 type AddPathCapabilities struct {

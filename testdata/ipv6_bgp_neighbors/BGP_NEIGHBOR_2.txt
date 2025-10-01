@@ -1,0 +1,42 @@
+{
+  "fc00::42": {
+    "admin_status": "up",
+    "asn": "64001",
+    "holdtime": "10",
+    "keepalive": "3",
+    "local_addr": "fc00::41",
+    "name": "ARISTA01T0",
+    "nhopself": "0",
+    "rrclient": "0"
+  },
+  "fc00::46": {
+    "admin_status": "up",
+    "asn": "64002",
+    "holdtime": "10",
+    "keepalive": "3",
+    "local_addr": "fc00::45",
+    "name": "ARISTA02T0",
+    "nhopself": "0",
+    "rrclient": "0"
+  },
+  "fc00::2": {
+    "admin_status": "up",
+    "asn": "65200",
+    "holdtime": "10",
+    "keepalive": "3",
+    "local_addr": "fc00::1",
+    "name": "ARISTA01T2",
+    "nhopself": "0",
+    "rrclient": "0"
+  },
+  "fc00::6": {
+    "admin_status": "up",
+    "asn": "65200",
+    "holdtime": "10",
+    "keepalive": "3",
+    "local_addr": "fc00::5",
+    "name": "ARISTA03T2",
+    "nhopself": "0",
+    "rrclient": "0"
+  }
+}

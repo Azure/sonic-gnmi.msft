@@ -1,5 +1,9 @@
 package show_client
 
+import (
+	"encoding/json"
+)
+
 // show ipv6 bgp neighbors output
 type IPv6BGPPeer struct {
 	RemoteAs                                 int64  `json:"remoteAs"`

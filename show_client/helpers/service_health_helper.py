@@ -54,16 +54,6 @@ func ServiceHealthCheck(configs map[string]interface, stats map[string]interface
 	checkServices(config, stats)
 }
 
-func SetStat(stats map[string]interface, objectType string, objectName string, message string, status string) {
-    value, ok := stats[objectName]; !ok {
-        stats[objectName] = make(map[string] interface)
-    }
-
-    stats[objectName]["type"] = objectType
-    stats[objectName]["message"] = messaage
-    stats[objectName]["status"] = status
-}
-
 func ignoreService(configs map[string]interface, serviceName string) {
     value, ok := configs["services_to_ignore"]; !ok {
         return false
@@ -132,9 +122,6 @@ func checkByMonit(config map[string]interface, stats map[string]interface) {
 			SetStat(serviceType, serviceName, "", STATUS)
 		}
 	}
-}
-
-func CheckProcessesStatus(containerName string, criticalProcesses map[string]interface, config map[string]interface, containerFeature map[string]interface, stats map[string]interface) {
 }
 
 func checkServices(config map[string]interface, stats map[string]interface) {

@@ -101,55 +101,6 @@ func IsDisaggregatedChassis() bool {
     return IsExpectedValue(val, "1")
 }
 
-func GetExpectedRunningContainers(featureTable map[string]interface) (map[string]struct{}, map[string]string) {
-	expectedRunningContainers := make(map[string]struct{})
-	containerFeatureDict := make(map[string]string)
-
-	runAllInstanceList := map[string]struct{}{
-		"database": {},
-		"bgp":      {},
-	}
-
-	containerList := []string{}
-	for containerName := range featureTable {
-		if containerName == "frr_bmp" {
-			continue
-		}
-		// slim image does not have telemetry container and corresponding docker image
-		if containerName == "telemetry" {
-			if !common.CheckDockerImageExist("docker-sonic-telemetry") {
-				if !common.CheckDockerImageExist("docker-sonic-gnmi") {
-					log.Errorf("Ignoring telemetry container check on image which has no corresponding docker image")
-				} else {
-					containerList = append(containerList, "gnmi")
-				}
-				continue
-			}
-		}
-		containerList = append(containerList, containerName)
-	}
-
-	for _, containerName := range containerList {
-		featureEntry := featureTable[containerName].(map[string]interface)
-		state := featureEntry["state"].(string)
-		if state != "disabled" && state != "always_disabled" {
-			if common.IsMultiAsic() {
-                log.Errorf("Currently multi ASIC not supported.")
-			} else {
-				expectedRunningContainers[containerName] = struct{}{}
-				containerFeatureDict[containerName] = containerName
-			}
-		}
-	}
-
-	if IsSupervisor() || IsDisaggregatedChassis() {
-		expectedRunningContainers["database-chassis"] = struct{}{}
-		containerFeatureDict["database-chassis"] = "database"
-	}
-
-	return expectedRunningContainers, containerFeatureDict
-}
-
 func GetChassisInfo() (map[string]string, error) {
 	chassisDict := make(map[string]string)
 	queries := [][]string{
@@ -199,10 +150,6 @@ func GetDockerInfo() string {
 	return cmdOutput
 }
 
-func CheckDockerImageExist(imageName string) bool {
-    allImagesData := GetDockerInfo()
-    return strings.Contains(allImagesData, imageName)
-}
 
 func GetPlatformInfo(versionInfo map[string]interface{}) (map[string]interface{}, error) {
 	hwInfoOnce.Do(func() {
@@ -355,72 +302,4 @@ func GetAsicPresenceList() []int {
 		}
 	}
 	return asicsList
-}
-
-func GetDockerRunningContainers() map[string]struct{} {
-	cmdOutput, err := GetDataFromHostCommand(`bash -o pipefail -c 'docker ps --format "{{.Names}}",`)
-
-	if err != nil {
-		return []string{} 
-	}
-
-	runningContainerSlice := strings.Splice(cmdOutput,",")
-    runningContainer := map[string]struct{}
-
-    for _, containerName := range runningContainerSlice {
-        runningContainer[containerName] = struct{}{}
-    }
-    return runningContainer
-}
-
-func GetContainerFolder(containerName string) string {
-    cmd = DockerInspectCmd + containerName + DockerInspectDirCmd
-    output, err := GetDataFromHostCommand(cmd)
-
-    if err != nil {
-        return ""
-    }
-    return strings.TrimSpace(output)
-}
-
-func GetContainerCriticalProcesses(runningContainer []string) (map[string]interface, map[string]struct{}) {
-    criticalProcesses := make(map[string]interface)
-    badProcesses := make(map[string]struct{}
-
-    for _, container := range runningContainer {
-        containerFolder = GetContainerFolder(container)
-        if containerFolder != "" {
-            criticalProcessesFile := filepath.Join(containerFolder, "etc/supervisor/critical_processes")
-            if !FileExists(criticalProcessesFile) {
-                criticalProcesses[container] = []string{}
-                continue
-            }
-
-            data, err := GetDataFromFile(criticalProcessesFile)
-            if err != nil {
-                criticalProcesses[container] = []string{}
-                continue
-            }
-
-            processList := []string{}
-
-            re := regexp.MustCompile(`^\s*(?:(.+):(.*))*\s*$`)
-            content := string(data)
-	        lines := strings.Split(content, "\n")
-            for _, line := range lines {
-                match := re.FindStringSubmatch(line)
-                if len(match) > 1 && match[1] != "" {
-			        identifierKey := strings.TrimSpace(match[2])
-			        identifierValue := strings.TrimSpace(match[3]) //
-
-			        if identifierKey == "program" && identifierValue != "" {
-                        processList.append(processList, identifierValue)
-                    }
-                } else {
-                   badProcesses[container] = struct{}{} 
-                }
-            }
-        }
-    }
-    return criticalProcesses, badProcesses
 }

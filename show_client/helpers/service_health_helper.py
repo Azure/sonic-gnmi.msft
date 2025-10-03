@@ -48,36 +48,17 @@ var EXPECT_STATUS_DICT = map[string]string{
 	"Program":    "Status ok",
 }
 
-func ServiceHealthCheck(configs map[string]interface, stats map[string]interface) map[string]interface {
+func ServiceHealthCheck(configs map[string]interface{}, stats map[string]interface{}) map[string]interface{} {
 	reset()
 	checkByMonit(config, stats)
 	checkServices(config, stats)
-}
-
-func ignoreService(configs map[string]interface, serviceName string) {
-    value, ok := configs["services_to_ignore"]; !ok {
-        return false
-    }
-
-    ignoredServices, isSlice := val.([]string)
-    if !isSlice {
-        return false
-    }
-
-    for _, service := range ignoredServices {
-		if service == serviceName {
-			return true
-		}
-	}
-
-    return false
 }
 
 func reset() {
     //Cleanup if needed.	
 }
 
-func checkByMonit(config map[string]interface, stats map[string]interface) {
+func checkByMonit(config map[string]interface{}, stats map[string]interface{}) {
 	output, err := common.GetDataFromHostCommand(CHECK_MONIT_SERVICE_CMD)
 
     if err != nil {
@@ -86,7 +67,7 @@ func checkByMonit(config map[string]interface, stats map[string]interface) {
     }
 
 	if strings.TrimSpace(output) != "active" {
-		SetStat("Service", "monit", "monit service is not running", STATUS_NOT_OK)
+		common.SetStat(stats, "Service", "monit", "monit service is not running", STATUS_NOT_OK)
 		return
 	}
 	output, err = common.GetDataFromHostCommand(CHECK_CMD)
@@ -96,18 +77,18 @@ func checkByMonit(config map[string]interface, stats map[string]interface) {
     }
 	lines := strings.Split(output, "\n")
 	if len(lines) < MIN_CHECK_CMD_LINES {
-		SetStat("Service", "monit", "monit service is not ready", STATUS_NOT_OK)
+		common.SetStat(stats, "Service", "monit", "monit service is not ready", STATUS_NOT_OK)
 		return
 	}
 	statusBegin := strings.Index(lines[1], "Status")
 	typeBegin := strings.Index(lines[1], "Type")
 	if statusBegin < 0 || typeBegin < 0 {
-		SetStat("Service", "monit", "output of monit summary -B is invalid or incompatible", STATUS_NOT_OK)
+		common.SetStat(stats, "Service", "monit", "output of monit summary -B is invalid or incompatible", STATUS_NOT_OK)
 		return
 	}
 	for _, line := range lines[2:] {
 		serviceName := strings.TrimSpace(line[:statusBegin])
-		if  ignoreService(config, serviceName) {
+		if  common.IgnoreService(config, serviceName) {
 			continue
 		}
 		status := strings.TrimSpace(line[statusBegin:typeBegin])
@@ -117,16 +98,16 @@ func checkByMonit(config map[string]interface, stats map[string]interface) {
 			continue
 		}
 		if expectStatus != status {
-			SetStat(serviceType, serviceName, serviceName+" is not "+expectStatus, STATUS_NOT_OK)
+			common.SetStat(serviceType, serviceName, serviceName+" is not "+expectStatus, STATUS_NOT_OK)
 		} else {
-			SetStat(serviceType, serviceName, "", STATUS)
+			common.SetStat(serviceType, serviceName, "", STATUS)
 		}
 	}
 }
 
-func checkServices(config map[string]interface, stats map[string]interface) {
+func checkServices(config map[string]interface{}, stats map[string]interface{}) {
 
-    queries := [][]string{{"CONFIG_DB", "PORT"}} 
+    queries := [][]string{{"CONFIG_DB", "FEATURE"}} 
     featureData, err := common.GetMapFromQueries(queries)
 	if err != nil {
 		return 
@@ -138,22 +119,20 @@ func checkServices(config map[string]interface, stats map[string]interface) {
 
     for expectedRunningContainer := range expectedRunningContainers {
         if _, exists := currentRunningContainers[expectedRunningContainer]; !exists {
-            SetStat("Service", expectedRunningContainer, "Container " + expectedRunningContainer + " is not running", STATUS_NOT_OK)
+            common.SetStat(stats, "Service", expectedRunningContainer, "Container " + expectedRunningContainer + " is not running", STATUS_NOT_OK)
         }
     }
 
     if len(containerCriticalProcesses) < 1 {
-        SetStat("Service", expectedRunningContainer, "no critical process found", STATUS_NOT_OK)
+        common.SetStat(stats, "Service", expectedRunningContainer, "no critical process found", STATUS_NOT_OK)
     }
 
     for container, criticalProcesses := range containerCriticalProcesses {
-        status := common.CheckProcessesStatus(container, criticalProcesses, config, containerFeature)
-        SetStat("Service", container, "no critical process found", STATUS_NOT_OK)
+        status := common.CheckProcessesStatus(container, criticalProcesses, config, containerFeature, featureData, stats)
+        common.SetStat(stats, "Service", container, "no critical process found", STATUS_NOT_OK)
     }
 
     for badContainer, _ := range badProcesses {
-        SetStat("Service", badContainer, "Syntax of critical_processes file is incorrect", STATUS_NOT_OK)
+        common.SetStat(stats, "Service", badContainer, "Syntax of critical_processes file is incorrect", STATUS_NOT_OK)
     }
-	
-    SetStat("Service", "system", "", STATUS_OK)
 }

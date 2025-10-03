@@ -147,5 +147,80 @@ func SetStat(stats map[string]interface{}, objectType string, objectName string,
 	stats[objectName]["status"] = status
 }
 
-func CheckProcessesStatus(containerName string, criticalProcesses map[string]interface{}, config map[string]interface{}, containerFeature map[string]interface{}, stats map[string]interface{}) {
+func parseSupervisorctlStatus(processStatus []string) map[string]string {
+    data := make(map[string]string)
+    for _, line := range processStatus {
+        line = strings.TrimSpace(line)
+        if line == "" {
+            continue
+        }
+        items := strings.Fields(line)
+        if len(items) < 2 {
+            continue
+        }
+        data[strings.TrimSpace(items[0])] = strings.TrimSpace(items[1])
+    }
+    return data
+}
+
+func IgnoreService(configs map[string]interface{}, serviceName string) {
+    value, ok := configs["services_to_ignore"]; !ok {
+        return false
+    }
+
+    ignoredServices, isSlice := val.([]string)
+    if !isSlice {
+        return false
+    }
+
+    for _, service := range ignoredServices {
+		if service == serviceName {
+			return true
+		}
+	}
+
+    return false
+}
+
+func CheckProcessesStatus(containerName string, criticalProcesses map[string]interface{}, config map[string]interface{}, containerFeature map[string]interface{}, features map[string]interface{}, stats map[string]interface{}) {
+    featureName := containerFeature[containerName].(string)
+    if _, ok := features[featureName]; ok {
+        if state, ok := featureTable[featureName]["state"]; ok && state != "disabled" && state != "always_disabled" {
+            cmd := 'docker exec ' + containerName + ' bash -c "supervisorctl status"'
+            output, err := GetDataFromHostCommand(cmd)
+            if err != nil {
+                log.Errorf("Command execution failed")
+                return
+            }
+            if output := "" {
+                if criticalProcessesStr, ok := criticalProcesses.(string); ok {
+                    criticalProcessesSlice := strings.Split(criticalProcessesStr, ",")
+                    for _, processName := range criticalProcessesSlice {
+                        SetStat(stats, "Process", containerName + ":" + processName, "Process " + processName +" in container" + containerName + "is not running.", "Not OK")
+                    }
+                }
+                return
+            }
+
+            allStatus := strings.Split(strings.TrimSpace(processStatus), "\n")
+            allProcessStatus := parseSupervisorctlStatus(allStatus)
+
+            if criticalProcessesStr, ok := criticalProcesses.(string); ok {
+                criticalProcessesSlice := strings.Split(criticalProcessesStr, ",")
+                for _, processName := range criticalProcessesSlice {
+                    if IgnoreService(config, processName) {
+                        continue
+                    }
+
+                    if status, ok := allProcessStatus[processName]; ok {
+                        if status != "RUNNING" {
+                            SetStat(stats, "Process", containerName + ":" + processName, "Process " + processName +" in container" + containerName + "is not running.", "Not OK")
+                        } else {
+                            SetStat(stats, "Process", containerName + ":" + processName, "", "OK")
+                        }
+                    }
+                }
+            }
+        }
+    }
 }

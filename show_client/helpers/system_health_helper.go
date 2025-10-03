@@ -17,8 +17,8 @@ func hardwareHealthCheck(configs map[string]interface) map[string]interface {
 }
 
 func ServiceAndHardwareHealthCheck(configs map[string]interface) map[string]interface {
-    servicStats := serviceHealthCheck(configs)
-    hardwareStats := hardwareHealthCheck(configs)
+    servicStats := ServiceHealthCheck(configs)
+    hardwareStats := HardwareHealthCheck(configs)
     
     stats := common.MergeMaps(serviceStats, hardwareStats)
     return stats

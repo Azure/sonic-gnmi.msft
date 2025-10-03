@@ -41,7 +41,12 @@ const (
     STATUS_OK = "OK"
 )
 
-
+var EXPECT_STATUS_DICT = map[string]string{
+	"System":     "Running",
+	"Process":    "Running",
+	"Filesystem": "Accessible",
+	"Program":    "Status ok",
+}
 
 func ServiceHealthCheck(configs map[string]interface, stats map[string]interface) map[string]interface {
 	reset()
@@ -129,6 +134,9 @@ func checkByMonit(config map[string]interface, stats map[string]interface) {
 	}
 }
 
+func CheckProcessesStatus(containerName string, criticalProcesses map[string]interface, config map[string]interface, containerFeature map[string]interface, stats map[string]interface) {
+}
+
 func checkServices(config map[string]interface, stats map[string]interface) {
 
     queries := [][]string{{"CONFIG_DB", "PORT"}} 
@@ -152,25 +160,13 @@ func checkServices(config map[string]interface, stats map[string]interface) {
     }
 
     for container, criticalProcesses := range containerCriticalProcesses {
-        status := common.CheckProcessesStatus(container, criticalProcesses)
+        status := common.CheckProcessesStatus(container, criticalProcesses, config, containerFeature)
         SetStat("Service", container, "no critical process found", STATUS_NOT_OK)
     }
 
     for badContainer, _ := range badProcesses {
-        SetStat("Service", container, "no critical process found", STATUS_NOT_OK)
+        SetStat("Service", badContainer, "Syntax of critical_processes file is incorrect", STATUS_NOT_OK)
     }
 	
     SetStat("Service", "system", "", STATUS_OK)
-}
-
-var EXPECT_STATUS_DICT = map[string]string{
-	"System":     "Running",
-	"Process":    "Running",
-	"Filesystem": "Accessible",
-	"Program":    "Status ok",
-}
-
-func hasKey(m map[string]struct{}, key string) bool {
-	_, ok := m[key]
-	return ok
 }

@@ -9,15 +9,32 @@ import (
 const PreviousRebootCauseFilePath = "/host/reboot-cause/previous-reboot-cause.json"
 
 func getPreviousRebootCause(args sdc.CmdArgs, options sdc.OptionMap) ([]byte, error) {
+	// Redact by default unless explicitly set to false
+	redact := true
+	if redactOption, ok := options["redact"].Bool(); ok {
+		redact = redactOption
+	}
 	data, err := common.GetDataFromFile(PreviousRebootCauseFilePath)
 	if err != nil {
 		log.Errorf("Unable to get data from file %v, got err: %v", PreviousRebootCauseFilePath, err)
 		return nil, err
 	}
+	if redact {
+		data, err = common.RedactSensitiveData(data)
+		if err != nil {
+			log.Errorf("Failed to redact data: %v", err)
+			return nil, err
+		}
+	}
 	return data, nil
 }
 
 func getRebootCauseHistory(args sdc.CmdArgs, options sdc.OptionMap) ([]byte, error) {
+	// Redact by default unless explicitly set to false
+	redact := true
+	if redactOption, ok := options["redact"].Bool(); ok {
+		redact = redactOption
+	}
 	queries := [][]string{
 		{"STATE_DB", "REBOOT_CAUSE"},
 	}
@@ -25,6 +42,13 @@ func getRebootCauseHistory(args sdc.CmdArgs, options sdc.OptionMap) ([]byte, err
 	if err != nil {
 		log.Errorf("Unable to get data from queries %v, got err: %v", queries, err)
 		return nil, err
+	}
+	if redact {
+		data, err = common.RedactSensitiveData(data)
+		if err != nil {
+			log.Errorf("Failed to redact data: %v", err)
+			return nil, err
+		}
 	}
 	return data, nil
 }

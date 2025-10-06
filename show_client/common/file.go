@@ -1,6 +1,7 @@
 package common
 
 import (
+	"encoding/json"
 	"fmt"
 	"os"
 	"strings"
@@ -62,4 +63,19 @@ func FileExists(path string) bool {
 		return false
 	}
 	return !info.IsDir()
+}
+
+func GetMapFromFile(filePath string) (map[string]interface{}, error) {
+	jsonBytes, err := GetDataFromFile(filePath)
+	if err != nil {
+		return nil, err
+	}
+
+	var result map[string]interface{}
+	err = json.Unmarshal(jsonBytes, &result)
+	if err != nil {
+		return nil, fmt.Errorf("failed to parse JSON from %s: %w", filePath, err)
+	}
+
+	return result, nil
 }

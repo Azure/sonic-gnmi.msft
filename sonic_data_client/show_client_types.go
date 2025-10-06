@@ -9,6 +9,7 @@ type ShowCmdOption struct {
 	description string     // will be used in help output
 	valueType   ValueType
 	enumValues  []string // valid only when valueType is EnumValue
+	hidden      bool     // true = exclude from help output
 }
 
 type OptionValue struct {
@@ -38,7 +39,24 @@ var (
 		showCmdOptionHelpDesc,
 		BoolValue,
 	)
+
+	showCmdOptionRedact = HiddenOption(
+		NewShowCmdOption(
+			"redact",
+			"",
+			BoolValue,
+		),
+	)
 )
+
+// registeredGlobalOptions defines options that are automatically available to all CLI commands.
+// These options are injected into every command's option map by constructOptions.
+// Command-specific options with the same name will override these global options.
+var registeredGlobalOptions = []ShowCmdOption{
+	showCmdOptionHelp,
+	showCmdOptionRedact,
+	// Add future global options here
+}
 
 const (
 	StringValue      ValueType = 0
@@ -99,5 +117,11 @@ func RequiredOption(option ShowCmdOption) ShowCmdOption {
 
 func UnimplementedOption(option ShowCmdOption) ShowCmdOption {
 	option.optType = Unimplemented
+	return option
+}
+
+func HiddenOption(option ShowCmdOption) ShowCmdOption {
+	option.hidden = true
+	option.description = "(hidden)"
 	return option
 }

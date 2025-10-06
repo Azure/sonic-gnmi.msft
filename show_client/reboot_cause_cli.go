@@ -38,28 +38,19 @@ func getRebootCauseHistory(args sdc.CmdArgs, options sdc.OptionMap) ([]byte, err
 		{"STATE_DB", "REBOOT_CAUSE"},
 	}
 
-	data, err := common.GetDataFromQueries(queries)
-	if err != nil {
-		log.Errorf("Unable to get data from queries %v, got err: %v", queries, err)
-		return nil, err
-	}
-
 	if redact {
-		var msi map[string]interface{}
-		err = json.Unmarshal(data, &msi)
+		msi, err := common.GetMapFromQueries(queries)
 		if err != nil {
-			log.Errorf("Unable to parse JSON, got err: %v", err)
+			log.Errorf("Unable to get data from queries %v, got err: %v", queries, err)
 			return nil, err
 		}
-
-		// Iterate through each timestamp entry and redact the nested map
+		// Redact user in each reboot cause entry
 		for key, value := range msi {
 			if nestedMap, ok := value.(map[string]interface{}); ok {
 				msi[key] = common.RedactSensitiveData(nestedMap, []string{"user"})
 			}
 		}
-
 		return json.Marshal(msi)
 	}
-	return data, nil
+	return common.GetDataFromQueries(queries)
 }

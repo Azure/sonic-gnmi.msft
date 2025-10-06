@@ -174,11 +174,9 @@ func constructDescription(usage string, subcommandDesc map[string]string, option
 	description["usage"] = make(map[string]string)
 
 	for _, option := range options {
-		// Skip hidden options from help output
 		if option.hidden {
 			continue
 		}
-
 		// Base description
 		desc := option.description
 
@@ -197,16 +195,11 @@ func constructDescription(usage string, subcommandDesc map[string]string, option
 
 func constructOptions(options []ShowCmdOption) map[string]ShowCmdOption {
 	pathOptions := make(map[string]ShowCmdOption)
-
-	// Step 1: Inject all registered global options
 	for _, globalOpt := range registeredGlobalOptions {
 		pathOptions[globalOpt.optName] = globalOpt
 	}
-
-	// Step 2: Add command-specific options (overwrites globals if names collide)
 	for _, option := range options {
 		pathOptions[option.optName] = option
 	}
-
 	return pathOptions
 }

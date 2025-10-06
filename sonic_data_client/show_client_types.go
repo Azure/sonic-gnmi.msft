@@ -9,7 +9,7 @@ type ShowCmdOption struct {
 	description string     // will be used in help output
 	valueType   ValueType
 	enumValues  []string // valid only when valueType is EnumValue
-	hidden      bool     // true = exclude from help output
+	hidden      bool     // when true, exclude from help output
 }
 
 type OptionValue struct {
@@ -49,13 +49,10 @@ var (
 	)
 )
 
-// registeredGlobalOptions defines options that are automatically available to all CLI commands.
-// These options are injected into every command's option map by constructOptions.
-// Command-specific options with the same name will override these global options.
+// registeredGlobalOptions defines options that are automatically available to all show commands
 var registeredGlobalOptions = []ShowCmdOption{
 	showCmdOptionHelp,
 	showCmdOptionRedact,
-	// Add future global options here
 }
 
 const (

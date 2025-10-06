@@ -23,13 +23,7 @@ func getPreviousRebootCause(args sdc.CmdArgs, options sdc.OptionMap) ([]byte, er
 			return nil, err
 		}
 
-		redactedMSI, err := common.RedactSensitiveData(msi, []string{"user"})
-		if err != nil {
-			log.Errorf("Unable to redact data, got err: %v", err)
-			return nil, err
-		}
-
-		return json.Marshal(redactedMSI)
+		return json.Marshal(common.RedactSensitiveData(msi, []string{"user"}))
 	}
 	return common.GetDataFromFile(PreviousRebootCauseFilePath)
 }
@@ -61,12 +55,7 @@ func getRebootCauseHistory(args sdc.CmdArgs, options sdc.OptionMap) ([]byte, err
 		// Iterate through each timestamp entry and redact the nested map
 		for key, value := range msi {
 			if nestedMap, ok := value.(map[string]interface{}); ok {
-				redactedNested, err := common.RedactSensitiveData(nestedMap, []string{"user"})
-				if err != nil {
-					log.Errorf("Unable to redact nested data for key %v, got err: %v", key, err)
-					return nil, err
-				}
-				msi[key] = redactedNested
+				msi[key] = common.RedactSensitiveData(nestedMap, []string{"user"})
 			}
 		}
 

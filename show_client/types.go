@@ -1,5 +1,9 @@
 package show_client
 
+import (
+	"encoding/json"
+)
+
 // show ipv6 bgp neighbors output
 type IPv6BGPPeer struct {
 	RemoteAs                                 int64  `json:"remoteAs"`
@@ -71,7 +75,7 @@ type NeighborCapabilities struct {
 	SoftwareVersion                 map[string]string   `json:"softwareVersion"`
 	GracefulRestart                 string              `json:"gracefulRestart"`
 	GracefulRestartRemoteTimerMsecs int                 `json:"gracefulRestartRemoteTimerMsecs"`
-	AddressFamiliesByPeer           string              `json:"addressFamiliesByPeer"`
+	AddressFamiliesByPeer           json.RawMessage     `json:"addressFamiliesByPeer"`
 }
 
 type AddPathCapabilities struct {

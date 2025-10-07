@@ -168,15 +168,15 @@ func getBridgePortMap() (map[string]string, error) {
 	queries := [][]string{
 		{"ASIC_DB", "ASIC_STATE:SAI_OBJECT_TYPE_BRIDGE_PORT:*"},
 	}
-	fdbEntries, err := GetMapFromQueries(queries)
+	bridgePortEntries, err := GetMapFromQueries(queries)
 	if err != nil {
 		return nil, err
 	}
-	log.V(6).Infof("SAI_OBJECT_TYPE_BRIDGE_PORT data from query: %v", fdbEntries)
+	log.V(6).Infof("SAI_OBJECT_TYPE_BRIDGE_PORT data from query: %v", bridgePortEntries)
 
 	ifBrOidMap := make(map[string]string)
 
-	for key, val := range fdbEntries {
+	for key, val := range bridgePortEntries {
 		parts := strings.SplitN(key, ":", 2)
 		if len(parts) < 2 || !strings.HasPrefix(parts[1], oidPrefix) {
 			continue

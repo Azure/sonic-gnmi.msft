@@ -92,6 +92,9 @@ func getARP(args sdc.CmdArgs, options sdc.OptionMap) ([]byte, error) {
 func parseNbrData(output string) [][]string {
 	var nbrdata [][]string
 	lines := strings.Split(output, "\n")
+	if len(lines) <= 1 {
+		return nbrdata
+	}
 	for _, line := range lines[1:] {
 		if !strings.Contains(line, "ether") {
 			continue

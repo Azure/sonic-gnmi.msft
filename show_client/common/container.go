@@ -164,23 +164,33 @@ func parseSupervisorctlStatus(processStatus []string) map[string]string {
 }
 
 func IgnoreService(configs map[string]interface{}, serviceName string) {
-    value, ok := configs["services_to_ignore"]; !ok {
+    return IgnoreEntry(config, "services_to_ignore", serviceName)
+}
+
+func IgnoreDevice(configs map[string]interface{}, deviceName string) {
+    return IgnoreEntry(config, "devices_to_ignore", deviceName)
+}
+
+func IgnoreEntry(configs map[string]interface{}, key string, name string) {
+    value, ok := configs[key]; !ok {
         return false
     }
 
-    ignoredServices, isSlice := val.([]string)
+    ignoredEntries, isSlice := val.([]string)
     if !isSlice {
         return false
     }
 
-    for _, service := range ignoredServices {
-		if service == serviceName {
+    for _, entry := range ignoredEntries {
+		if entry == name {
 			return true
 		}
 	}
 
     return false
 }
+
+
 
 func CheckProcessesStatus(containerName string, criticalProcesses map[string]interface{}, config map[string]interface{}, containerFeature map[string]interface{}, features map[string]interface{}, stats map[string]interface{}) {
     featureName := containerFeature[containerName].(string)

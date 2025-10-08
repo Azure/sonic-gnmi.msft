@@ -67,20 +67,32 @@ func GetCategory() string {
 }
 
 func HardwareHealthCheck(config map[string]interface{}) map[string]interface{} {
+    var stats map[string]interface{} := make(map[string]interface{})
 	Reset()
-	CheckAsicStatus(config)
-	CheckFanStatus(config)
-	CheckPsuStatus(config)
+	CheckAsicStatus(config, stats)
+	CheckFanStatus(config, stats)
+	CheckPsuStatus(config, stats)
 }
 
-func CheckAsicStatus(config map[string]interface{}) {
-	const asicTempKey = "TEMPERATURE_INFO|ASIC"
-	if config != nil && config.IgnoreDevices["asic"] {
+func CheckAsicStatus(config map[string]interface{}, stats map[string]interface{}) {
+	if common.IgnoreDevices(config, "asic") {
 		return
 	}
-	asicKeys := hc.db.Keys("STATE_DB", asicTempKey+"*")
-	for _, asicKey := range asicKeys {
+
+	queries := [][]string{
+		{"STATE_DB", "TEMPERATURE_INFO", "ASIC*"},
+	}
+
+    tempInfoData := := common.GetMapFromQueries(queries)	
+	for asicKey, _ := range asicKeys {
+	    queries = [][]string{
+		    {"STATE_DB", asicKey, "temperature"},
+	    }
 		temperatureStr := hc.db.Get("STATE_DB", asicKey, "temperature")
+	    
+        queries = [][]string{
+		    {"STATE_DB", asicKey, "high_threshold"},
+	    }
 		thresholdStr := hc.db.Get("STATE_DB", asicKey, "high_threshold")
 		parts := strings.Split(asicKey, "|")
 		asicName := ""
@@ -111,7 +123,7 @@ func CheckAsicStatus(config map[string]interface{}) {
 	}
 }
 
-func CheckFanStatus(config map[string]interface{}) {
+func CheckFanStatus(config map[string]interface{}, stats map[string]interface{}) {
 	const fanTable = "FAN_INFO"
 	if config != nil && config.IgnoreDevices["fan"] {
 		return
@@ -189,7 +201,7 @@ func CheckFanStatus(config map[string]interface{}) {
 	}
 }
 
-func CheckPsuStatus(config map[string]interface{}) {
+func CheckPsuStatus(config map[string]interface{}, stats map[string]interface{}) {
 	const psuTable = "PSU_INFO"
 	if config != nil && config.IgnoreDevices["psu"] {
 		return

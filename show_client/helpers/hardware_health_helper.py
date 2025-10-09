@@ -83,56 +83,68 @@ func CheckAsicStatus(config map[string]interface{}, stats map[string]interface{}
 		{"STATE_DB", "TEMPERATURE_INFO", "ASIC*"},
 	}
 
-    tempInfoData := := common.GetMapFromQueries(queries)	
-	for asicKey, _ := range asicKeys {
-	    queries = [][]string{
-		    {"STATE_DB", asicKey, "temperature"},
-	    }
-		temperatureStr := hc.db.Get("STATE_DB", asicKey, "temperature")
-	    
-        queries = [][]string{
-		    {"STATE_DB", asicKey, "high_threshold"},
-	    }
-		thresholdStr := hc.db.Get("STATE_DB", asicKey, "high_threshold")
+    asicKeyFromTempData, err := common.GetMapFromQueries(queries)
+
+	for asicKey, _ := range asicKeyFromTempData {
 		parts := strings.Split(asicKey, "|")
 		asicName := ""
 		if len(parts) > 1 {
 			asicName = parts[1]
 		} else {
-			asicName = asicKey
+		    continue
 		}
-		if temperatureStr == "" {
-			hc.SetObjectNotOk("ASIC", asicName, fmt.Sprintf("Failed to get %s temperature", asicName))
-			continue
-		}
-		if thresholdStr == "" {
-			hc.SetObjectNotOk("ASIC", asicName, fmt.Sprintf("Failed to get %s temperature threshold", asicName))
-			continue
-		}
-		temperature, errT := strconv.ParseFloat(temperatureStr, 64)
-		threshold, errTh := strconv.ParseFloat(thresholdStr, 64)
-		if errT != nil || errTh != nil {
-			hc.SetObjectNotOk("ASIC", asicName, fmt.Sprintf("Invalid %s temperature data, temperature=%s, threshold=%s", asicName, temperatureStr, thresholdStr))
-			continue
-		}
-		if temperature > threshold {
-			hc.SetObjectNotOk("ASIC", asicName, fmt.Sprintf("%s temperature is too hot, temperature=%f, threshold=%f", asicName, temperature, threshold))
-		} else {
-			hc.SetObjectOk("ASIC", asicName)
-		}
+
+	    queries = [][]string{
+		    {"STATE_DB", asicKey, "temperature"},
+	    }
+        tempMetadata, err := common.GetMapFromQueries(queries)
+	    
+        queries = [][]string{
+		    {"STATE_DB", asicKey, "high_threshold"},
+	    }
+        threadholdMetadata, err := common.GetMapFromQueries(queries)	
+		
+        if temperatureStr, ok := tempMetadat["temperature"]; !ok {
+		    common.SetStat(stats, "ASIC", asicName, "Failed to get " + asicName + " temperature", STATUS_NOT_OK)
+        } else {
+            if thresholdStr, ok := threadholdMetadata["high_threshold"]; !ok {
+		        common.SetStat(stats, "ASIC", asicName, "Failed to get " + asicName + " temperature threshold", STATUS_NOT_OK)
+            } else {
+		        temperature, errT := strconv.ParseFloat(temperatureStr, 64)
+		        threshold, errTh := strconv.ParseFloat(thresholdStr, 64)
+		        if errT != nil || errTh != nil {
+			        common.SetStat(stats, "ASIC", asicName, fmt.Sprintf("Invalid %s temperature data, temperature=%s, threshold=%s", asicName, temperatureStr, thresholdStr), STATUS_NOT_OK)
+			        continue
+		        }
+		        if temperature > threshold {
+			        common.SetStat(stats, "ASIC", asicName, fmt.Sprintf("%s temperature is too hot, temperature=%f, threshold=%f", asicName, temperature, threshold), STATUS_NOT_OK)
+		        } else {
+			        common.SetStat(stats, "ASIC", asicName,"", STATUS_OK)
+		        }
+            }
+        }
 	}
 }
 
 func CheckFanStatus(config map[string]interface{}, stats map[string]interface{}) {
-	const fanTable = "FAN_INFO"
-	if config != nil && config.IgnoreDevices["fan"] {
+	if common.IgnoreDevices(config, "fan") {
 		return
 	}
-	keys := hc.db.Keys("STATE_DB", fanTable+"*")
-	if len(keys) == 0 {
-		hc.SetObjectNotOk("Fan", "Fan", "Failed to get fan information")
-		return
+	queries := [][]string{
+		{"STATE_DB", "FAN_INFO"},
 	}
+
+    fanInfoData, err := common.GetMapFromQueries(queries)
+    if err != nil {
+        return
+    }
+
+    if len(fanInfoData) == 0 {
+	    common.SetStat(stats, "Fan", "Fan", "Failed to get fan information", STATUS_NOT_OK)
+    }
+
+	for asicKey, _ := range asicKeyFromTempData {
+
 	sort.Strings(keys) // natsorted equivalent for typical keys
 	expectFanDirection := ""
 	expectFanName := ""

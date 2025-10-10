@@ -42,7 +42,7 @@ func TestGetShowFeatureConfig(t *testing.T) {
 	bgpFeatureExpected := `{"features":[{"name":"bgp","data":{"state":"enabled","auto_restart":"enabled","owner":"local","fallback":"false"}}]}`
 
 	featureConfigDbDataFilename := "../testdata/FEATURE_CONFIG_DB_DATA.txt"
-	featureConfigDbDataEmptyFilename := "../testdata/FEATURE_CONFIG_DB_DATA_EMPTY.txt"
+	featureConfigDbDataEmptyFilename := "../testdata/EMPTY_JSON.txt"
 
 	ResetDataSetsAndMappings(t)
 
@@ -62,9 +62,9 @@ func TestGetShowFeatureConfig(t *testing.T) {
 				elem: <name: "feature" >
 				elem: <name: "config" >
 			`,
-			wantRetCode: codes.OK,
-			wantRespVal: []byte(`{"features":[]}`),
-			valTest:     true,
+			wantRetCode: codes.NotFound,
+			wantRespVal: nil,
+			valTest:     false,
 			testInit: func() {
 				AddDataSet(t, ConfigDbNum, featureConfigDbDataEmptyFilename)
 			},
@@ -107,6 +107,8 @@ func TestGetShowFeatureConfig(t *testing.T) {
 				elem: <name: "non_existent_feature" >
 			`,
 			wantRetCode: codes.NotFound,
+			wantRespVal: nil,
+			valTest:     false,
 			testInit: func() {
 			},
 		},
@@ -141,7 +143,7 @@ func TestGetShowFeatureConfigErrorCases(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), QueryTimeout*time.Second)
 	defer cancel()
 
-	featureConfigDbDataNoFeatureFilename := "../testdata/FEATURE_CONFIG_DB_DATA_NO_FEATURE.txt"
+	featureConfigDbDataNoFeatureFilename := "../testdata/EMPTY_JSON.txt"
 
 	ResetDataSetsAndMappings(t)
 
@@ -150,6 +152,8 @@ func TestGetShowFeatureConfigErrorCases(t *testing.T) {
 		pathTarget  string
 		textPbPath  string
 		wantRetCode codes.Code
+		wantRespVal interface{}
+		valTest     bool
 		testInit    func()
 	}{
 		{
@@ -160,6 +164,8 @@ func TestGetShowFeatureConfigErrorCases(t *testing.T) {
 				elem: <name: "config" >
 			`,
 			wantRetCode: codes.NotFound,
+			wantRespVal: nil,
+			valTest:     false,
 			testInit: func() {
 				AddDataSet(t, ConfigDbNum, featureConfigDbDataNoFeatureFilename)
 			},
@@ -172,6 +178,8 @@ func TestGetShowFeatureConfigErrorCases(t *testing.T) {
 				elem: <name: "config" >
 			`,
 			wantRetCode: codes.NotFound,
+			wantRespVal: nil,
+			valTest:     false,
 			testInit: func() {
 				FlushDataSet(t, ConfigDbNum)
 			},

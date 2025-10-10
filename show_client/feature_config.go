@@ -40,22 +40,16 @@ func getFeatureConfig(args sdc.CmdArgs, options sdc.OptionMap) ([]byte, error) {
 		return nil, err
 	}
 
-	// getting feature name if given
+	// feature name if given
 	var featureName string
 	if len(args) > 0 {
 		featureName = args[0]
 	}
 
-	// getting FEATURE table data
-	configDB, ok := rawData["CONFIG_DB"].(map[string]interface{})
-	if !ok {
-		log.Errorf("Failed to fetch data from CONFIG_DB. Raw data: %+v", rawData)
-		return nil, fmt.Errorf("failed to retrieve feature configuration data")
-	}
+	featureTable := rawData
 
-	featureTable, ok := configDB["FEATURE"].(map[string]interface{})
-	if !ok {
-		log.Errorf("Failed to fetch data from FEATURE. CONFIG_DB data: %+v", configDB)
+	if len(featureTable) == 0 {
+		log.Errorf("Failed to fetch data from FEATURE table. Raw data: %+v", rawData)
 		return nil, fmt.Errorf("failed to retrieve feature configuration data")
 	}
 

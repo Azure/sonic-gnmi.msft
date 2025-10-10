@@ -835,4 +835,13 @@ func init() {
 		showCmdOptionSonicCliIfaceMode,
 		showCmdOptionIface,
 	)
+
+	sdc.RegisterCliPath(
+		[]string{"SHOW", "feature", "config"},
+		getFeatureConfig,
+		"SHOW/feature/config/{FEATURE_NAME}[OPTIONS]: Show feature configuration",
+		0,
+		1,
+		nil,
+	)
 }

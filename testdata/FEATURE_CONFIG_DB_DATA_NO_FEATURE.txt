@@ -1,9 +1,5 @@
 {
-  "CONFIG_DB": {
-    "PORT": {
-      "Ethernet0": {
-        "admin_status": "up"
-      }
-    }
+  "PORT|Ethernet0": {
+    "admin_status": "up"
   }
 }

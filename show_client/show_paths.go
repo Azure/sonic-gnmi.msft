@@ -835,4 +835,16 @@ func init() {
 		showCmdOptionSonicCliIfaceMode,
 		showCmdOptionIface,
 	)
+
+	// SHOW/buffer
+	sdc.RegisterCliPath(
+		[]string{"SHOW", "buffer", "configuration"},
+		getMmuConfig,
+		"SHOW/buffer/configuration[OPTIONS]: Show buffer configuration",
+		0,
+		0,
+		nil,
+		sdc.UnimplementedOption(showCmdOptionNamespace),
+		showCmdOptionVerbose,
+	)
 }

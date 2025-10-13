@@ -10,6 +10,7 @@ const (
 	RecircPort                 = "Rec"
 	DpuConnectPort             = "Dpc"
 	RJ45PortType               = "RJ45"
+	OptionKeyVerbose           = "verbose"
 )
 
 var SonicInterfacePrefixes = map[string]string{

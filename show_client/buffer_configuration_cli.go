@@ -5,7 +5,7 @@ import (
 	sdc "github.com/sonic-net/sonic-gnmi/sonic_data_client"
 )
 
-func getMmuConfig(args sdc.CmdArgs, options sdc.OptionMap) ([]byte, error) {
+func getBufferConfig(args sdc.CmdArgs, options sdc.OptionMap) ([]byte, error) {
 	verbose := false
 	if v, ok := options[common.OptionKeyVerbose].Bool(); ok {
 		verbose = v

@@ -15,7 +15,7 @@ import (
 	"google.golang.org/grpc/credentials"
 )
 
-func TestShowMmu(t *testing.T) {
+func TestGetBufferConfiguration(t *testing.T) {
 	s := createServer(t, ServerPort)
 	go runServer(t, s)
 	defer s.ForceStop()
@@ -23,9 +23,10 @@ func TestShowMmu(t *testing.T) {
 
 	tlsConfig := &tls.Config{InsecureSkipVerify: true}
 	opts := []grpc.DialOption{grpc.WithTransportCredentials(credentials.NewTLS(tlsConfig))}
+
 	conn, err := grpc.Dial(TargetAddr, opts...)
 	if err != nil {
-		t.Fatalf("Dial failed: %v", err)
+		t.Fatalf("Dialing to %q failed: %v", TargetAddr, err)
 	}
 	defer conn.Close()
 
@@ -42,16 +43,18 @@ func TestShowMmu(t *testing.T) {
 		testInit    func() *gomonkey.Patches
 	}{
 		{
-			desc:        "empty CONFIG_DB",
-			textPbPath:  `elem: <name: "mmu" >`,
+			desc: "empty CONFIG_DB",
+			textPbPath: `elem: <name: "buffer" >
+                                      elem: <name: "configuration" >`,
 			wantRetCode: codes.OK,
 			wantRespVal: []byte(`{}`),
 			valTest:     true,
 			testInit:    nil,
 		},
 		{
-			desc:        "partial config with only pools",
-			textPbPath:  `elem: <name: "mmu" >`,
+			desc: "partial config with only pools",
+			textPbPath: `elem: <name: "buffer" >
+                                      elem: <name: "configuration" >`,
 			wantRetCode: codes.OK,
 			wantRespVal: []byte(`{
                                 "pools": {
@@ -66,8 +69,9 @@ func TestShowMmu(t *testing.T) {
 			},
 		},
 		{
-			desc:        "happy path with full config",
-			textPbPath:  `elem: <name: "mmu" >`,
+			desc: "happy path with full config",
+			textPbPath: `elem: <name: "buffer" >
+				      elem: <name: "configuration" >`,
 			wantRetCode: codes.OK,
 			wantRespVal: []byte(`{
 				"losslessTrafficPatterns": {
@@ -92,8 +96,9 @@ func TestShowMmu(t *testing.T) {
 			},
 		},
 		{
-			desc:        "verbose totals enabled",
-			textPbPath:  `elem: <name: "mmu" key: { key: "verbose" value: "true" } >`,
+			desc: "verbose totals enabled",
+			textPbPath: `elem: <name: "buffer" >
+                                      elem: <name: "configuration" key: { key: "verbose" value: "true" } >`,
 			wantRetCode: codes.OK,
 			wantRespVal: []byte(`{
 				"losslessTrafficPatterns": {
@@ -119,8 +124,9 @@ func TestShowMmu(t *testing.T) {
 			},
 		},
 		{
-			desc:        "error reading lossless table",
-			textPbPath:  `elem: <name: "mmu" >`,
+			desc: "error reading lossless table",
+			textPbPath: `elem: <name: "buffer" >
+                                      elem: <name: "configuration" >`,
 			wantRetCode: codes.NotFound,
 			wantRespVal: nil,
 			valTest:     false,
@@ -136,8 +142,9 @@ func TestShowMmu(t *testing.T) {
 			},
 		},
 		{
-			desc:        "error reading pools table",
-			textPbPath:  `elem: <name: "mmu" >`,
+			desc: "error reading pools table",
+			textPbPath: `elem: <name: "buffer" >
+                                      elem: <name: "configuration" >`,
 			wantRetCode: codes.NotFound,
 			wantRespVal: nil,
 			valTest:     false,
@@ -153,8 +160,9 @@ func TestShowMmu(t *testing.T) {
 			},
 		},
 		{
-			desc:        "error reading profiles table",
-			textPbPath:  `elem: <name: "mmu" >`,
+			desc: "error reading profiles table",
+			textPbPath: `elem: <name: "buffer" >
+                                      elem: <name: "configuration" >`,
 			wantRetCode: codes.NotFound,
 			wantRespVal: nil,
 			valTest:     false,

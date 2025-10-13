@@ -15,7 +15,7 @@ import (
 	"google.golang.org/grpc/credentials"
 )
 
-func TestGetBufferConfiguration(t *testing.T) {
+func TestGetBufferConfig(t *testing.T) {
 	s := createServer(t, ServerPort)
 	go runServer(t, s)
 	defer s.ForceStop()

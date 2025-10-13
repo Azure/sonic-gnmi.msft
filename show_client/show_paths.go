@@ -839,7 +839,7 @@ func init() {
 	// SHOW/buffer
 	sdc.RegisterCliPath(
 		[]string{"SHOW", "buffer", "configuration"},
-		getMmuConfig,
+		getBufferConfig,
 		"SHOW/buffer/configuration[OPTIONS]: Show buffer configuration",
 		0,
 		0,

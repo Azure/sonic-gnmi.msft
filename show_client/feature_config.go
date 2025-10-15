@@ -10,12 +10,13 @@ import (
 	sdc "github.com/sonic-net/sonic-gnmi/sonic_data_client"
 )
 
-func buildFeatureEntry(name string, data map[string]interface{}) map[string]interface{} {
-	// Invert boolean value of no_fallback_to_local
+func buildFeatureConfigEntry(name string, data map[string]interface{}) map[string]interface{} {
+	// inverted fallback value
+	fallbackValue := ""
 	if val, exists := data["no_fallback_to_local"]; exists {
 		if strVal, ok := val.(string); ok {
 			if boolVal, err := strconv.ParseBool(strVal); err == nil {
-				data["no_fallback_to_local"] = strconv.FormatBool(!boolVal)
+				fallbackValue = strconv.FormatBool(!boolVal)
 			}
 		}
 	}
@@ -26,7 +27,7 @@ func buildFeatureEntry(name string, data map[string]interface{}) map[string]inte
 			"state":               common.GetValueOrDefault(data, "state", ""),
 			"auto_restart":        common.GetValueOrDefault(data, "auto_restart", ""),
 			"owner":           common.GetValueOrDefault(data, "set_owner", "local"),
-			"fallback": common.GetValueOrDefault(data, "no_fallback_to_local", ""),
+			"fallback": fallbackValue,
 		},
 	}
 }

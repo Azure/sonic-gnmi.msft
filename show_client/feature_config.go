@@ -10,7 +10,7 @@ import (
 	sdc "github.com/sonic-net/sonic-gnmi/sonic_data_client"
 )
 
-func buildFeatureConfigEntry(name string, data map[string]interface{}) map[string]interface{} {
+func buildFeatureEntry(name string, data map[string]interface{}) map[string]interface{} {
 	// inverted fallback value
 	fallbackValue := ""
 	if val, exists := data["no_fallback_to_local"]; exists {

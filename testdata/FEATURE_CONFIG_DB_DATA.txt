@@ -1,0 +1,44 @@
+{
+  "FEATURE|bgp": {
+    "state": "enabled",
+    "auto_restart": "enabled",
+    "set_owner": "local",
+    "no_fallback_to_local": "true"
+  },
+  "FEATURE|database": {
+    "state": "enabled", 
+    "auto_restart": "disabled",
+    "set_owner": "local",
+    "no_fallback_to_local": "true"
+  },
+  "FEATURE|lldp": {
+    "state": "enabled",
+    "auto_restart": "enabled", 
+    "set_owner": "local",
+    "no_fallback_to_local": "true"
+  },
+  "FEATURE|snmp": {
+    "state": "enabled",
+    "auto_restart": "enabled",
+    "set_owner": "local", 
+    "no_fallback_to_local": "true"
+  },
+  "FEATURE|swss": {
+    "state": "enabled",
+    "auto_restart": "enabled",
+    "set_owner": "local",
+    "no_fallback_to_local": "true"
+  },
+  "FEATURE|syncd": {
+    "state": "enabled",
+    "auto_restart": "enabled",
+    "set_owner": "local",
+    "no_fallback_to_local": "true"
+  },
+  "FEATURE|teamd": {
+    "state": "enabled",
+    "auto_restart": "enabled",
+    "set_owner": "local",
+    "no_fallback_to_local": "true"
+  }
+}

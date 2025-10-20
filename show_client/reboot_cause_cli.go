@@ -9,6 +9,8 @@ import (
 )
 
 const PreviousRebootCauseFilePath = "/host/reboot-cause/previous-reboot-cause.json"
+const RedactedUserString = "$USER$"
+const RedactField = "user"
 
 func getPreviousRebootCause(args sdc.CmdArgs, options sdc.OptionMap) ([]byte, error) {
 	redact := true
@@ -23,7 +25,7 @@ func getPreviousRebootCause(args sdc.CmdArgs, options sdc.OptionMap) ([]byte, er
 			return nil, err
 		}
 
-		return json.Marshal(common.RedactSensitiveData(msi, []string{"user"}))
+		return json.Marshal(common.RedactSensitiveData(msi, []string{RedactField}, RedactedUserString))
 	}
 	return common.GetDataFromFile(PreviousRebootCauseFilePath)
 }
@@ -47,7 +49,7 @@ func getRebootCauseHistory(args sdc.CmdArgs, options sdc.OptionMap) ([]byte, err
 		// Redact user in each reboot cause entry
 		for key, value := range msi {
 			if nestedMap, ok := value.(map[string]interface{}); ok {
-				msi[key] = common.RedactSensitiveData(nestedMap, []string{"user"})
+				msi[key] = common.RedactSensitiveData(nestedMap, []string{RedactField}, RedactedUserString)
 			}
 		}
 		return json.Marshal(msi)

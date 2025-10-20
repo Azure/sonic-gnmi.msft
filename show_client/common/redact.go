@@ -1,32 +1,20 @@
 package common
 
-const redactedString = "[REDACTED]"
-
-// Redaction is performed at the top level only and only supports when map values are primitive types only.
-func RedactSensitiveData(msi map[string]interface{}, keys []string) (map[string]interface{}) {
-	if msi == nil {
-		return nil
+func RedactSensitiveData(msi map[string]interface{}, keys []string, redactedString string) map[string]interface{} {
+	if msi == nil || len(keys) == 0 {
+		return msi
 	}
 
-	result := make(map[string]interface{}, len(msi))
-	for key, value := range msi {
-		result[key] = value
-	}
-
-	if len(keys) == 0 {
-		return result
-	}
-
-	keySet := make(map[string]bool)
+	keySet := make(map[string]bool, len(keys))
 	for _, k := range keys {
 		keySet[k] = true
 	}
 
-	for key := range result {
+	for key := range msi {
 		if keySet[key] {
-			result[key] = redactedString
+			msi[key] = redactedString
 		}
 	}
 
-	return result
+	return msi
 }

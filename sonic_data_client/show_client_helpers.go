@@ -174,6 +174,9 @@ func constructDescription(usage string, subcommandDesc map[string]string, option
 	description["usage"] = make(map[string]string)
 
 	for _, option := range options {
+		if option.hidden {
+			continue
+		}
 		// Base description
 		desc := option.description
 
@@ -192,7 +195,9 @@ func constructDescription(usage string, subcommandDesc map[string]string, option
 
 func constructOptions(options []ShowCmdOption) map[string]ShowCmdOption {
 	pathOptions := make(map[string]ShowCmdOption)
-	pathOptions[showCmdOptionHelp.optName] = showCmdOptionHelp
+	for _, globalOpt := range registeredGlobalOptions {
+		pathOptions[globalOpt.optName] = globalOpt
+	}
 	for _, option := range options {
 		pathOptions[option.optName] = option
 	}

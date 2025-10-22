@@ -9,6 +9,7 @@ type ShowCmdOption struct {
 	description string     // will be used in help output
 	valueType   ValueType
 	enumValues  []string // valid only when valueType is EnumValue
+	hidden      bool     // when true, exclude from help output
 }
 
 type OptionValue struct {
@@ -38,7 +39,21 @@ var (
 		showCmdOptionHelpDesc,
 		BoolValue,
 	)
+
+	showCmdOptionRedact = HiddenOption(
+		NewShowCmdOption(
+			"redact",
+			"",
+			BoolValue,
+		),
+	)
 )
+
+// registeredGlobalOptions defines options that are automatically available to all show commands
+var registeredGlobalOptions = []ShowCmdOption{
+	showCmdOptionHelp,
+	showCmdOptionRedact,
+}
 
 const (
 	StringValue      ValueType = 0
@@ -99,5 +114,11 @@ func RequiredOption(option ShowCmdOption) ShowCmdOption {
 
 func UnimplementedOption(option ShowCmdOption) ShowCmdOption {
 	option.optType = Unimplemented
+	return option
+}
+
+func HiddenOption(option ShowCmdOption) ShowCmdOption {
+	option.hidden = true
+	option.description = "(hidden)"
 	return option
 }

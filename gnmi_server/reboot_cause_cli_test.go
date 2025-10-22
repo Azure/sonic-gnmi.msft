@@ -38,8 +38,11 @@ func TestGetShowRebootCause(t *testing.T) {
 	defer cancel()
 
 	rebootCauseReboot := `{"gen_time": "2025_07_09_17_32_14", "cause": "reboot", "user": "admin", "time": "Wed Jul  9 05:28:24 PM UTC 2025", "comment": "N/A"}`
+	rebootCauseRebootRedacted := `{"cause":"reboot","comment":"N/A","gen_time":"2025_07_09_17_32_14","time":"Wed Jul  9 05:28:24 PM UTC 2025","user":"$USER$"}`
 	rebootCausePowerLoss := `{"gen_time": "2025_07_10_12_19_14", "cause": "Power Loss", "user": "N/A", "time": "Thur Jul  10 00:14:24 PM UTC 2025", "comment": "N/A"}`
+	rebootCausePowerLossRedacted := `{"cause":"Power Loss","comment":"N/A","gen_time":"2025_07_10_12_19_14","time":"Thur Jul  10 00:14:24 PM UTC 2025","user":"$USER$"}`
 	rebootCauseHardware := `{"gen_time": "2025_07_08_11_53_50", "cause": "Hardware - Other (gpi-2, description: gpi 2 detailed fault, time: 2025-07-08 11:53:04)", "user": "N/A", "time": "N/A", "comment": "Unknown"}`
+	rebootCauseHardwareRedacted := `{"cause":"Hardware - Other (gpi-2, description: gpi 2 detailed fault, time: 2025-07-08 11:53:04)","comment":"Unknown","gen_time":"2025_07_08_11_53_50","time":"N/A","user":"$USER$"}`
 
 	tests := []struct {
 		desc        string
@@ -59,10 +62,11 @@ func TestGetShowRebootCause(t *testing.T) {
 			wantRetCode: codes.NotFound,
 		},
 		{
-			desc:       "query SHOW reboot-cause reboot",
+			desc:       "query SHOW reboot-cause reboot redact=false",
 			pathTarget: "SHOW",
 			textPbPath: `
-				elem: <name: "reboot-cause" >
+				elem: <name: "reboot-cause"
+				      key: { key: "redact" value: "false" }>
 			`,
 			wantRetCode: codes.OK,
 			wantRespVal: []byte(rebootCauseReboot),
@@ -72,10 +76,24 @@ func TestGetShowRebootCause(t *testing.T) {
 			},
 		},
 		{
-			desc:       "query SHOW reboot-cause Power Loss",
+			desc:       "query SHOW reboot-cause reboot redacted",
 			pathTarget: "SHOW",
 			textPbPath: `
 				elem: <name: "reboot-cause" >
+			`,
+			wantRetCode: codes.OK,
+			wantRespVal: []byte(rebootCauseRebootRedacted),
+			valTest:     true,
+			testInit: func() {
+				MockReadFile(show_client.PreviousRebootCauseFilePath, rebootCauseReboot, nil)
+			},
+		},
+		{
+			desc:       "query SHOW reboot-cause Power Loss redact=false",
+			pathTarget: "SHOW",
+			textPbPath: `
+				elem: <name: "reboot-cause"
+				      key: { key: "redact" value: "false" }>
 			`,
 			wantRetCode: codes.OK,
 			wantRespVal: []byte(rebootCausePowerLoss),
@@ -85,13 +103,40 @@ func TestGetShowRebootCause(t *testing.T) {
 			},
 		},
 		{
-			desc:       "query SHOW reboot-cause Hardware",
+			desc:       "query SHOW reboot-cause Power Loss redacted",
 			pathTarget: "SHOW",
 			textPbPath: `
 				elem: <name: "reboot-cause" >
 			`,
 			wantRetCode: codes.OK,
+			wantRespVal: []byte(rebootCausePowerLossRedacted),
+			valTest:     true,
+			testInit: func() {
+				MockReadFile(show_client.PreviousRebootCauseFilePath, rebootCausePowerLoss, nil)
+			},
+		},
+		{
+			desc:       "query SHOW reboot-cause Hardware redact=false",
+			pathTarget: "SHOW",
+			textPbPath: `
+				elem: <name: "reboot-cause"
+				      key: { key: "redact" value: "false" }>
+			`,
+			wantRetCode: codes.OK,
 			wantRespVal: []byte(rebootCauseHardware),
+			valTest:     true,
+			testInit: func() {
+				MockReadFile(show_client.PreviousRebootCauseFilePath, rebootCauseHardware, nil)
+			},
+		},
+		{
+			desc:       "query SHOW reboot-cause Hardware redacted",
+			pathTarget: "SHOW",
+			textPbPath: `
+				elem: <name: "reboot-cause" >
+			`,
+			wantRetCode: codes.OK,
+			wantRespVal: []byte(rebootCauseHardwareRedacted),
 			valTest:     true,
 			testInit: func() {
 				MockReadFile(show_client.PreviousRebootCauseFilePath, rebootCauseHardware, nil)
@@ -130,12 +175,16 @@ func TestGetShowRebootCauseHistory(t *testing.T) {
 
 	rebootCauseHistoryWatchdogFileName := "../testdata/REBOOT_CAUSE_WATCHDOG.txt"
 	rebootCauseHistoryWatchdog := `{"2025_07_10_20_06_34":{"cause":"reboot","comment":"N/A","time":"Thu Jul 10 08:05:33 PM UTC 2025","user":"admin"},"2025_07_10_20_12_49":{"cause":"fast-reboot","comment":"N/A","time":"Thu Jul 10 08:10:49 PM UTC 2025","user":"admin"},"2025_07_10_20_19_34":{"cause":"warm-reboot","comment":"N/A","time":"Thu Jul 10 08:17:34 PM UTC 2025","user":"admin"},"2025_07_10_20_31_14":{"cause":"Watchdog (watchdog, description: Watchdog fired, time: 2025-07-10 20:30:26)","comment":"Unknown","time":"N/A","user":"N/A"},"2025_07_10_20_36_35":{"cause":"reboot","comment":"N/A","time":"Thu Jul 10 08:35:34 PM UTC 2025","user":"admin"},"2025_07_10_20_41_54":{"cause":"reboot","comment":"N/A","time":"Thu Jul 10 08:40:52 PM UTC 2025","user":"admin"},"2025_07_10_20_47_15":{"cause":"reboot","comment":"N/A","time":"Thu Jul 10 08:46:13 PM UTC 2025","user":"admin"},"2025_07_11_01_49_30":{"cause":"reboot","comment":"N/A","time":"Fri Jul 11 01:48:29 AM UTC 2025","user":"admin"},"2025_07_11_02_00_24":{"cause":"reboot","comment":"N/A","time":"Fri Jul 11 01:59:22 AM UTC 2025","user":"admin"},"2025_07_11_02_35_51":{"cause":"Unknown","comment":"N/A","time":"N/A","user":"N/A"}}`
+	rebootCauseHistoryWatchdogRedacted := `{"2025_07_10_20_06_34":{"cause":"reboot","comment":"N/A","time":"Thu Jul 10 08:05:33 PM UTC 2025","user":"$USER$"},"2025_07_10_20_12_49":{"cause":"fast-reboot","comment":"N/A","time":"Thu Jul 10 08:10:49 PM UTC 2025","user":"$USER$"},"2025_07_10_20_19_34":{"cause":"warm-reboot","comment":"N/A","time":"Thu Jul 10 08:17:34 PM UTC 2025","user":"$USER$"},"2025_07_10_20_31_14":{"cause":"Watchdog (watchdog, description: Watchdog fired, time: 2025-07-10 20:30:26)","comment":"Unknown","time":"N/A","user":"$USER$"},"2025_07_10_20_36_35":{"cause":"reboot","comment":"N/A","time":"Thu Jul 10 08:35:34 PM UTC 2025","user":"$USER$"},"2025_07_10_20_41_54":{"cause":"reboot","comment":"N/A","time":"Thu Jul 10 08:40:52 PM UTC 2025","user":"$USER$"},"2025_07_10_20_47_15":{"cause":"reboot","comment":"N/A","time":"Thu Jul 10 08:46:13 PM UTC 2025","user":"$USER$"},"2025_07_11_01_49_30":{"cause":"reboot","comment":"N/A","time":"Fri Jul 11 01:48:29 AM UTC 2025","user":"$USER$"},"2025_07_11_02_00_24":{"cause":"reboot","comment":"N/A","time":"Fri Jul 11 01:59:22 AM UTC 2025","user":"$USER$"},"2025_07_11_02_35_51":{"cause":"Unknown","comment":"N/A","time":"N/A","user":"$USER$"}}`
 	rebootCauseHistoryHardwareFileName := "../testdata/REBOOT_CAUSE_HARDWARE.txt"
 	rebootCauseHistoryHardware := `{"2025_07_07_02_35_26":{"cause":"reboot","comment":"N/A","time":"Mon Jul  7 02:34:07 AM UTC 2025","user":"admin"},"2025_07_07_02_43_43":{"cause":"reboot","comment":"N/A","time":"Mon Jul  7 02:42:22 AM UTC 2025","user":"admin"},"2025_07_08_05_22_02":{"cause":"reboot","comment":"N/A","time":"Tue Jul  8 05:20:54 AM UTC 2025","user":"admin"},"2025_07_08_05_30_28":{"cause":"reboot","comment":"N/A","time":"Tue Jul  8 05:29:20 AM UTC 2025","user":"admin"},"2025_07_08_07_00_08":{"cause":"reboot","comment":"N/A","time":"Tue Jul  8 06:59:00 AM UTC 2025","user":"admin"},"2025_07_08_09_21_21":{"cause":"reboot","comment":"N/A","time":"Tue Jul  8 09:20:13 AM UTC 2025","user":""},"2025_07_08_09_29_39":{"cause":"reboot","comment":"N/A","time":"Tue Jul  8 09:28:30 AM UTC 2025","user":"admin"},"2025_07_08_10_13_31":{"cause":"reboot","comment":"N/A","time":"Tue Jul  8 10:12:23 AM UTC 2025","user":"admin"},"2025_07_08_11_53_50":{"cause":"Hardware - Other (gpi-2, description: gpi 2 detailed fault, time: 2025-07-08 11:53:04)","comment":"Unknown","time":"N/A","user":"N/A"},"2025_07_08_18_29_38":{"cause":"reboot","comment":"N/A","time":"Tue Jul  8 06:28:26 PM UTC 2025","user":"admin"}}`
+	rebootCauseHistoryHardwareRedacted := `{"2025_07_07_02_35_26":{"cause":"reboot","comment":"N/A","time":"Mon Jul  7 02:34:07 AM UTC 2025","user":"$USER$"},"2025_07_07_02_43_43":{"cause":"reboot","comment":"N/A","time":"Mon Jul  7 02:42:22 AM UTC 2025","user":"$USER$"},"2025_07_08_05_22_02":{"cause":"reboot","comment":"N/A","time":"Tue Jul  8 05:20:54 AM UTC 2025","user":"$USER$"},"2025_07_08_05_30_28":{"cause":"reboot","comment":"N/A","time":"Tue Jul  8 05:29:20 AM UTC 2025","user":"$USER$"},"2025_07_08_07_00_08":{"cause":"reboot","comment":"N/A","time":"Tue Jul  8 06:59:00 AM UTC 2025","user":"$USER$"},"2025_07_08_09_21_21":{"cause":"reboot","comment":"N/A","time":"Tue Jul  8 09:20:13 AM UTC 2025","user":"$USER$"},"2025_07_08_09_29_39":{"cause":"reboot","comment":"N/A","time":"Tue Jul  8 09:28:30 AM UTC 2025","user":"$USER$"},"2025_07_08_10_13_31":{"cause":"reboot","comment":"N/A","time":"Tue Jul  8 10:12:23 AM UTC 2025","user":"$USER$"},"2025_07_08_11_53_50":{"cause":"Hardware - Other (gpi-2, description: gpi 2 detailed fault, time: 2025-07-08 11:53:04)","comment":"Unknown","time":"N/A","user":"$USER$"},"2025_07_08_18_29_38":{"cause":"reboot","comment":"N/A","time":"Tue Jul  8 06:28:26 PM UTC 2025","user":"$USER$"}}`
 	rebootCauseHistoryKernelFileName := "../testdata/REBOOT_CAUSE_KERNEL.txt"
 	rebootCauseHistoryKernel := `{"2025_07_10_14_39_01":{"cause":"reboot","comment":"N/A","time":"Thu Jul 10 02:34:54 PM UTC 2025","user":"admin"},"2025_07_10_14_55_20":{"cause":"Kernel Panic","comment":"N/A","time":"Thu Jul 10 02:51:53 PM UTC 2025","user":"N/A"},"2025_07_10_15_13_45":{"cause":"reboot","comment":"N/A","time":"Thu Jul 10 03:09:38 PM UTC 2025","user":"admin"},"2025_07_10_15_29_52":{"cause":"reboot","comment":"N/A","time":"Thu Jul 10 03:25:44 PM UTC 2025","user":"admin"},"2025_07_10_15_45_47":{"cause":"reboot","comment":"N/A","time":"Thu Jul 10 03:41:43 PM UTC 2025","user":"admin"},"2025_07_10_18_03_28":{"cause":"reboot","comment":"N/A","time":"Thu Jul 10 05:59:18 PM UTC 2025","user":"admin"},"2025_07_10_23_33_47":{"cause":"warm-reboot","comment":"N/A","time":"Thu Jul 10 11:29:44 PM UTC 2025","user":"admin"},"2025_07_10_23_48_41":{"cause":"warm-reboot","comment":"N/A","time":"Thu Jul 10 11:44:41 PM UTC 2025","user":"admin"},"2025_07_11_00_51_52":{"cause":"warm-reboot","comment":"N/A","time":"Fri Jul 11 12:49:13 AM UTC 2025","user":"admin"},"2025_07_11_01_00_54":{"cause":"Kernel Panic","comment":"N/A","time":"Fri Jul 11 12:57:23 AM UTC 2025","user":"N/A"}}`
+	rebootCauseHistoryKernelRedacted := `{"2025_07_10_14_39_01":{"cause":"reboot","comment":"N/A","time":"Thu Jul 10 02:34:54 PM UTC 2025","user":"$USER$"},"2025_07_10_14_55_20":{"cause":"Kernel Panic","comment":"N/A","time":"Thu Jul 10 02:51:53 PM UTC 2025","user":"$USER$"},"2025_07_10_15_13_45":{"cause":"reboot","comment":"N/A","time":"Thu Jul 10 03:09:38 PM UTC 2025","user":"$USER$"},"2025_07_10_15_29_52":{"cause":"reboot","comment":"N/A","time":"Thu Jul 10 03:25:44 PM UTC 2025","user":"$USER$"},"2025_07_10_15_45_47":{"cause":"reboot","comment":"N/A","time":"Thu Jul 10 03:41:43 PM UTC 2025","user":"$USER$"},"2025_07_10_18_03_28":{"cause":"reboot","comment":"N/A","time":"Thu Jul 10 05:59:18 PM UTC 2025","user":"$USER$"},"2025_07_10_23_33_47":{"cause":"warm-reboot","comment":"N/A","time":"Thu Jul 10 11:29:44 PM UTC 2025","user":"$USER$"},"2025_07_10_23_48_41":{"cause":"warm-reboot","comment":"N/A","time":"Thu Jul 10 11:44:41 PM UTC 2025","user":"$USER$"},"2025_07_11_00_51_52":{"cause":"warm-reboot","comment":"N/A","time":"Fri Jul 11 12:49:13 AM UTC 2025","user":"$USER$"},"2025_07_11_01_00_54":{"cause":"Kernel Panic","comment":"N/A","time":"Fri Jul 11 12:57:23 AM UTC 2025","user":"$USER$"}}`
 	rebootCauseHistoryPowerLossFileName := "../testdata/REBOOT_CAUSE_POWER_LOSS.txt"
 	rebootCauseHistoryPowerLoss := `{"2025_07_09_04_44_38":{"cause":"reboot","comment":"N/A","time":"Wed Jul  9 04:41:09 AM UTC 2025","user":"admin"},"2025_07_09_05_11_26":{"cause":"reboot","comment":"N/A","time":"Wed Jul  9 05:07:59 AM UTC 2025","user":"admin"},"2025_07_09_06_52_52":{"cause":"fast-reboot","comment":"N/A","time":"Wed Jul  9 06:50:57 AM UTC 2025","user":"admin"},"2025_07_09_09_23_16":{"cause":"Power Loss","comment":"Unknown","time":"N/A","user":"N/A"},"2025_07_09_09_33_28":{"cause":"Power Loss","comment":"Unknown","time":"N/A","user":"N/A"},"2025_07_09_17_46_25":{"cause":"reboot","comment":"N/A","time":"Wed Jul  9 05:42:44 PM UTC 2025","user":"admin"},"2025_07_10_02_58_57":{"cause":"reboot","comment":"N/A","time":"Thu Jul 10 02:55:28 AM UTC 2025","user":""},"2025_07_10_05_00_09":{"cause":"Power Loss","comment":"Unknown","time":"N/A","user":"N/A"},"2025_07_10_05_27_16":{"cause":"reboot","comment":"N/A","time":"Thu Jul 10 05:23:48 AM UTC 2025","user":"admin"},"2025_07_10_06_31_24":{"cause":"Kernel Panic - Out of memory [Time: Thu Jul 10 06:28:29 AM UTC 2025]","comment":"N/A","time":"N/A","user":"N/A"}}`
+	rebootCauseHistoryPowerLossRedacted := `{"2025_07_09_04_44_38":{"cause":"reboot","comment":"N/A","time":"Wed Jul  9 04:41:09 AM UTC 2025","user":"$USER$"},"2025_07_09_05_11_26":{"cause":"reboot","comment":"N/A","time":"Wed Jul  9 05:07:59 AM UTC 2025","user":"$USER$"},"2025_07_09_06_52_52":{"cause":"fast-reboot","comment":"N/A","time":"Wed Jul  9 06:50:57 AM UTC 2025","user":"$USER$"},"2025_07_09_09_23_16":{"cause":"Power Loss","comment":"Unknown","time":"N/A","user":"$USER$"},"2025_07_09_09_33_28":{"cause":"Power Loss","comment":"Unknown","time":"N/A","user":"$USER$"},"2025_07_09_17_46_25":{"cause":"reboot","comment":"N/A","time":"Wed Jul  9 05:42:44 PM UTC 2025","user":"$USER$"},"2025_07_10_02_58_57":{"cause":"reboot","comment":"N/A","time":"Thu Jul 10 02:55:28 AM UTC 2025","user":"$USER$"},"2025_07_10_05_00_09":{"cause":"Power Loss","comment":"Unknown","time":"N/A","user":"$USER$"},"2025_07_10_05_27_16":{"cause":"reboot","comment":"N/A","time":"Thu Jul 10 05:23:48 AM UTC 2025","user":"$USER$"},"2025_07_10_06_31_24":{"cause":"Kernel Panic - Out of memory [Time: Thu Jul 10 06:28:29 AM UTC 2025]","comment":"N/A","time":"N/A","user":"$USER$"}}`
 
 	ResetDataSetsAndMappings(t)
 
@@ -158,11 +207,12 @@ func TestGetShowRebootCauseHistory(t *testing.T) {
 			wantRetCode: codes.OK,
 		},
 		{
-			desc:       "query SHOW reboot-cause history watchdog",
+			desc:       "query SHOW reboot-cause history watchdog redact=false",
 			pathTarget: "SHOW",
 			textPbPath: `
 				elem: <name: "reboot-cause" >
-				elem: <name: "history" >
+				elem: <name: "history"
+				      key: { key: "redact" value: "false" }>
 			`,
 			wantRetCode: codes.OK,
 			wantRespVal: []byte(rebootCauseHistoryWatchdog),
@@ -172,11 +222,23 @@ func TestGetShowRebootCauseHistory(t *testing.T) {
 			},
 		},
 		{
-			desc:       "query SHOW reboot-cause history hardware",
+			desc:       "query SHOW reboot-cause history watchdog redacted",
 			pathTarget: "SHOW",
 			textPbPath: `
 				elem: <name: "reboot-cause" >
 				elem: <name: "history" >
+			`,
+			wantRetCode: codes.OK,
+			wantRespVal: []byte(rebootCauseHistoryWatchdogRedacted),
+			valTest:     true,
+		},
+		{
+			desc:       "query SHOW reboot-cause history hardware redact=false",
+			pathTarget: "SHOW",
+			textPbPath: `
+				elem: <name: "reboot-cause" >
+				elem: <name: "history"
+				      key: { key: "redact" value: "false" }>
 			`,
 			wantRetCode: codes.OK,
 			wantRespVal: []byte(rebootCauseHistoryHardware),
@@ -187,11 +249,23 @@ func TestGetShowRebootCauseHistory(t *testing.T) {
 			},
 		},
 		{
-			desc:       "query SHOW reboot-cause history kernel",
+			desc:       "query SHOW reboot-cause history hardware redacted",
 			pathTarget: "SHOW",
 			textPbPath: `
 				elem: <name: "reboot-cause" >
 				elem: <name: "history" >
+			`,
+			wantRetCode: codes.OK,
+			wantRespVal: []byte(rebootCauseHistoryHardwareRedacted),
+			valTest:     true,
+		},
+		{
+			desc:       "query SHOW reboot-cause history kernel redact=false",
+			pathTarget: "SHOW",
+			textPbPath: `
+				elem: <name: "reboot-cause" >
+				elem: <name: "history"
+				      key: { key: "redact" value: "false" }>
 			`,
 			wantRetCode: codes.OK,
 			wantRespVal: []byte(rebootCauseHistoryKernel),
@@ -202,11 +276,23 @@ func TestGetShowRebootCauseHistory(t *testing.T) {
 			},
 		},
 		{
-			desc:       "query SHOW reboot-cause history power loss",
+			desc:       "query SHOW reboot-cause history kernel redacted",
 			pathTarget: "SHOW",
 			textPbPath: `
 				elem: <name: "reboot-cause" >
 				elem: <name: "history" >
+			`,
+			wantRetCode: codes.OK,
+			wantRespVal: []byte(rebootCauseHistoryKernelRedacted),
+			valTest:     true,
+		},
+		{
+			desc:       "query SHOW reboot-cause history power loss redact=false",
+			pathTarget: "SHOW",
+			textPbPath: `
+				elem: <name: "reboot-cause" >
+				elem: <name: "history"
+				      key: { key: "redact" value: "false" }>
 			`,
 			wantRetCode: codes.OK,
 			wantRespVal: []byte(rebootCauseHistoryPowerLoss),
@@ -215,6 +301,17 @@ func TestGetShowRebootCauseHistory(t *testing.T) {
 				FlushDataSet(t, StateDbNum)
 				AddDataSet(t, StateDbNum, rebootCauseHistoryPowerLossFileName)
 			},
+		},
+		{
+			desc:       "query SHOW reboot-cause history power loss redacted",
+			pathTarget: "SHOW",
+			textPbPath: `
+				elem: <name: "reboot-cause" >
+				elem: <name: "history" >
+			`,
+			wantRetCode: codes.OK,
+			wantRespVal: []byte(rebootCauseHistoryPowerLossRedacted),
+			valTest:     true,
 		},
 	}
 

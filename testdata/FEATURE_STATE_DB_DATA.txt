@@ -1,0 +1,58 @@
+{
+    "FEATURE|bgp": {
+        "system_state": "Up",
+        "update_time": "2024-10-15 10:30:15",
+        "container_id": "bgp",
+        "container_version": "1.2.3",
+        "current_owner": "local",
+        "remote_state": "enabled"
+    },
+    "FEATURE|database": {
+        "system_state": "Up", 
+        "update_time": "2024-10-15 10:25:10",
+        "container_id": "database",
+        "container_version": "2.1.0",
+        "current_owner": "local",
+        "remote_state": "enabled"
+    },
+    "FEATURE|lldp": {
+        "system_state": "Up",
+        "update_time": "2024-10-15 10:28:45", 
+        "container_id": "lldp",
+        "container_version": "1.5.2",
+        "current_owner": "local",
+        "remote_state": "enabled"
+    },
+    "FEATURE|snmp": {
+        "system_state": "Up",
+        "update_time": "2024-10-15 10:32:20",
+        "container_id": "snmp", 
+        "container_version": "3.0.1",
+        "current_owner": "local",
+        "remote_state": "enabled"
+    },
+    "FEATURE|swss": {
+        "system_state": "Up",
+        "update_time": "2024-10-15 10:20:30",
+        "container_id": "swss",
+        "container_version": "4.1.5",
+        "current_owner": "local", 
+        "remote_state": "enabled"
+    },
+    "FEATURE|syncd": {
+        "system_state": "Up",
+        "update_time": "2024-10-15 10:35:12",
+        "container_id": "syncd",
+        "container_version": "2.3.1",
+        "current_owner": "local",
+        "remote_state": "enabled"
+    },
+    "FEATURE|teamd": {
+        "system_state": "Up",
+        "update_time": "2024-10-15 10:27:55",
+        "container_id": "teamd",
+        "container_version": "1.8.0", 
+        "current_owner": "local",
+        "remote_state": "enabled"
+    }
+}

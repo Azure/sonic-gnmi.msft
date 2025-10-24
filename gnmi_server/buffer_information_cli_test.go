@@ -43,7 +43,7 @@ func TestGetBufferInfo(t *testing.T) {
 		testInit    func() *gomonkey.Patches
 	}{
 		{
-			desc: "empty CONFIG_DB",
+			desc: "empty STATE_DB",
 			textPbPath: `elem: <name: "buffer" >
 			elem: <name: "information" >`,
 			wantRetCode: codes.OK,
@@ -52,7 +52,7 @@ func TestGetBufferInfo(t *testing.T) {
 			testInit:    nil,
 		},
 		{
-			desc: "partial config with only pools",
+			desc: "partial state_db with only pools",
 			textPbPath: `elem: <name: "buffer" >
 			elem: <name: "information" >`,
 			wantRetCode: codes.OK,
@@ -64,12 +64,12 @@ func TestGetBufferInfo(t *testing.T) {
 			}`),
 			valTest: true,
 			testInit: func() *gomonkey.Patches {
-				AddDataSet(t, StateDbNum, "../testdata/CONFIG_DB_BUFFER_POOL.txt")
+				AddDataSet(t, StateDbNum, "../testdata/STATE_DB_BUFFER_POOL.txt")
 				return nil
 			},
 		},
 		{
-			desc: "happy path with full config",
+			desc: "happy path with full state_db",
 			textPbPath: `elem: <name: "buffer" >
 			elem: <name: "information" >`,
 			wantRetCode: codes.OK,
@@ -89,9 +89,9 @@ func TestGetBufferInfo(t *testing.T) {
 			}`),
 			valTest: true,
 			testInit: func() *gomonkey.Patches {
-				AddDataSet(t, StateDbNum, "../testdata/CONFIG_DB_DEFAULT_LOSSLESS_BUFFER_PARAMETER.txt")
-				AddDataSet(t, StateDbNum, "../testdata/CONFIG_DB_BUFFER_POOL.txt")
-				AddDataSet(t, StateDbNum, "../testdata/CONFIG_DB_BUFFER_PROFILE.txt")
+				AddDataSet(t, StateDbNum, "../testdata/STATE_DB_DEFAULT_LOSSLESS_BUFFER_PARAMETER.txt")
+				AddDataSet(t, StateDbNum, "../testdata/STATE_DB_BUFFER_POOL.txt")
+				AddDataSet(t, StateDbNum, "../testdata/STATE_DB_BUFFER_PROFILE.txt")
 				return nil
 			},
 		},
@@ -117,9 +117,9 @@ func TestGetBufferInfo(t *testing.T) {
 			}`),
 			valTest: true,
 			testInit: func() *gomonkey.Patches {
-				AddDataSet(t, StateDbNum, "../testdata/CONFIG_DB_DEFAULT_LOSSLESS_BUFFER_PARAMETER.txt")
-				AddDataSet(t, StateDbNum, "../testdata/CONFIG_DB_BUFFER_POOL.txt")
-				AddDataSet(t, StateDbNum, "../testdata/CONFIG_DB_BUFFER_PROFILE.txt")
+				AddDataSet(t, StateDbNum, "../testdata/STATE_DB_DEFAULT_LOSSLESS_BUFFER_PARAMETER.txt")
+				AddDataSet(t, StateDbNum, "../testdata/STATE_DB_BUFFER_POOL.txt")
+				AddDataSet(t, StateDbNum, "../testdata/STATE_DB_BUFFER_PROFILE.txt")
 				return nil
 			},
 		},

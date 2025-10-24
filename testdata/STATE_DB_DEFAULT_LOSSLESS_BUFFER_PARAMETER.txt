@@ -1,0 +1,5 @@
+{
+  "DEFAULT_LOSSLESS_BUFFER_PARAMETER|pattern": {
+    "field1": "value1"
+  }
+}

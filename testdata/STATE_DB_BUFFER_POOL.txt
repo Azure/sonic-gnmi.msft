@@ -1,0 +1,13 @@
+{
+  "BUFFER_POOL|ingress_lossless_pool": {
+    "mode": "dynamic",
+    "size": "164075364",
+    "type": "ingress",
+    "xoff": "20181824"
+  },
+  "BUFFER_POOL|egress_lossless_pool": {
+    "mode": "static",
+    "size": "164075364",
+    "type": "egress"
+  }
+}

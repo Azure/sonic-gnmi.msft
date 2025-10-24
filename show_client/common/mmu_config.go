@@ -71,18 +71,18 @@ $ redis-cli -n 4 HGETALL 'BUFFER_POOL|egress_lossless_pool'
  5. "type"
  6. "egress"
 */
-func GetMmuConfig(verbose bool) ([]byte, error) {
-	lossless, err := getTableAsNestedMap(ConfigDb, CfgTableDefaultLossless)
+func GetMmuConfig(db string, verbose bool) ([]byte, error) {
+	lossless, err := getTableAsNestedMap(db, CfgTableDefaultLossless)
 	if err != nil {
 		log.Errorf("Failed to read %s: %v", CfgTableDefaultLossless, err)
 		return nil, err
 	}
-	pools, err := getTableAsNestedMap(ConfigDb, CfgTableBufferPool)
+	pools, err := getTableAsNestedMap(db, CfgTableBufferPool)
 	if err != nil {
 		log.Errorf("Failed to read %s: %v", CfgTableBufferPool, err)
 		return nil, err
 	}
-	profiles, err := getTableAsNestedMap(ConfigDb, CfgTableBufferProfile)
+	profiles, err := getTableAsNestedMap(db, CfgTableBufferProfile)
 	if err != nil {
 		log.Errorf("Failed to read %s: %v", CfgTableBufferProfile, err)
 		return nil, err
@@ -107,7 +107,12 @@ func GetMmuConfig(verbose bool) ([]byte, error) {
 // pls read the comments on GetMmuConfig
 func getTableAsNestedMap(db string, table string) (map[string]map[string]interface{}, error) {
 	// Get all keys and values in the table
-	queries := [][]string{{db, table}}
+	var queries [][]string
+	if db == StateDb {
+		queries = [][]string{{db, table, "*"}} // wildcard for StateDb
+	} else {
+		queries = [][]string{{db, table}} // exact table for ConfigDb
+	}
 	msi, err := GetMapFromQueries(queries)
 	if err != nil {
 		return nil, err

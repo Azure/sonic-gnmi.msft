@@ -421,6 +421,9 @@ func (s *Server) Get(ctx context.Context, req *gnmipb.GetRequest) (*gnmipb.GetRe
 	}
 
 	if err != nil {
+		if target == "SHOW" {
+			log.V(2).Infof("SHOW paths failure: paths=%v, success=false, err=%v", paths, err)
+		}
 		common_utils.IncCounter(common_utils.GNMI_GET_FAIL)
 		return nil, status.Error(codes.NotFound, err.Error())
 	}
@@ -428,11 +431,18 @@ func (s *Server) Get(ctx context.Context, req *gnmipb.GetRequest) (*gnmipb.GetRe
 	notifications := make([]*gnmipb.Notification, len(paths))
 	spbValues, err := dc.Get(nil)
 	if err != nil {
+		if target == "SHOW" {
+			log.V(2).Infof("SHOW paths failure: paths=%v, success=false, err=%v", paths, err)
+		}
 		common_utils.IncCounter(common_utils.GNMI_GET_FAIL)
 		if st, ok := status.FromError(err); ok {
 			return nil, st.Err()
 		}
 		return nil, status.Error(codes.NotFound, err.Error())
+	}
+
+	if target == "SHOW" {
+		log.V(2).Infof("SHOW paths success: paths=%v, success=true", paths)
 	}
 
 	for index, spbValue := range spbValues {

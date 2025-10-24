@@ -11,5 +11,5 @@ func getBufferConfig(args sdc.CmdArgs, options sdc.OptionMap) ([]byte, error) {
 		verbose = v
 	}
 
-	return common.GetMmuConfig(verbose)
+	return common.GetMmuConfig(common.ConfigDb, verbose)
 }

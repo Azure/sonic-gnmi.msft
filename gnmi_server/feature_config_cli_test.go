@@ -37,11 +37,16 @@ func TestGetShowFeatureConfig(t *testing.T) {
 
 	// expected output
 	allFeaturesExpected := `{"features":[{"name":"bgp","data":{"state":"enabled","auto_restart":"enabled","owner":"local","fallback":"false"}},{"name":"database","data":{"state":"enabled","auto_restart":"disabled","owner":"local","fallback":"false"}},{"name":"lldp","data":{"state":"enabled","auto_restart":"enabled","owner":"local","fallback":"false"}},{"name":"snmp","data":{"state":"enabled","auto_restart":"enabled","owner":"local","fallback":"false"}},{"name":"swss","data":{"state":"enabled","auto_restart":"enabled","owner":"local","fallback":"false"}},{"name":"syncd","data":{"state":"enabled","auto_restart":"enabled","owner":"local","fallback":"false"}},{"name":"teamd","data":{"state":"enabled","auto_restart":"enabled","owner":"local","fallback":"false"}}]}`
-
+	// expected output without fallback field
+	allFeaturesExpectedNoFallback := `{"features":[{"name":"bgp","data":{"state":"enabled","auto_restart":"enabled","owner":"local"}},{"name":"database","data":{"state":"enabled","auto_restart":"disabled","owner":"local"}},{"name":"lldp","data":{"state":"enabled","auto_restart":"enabled","owner":"local"}},{"name":"snmp","data":{"state":"enabled","auto_restart":"enabled","owner":"local"}},{"name":"swss","data":{"state":"enabled","auto_restart":"enabled","owner":"local"}},{"name":"syncd","data":{"state":"enabled","auto_restart":"enabled","owner":"local"}},{"name":"teamd","data":{"state":"enabled","auto_restart":"enabled","owner":"local"}}]}`
+	// expected output with mixed fallback (some have fallback field, some don't)
+	mixedFallbackExpected := `{"features":[{"name":"bgp","data":{"state":"enabled","auto_restart":"enabled","owner":"local","fallback":"false"}},{"name":"database","data":{"state":"enabled","auto_restart":"disabled","owner":"local"}},{"name":"lldp","data":{"state":"enabled","auto_restart":"enabled","owner":"local"}},{"name":"snmp","data":{"state":"enabled","auto_restart":"enabled","owner":"local"}},{"name":"swss","data":{"state":"enabled","auto_restart":"enabled","owner":"local"}},{"name":"syncd","data":{"state":"enabled","auto_restart":"enabled","owner":"local"}},{"name":"teamd","data":{"state":"enabled","auto_restart":"enabled","owner":"local","fallback":"false"}}]}`
 	// Expected output for single feature (bgp)
 	bgpFeatureExpected := `{"features":[{"name":"bgp","data":{"state":"enabled","auto_restart":"enabled","owner":"local","fallback":"false"}}]}`
 
 	featureConfigDbDataFilename := "../testdata/FEATURE_DB_DATA.txt"
+	featureConfigDbDataNoFallbackFilename := "../testdata/FEATURE_DB_DATA_NO_FALLBACK.txt"
+	featureConfigDbDataMixedFallbackFilename := "../testdata/FEATURE_DB_DATA_MIXED_FALLBACK.txt"
 	featureConfigDbDataEmptyFilename := "../testdata/EMPTY_JSON.txt"
 
 	ResetDataSetsAndMappings(t)
@@ -112,7 +117,36 @@ func TestGetShowFeatureConfig(t *testing.T) {
 			testInit: func() {
 			},
 		},
-
+		{
+			desc:       "query SHOW feature config all feature without fallback field",
+			pathTarget: "SHOW",
+			textPbPath: `
+				elem: <name: "feature" >
+				elem: <name: "config" >
+			`,
+			wantRetCode: codes.OK,
+			wantRespVal: []byte(allFeaturesExpectedNoFallback),
+			valTest:     true,
+			testInit: func() {
+				FlushDataSet(t, ConfigDbNum)
+				AddDataSet(t, ConfigDbNum, featureConfigDbDataNoFallbackFilename)
+			},
+		},
+		{
+			desc:       "query SHOW feature config with mixed fallback scenarios",
+			pathTarget: "SHOW",
+			textPbPath: `
+				elem: <name: "feature" >
+				elem: <name: "config" >
+			`,
+			wantRetCode: codes.OK,
+			wantRespVal: []byte(mixedFallbackExpected),
+			valTest:     true,
+			testInit: func() {
+				FlushDataSet(t, ConfigDbNum)
+				AddDataSet(t, ConfigDbNum, featureConfigDbDataMixedFallbackFilename)
+			},
+		},
 	}
 
 	for _, test := range tests {
@@ -195,3 +229,4 @@ func TestGetShowFeatureConfigErrorCases(t *testing.T) {
 		})
 	}
 }
+

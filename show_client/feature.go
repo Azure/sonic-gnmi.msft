@@ -13,22 +13,29 @@ import (
 func buildFeatureConfigEntry(name string, data map[string]interface{}) map[string]interface{} {
 	// inverted fallback value
 	fallbackValue := ""
+	includeFallback := false
 	if val, exists := data["no_fallback_to_local"]; exists {
-		if strVal, ok := val.(string); ok {
+		if strVal, ok := val.(string); ok && strVal != "" {
 			if boolVal, err := strconv.ParseBool(strVal); err == nil {
 				fallbackValue = strconv.FormatBool(!boolVal)
+				includeFallback = true
 			}
 		}
 	}
 
+	dataMap := map[string]interface{}{
+		"state":        common.GetValueOrDefault(data, "state", ""),
+		"auto_restart": common.GetValueOrDefault(data, "auto_restart", ""),
+		"owner":        common.GetValueOrDefault(data, "set_owner", "local"),
+	}
+
+	if includeFallback {
+		dataMap["fallback"] = fallbackValue
+	}
+
 	return map[string]interface{}{
 		"name": name,
-		"data": map[string]interface{}{
-			"state":               common.GetValueOrDefault(data, "state", ""),
-			"auto_restart":        common.GetValueOrDefault(data, "auto_restart", ""),
-			"owner":           common.GetValueOrDefault(data, "set_owner", "local"),
-			"fallback": fallbackValue,
-		},
+		"data": dataMap,
 	}
 }
 
@@ -36,22 +43,22 @@ func buildFeatureStatusEntry(name string, data map[string]interface{}) map[strin
 	return map[string]interface{}{
 		"name": name,
 		"data": map[string]interface{}{
-			"state":               common.GetValueOrDefault(data, "state", ""),
-			"auto_restart":        common.GetValueOrDefault(data, "auto_restart", ""),
-			"system_state":        common.GetValueOrDefault(data, "system_state", ""),
-			"update_time":         common.GetValueOrDefault(data, "update_time", ""),
-			"container_id":        common.GetValueOrDefault(data, "container_id", ""),
-			"container_version":   common.GetValueOrDefault(data, "container_version", ""),
-			"set_owner":           common.GetValueOrDefault(data, "set_owner", ""),
-			"current_owner":       common.GetValueOrDefault(data, "current_owner", ""),
-			"remote_state":        common.GetValueOrDefault(data, "remote_state", ""),
+			"state":             common.GetValueOrDefault(data, "state", ""),
+			"auto_restart":      common.GetValueOrDefault(data, "auto_restart", ""),
+			"system_state":      common.GetValueOrDefault(data, "system_state", ""),
+			"update_time":       common.GetValueOrDefault(data, "update_time", ""),
+			"container_id":      common.GetValueOrDefault(data, "container_id", ""),
+			"container_version": common.GetValueOrDefault(data, "container_version", ""),
+			"set_owner":         common.GetValueOrDefault(data, "set_owner", ""),
+			"current_owner":     common.GetValueOrDefault(data, "current_owner", ""),
+			"remote_state":      common.GetValueOrDefault(data, "remote_state", ""),
 		},
 	}
 }
 
 func buildFeatureAutoRestartEntry(name string, data map[string]interface{}) map[string]interface{} {
 	return map[string]interface{}{
-		"name": name,
+		"name":         name,
 		"auto_restart": common.GetValueOrDefault(data, "auto_restart", "unknown"),
 	}
 }
@@ -106,7 +113,6 @@ func getFeatureConfig(args sdc.CmdArgs, options sdc.OptionMap) ([]byte, error) {
 	return json.Marshal(response)
 }
 
-
 func getFeatureStatus(args sdc.CmdArgs, options sdc.OptionMap) ([]byte, error) {
 	configQueries := [][]string{{"CONFIG_DB", "FEATURE"}}
 	stateQueries := [][]string{{"STATE_DB", "FEATURE"}}
@@ -138,7 +144,7 @@ func getFeatureStatus(args sdc.CmdArgs, options sdc.OptionMap) ([]byte, error) {
 	var features []map[string]interface{}
 
 	if featureName != "" {
-		// specific feature 
+		// specific feature
 		if configFeatureData, exists := configData[featureName]; exists {
 			if configFeatureDataMap, ok := configFeatureData.(map[string]interface{}); ok {
 				mergedData := make(map[string]interface{})
@@ -184,7 +190,6 @@ func getFeatureStatus(args sdc.CmdArgs, options sdc.OptionMap) ([]byte, error) {
 
 	return json.Marshal(response)
 }
-
 
 func getFeatureAutoRestart(args sdc.CmdArgs, options sdc.OptionMap) ([]byte, error) {
 	queries := [][]string{{"CONFIG_DB", "FEATURE"}}
@@ -235,3 +240,4 @@ func getFeatureAutoRestart(args sdc.CmdArgs, options sdc.OptionMap) ([]byte, err
 
 	return json.Marshal(response)
 }
+

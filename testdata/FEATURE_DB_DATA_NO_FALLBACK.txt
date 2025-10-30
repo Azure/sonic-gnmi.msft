@@ -1,0 +1,37 @@
+{
+  "FEATURE|bgp": {
+    "state": "enabled",
+    "auto_restart": "enabled",
+    "set_owner": "local"
+  },
+  "FEATURE|database": {
+    "state": "enabled", 
+    "auto_restart": "disabled",
+    "set_owner": "local"
+  },
+  "FEATURE|lldp": {
+    "state": "enabled",
+    "auto_restart": "enabled", 
+    "set_owner": "local"
+  },
+  "FEATURE|snmp": {
+    "state": "enabled",
+    "auto_restart": "enabled",
+    "set_owner": "local"
+  },
+  "FEATURE|swss": {
+    "state": "enabled",
+    "auto_restart": "enabled",
+    "set_owner": "local"
+  },
+  "FEATURE|syncd": {
+    "state": "enabled",
+    "auto_restart": "enabled",
+    "set_owner": "local"
+  },
+  "FEATURE|teamd": {
+    "state": "enabled",
+    "auto_restart": "enabled",
+    "set_owner": "local"
+  }
+}

@@ -774,30 +774,6 @@ func initFullCountersDb(t *testing.T, namespace string) {
 	mpi_fab_counter_1 := loadConfig(t, "COUNTERS:oid:0x1000000000082", countersPort1_Byte)
 	loadDB(t, rclient, mpi_fab_counter_1)
 
-	fileName = "../testdata/COUNTERS_SRV6_NAME_MAP.json"
-	countersSRv6NameMapByte, err := os.ReadFile(fileName)
-	if err != nil {
-		t.Fatalf("read file %v err: %v", fileName, err)
-	}
-	counters_srv6_name_map := loadConfig(t, "COUNTERS_SRV6_NAME_MAP", countersSRv6NameMapByte)
-	loadDB(t, rclient, counters_srv6_name_map)
-
-	fileName = "../testdata/COUNTERS:oid:0x54000000004f63.txt"
-	sid1_byte, err := os.ReadFile(fileName)
-	if err != nil {
-		t.Fatalf("read file %v err: %v", fileName, err)
-	}
-	sid1_counter := loadConfig(t, "COUNTERS:oid:0x54000000004f63", sid1_byte)
-	loadDB(t, rclient, sid1_counter)
-
-	fileName = "../testdata/COUNTERS:oid:0x54000000004f64.txt"
-	sid2_byte, err := os.ReadFile(fileName)
-	if err != nil {
-		t.Fatalf("read file %v err: %v", fileName, err)
-	}
-	sid2_counter := loadConfig(t, "COUNTERS:oid:0x54000000004f64", sid2_byte)
-	loadDB(t, rclient, sid2_counter)
-
 }
 
 func prepareConfigDb(t *testing.T, namespace string) {
@@ -989,6 +965,30 @@ func prepareDb(t *testing.T, namespace string) {
 	}
 	mpi_counter = loadConfig(t, "COUNTERS:oid:0x1000000000082", countersPort1_Byte)
 	loadDB(t, rclient, mpi_counter)
+
+	fileName = "../testdata/COUNTERS_SRV6_NAME_MAP.json"
+	countersSRv6NameMapByte, err := os.ReadFile(fileName)
+	if err != nil {
+		t.Fatalf("read file %v err: %v", fileName, err)
+	}
+	counters_srv6_name_map := loadConfig(t, "COUNTERS_SRV6_NAME_MAP", countersSRv6NameMapByte)
+	loadDB(t, rclient, counters_srv6_name_map)
+
+	fileName = "../testdata/COUNTERS:oid:0x54000000004f63.txt"
+	sid1_byte, err := os.ReadFile(fileName)
+	if err != nil {
+		t.Fatalf("read file %v err: %v", fileName, err)
+	}
+	sid1_counter := loadConfig(t, "COUNTERS:oid:0x54000000004f63", sid1_byte)
+	loadDB(t, rclient, sid1_counter)
+
+	fileName = "../testdata/COUNTERS:oid:0x54000000004f64.txt"
+	sid2_byte, err := os.ReadFile(fileName)
+	if err != nil {
+		t.Fatalf("read file %v err: %v", fileName, err)
+	}
+	sid2_counter := loadConfig(t, "COUNTERS:oid:0x54000000004f64", sid2_byte)
+	loadDB(t, rclient, sid2_counter)
 
 	// Load CONFIG_DB for alias translation
 	prepareConfigDb(t, namespace)

@@ -3450,13 +3450,13 @@ func runTestSubscribe(t *testing.T, namespace string) {
 			},
 			wantNoti: []client.Notification{
 				client.Connected{},
-				client.Update{Path: []string{"COUNTERS_DB", "COUNTERS", "SID*"}, TS: time.Unix(0, 200), Val: countersSidCountersWildcardJson},
+				client.Update{Path: []string{"COUNTERS", "SID*"}, TS: time.Unix(0, 200), Val: countersSidCountersWildcardJson},
 				client.Sync{},
-				client.Update{Path: []string{"COUNTERS_DB", "COUNTERS", "SID*"}, TS: time.Unix(0, 200), Val: mergeStrMaps(countersSidCountersWildcardJson, singleSidCounterJsonUpdate)},
+				client.Update{Path: []string{"COUNTERS", "SID*"}, TS: time.Unix(0, 200), Val: mergeStrMaps(countersSidCountersWildcardJson, singleSidCounterJsonUpdate)},
 				client.Sync{},
-				client.Update{Path: []string{"COUNTERS_DB", "COUNTERS", "SID*"}, TS: time.Unix(0, 200), Val: mergeStrMaps(countersSidCountersWildcardJson, singleSidCounterJsonUpdate)},
+				client.Update{Path: []string{"COUNTERS", "SID*"}, TS: time.Unix(0, 200), Val: mergeStrMaps(countersSidCountersWildcardJson, singleSidCounterJsonUpdate)},
 				client.Sync{},
-				client.Update{Path: []string{"COUNTERS_DB", "COUNTERS", "SID*"}, TS: time.Unix(0, 200), Val: mergeStrMaps(countersSidCountersWildcardJson, singleSidCounterJsonUpdate)},
+				client.Update{Path: []string{"COUNTERS", "SID*"}, TS: time.Unix(0, 200), Val: mergeStrMaps(countersSidCountersWildcardJson, singleSidCounterJsonUpdate)},
 				client.Sync{},
 			},
 		},
@@ -3468,9 +3468,9 @@ func runTestSubscribe(t *testing.T, namespace string) {
 			},
 			wantNoti: []client.Notification{
 				client.Connected{},
-				client.Update{Path: []string{"COUNTERS_DB", "COUNTERS", "SID*"}, TS: time.Unix(0, 200), Val: countersSidCountersWildcardJson},
+				client.Update{Path: []string{"COUNTERS", "SID*"}, TS: time.Unix(0, 200), Val: countersSidCountersWildcardJson},
 				client.Sync{},
-				client.Update{Path: []string{"COUNTERS_DB", "COUNTERS", "SID*"}, TS: time.Unix(0, 200), Val: singleSidCounterJsonUpdate},
+				client.Update{Path: []string{"COUNTERS", "SID*"}, TS: time.Unix(0, 200), Val: singleSidCounterJsonUpdate},
 			},
 		},
 		{
@@ -3482,9 +3482,9 @@ func runTestSubscribe(t *testing.T, namespace string) {
 			},
 			wantNoti: []client.Notification{
 				client.Connected{},
-				client.Update{Path: []string{"COUNTERS_DB", "COUNTERS", "SID*"}, TS: time.Unix(0, 200), Val: countersSidCountersWildcardJson},
+				client.Update{Path: []string{"COUNTERS", "SID*"}, TS: time.Unix(0, 200), Val: countersSidCountersWildcardJson},
 				client.Sync{},
-				client.Update{Path: []string{"COUNTERS_DB", "COUNTERS", "SID*"}, TS: time.Unix(0, 200), Val: mergeStrMaps(countersSidCountersWildcardJson, singleSidCounterJsonUpdate)},
+				client.Update{Path: []string{"COUNTERS", "SID*"}, TS: time.Unix(0, 200), Val: mergeStrMaps(countersSidCountersWildcardJson, singleSidCounterJsonUpdate)},
 			},
 		},
 	}

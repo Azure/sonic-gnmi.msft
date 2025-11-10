@@ -893,5 +893,6 @@ func init() {
 		0,
 		0,
 		nil,
+		showCmdOptionJson,
 	)
 }

@@ -11,11 +11,13 @@ import (
 )
 
 const BGP_DEVICE_GLOBAL_KEY = "STATE"
+const TSA_KEY = "tsa_enabled"
+const WCMP_KEY = "wcmp_enabled"
 
 func buildBgpDeviceGlobalEntry(data map[string]interface{}) map[string]interface{} {
 	return map[string]interface{}{
-		"tsa":    helpers.StateBoolToStr(common.GetValueOrDefault(data, "tsa_enabled", "N/A")),
-		"w-ecmp": helpers.StateBoolToStr(common.GetValueOrDefault(data, "wcmp_enabled", "N/A")),
+		"tsa":    helpers.StateBoolToStr(common.GetValueOrDefault(data, TSA_KEY, "N/A")),
+		"w-ecmp": helpers.StateBoolToStr(common.GetValueOrDefault(data, WCMP_KEY, "N/A")),
 	}
 }
 

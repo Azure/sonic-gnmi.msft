@@ -886,6 +886,16 @@ func init() {
 		showCmdOptionVerbose,
 	)
 
+	sdc.RegisterCliPath(
+		[]string{"SHOW", "bgp", "device-global"},
+		getBGPDeviceGlobal,
+		"SHOW/bgp/device-global[OPTIONS]: Show BGP device global configuration",
+		0,
+		0,
+		nil,
+		showCmdOptionJson,
+	)
+
 	//SHOW/environment
 	sdc.RegisterCliPath(
 		[]string{"SHOW", "environment"},

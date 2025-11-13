@@ -14,12 +14,12 @@ import (
 	"path/filepath"
 	"reflect"
 	"runtime"
+	"sort"
 	"strings"
 	"sync"
 	"testing"
 	"time"
 	"unsafe"
-	"sort"
 
 	"crypto/x509"
 	"crypto/x509/pkix"
@@ -248,7 +248,7 @@ func TestPFCWDErrors(t *testing.T) {
 	go runServer(t, s)
 	defer s.ForceStop()
 
-	mock := gomonkey.ApplyFunc(sdc.GetPfcwdMap, func() (map[string]map[string]string, error)  {
+	mock := gomonkey.ApplyFunc(sdc.GetPfcwdMap, func() (map[string]map[string]string, error) {
 		return nil, fmt.Errorf("Mock error")
 	})
 	defer mock.Reset()
@@ -262,16 +262,16 @@ func TestPFCWDErrors(t *testing.T) {
 	json.Unmarshal(countersEthernetWildcardByte, &countersEthernetWildcardJson)
 
 	tests := []struct {
-		desc    string
-		q       client.Query
-		wantNoti    []client.Notification
-		poll    int
+		desc     string
+		q        client.Query
+		wantNoti []client.Notification
+		poll     int
 	}{
 		{
 			desc: "query COUNTERS/Ethernet*",
 			poll: 1,
 			q: client.Query{
-				Target: "COUNTERS_DB",
+				Target:  "COUNTERS_DB",
 				Type:    client.Poll,
 				Queries: []client.Path{{"COUNTERS", "Ethernet*"}},
 				TLS:     &tls.Config{InsecureSkipVerify: true},
@@ -341,7 +341,6 @@ func TestPFCWDErrors(t *testing.T) {
 		})
 	}
 }
-
 
 // runTestGet requests a path from the server by Get grpc call, and compares if
 // the return code and response value are expected.
@@ -752,7 +751,7 @@ func initFullCountersDb(t *testing.T, namespace string) {
 	fileName = "../testdata/COUNTERS_FABRIC_PORT_NAME_MAP.txt"
 	countersFabricPortNameMapByte, err := ioutil.ReadFile(fileName)
 	if err != nil {
-			t.Fatalf("read file %v err: %v", fileName, err)
+		t.Fatalf("read file %v err: %v", fileName, err)
 	}
 	mpi_fab_name_map := loadConfig(t, "COUNTERS_FABRIC_PORT_NAME_MAP", countersFabricPortNameMapByte)
 	loadDB(t, rclient, mpi_fab_name_map)
@@ -761,7 +760,7 @@ func initFullCountersDb(t *testing.T, namespace string) {
 	fileName = "../testdata/COUNTERS:oid:0x1000000000081.txt"
 	countersPort0_Byte, err := ioutil.ReadFile(fileName)
 	if err != nil {
-			t.Fatalf("read file %v err: %v", fileName, err)
+		t.Fatalf("read file %v err: %v", fileName, err)
 	}
 	mpi_fab_counter_0 := loadConfig(t, "COUNTERS:oid:0x1000000000081", countersPort0_Byte)
 	loadDB(t, rclient, mpi_fab_counter_0)
@@ -770,10 +769,11 @@ func initFullCountersDb(t *testing.T, namespace string) {
 	fileName = "../testdata/COUNTERS:oid:0x1000000000082.txt"
 	countersPort1_Byte, err := ioutil.ReadFile(fileName)
 	if err != nil {
-			t.Fatalf("read file %v err: %v", fileName, err)
+		t.Fatalf("read file %v err: %v", fileName, err)
 	}
 	mpi_fab_counter_1 := loadConfig(t, "COUNTERS:oid:0x1000000000082", countersPort1_Byte)
 	loadDB(t, rclient, mpi_fab_counter_1)
+
 }
 
 func prepareConfigDb(t *testing.T, namespace string) {
@@ -965,6 +965,30 @@ func prepareDb(t *testing.T, namespace string) {
 	}
 	mpi_counter = loadConfig(t, "COUNTERS:oid:0x1000000000082", countersPort1_Byte)
 	loadDB(t, rclient, mpi_counter)
+
+	fileName = "../testdata/COUNTERS_SRV6_NAME_MAP.json"
+	countersSRv6NameMapByte, err := os.ReadFile(fileName)
+	if err != nil {
+		t.Fatalf("read file %v err: %v", fileName, err)
+	}
+	counters_srv6_name_map := loadConfig(t, "COUNTERS_SRV6_NAME_MAP", countersSRv6NameMapByte)
+	loadDB(t, rclient, counters_srv6_name_map)
+
+	fileName = "../testdata/COUNTERS:oid:0x54000000004f63.txt"
+	sid1_byte, err := os.ReadFile(fileName)
+	if err != nil {
+		t.Fatalf("read file %v err: %v", fileName, err)
+	}
+	sid1_counter := loadConfig(t, "COUNTERS:oid:0x54000000004f63", sid1_byte)
+	loadDB(t, rclient, sid1_counter)
+
+	fileName = "../testdata/COUNTERS:oid:0x54000000004f64.txt"
+	sid2_byte, err := os.ReadFile(fileName)
+	if err != nil {
+		t.Fatalf("read file %v err: %v", fileName, err)
+	}
+	sid2_counter := loadConfig(t, "COUNTERS:oid:0x54000000004f64", sid2_byte)
+	loadDB(t, rclient, sid2_counter)
 
 	// Load CONFIG_DB for alias translation
 	prepareConfigDb(t, namespace)
@@ -1534,8 +1558,20 @@ func runGnmiTestGet(t *testing.T, namespace string) {
 		t.Fatalf("read file %v err: %v", fileName, err)
 	}
 
-	fileName = "../testdata/COUNTERS:PORT_wildcard" +  namespace + ".txt"
+	fileName = "../testdata/COUNTERS:PORT_wildcard" + namespace + ".txt"
 	countersFabricPortWildcardByte, err := ioutil.ReadFile(fileName)
+	if err != nil {
+		t.Fatalf("read file %v err: %v", fileName, err)
+	}
+
+	fileName = "../testdata/COUNTERS:SID_wildcard.json"
+	countersSidWildcardByte, err := os.ReadFile(fileName)
+	if err != nil {
+		t.Fatalf("read file %v err: %v", fileName, err)
+	}
+
+	fileName = "../testdata/COUNTERS:SID_single_entry.json"
+	countersSidSingleEntryByte, err := os.ReadFile(fileName)
 	if err != nil {
 		t.Fatalf("read file %v err: %v", fileName, err)
 	}
@@ -1547,8 +1583,8 @@ func runGnmiTestGet(t *testing.T, namespace string) {
 	invalidFabricPortName := "PORT0-" + namespace
 	if namespace != ns {
 		stateDBPath = "STATE_DB" + "/" + namespace
-		validFabricPortName =  "PORT0-" + namespace
-		invalidFabricPortName = "PORT0" 
+		validFabricPortName = "PORT0-" + namespace
+		invalidFabricPortName = "PORT0"
 	}
 
 	type testCase struct {
@@ -1763,6 +1799,42 @@ func runGnmiTestGet(t *testing.T, namespace string) {
 			pathTarget:  stateDBPath,
 			textPbPath:  ``,
 			valTest:     true,
+			wantRetCode: codes.NotFound,
+		}, {
+			desc:       "get COUNTERS:SID*",
+			pathTarget: "COUNTERS_DB",
+			textPbPath: `
+					elem: <name: "COUNTERS" >
+					elem: <name: "SID*" >
+				`,
+			wantRetCode: codes.OK,
+			wantRespVal: countersSidWildcardByte,
+			valTest:     true,
+		}, {
+			desc:       "get COUNTERS:SID:fcbb:bbbb:2::/48",
+			pathTarget: "COUNTERS_DB",
+			textPbPath: `
+					elem: <name: "COUNTERS" >
+					elem: <name: "SID:fcbb:bbbb:2::/48" >
+				`,
+			wantRetCode: codes.OK,
+			wantRespVal: countersSidSingleEntryByte,
+			valTest:     true,
+		}, {
+			desc:       "get COUNTERS:fcbb:bbbb:2::/48 -- malformed",
+			pathTarget: "COUNTERS_DB",
+			textPbPath: `
+					elem: <name: "COUNTERS" >
+					elem: <name: "fcbb:bbbb:2::/48" >
+				`,
+			wantRetCode: codes.NotFound,
+		}, {
+			desc:       "get COUNTERS:fcbb:bbbb:3::/48 -- not existing",
+			pathTarget: "COUNTERS_DB",
+			textPbPath: `
+					elem: <name: "COUNTERS" >
+					elem: <name: "SID:fcbb:bbbb:3::/48" >
+				`,
 			wantRetCode: codes.NotFound,
 		},
 
@@ -2205,6 +2277,19 @@ func runTestSubscribe(t *testing.T, namespace string) {
 	json.Unmarshal(countersEthernetWildPfcwdByte, &tmp6)
 	tmp6.(map[string]interface{})["Ethernet68/1:3"].(map[string]interface{})["PFC_WD_QUEUE_STATS_DEADLOCK_DETECTED"] = "1"
 	countersEthernetWildPfcwdUpdate := tmp6
+
+	var countersSidCountersWildcardJson interface{}
+	// for SID* subscription
+	fileName = "../testdata/COUNTERS:SID_wildcard.json"
+	countersSidWildcardByte, err := ioutil.ReadFile(fileName)
+	if err != nil {
+		t.Fatalf("read file %v err: %v", fileName, err)
+	}
+	json.Unmarshal(countersSidWildcardByte, &countersSidCountersWildcardJson)
+	//The update with new value
+	tmp = map[string]interface{}{"SAI_COUNTER_STAT_PACKETS": "4", "SAI_COUNTER_STAT_BYTES": "0"}
+	singleSidCounterJsonUpdate := make(map[string]interface{})
+	singleSidCounterJsonUpdate["fcbb:bbbb:1::/48"] = tmp
 
 	///////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -3344,6 +3429,64 @@ func runTestSubscribe(t *testing.T, namespace string) {
 				client.Update{Path: []string{"COUNTERS", "Ethernet*", "Pfcwd"}, TS: time.Unix(0, 200), Val: map[string]interface{}{}}, //empty update
 			},
 		},
+		{
+			desc: "poll query for COUNTERS/SID* with field value change",
+			poll: 3,
+			q: client.Query{
+				Target:  "COUNTERS_DB",
+				Type:    client.Poll,
+				Queries: []client.Path{{"COUNTERS", "SID*"}},
+				TLS:     &tls.Config{InsecureSkipVerify: true},
+			},
+			updates: []tablePathValue{
+				{
+					dbName:    "COUNTERS_DB",
+					tableName: "COUNTERS",
+					tableKey:  "oid:0x54000000004f63",
+					delimitor: ":",
+					field:     "SAI_COUNTER_STAT_PACKETS",
+					value:     "4", // being changed to 4 from 0
+				},
+			},
+			wantNoti: []client.Notification{
+				client.Connected{},
+				client.Update{Path: []string{"COUNTERS", "SID*"}, TS: time.Unix(0, 200), Val: countersSidCountersWildcardJson},
+				client.Sync{},
+				client.Update{Path: []string{"COUNTERS", "SID*"}, TS: time.Unix(0, 200), Val: mergeStrMaps(countersSidCountersWildcardJson, singleSidCounterJsonUpdate)},
+				client.Sync{},
+				client.Update{Path: []string{"COUNTERS", "SID*"}, TS: time.Unix(0, 200), Val: mergeStrMaps(countersSidCountersWildcardJson, singleSidCounterJsonUpdate)},
+				client.Sync{},
+				client.Update{Path: []string{"COUNTERS", "SID*"}, TS: time.Unix(0, 200), Val: mergeStrMaps(countersSidCountersWildcardJson, singleSidCounterJsonUpdate)},
+				client.Sync{},
+			},
+		},
+		{
+			desc: "stream query for table key SID* with field value update",
+			q:    createCountersDbQueryOnChangeMode(t, "COUNTERS", "SID*"),
+			updates: []tablePathValue{
+				createCountersTableSetUpdate("oid:0x54000000004f63", "SAI_COUNTER_STAT_PACKETS", "4"),
+			},
+			wantNoti: []client.Notification{
+				client.Connected{},
+				client.Update{Path: []string{"COUNTERS", "SID*"}, TS: time.Unix(0, 200), Val: countersSidCountersWildcardJson},
+				client.Sync{},
+				client.Update{Path: []string{"COUNTERS", "SID*"}, TS: time.Unix(0, 200), Val: singleSidCounterJsonUpdate},
+			},
+		},
+		{
+			desc:              "sample stream query for table key SID* with field value update",
+			q:                 createCountersDbQuerySampleMode(t, 0, false, "COUNTERS", "SID*"),
+			generateIntervals: true,
+			updates: []tablePathValue{
+				createCountersTableSetUpdate("oid:0x54000000004f63", "SAI_COUNTER_STAT_PACKETS", "4"),
+			},
+			wantNoti: []client.Notification{
+				client.Connected{},
+				client.Update{Path: []string{"COUNTERS", "SID*"}, TS: time.Unix(0, 200), Val: countersSidCountersWildcardJson},
+				client.Sync{},
+				client.Update{Path: []string{"COUNTERS", "SID*"}, TS: time.Unix(0, 200), Val: mergeStrMaps(countersSidCountersWildcardJson, singleSidCounterJsonUpdate)},
+			},
+		},
 	}
 
 	sdc.NeedMock = true
@@ -3607,7 +3750,7 @@ func TestGNOI(t *testing.T) {
 		if len(resp.Stats) == 0 {
 			t.Fatalf("Expected at least one StatInfo in response")
 		}
-	
+
 		statInfo := resp.Stats[0]
 
 		if statInfo.LastModified != 1609459200000000000 {
@@ -3627,7 +3770,7 @@ func TestGNOI(t *testing.T) {
 	t.Run("FileStatFailure", func(t *testing.T) {
 		mockClient := &ssc.DbusClient{}
 		expectedError := fmt.Errorf("failed to get file stats")
-		
+
 		mock := gomonkey.ApplyMethod(reflect.TypeOf(mockClient), "GetFileStat", func(_ *ssc.DbusClient, path string) (map[string]string, error) {
 			return nil, expectedError
 		})
@@ -3645,10 +3788,10 @@ func TestGNOI(t *testing.T) {
 		if resp != nil {
 			t.Fatalf("Expected nil response but got: %v", resp)
 		}
-	
+
 		if !strings.Contains(err.Error(), expectedError.Error()) {
 			t.Errorf("Expected error to contain '%v' but got '%v'", expectedError, err)
-		}	
+		}
 	})
 
 	type configData struct {
@@ -4465,16 +4608,16 @@ func TestConnectionsKeepAlive(t *testing.T) {
 	defer s.Stop()
 
 	tests := []struct {
-		desc    string
-		q       client.Query
-		want    []client.Notification
-		poll    int
+		desc string
+		q    client.Query
+		want []client.Notification
+		poll int
 	}{
 		{
 			desc: "Testing KeepAlive with goroutine count",
 			poll: 3,
 			q: client.Query{
-				Target: "COUNTERS_DB",
+				Target:  "COUNTERS_DB",
 				Type:    client.Poll,
 				Queries: []client.Path{{"COUNTERS", "Ethernet*"}},
 				TLS:     &tls.Config{InsecureSkipVerify: true},
@@ -4485,7 +4628,7 @@ func TestConnectionsKeepAlive(t *testing.T) {
 			},
 		},
 	}
-	for _, tt := range(tests) {
+	for _, tt := range tests {
 		var clients []*cacheclient.CacheClient
 		for i := 0; i < 5; i++ {
 			t.Run(tt.desc, func(t *testing.T) {
@@ -4514,7 +4657,7 @@ func TestConnectionsKeepAlive(t *testing.T) {
 				}
 			})
 		}
-		for _, cacheClient := range(clients) {
+		for _, cacheClient := range clients {
 			cacheClient.Close()
 		}
 	}
@@ -4828,7 +4971,7 @@ func TestGNMINative(t *testing.T) {
 		return &dbus.Call{}
 	})
 	defer mock2.Reset()
-	mock3 := gomonkey.ApplyFunc(sdc.RunPyCode, func(text string) error {return nil})
+	mock3 := gomonkey.ApplyFunc(sdc.RunPyCode, func(text string) error { return nil })
 	defer mock3.Reset()
 
 	sdcfg.Init()

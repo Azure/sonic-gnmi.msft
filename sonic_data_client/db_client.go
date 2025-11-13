@@ -29,7 +29,6 @@ const (
 
 // Client defines a set of methods which every client must implement.
 // This package provides one implmentation for now: the DbClient
-//
 type Client interface {
 	// StreamRun will start watching service on data source
 	// and enqueue data change to the priority queue.
@@ -57,7 +56,7 @@ type Client interface {
 	// callbacks on send failed
 	FailedSend()
 
-	// callback on sent 
+	// callback on sent
 	SentOne(*Value)
 }
 
@@ -519,7 +518,7 @@ func GetRedisClientsForDb(target string) (redis_client_map map[string]*redis.Cli
 
 // This function get target present in GNMI Request and
 // returns: 1. DbName (string) 2. Is DbName valid (bool)
-//          3. DbNamespace (string) 4. Is DbNamespace present in Target (bool)
+//  3. DbNamespace (string) 4. Is DbNamespace present in Target (bool)
 func IsTargetDb(target string) (string, bool, string, bool) {
 	targetname := strings.Split(target, "/")
 	dbName := targetname[0]
@@ -676,6 +675,10 @@ func populateDbtablePath(prefix, path *gnmipb.Path, pathG2S *map[*gnmipb.Path][]
 		err = initCountersFabricPortNameMap()
 		if err != nil {
 			log.Errorf("Could not create CountersFabricPortNameMap: %v", err)
+		}
+		err = initCountersSidMap()
+		if err != nil {
+			log.Errorf("Could not create CountersSidMap: %v", err)
 		}
 	}
 

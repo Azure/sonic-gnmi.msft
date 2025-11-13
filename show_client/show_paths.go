@@ -861,7 +861,7 @@ func init() {
 		0,
 		1,
 		nil,
-	)  
+	)
 
 	// SHOW/buffer
 	sdc.RegisterCliPath(
@@ -883,6 +883,17 @@ func init() {
 		0,
 		nil,
 		sdc.UnimplementedOption(showCmdOptionNamespace),
+		showCmdOptionVerbose,
+	)
+
+	//SHOW/environment
+	sdc.RegisterCliPath(
+		[]string{"SHOW", "environment"},
+		getEnvironment,
+		"SHOW/environment[OPTIONS]: Show environmentals (voltages, fans, temps)",
+		0,
+		0,
+		nil,
 		showCmdOptionVerbose,
 	)
 }

@@ -895,4 +895,32 @@ func init() {
 		nil,
 		showCmdOptionJson,
 	)
+
+	sdc.RegisterCliPath(
+		[]string{"SHOW", "kdump", "config"},
+		getKdumpConfig,
+		"SHOW/kdump/config[OPTIONS]: Show kdump configuration",
+		0,
+		0,
+		nil,
+	)
+
+	sdc.RegisterCliPath(
+		[]string{"SHOW", "kdump", "files"},
+		getKdumpFiles,
+		"SHOW/kdump/files[OPTIONS]: Show kernel core dump and dmesg files",
+		0,
+		0,
+		nil,
+	)
+
+	sdc.RegisterCliPath(
+		[]string{"SHOW", "kdump", "logging"},
+		getKdumpLogging,
+		"SHOW/kdump/logging/{FILENAME}[OPTIONS]: Show last lines of kernel dmesg file",
+		0,
+		1,
+		nil,
+		showCmdOptionLines,
+	)
 }

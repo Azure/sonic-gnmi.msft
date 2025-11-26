@@ -4,8 +4,8 @@ import (
 	"encoding/json"
 	"fmt"
 	"sort"
-	"strings"
 	"strconv"
+	"strings"
 
 	log "github.com/golang/glog"
 	"github.com/sonic-net/sonic-gnmi/show_client/common"
@@ -13,6 +13,9 @@ import (
 )
 
 const KDUMP_CONFIG_KEY = "config"
+const KDUMP_CONFIG_STATUS_CMD = "/usr/sbin/kdump-config status"
+const FIND_KDUMP_CMD = "find /var/crash -name 'kdump.*'"
+const FIND_DMESG_CMD = "find /var/crash -name 'dmesg.*'"
 
 func getKdumpConfigData(fieldName string) string {
 	queries := [][]string{{"CONFIG_DB", "KDUMP"}}
@@ -23,21 +26,13 @@ func getKdumpConfigData(fieldName string) string {
 		return "Unknown"
 	}
 
-	if kdumpTable, ok := rawData[KDUMP_CONFIG_KEY].(map[string]interface{}); ok {
-		if value, exists := kdumpTable[fieldName]; exists {
-			if strValue, ok := value.(string); ok {
-				return strValue
-			}
-		}
-	}
-
-	return "Unknown"
+	return common.GetFieldValueString(rawData, KDUMP_CONFIG_KEY, "Unknown", fieldName)
 }
 
 func getKdumpOperMode() string {
 	operMode := "Not Ready"
 	
-	output, err := common.GetDataFromHostCommand("/usr/sbin/kdump-config status")
+	output, err := common.GetDataFromHostCommand(KDUMP_CONFIG_STATUS_CMD)
 	if err != nil {
 		log.V(2).Infof("Failed to get kdump operational mode: %v", err)
 		return operMode
@@ -92,7 +87,7 @@ func getKdumpCoreFiles() (string, []string) {
 	cmdMessage := ""
 	dumpFileList := []string{}
 
-	output, err := common.GetDataFromHostCommand("find /var/crash -name 'kdump.*'")
+	output, err := common.GetDataFromHostCommand(FIND_KDUMP_CMD)
 	if err != nil {
 		log.Errorf("Failed to get kdump core files: %v", err)
 		cmdMessage = "No kernel core dump file available!"
@@ -114,7 +109,7 @@ func getKdumpDmesgFiles() (string, []string) {
 	cmdMessage := ""
 	dmesgFileList := []string{}
 
-	output, err := common.GetDataFromHostCommand("find /var/crash -name 'dmesg.*'")
+	output, err := common.GetDataFromHostCommand(FIND_DMESG_CMD)
 	if err != nil {
 		log.Errorf("Failed to get kdump dmesg files: %v", err)
 		cmdMessage = "No kernel dmesg file available!"

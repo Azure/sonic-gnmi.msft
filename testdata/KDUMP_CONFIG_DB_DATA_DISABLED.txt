@@ -1,0 +1,8 @@
+{
+    "KDUMP|config": {
+        "enabled": "false",
+        "memory": "64M",
+        "num_dumps": "3",
+        "remote": "false"
+    }
+}

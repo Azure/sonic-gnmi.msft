@@ -32,6 +32,7 @@ const (
 	showCmdOptionPrintAllDesc          = "[printall=true] Show all counters"
 	showCmdOptionAllDesc               = "[all=true] No-op since all queue counters are shown by default"
 	showCmdOptionIfaceDesc             = "[iface=TEXT] Filter by interface name"
+	showCmdOptionLinesDesc             = "[lines=INTEGER] Number of lines to show (default: 10)"
 )
 
 // Option keys
@@ -205,4 +206,11 @@ var (
 		showCmdOptionIfaceDesc,
 		sdc.StringValue,
 	)
+
+	showCmdOptionLines = sdc.NewShowCmdOption(
+		"lines",
+		showCmdOptionLinesDesc,
+		sdc.IntValue,
+	)
 )
+

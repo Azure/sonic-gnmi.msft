@@ -8,7 +8,7 @@ on:
       - 'master'
       - '202[0-9][0-9][0-9]'
       - '202[0-9][0-9][0-9]-dev'
-  pull_request_target:
+  pull_request:
     branches:
       - 'master'
       - '202[0-9][0-9][0-9]'
@@ -19,6 +19,7 @@ jobs:
   analyze:
     name: Analyze
     runs-on: ubuntu-latest
+
     permissions:
       actions: read
       contents: read
@@ -30,31 +31,47 @@ jobs:
         language: [ 'go' ]
 
     steps:
-    - name: Checkout repository
-      uses: actions/checkout@v3
+      # nosemgrep: yaml.github-actions.security.pull-request-target-code-checkout.pull-request-target-code-checkout
+      - name: Checkout PR head (for pull_request_target)
+        if: ${{ github.event_name == 'pull_request_target' }}
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          repository: ${{ github.event.pull_request.head.repo.full_name }}
+          fetch-depth: 2
+          persist-credentials: false
 
-    # Checkout sonic-mgmt-common repository which is used by sonic-gnmi
-    - name: Checkout sonic-mgmt-common repository
-      uses: actions/checkout@v3
-      with:
-        repository: sonic-net/sonic-mgmt-common
-        path: sonic-mgmt-common
-        ref: refs/heads/202411
+      - name: Checkout repository (for push/workflow_dispatch)
+        if: ${{ github.event_name != 'pull_request_target' }}
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+          persist-credentials: false
 
-    # Update go.mod to use local sonic-mgmt-common.
-    # This is the same hack used in the CI pipeline. See lgtm.yml.
-    # We should find a better way to do this.
-    - name: Update go.mod for sonic-mgmt-common
-      run: sed -i 's@replace github.com/Azure/sonic-mgmt-common => ../sonic-mgmt-common@replace github.com/Azure/sonic-mgmt-common => ./sonic-mgmt-common@g' go.mod
+      # Checkout sonic-mgmt-common repository which is used by sonic-gnmi
+      - name: Checkout sonic-mgmt-common repository
+        uses: actions/checkout@v4
+        with:
+          repository: sonic-net/sonic-mgmt-common
+          path: sonic-mgmt-common
+          ref: refs/heads/202411
+          fetch-depth: 2
+          persist-credentials: false
 
-    # Initializes the CodeQL tools for scanning.
-    - name: Initialize CodeQL
-      uses: github/codeql-action/init@v2.1.29
-      with:
-        config-file: ./.github/codeql/codeql-config.yml
-        languages: ${{ matrix.language }}
+      # Update go.mod to use local sonic-mgmt-common.
+      # This is the same hack used in the CI pipeline. See lgtm.yml.
+      # We should find a better way to do this.
+      - name: Update go.mod for sonic-mgmt-common
+        run: sed -i 's@replace github.com/Azure/sonic-mgmt-common => ../sonic-mgmt-common@replace github.com/Azure/sonic-mgmt-common => ./sonic-mgmt-common@g' go.mod
 
-    - name: Perform CodeQL Analysis
-      uses: github/codeql-action/analyze@v2.1.29
-      with:
-        category: "/language:${{matrix.language}}"
+      # Initializes the CodeQL tools for scanning.
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@v4
+        with:
+          config-file: ./.github/codeql/codeql-config.yml
+          languages: ${{ matrix.language }}
+
+      - name: Perform CodeQL Analysis
+        uses: github/codeql-action/analyze@v4
+        with:
+          category: "/language:${{ matrix.language }}"

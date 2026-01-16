@@ -138,6 +138,8 @@ stages:
 
     - script: |
         set -ex
+        # Install libboost-serialization dependency required by libswsscommon
+        sudo apt-get install -y libboost-serialization1.74.0
         # LIBSWSSCOMMON
         sudo dpkg -i libswsscommon_1.0.0_amd64.deb
         sudo dpkg -i libswsscommon-dev_1.0.0_amd64.deb

@@ -109,23 +109,6 @@ func shouldBypassValidation(ctx context.Context) bool {
 
 ---
 
-## Implementation Tasks
-- [ ] Add `shouldBypassValidation(ctx)` helper in mixed_db_client.go
-- [ ] Add SKU detection function (read from ConfigDB)
-- [ ] Define allowed tables whitelist
-- [ ] Implement `applyPatchDirectly()` using swsscommon
-- [ ] Modify `SetIncrementalConfig()` to check bypass conditions
-- [ ] Add logging for bypass path
-
-### Files to Modify
-```
-sonic-gnmi.msft/sonic_data_client/
-├── mixed_db_client.go          # Main bypass logic + metadata check
-└── bypass_config.go            # New: SKU check, allowed tables, direct write
-```
-
----
-
 ## Risk Acknowledgment
 - No YANG validation (invalid config possible)
 - No dependency ordering

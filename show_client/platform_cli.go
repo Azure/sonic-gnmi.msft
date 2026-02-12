@@ -218,7 +218,6 @@ type PsuStatus struct {
 }
 
 // getPlatformPsustatus implements the "show platform psustatus" command
-// This replicates the logic from sonic-utilities/scripts/psushow
 // Supports filtering by PSU index via options (index=INTEGER)
 func getPlatformPsustatus(args sdc.CmdArgs, options sdc.OptionMap) ([]byte, error) {
 	// Get optional PSU index filter

@@ -1,0 +1,19 @@
+{
+	"chassis 1": {"psu_num": "2"},
+	"PSU 1": {
+		"presence": "true",
+		"status": "true",
+		"power_overload": "false",
+		"model": "PWR-500AC-F",
+		"serial": "ABC12345678",
+		"revision": "A1",
+		"voltage": "12.00",
+		"current": "5.50",
+		"power": "66.00",
+		"led_status": "green"
+	},
+	"PSU 2": {
+		"presence": "false",
+		"led_status": "off"
+	}
+}

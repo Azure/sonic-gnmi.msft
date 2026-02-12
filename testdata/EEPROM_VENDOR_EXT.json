@@ -1,0 +1,11 @@
+{
+	"State": {"Initialized": "1"},
+	"TlvHeader": {"Id String": "TlvInfo", "Version": "1", "Total Length": "256"},
+	"0x21": {"Name": "Product Name", "Len": "10", "Value": "MSN2700"},
+	"0xfd": {
+		"Num_vendor_ext": "2",
+		"Name_0": "Vendor Extension", "Len_0": "10", "Value_0": "CustomData1",
+		"Name_1": "Vendor Extension", "Len_1": "8", "Value_1": "CustomData2"
+	},
+	"Checksum": {"Valid": "1"}
+}

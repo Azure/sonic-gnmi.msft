@@ -33,12 +33,14 @@ const (
 	showCmdOptionAllDesc               = "[all=true] No-op since all queue counters are shown by default"
 	showCmdOptionIfaceDesc             = "[iface=TEXT] Filter by interface name"
 	showCmdOptionLinesDesc             = "[lines=INTEGER] Number of lines to show (default: 10)"
+	showCmdOptionPsuIndexDesc          = "[index=INTEGER] Display a specific PSU by index"
 )
 
 // Option keys
 const (
 	OptionKeyVerbose  = "verbose"
 	SonicCliIfaceMode = "SONIC_CLI_IFACE_MODE"
+	OptionKeyPsuIndex = "index"
 )
 
 var (
@@ -210,6 +212,12 @@ var (
 	showCmdOptionLines = sdc.NewShowCmdOption(
 		"lines",
 		showCmdOptionLinesDesc,
+		sdc.IntValue,
+	)
+
+	showCmdOptionPsuIndex = sdc.NewShowCmdOption(
+		"index",
+		showCmdOptionPsuIndexDesc,
 		sdc.IntValue,
 	)
 )

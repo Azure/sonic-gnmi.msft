@@ -729,6 +729,40 @@ func init() {
 		showCmdOptionVerbose,
 	)
 
+	// SHOW/platform/summary
+	sdc.RegisterCliPath(
+		[]string{"SHOW", "platform", "summary"},
+		getPlatformSummary,
+		"SHOW/platform/summary[OPTIONS]: Show hardware platform information",
+		0,
+		0,
+		nil,
+	)
+
+	// SHOW/platform/syseeprom
+	sdc.RegisterCliPath(
+		[]string{"SHOW", "platform", "syseeprom"},
+		getPlatformSyseeprom,
+		"SHOW/platform/syseeprom[OPTIONS]: Show system EEPROM information",
+		0,
+		0,
+		nil,
+		showCmdOptionVerbose,
+	)
+
+	// SHOW/platform/psustatus
+	sdc.RegisterCliPath(
+		[]string{"SHOW", "platform", "psustatus"},
+		getPlatformPsustatus,
+		"SHOW/platform/psustatus[OPTIONS]: Show power supply unit status",
+		0,
+		0,
+		nil,
+		showCmdOptionJson,
+		showCmdOptionVerbose,
+		showCmdOptionPsuIndex,
+	)
+
 	// SHOW/uptime
 	sdc.RegisterCliPath(
 		[]string{"SHOW", "uptime"},

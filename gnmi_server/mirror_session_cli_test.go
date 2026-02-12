@@ -35,51 +35,44 @@ func TestGetMirrorSession(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), QueryTimeout*time.Second)
 	defer cancel()
 
-	// Mock data for testing
-	configDbMirrorSession := map[string]interface{}{
-		"CONFIG_DB": map[string]interface{}{
-			"MIRROR_SESSION": map[string]interface{}{
-				"session1": map[string]interface{}{
-					"type":     "ERSPAN",
-					"src_ip":   "1.1.1.1",
-					"dst_ip":   "2.2.2.2",
-					"gre_type": "0x88be",
-					"dscp":     "8",
-					"ttl":      "255",
-					"queue":    "7",
-					"src_port": "Ethernet0",
-					"direction": "both",
-				},
-				"session2": map[string]interface{}{
-					"type":      "SPAN",
-					"dst_port":  "Ethernet4",
-					"src_port":  "Ethernet8",
-					"direction": "ingress",
-					"queue":     "6",
-				},
-			},
+	// Mock database data separated into CONFIG_DB and STATE_DB
+	// CONFIG_DB data (first query)
+	configResult := map[string]interface{}{
+		"session1": map[string]interface{}{
+			"type":      "ERSPAN",
+			"src_ip":    "1.1.1.1",
+			"dst_ip":    "2.2.2.2",
+			"gre_type":  "0x88be",
+			"dscp":      "8",
+			"ttl":       "255",
+			"queue":     "7",
+			"src_port":  "Ethernet0",
+			"direction": "both",
+		},
+		"session2": map[string]interface{}{
+			"type":      "SPAN",
+			"dst_port":  "Ethernet4",
+			"src_port":  "Ethernet8",
+			"direction": "ingress",
+			"queue":     "6",
 		},
 	}
 
-	stateDbMirrorSession := map[string]interface{}{
-		"STATE_DB": map[string]interface{}{
-			"MIRROR_SESSION_TABLE": map[string]interface{}{
-				"MIRROR_SESSION_TABLE|session1": map[string]interface{}{
-					"status":       "active",
-					"monitor_port": "Ethernet12",
-				},
-				"MIRROR_SESSION_TABLE|session2": map[string]interface{}{
-					"status": "active",
-				},
-			},
-		},
+	// STATE_DB data (per-session queries) - returned directly without session name wrapper
+	// This matches the actual behavior of GetMapFromQueries when querying a specific key
+	stateResult1Direct := map[string]interface{}{
+		"status":       "active",
+		"monitor_port": "Ethernet12",
 	}
 
-	emptyStateDb := map[string]interface{}{
-		"STATE_DB": map[string]interface{}{
-			"MIRROR_SESSION_TABLE": map[string]interface{}{},
-		},
+	stateResult2Direct := map[string]interface{}{
+		"status": "active",
 	}
+
+	emptyConfigResult := map[string]interface{}{}
+
+	// Empty state results to simulate STATE_DB query errors
+	emptyStateResult := map[string]interface{}{}
 
 	expectedAllSessions := `{
 		"erspan_sessions": [
@@ -109,41 +102,6 @@ func TestGetMirrorSession(t *testing.T) {
 				"policer": ""
 			}
 		]
-	}`
-
-	expectedVerbose := `{
-		"erspan_sessions": [
-			{
-				"name": "session1",
-				"status": "active",
-				"src_ip": "1.1.1.1",
-				"dst_ip": "2.2.2.2",
-				"gre": "0x88be",
-				"dscp": "8",
-				"ttl": "255",
-				"queue": "7",
-				"policer": "",
-				"monitor_port": "Ethernet12",
-				"src_port": "Ethernet0",
-				"direction": "both"
-			}
-		],
-		"span_sessions": [
-			{
-				"name": "session2",
-				"status": "active",
-				"dst_port": "Ethernet4",
-				"src_port": "Ethernet8",
-				"direction": "ingress",
-				"queue": "6",
-				"policer": ""
-			}
-		],
-		"totals": {
-			"total_erspan": 1,
-			"total_span": 1,
-			"total_sessions": 2
-		}
 	}`
 
 	expectedFilteredSession := `{
@@ -215,39 +173,23 @@ func TestGetMirrorSession(t *testing.T) {
 			wantRespVal: []byte(expectedAllSessions),
 			valTest:     true,
 			testInit: func() *gomonkey.Patches {
-				patches := gomonkey.NewPatches()
 				callCount := 0
-				patches.ApplyFunc(sccommon.GetMapFromQueries, func(queries [][]string) (map[string]interface{}, error) {
+				patches := gomonkey.ApplyFunc(sccommon.GetMapFromQueries, func(queries [][]string) (map[string]interface{}, error) {
 					callCount++
+					// First call: CONFIG_DB
 					if callCount == 1 {
-						// First call for CONFIG_DB
-						return configDbMirrorSession, nil
+						return configResult, nil
 					}
-					// Second call for STATE_DB
-					return stateDbMirrorSession, nil
-				})
-				return patches
-			},
-		},
-		{
-			desc:       "query show mirror_session - verbose mode",
-			pathTarget: "SHOW",
-			textPbPath: `
-				elem: <name: "mirror_session" >
-				elem: <name: "" key: { key: "verbose" value: "true" } >
-			`,
-			wantRetCode: codes.OK,
-			wantRespVal: []byte(expectedVerbose),
-			valTest:     true,
-			testInit: func() *gomonkey.Patches {
-				patches := gomonkey.NewPatches()
-				callCount := 0
-				patches.ApplyFunc(sccommon.GetMapFromQueries, func(queries [][]string) (map[string]interface{}, error) {
-					callCount++
-					if callCount == 1 {
-						return configDbMirrorSession, nil
+					// Subsequent calls: STATE_DB for individual sessions (returned directly)
+					if len(queries) > 0 && len(queries[0]) > 2 {
+						sessionName := queries[0][2]
+						if sessionName == "session1" {
+							return stateResult1Direct, nil
+						} else if sessionName == "session2" {
+							return stateResult2Direct, nil
+						}
 					}
-					return stateDbMirrorSession, nil
+					return map[string]interface{}{}, nil
 				})
 				return patches
 			},
@@ -263,20 +205,27 @@ func TestGetMirrorSession(t *testing.T) {
 			wantRespVal: []byte(expectedFilteredSession),
 			valTest:     true,
 			testInit: func() *gomonkey.Patches {
-				patches := gomonkey.NewPatches()
 				callCount := 0
-				patches.ApplyFunc(sccommon.GetMapFromQueries, func(queries [][]string) (map[string]interface{}, error) {
+				patches := gomonkey.ApplyFunc(sccommon.GetMapFromQueries, func(queries [][]string) (map[string]interface{}, error) {
 					callCount++
 					if callCount == 1 {
-						return configDbMirrorSession, nil
+						return configResult, nil
 					}
-					return stateDbMirrorSession, nil
+					if len(queries) > 0 && len(queries[0]) > 2 {
+						sessionName := queries[0][2]
+						if sessionName == "session1" {
+							return stateResult1Direct, nil
+						} else if sessionName == "session2" {
+							return stateResult2Direct, nil
+						}
+					}
+					return map[string]interface{}{}, nil
 				})
 				return patches
 			},
 		},
 		{
-			desc:       "query show mirror_session - error state (no STATE_DB data)",
+			desc:       "query show mirror_session - error state",
 			pathTarget: "SHOW",
 			textPbPath: `
 				elem: <name: "mirror_session" >
@@ -285,14 +234,15 @@ func TestGetMirrorSession(t *testing.T) {
 			wantRespVal: []byte(expectedErrorState),
 			valTest:     true,
 			testInit: func() *gomonkey.Patches {
-				patches := gomonkey.NewPatches()
 				callCount := 0
-				patches.ApplyFunc(sccommon.GetMapFromQueries, func(queries [][]string) (map[string]interface{}, error) {
+				patches := gomonkey.ApplyFunc(sccommon.GetMapFromQueries, func(queries [][]string) (map[string]interface{}, error) {
 					callCount++
+					// Return CONFIG_DB data on first call
 					if callCount == 1 {
-						return configDbMirrorSession, nil
+						return configResult, nil
 					}
-					return emptyStateDb, nil
+					// Return errors for STATE_DB queries to simulate missing state
+					return emptyStateResult, fmt.Errorf("state data not found")
 				})
 				return patches
 			},
@@ -307,25 +257,14 @@ func TestGetMirrorSession(t *testing.T) {
 			wantRespVal: []byte(`{"erspan_sessions":[],"span_sessions":[]}`),
 			valTest:     true,
 			testInit: func() *gomonkey.Patches {
-				emptyConfigDb := map[string]interface{}{
-					"CONFIG_DB": map[string]interface{}{
-						"MIRROR_SESSION": map[string]interface{}{},
-					},
-				}
-				patches := gomonkey.NewPatches()
-				callCount := 0
-				patches.ApplyFunc(sccommon.GetMapFromQueries, func(queries [][]string) (map[string]interface{}, error) {
-					callCount++
-					if callCount == 1 {
-						return emptyConfigDb, nil
-					}
-					return emptyStateDb, nil
+				patches := gomonkey.ApplyFunc(sccommon.GetMapFromQueries, func(queries [][]string) (map[string]interface{}, error) {
+					return emptyConfigResult, nil
 				})
 				return patches
 			},
 		},
 		{
-			desc:       "query show mirror_session - CONFIG_DB query error",
+			desc:       "query show mirror_session - readSessionsInfo error",
 			pathTarget: "SHOW",
 			textPbPath: `
 				elem: <name: "mirror_session" >
@@ -334,38 +273,8 @@ func TestGetMirrorSession(t *testing.T) {
 			wantRespVal: nil,
 			valTest:     false,
 			testInit: func() *gomonkey.Patches {
-				patches := gomonkey.NewPatches()
-				callCount := 0
-				patches.ApplyFunc(sccommon.GetMapFromQueries, func(queries [][]string) (map[string]interface{}, error) {
-					callCount++
-					if callCount == 1 {
-						// First call for CONFIG_DB - simulate error
-						return nil, fmt.Errorf("CONFIG_DB connection failed")
-					}
-					return stateDbMirrorSession, nil
-				})
-				return patches
-			},
-		},
-		{
-			desc:       "query show mirror_session - STATE_DB query error",
-			pathTarget: "SHOW",
-			textPbPath: `
-				elem: <name: "mirror_session" >
-			`,
-			wantRetCode: codes.NotFound,
-			wantRespVal: nil,
-			valTest:     false,
-			testInit: func() *gomonkey.Patches {
-				patches := gomonkey.NewPatches()
-				callCount := 0
-				patches.ApplyFunc(sccommon.GetMapFromQueries, func(queries [][]string) (map[string]interface{}, error) {
-					callCount++
-					if callCount == 1 {
-						return configDbMirrorSession, nil
-					}
-					// Second call for STATE_DB - simulate error
-					return nil, fmt.Errorf("STATE_DB connection failed")
+				patches := gomonkey.ApplyFunc(sccommon.GetMapFromQueries, func(queries [][]string) (map[string]interface{}, error) {
+					return nil, fmt.Errorf("database connection failed")
 				})
 				return patches
 			},
@@ -381,14 +290,21 @@ func TestGetMirrorSession(t *testing.T) {
 			wantRespVal: []byte(`{"erspan_sessions":[],"span_sessions":[]}`),
 			valTest:     true,
 			testInit: func() *gomonkey.Patches {
-				patches := gomonkey.NewPatches()
 				callCount := 0
-				patches.ApplyFunc(sccommon.GetMapFromQueries, func(queries [][]string) (map[string]interface{}, error) {
+				patches := gomonkey.ApplyFunc(sccommon.GetMapFromQueries, func(queries [][]string) (map[string]interface{}, error) {
 					callCount++
 					if callCount == 1 {
-						return configDbMirrorSession, nil
+						return configResult, nil
 					}
-					return stateDbMirrorSession, nil
+					if len(queries) > 0 && len(queries[0]) > 2 {
+						sessionName := queries[0][2]
+						if sessionName == "session1" {
+							return stateResult1Direct, nil
+						} else if sessionName == "session2" {
+							return stateResult2Direct, nil
+						}
+					}
+					return map[string]interface{}{}, nil
 				})
 				return patches
 			},

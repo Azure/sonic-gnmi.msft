@@ -1,9 +1,0 @@
-{
-	"State": {"Initialized": "1"},
-	"TlvHeader": {"Id String": "TlvInfo", "Version": "1", "Total Length": "256"},
-	"0x21": {"Name": "Product Name", "Len": "10", "Value": "MSN2700"},
-	"0x23": {"Name": "Serial Number", "Len": "16", "Value": "MT1234X56789"},
-	"0x24": {"Name": "Base MAC Address", "Len": "12", "Value": "00:02:03:04:05:06"},
-	"0xfe": {"Name": "CRC-32", "Len": "4", "Value": "0x12345678"},
-	"Checksum": {"Valid": "1"}
-}

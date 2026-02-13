@@ -943,24 +943,14 @@ func init() {
 		0,
 		0,
 		nil,
-	)
-
-	// SHOW/platform/syseeprom
-	sdc.RegisterCliPath(
-		[]string{"SHOW", "platform", "syseeprom"},
-		getPlatformSyseeprom,
-		"SHOW/platform/syseeprom[OPTIONS]: Show system EEPROM information",
-		0,
-		0,
-		nil,
-		showCmdOptionVerbose,
-	)
+		showCmdOptionJson,
+	}
 
 	// SHOW/platform/psustatus
 	sdc.RegisterCliPath(
 		[]string{"SHOW", "platform", "psustatus"},
 		getPlatformPsustatus,
-		"SHOW/platform/psustatus[OPTIONS]: Show power supply unit status",
+		"SHOW/platform/psustatus[OPTIONS]: Show platform psu status",
 		0,
 		0,
 		nil,

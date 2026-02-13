@@ -1,9 +1,0 @@
-{
-	"State": {"Initialized": "1"},
-	"ASY": {"Value": "dummy"},
-	"HwApi": {"Value": "02.00"},
-	"HwRev": {"Value": "11.00"},
-	"MAC": {"Value": "00:11:22:33:44:55"},
-	"SerialNumber": {"Value": "ABC123456789"},
-	"SKU": {"Value": "BCM56850"}
-}

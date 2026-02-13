@@ -944,7 +944,7 @@ func init() {
 		0,
 		nil,
 		showCmdOptionJson,
-	}
+	)
 
 	// SHOW/platform/psustatus
 	sdc.RegisterCliPath(

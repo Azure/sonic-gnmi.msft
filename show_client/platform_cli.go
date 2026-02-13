@@ -28,14 +28,14 @@ type PsuStatus struct {
 	Index    string `json:"index"`
 	Name     string `json:"name"`
 	Presence string `json:"presence"`
+	Status   string `json:"status"`
+	LED      string `json:"led_status"`
 	Model    string `json:"model"`
 	Serial   string `json:"serial"`
 	Revision string `json:"revision"`
 	Voltage  string `json:"voltage"`
 	Current  string `json:"current"`
 	Power    string `json:"power"`
-	Status   string `json:"status"`
-	LED      string `json:"led_status"`
 }
 
 // getPlatformSummary implements the "show platform summary" command

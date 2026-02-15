@@ -22,25 +22,6 @@ import (
 )
 
 func TestGetShowPlatformSummary(t *testing.T) {
-	ResetDataSetsAndMappings(t)
-
-	s := createServer(t, ServerPort)
-	go runServer(t, s)
-	defer s.ForceStop()
-
-	tlsConfig := &tls.Config{InsecureSkipVerify: true}
-	opts := []grpc.DialOption{grpc.WithTransportCredentials(credentials.NewTLS(tlsConfig))}
-
-	conn, err := grpc.Dial(TargetAddr, opts...)
-	if err != nil {
-		t.Fatalf("Dialing to %q failed: %v", TargetAddr, err)
-	}
-	defer conn.Close()
-
-	gClient := pb.NewGNMIClient(conn)
-	ctx, cancel := context.WithTimeout(context.Background(), QueryTimeout*time.Second)
-	defer cancel()
-
 	versionInfo := `
 build_version: test_branch.1-a8fbac59d
 asic_type: mellanox
@@ -49,6 +30,7 @@ asic_type: mellanox
 	chassisDataFilename := "../testdata/PLATFORM_CHASSIS.txt"
 
 	expectedOutput := `{"platform":"x86_64-mlnx_msn2700-r0","hwsku":"Mellanox-SN2700","asic_type":"mellanox","asic_count":"1","serial":"MT1234X56789","model":"MSN2700-CS2FO","revision":"A1"}`
+	expectedOutputWithNA := `{"platform":"","hwsku":"","asic_type":"N/A","asic_count":"1","serial":"N/A","model":"N/A","revision":"N/A"}`
 
 	tests := []struct {
 		desc        string
@@ -60,13 +42,19 @@ asic_type: mellanox
 		testInit    func()
 	}{
 		{
-			desc:       "query SHOW platform summary error",
+			desc:       "query SHOW platform summary with missing data",
 			pathTarget: "SHOW",
 			textPbPath: `
 				elem: <name: "platform" >
 				elem: <name: "summary" >
 			`,
-			wantRetCode: codes.NotFound,
+			wantRetCode: codes.OK,
+			wantRespVal: []byte(expectedOutputWithNA),
+			valTest:     true,
+			testInit: func() {
+				ResetDataSetsAndMappings(t)
+				sdc.ImplIoutilReadFile = ioutil.ReadFile
+			},
 		},
 		{
 			desc:       "query SHOW platform summary success",
@@ -79,7 +67,8 @@ asic_type: mellanox
 			wantRespVal: []byte(expectedOutput),
 			valTest:     true,
 			testInit: func() {
-				sdc.ImplIoutilReadFile = ioutil.ReadFile // Reset mock first
+				ResetDataSetsAndMappings(t)
+				sdc.ImplIoutilReadFile = ioutil.ReadFile
 				MockReadFile(show_client.SonicVersionYamlPath, versionInfo, nil)
 				MockReadFile(deviceMetadataFilename, "onie_platform=x86_64-mlnx_msn2700-r0", nil)
 				MockReadFile(chassisDataFilename, `{"chassis 1": {"serial": "MT1234X56789", "model": "MSN2700-CS2FO", "revision": "A1"}}`, nil)
@@ -89,12 +78,26 @@ asic_type: mellanox
 
 	for _, tt := range tests {
 		t.Run(tt.desc, func(t *testing.T) {
-			// Reset mock before each test
-			sdc.ImplIoutilReadFile = ioutil.ReadFile
-			
 			if tt.testInit != nil {
 				tt.testInit()
 			}
+
+			s := createServer(t, ServerPort)
+			go runServer(t, s)
+			defer s.ForceStop()
+
+			tlsConfig := &tls.Config{InsecureSkipVerify: true}
+			opts := []grpc.DialOption{grpc.WithTransportCredentials(credentials.NewTLS(tlsConfig))}
+
+			conn, err := grpc.Dial(TargetAddr, opts...)
+			if err != nil {
+				t.Fatalf("Dialing to %q failed: %v", TargetAddr, err)
+			}
+			defer conn.Close()
+
+			gClient := pb.NewGNMIClient(conn)
+			ctx, cancel := context.WithTimeout(context.Background(), QueryTimeout*time.Second)
+			defer cancel()
 
 			runTestGet(t, ctx, gClient, tt.pathTarget, tt.textPbPath, tt.wantRetCode, tt.wantRespVal, tt.valTest)
 		})

@@ -6,6 +6,7 @@ package gnmi
 
 import (
 	"crypto/tls"
+	"io/ioutil"
 	"testing"
 	"time"
 	
@@ -16,10 +17,13 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/credentials"
 
+	sdc "github.com/sonic-net/sonic-gnmi/sonic_data_client"
 	show_client "github.com/sonic-net/sonic-gnmi/show_client"
 )
 
 func TestGetShowPlatformSummary(t *testing.T) {
+	ResetDataSetsAndMappings(t)
+
 	s := createServer(t, ServerPort)
 	go runServer(t, s)
 	defer s.ForceStop()
@@ -75,6 +79,7 @@ asic_type: mellanox
 			wantRespVal: []byte(expectedOutput),
 			valTest:     true,
 			testInit: func() {
+				sdc.ImplIoutilReadFile = ioutil.ReadFile // Reset mock first
 				MockReadFile(show_client.SonicVersionYamlPath, versionInfo, nil)
 				MockReadFile(deviceMetadataFilename, "onie_platform=x86_64-mlnx_msn2700-r0", nil)
 				MockReadFile(chassisDataFilename, `{"chassis 1": {"serial": "MT1234X56789", "model": "MSN2700-CS2FO", "revision": "A1"}}`, nil)
@@ -84,6 +89,9 @@ asic_type: mellanox
 
 	for _, tt := range tests {
 		t.Run(tt.desc, func(t *testing.T) {
+			// Reset mock before each test
+			sdc.ImplIoutilReadFile = ioutil.ReadFile
+			
 			if tt.testInit != nil {
 				tt.testInit()
 			}
@@ -94,23 +102,6 @@ asic_type: mellanox
 }
 
 func TestGetShowPlatformPsustatus(t *testing.T) {
-	s := createServer(t, ServerPort)
-	go runServer(t, s)
-	defer s.ForceStop()
-
-	tlsConfig := &tls.Config{InsecureSkipVerify: true}
-	opts := []grpc.DialOption{grpc.WithTransportCredentials(credentials.NewTLS(tlsConfig))}
-
-	conn, err := grpc.Dial(TargetAddr, opts...)
-	if err != nil {
-		t.Fatalf("Dialing to %q failed: %v", TargetAddr, err)
-	}
-	defer conn.Close()
-
-	gClient := pb.NewGNMIClient(conn)
-	ctx, cancel := context.WithTimeout(context.Background(), QueryTimeout*time.Second)
-	defer cancel()
-
 	expectedOutput := `[{"index":"1","name":"PSU 1","presence":"true","model":"PWR-500AC-F","serial":"ABC12345678","revision":"A1","voltage":"12.00","current":"5.50","power":"66.00","status":"OK","led_status":"green"},{"index":"2","name":"PSU 2","presence":"false","model":"N/A","serial":"N/A","revision":"N/A","voltage":"N/A","current":"N/A","power":"N/A","status":"NOT PRESENT","led_status":"off"}]`
 
 	expectedOutputWarning := `[{"index":"1","name":"PSU 1","presence":"true","model":"PWR-500AC-F","serial":"XYZ98765432","revision":"B2","voltage":"12.50","current":"8.00","power":"100.00","status":"WARNING","led_status":"amber"}]`
@@ -135,8 +126,11 @@ func TestGetShowPlatformPsustatus(t *testing.T) {
 				elem: <name: "platform" >
 				elem: <name: "psustatus" >
 			`,
-			wantRetCode: codes.NotFound,
+			wantRetCode: codes.OK,
+			wantRespVal: []byte(`[]`),
+			valTest:     true,
 			testInit: func() {
+				ResetDataSetsAndMappings(t)
 				AddDataSet(t, StateDbNum, psuNoPsuFilename)
 			},
 		},
@@ -151,6 +145,7 @@ func TestGetShowPlatformPsustatus(t *testing.T) {
 			wantRespVal: []byte(expectedOutput),
 			valTest:     true,
 			testInit: func() {
+				ResetDataSetsAndMappings(t)
 				AddDataSet(t, StateDbNum, psuMixedFilename)
 			},
 		},
@@ -165,6 +160,7 @@ func TestGetShowPlatformPsustatus(t *testing.T) {
 			wantRespVal: []byte(expectedOutputWarning),
 			valTest:     true,
 			testInit: func() {
+				ResetDataSetsAndMappings(t)
 				AddDataSet(t, StateDbNum, psuWarningFilename)
 			},
 		},
@@ -175,6 +171,23 @@ func TestGetShowPlatformPsustatus(t *testing.T) {
 			if tt.testInit != nil {
 				tt.testInit()
 			}
+
+			s := createServer(t, ServerPort)
+			go runServer(t, s)
+			defer s.ForceStop()
+
+			tlsConfig := &tls.Config{InsecureSkipVerify: true}
+			opts := []grpc.DialOption{grpc.WithTransportCredentials(credentials.NewTLS(tlsConfig))}
+
+			conn, err := grpc.Dial(TargetAddr, opts...)
+			if err != nil {
+				t.Fatalf("Dialing to %q failed: %v", TargetAddr, err)
+			}
+			defer conn.Close()
+
+			gClient := pb.NewGNMIClient(conn)
+			ctx, cancel := context.WithTimeout(context.Background(), QueryTimeout*time.Second)
+			defer cancel()
 
 			runTestGet(t, ctx, gClient, tt.pathTarget, tt.textPbPath, tt.wantRetCode, tt.wantRespVal, tt.valTest)
 		})

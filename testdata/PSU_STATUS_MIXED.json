@@ -1,6 +1,6 @@
 {
-	"chassis 1": {"psu_num": "2"},
-	"PSU 1": {
+	"CHASSIS_INFO|chassis 1": {"psu_num": "2"},
+	"PSU_INFO|PSU 1": {
 		"presence": "true",
 		"status": "true",
 		"power_overload": "false",
@@ -12,7 +12,7 @@
 		"power": "66.00",
 		"led_status": "green"
 	},
-	"PSU 2": {
+	"PSU_INFO|PSU 2": {
 		"presence": "false",
 		"led_status": "off"
 	}

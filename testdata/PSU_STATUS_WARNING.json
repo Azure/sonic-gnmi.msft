@@ -1,6 +1,6 @@
 {
-	"chassis 1": {"psu_num": "1"},
-	"PSU 1": {
+	"CHASSIS_INFO|chassis 1": {"psu_num": "1"},
+	"PSU_INFO|PSU 1": {
 		"presence": "true",
 		"status": "true",
 		"power_overload": "True",

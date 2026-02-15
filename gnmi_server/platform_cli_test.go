@@ -86,7 +86,6 @@ asic_type: mellanox
 		t.Run(tt.desc, func(t *testing.T) {
 			if tt.testInit != nil {
 				tt.testInit()
-				defer ClearMockReadFile()
 			}
 
 			runTestGet(t, ctx, gClient, tt.pathTarget, tt.textPbPath, tt.wantRetCode, tt.wantRespVal, tt.valTest)
@@ -112,47 +111,13 @@ func TestGetShowPlatformPsustatus(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), QueryTimeout*time.Second)
 	defer cancel()
 
-	// PSU data with 2 PSUs (one present, one not present)
-	psuData := `{
-		"chassis 1": {"psu_num": "2"},
-		"PSU 1": {
-			"presence": "true",
-			"status": "true",
-			"power_overload": "false",
-			"model": "PWR-500AC-F",
-			"serial": "ABC12345678",
-			"revision": "A1",
-			"voltage": "12.00",
-			"current": "5.50",
-			"power": "66.00",
-			"led_status": "green"
-		},
-		"PSU 2": {
-			"presence": "false",
-			"led_status": "off"
-		}
-	}`
-
 	expectedOutput := `[{"index":"1","name":"PSU 1","presence":"true","model":"PWR-500AC-F","serial":"ABC12345678","revision":"A1","voltage":"12.00","current":"5.50","power":"66.00","status":"OK","led_status":"green"},{"index":"2","name":"PSU 2","presence":"false","model":"N/A","serial":"N/A","revision":"N/A","voltage":"N/A","current":"N/A","power":"N/A","status":"NOT PRESENT","led_status":"off"}]`
 
-	// PSU data with power overload warning (note: 'True' not 'true')
-	psuDataWarning := `{
-		"chassis 1": {"psu_num": "1"},
-		"PSU 1": {
-			"presence": "true",
-			"status": "true",
-			"power_overload": "True",
-			"model": "PWR-500AC-F",
-			"serial": "XYZ98765432",
-			"revision": "B2",
-			"voltage": "12.50",
-			"current": "8.00",
-			"power": "100.00",
-			"led_status": "amber"
-		}
-	}`
-
 	expectedOutputWarning := `[{"index":"1","name":"PSU 1","presence":"true","model":"PWR-500AC-F","serial":"XYZ98765432","revision":"B2","voltage":"12.50","current":"8.00","power":"100.00","status":"WARNING","led_status":"amber"}]`
+
+	psuMixedFilename := "../testdata/PSU_STATUS_MIXED.json"
+	psuWarningFilename := "../testdata/PSU_STATUS_WARNING.json"
+	psuNoPsuFilename := "../testdata/PSU_STATUS_NO_PSU.json"
 
 	tests := []struct {
 		desc        string
@@ -172,7 +137,7 @@ func TestGetShowPlatformPsustatus(t *testing.T) {
 			`,
 			wantRetCode: codes.NotFound,
 			testInit: func() {
-				MockGetDataFromQueries([]byte(`{"chassis 1": {}}`), nil)
+				AddDataSet(t, StateDbNum, psuNoPsuFilename)
 			},
 		},
 		{
@@ -186,7 +151,7 @@ func TestGetShowPlatformPsustatus(t *testing.T) {
 			wantRespVal: []byte(expectedOutput),
 			valTest:     true,
 			testInit: func() {
-				MockGetDataFromQueries([]byte(psuData), nil)
+				AddDataSet(t, StateDbNum, psuMixedFilename)
 			},
 		},
 		{
@@ -200,7 +165,7 @@ func TestGetShowPlatformPsustatus(t *testing.T) {
 			wantRespVal: []byte(expectedOutputWarning),
 			valTest:     true,
 			testInit: func() {
-				MockGetDataFromQueries([]byte(psuDataWarning), nil)
+				AddDataSet(t, StateDbNum, psuWarningFilename)
 			},
 		},
 	}
@@ -209,7 +174,6 @@ func TestGetShowPlatformPsustatus(t *testing.T) {
 		t.Run(tt.desc, func(t *testing.T) {
 			if tt.testInit != nil {
 				tt.testInit()
-				defer ClearMockGetDataFromQueries()
 			}
 
 			runTestGet(t, ctx, gClient, tt.pathTarget, tt.textPbPath, tt.wantRetCode, tt.wantRespVal, tt.valTest)

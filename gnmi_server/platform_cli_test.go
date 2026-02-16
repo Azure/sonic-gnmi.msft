@@ -6,7 +6,6 @@ package gnmi
 
 import (
 	"crypto/tls"
-	"io/ioutil"
 	"testing"
 	"time"
 	
@@ -18,17 +17,10 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/credentials"
 
-	sdc "github.com/sonic-net/sonic-gnmi/sonic_data_client"
 	sccommon "github.com/sonic-net/sonic-gnmi/show_client/common"
-	show_client "github.com/sonic-net/sonic-gnmi/show_client"
 )
 
 func TestGetShowPlatformSummary(t *testing.T) {
-	versionInfo := `
-build_version: test_branch.1-a8fbac59d
-asic_type: mellanox
-`
-	deviceMetadataFilename := "../testdata/PLATFORM_METADATA.txt"
 	chassisDataFilename := "../testdata/PLATFORM_CHASSIS.txt"
 
 	expectedOutput := `{"platform":"x86_64-mlnx_msn2700-r0","hwsku":"Mellanox-SN2700","asic_type":"mellanox","asic_count":"1","serial":"MT1234X56789","model":"MSN2700-CS2FO","revision":"A1"}`
@@ -55,7 +47,6 @@ asic_type: mellanox
 			valTest:     true,
 			testInit: func() *gomonkey.Patches {
 				ResetDataSetsAndMappings(t)
-				sdc.ImplIoutilReadFile = ioutil.ReadFile
 				return gomonkey.ApplyFunc(sccommon.GetPlatformInfo, func(versionInfo map[string]interface{}) (map[string]interface{}, error) {
 					return map[string]interface{}{
 						"platform":   "",

@@ -78,10 +78,7 @@ asic_type: mellanox
 			valTest:     true,
 			testInit: func() *gomonkey.Patches {
 				ResetDataSetsAndMappings(t)
-				sdc.ImplIoutilReadFile = ioutil.ReadFile
-				MockReadFile(show_client.SonicVersionYamlPath, versionInfo, nil)
-				MockReadFile(deviceMetadataFilename, "onie_platform=x86_64-mlnx_msn2700-r0", nil)
-				MockReadFile(chassisDataFilename, `{"chassis 1": {"serial": "MT1234X56789", "model": "MSN2700-CS2FO", "revision": "A1"}}`, nil)
+				AddDataSet(t, StateDbNum, chassisDataFilename)
 				return gomonkey.ApplyFunc(sccommon.GetPlatformInfo, func(versionInfo map[string]interface{}) (map[string]interface{}, error) {
 					return map[string]interface{}{
 						"platform":   "x86_64-mlnx_msn2700-r0",

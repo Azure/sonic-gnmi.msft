@@ -12,12 +12,14 @@ import (
 	
 	pb "github.com/openconfig/gnmi/proto/gnmi"
 
+	"github.com/agiledragon/gomonkey/v2"
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/credentials"
 
 	sdc "github.com/sonic-net/sonic-gnmi/sonic_data_client"
+	sccommon "github.com/sonic-net/sonic-gnmi/show_client/common"
 	show_client "github.com/sonic-net/sonic-gnmi/show_client"
 )
 
@@ -39,7 +41,7 @@ asic_type: mellanox
 		wantRetCode codes.Code
 		wantRespVal interface{}
 		valTest     bool
-		testInit    func()
+		testInit    func() *gomonkey.Patches
 	}{
 		{
 			desc:       "query SHOW platform summary with missing data",
@@ -51,9 +53,17 @@ asic_type: mellanox
 			wantRetCode: codes.OK,
 			wantRespVal: []byte(expectedOutputWithNA),
 			valTest:     true,
-			testInit: func() {
+			testInit: func() *gomonkey.Patches {
 				ResetDataSetsAndMappings(t)
 				sdc.ImplIoutilReadFile = ioutil.ReadFile
+				return gomonkey.ApplyFunc(sccommon.GetPlatformInfo, func(versionInfo map[string]interface{}) (map[string]interface{}, error) {
+					return map[string]interface{}{
+						"platform":   "",
+						"hwsku":      "",
+						"asic_type":  "N/A",
+						"asic_count": "1",
+					}, nil
+				})
 			},
 		},
 		{
@@ -66,21 +76,35 @@ asic_type: mellanox
 			wantRetCode: codes.OK,
 			wantRespVal: []byte(expectedOutput),
 			valTest:     true,
-			testInit: func() {
+			testInit: func() *gomonkey.Patches {
 				ResetDataSetsAndMappings(t)
 				sdc.ImplIoutilReadFile = ioutil.ReadFile
 				MockReadFile(show_client.SonicVersionYamlPath, versionInfo, nil)
 				MockReadFile(deviceMetadataFilename, "onie_platform=x86_64-mlnx_msn2700-r0", nil)
 				MockReadFile(chassisDataFilename, `{"chassis 1": {"serial": "MT1234X56789", "model": "MSN2700-CS2FO", "revision": "A1"}}`, nil)
+				return gomonkey.ApplyFunc(sccommon.GetPlatformInfo, func(versionInfo map[string]interface{}) (map[string]interface{}, error) {
+					return map[string]interface{}{
+						"platform":   "x86_64-mlnx_msn2700-r0",
+						"hwsku":      "Mellanox-SN2700",
+						"asic_type":  "mellanox",
+						"asic_count": "1",
+					}, nil
+				})
 			},
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.desc, func(t *testing.T) {
+			var patches *gomonkey.Patches
 			if tt.testInit != nil {
-				tt.testInit()
+				patches = tt.testInit()
 			}
+			defer func() {
+				if patches != nil {
+					patches.Reset()
+				}
+			}()
 
 			s := createServer(t, ServerPort)
 			go runServer(t, s)

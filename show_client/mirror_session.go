@@ -6,6 +6,8 @@ import (
 	"sort"
 	"strings"
 
+	log "github.com/golang/glog"
+	natural "github.com/maruel/natural"
 	"github.com/sonic-net/sonic-gnmi/show_client/common"
 	sdc "github.com/sonic-net/sonic-gnmi/sonic_data_client"
 )
@@ -53,13 +55,12 @@ func getMirrorSession(args sdc.CmdArgs, options sdc.OptionMap) ([]byte, error) {
 	var sessionName string
 	if len(args) > 0 {
 		sessionName = args[0]
-		fmt.Printf("DEBUG: Filtering for session: %s\n", sessionName)
 	}
 
 	// Get sessions info (config + state data merged)
 	sessions, err := readSessionsInfo()
 	if err != nil {
-		fmt.Printf("DEBUG: readSessionsInfo failed: %v\n", err)
+		log.Errorf("Failed to read sessions info: %v", err)
 		return nil, fmt.Errorf("failed to read sessions info: %v", err)
 	}
 
@@ -72,7 +73,6 @@ func getMirrorSession(args sdc.CmdArgs, options sdc.OptionMap) ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
-	fmt.Printf("DEBUG: Generated JSON with %d ERSPAN and %d SPAN sessions\n", len(output.ERSPANSessions), len(output.SPANSessions))
 	return result, nil
 }
 
@@ -83,21 +83,18 @@ func readSessionsInfo() (map[string]map[string]interface{}, error) {
 	configQueries := [][]string{
 		{common.ConfigDb, CFGMirrorSessionTable},
 	}
-	fmt.Printf("DEBUG: Executing query for CONFIG_DB.%s\n", CFGMirrorSessionTable)
 
 	configResult, err := common.GetMapFromQueries(configQueries)
 	if err != nil {
-		fmt.Printf("DEBUG: GetMapFromQueries for CONFIG_DB failed: %v\n", err)
+		log.Errorf("Failed to get config data from CONFIG_DB: %v", err)
 		return nil, fmt.Errorf("failed to get config data: %v", err)
 	}
-	fmt.Printf("DEBUG: Found %d sessions in CONFIG_DB\n", len(configResult))
 
 	// Initialize sessions with config data
 	sessions := make(map[string]map[string]interface{})
 	for sessionName, sessionData := range configResult {
 		if sessionMap, ok := sessionData.(map[string]interface{}); ok {
 			sessions[sessionName] = sessionMap
-			fmt.Printf("DEBUG: Added config for session %s\n", sessionName)
 		}
 	}
 
@@ -107,11 +104,10 @@ func readSessionsInfo() (map[string]map[string]interface{}, error) {
 		stateQueries := [][]string{
 			{common.StateDb, StateMirrorSessionTable, sessionName},
 		}
-		fmt.Printf("DEBUG: Querying STATE_DB for session %s\n", sessionName)
-		
+
 		stateResult, err := common.GetMapFromQueries(stateQueries)
 		if err != nil {
-			fmt.Printf("DEBUG: GetMapFromQueries for STATE_DB session %s failed: %v\n", sessionName, err)
+			log.Errorf("Failed to get state data for session %s: %v", sessionName, err)
 			// Set default values as per Python logic: "error" if state_db_info doesn't exist
 			sessions[sessionName]["status"] = "error"
 			sessions[sessionName]["monitor_port"] = ""
@@ -149,21 +145,17 @@ func readSessionsInfo() (map[string]map[string]interface{}, error) {
 			} else {
 				sessions[sessionName]["monitor_port"] = ""
 			}
-			fmt.Printf("DEBUG: Added state data for session %s (status=%v, monitor_port=%v)\n", sessionName, stateMap["status"], stateMap["monitor_port"])
 		} else {
 			// No state data found, set defaults as per Python logic
 			sessions[sessionName]["status"] = "error"
 			sessions[sessionName]["monitor_port"] = ""
-			fmt.Printf("DEBUG: No state data found for session %s, set status=error\n", sessionName)
 		}
 	}
 
-	fmt.Printf("DEBUG: Total sessions with merged data: %d\n", len(sessions))
 	return sessions, nil
 }
 
 func processMirrorSessionData(sessions map[string]map[string]interface{}, sessionFilter string) (*MirrorSessionOutput, error) {
-	fmt.Printf("DEBUG: Processing %d sessions, filter: '%s'\n", len(sessions), sessionFilter)
 	output := &MirrorSessionOutput{
 		ERSPANSessions: []ERSPANSession{},
 		SPANSessions:   []SPANSession{},
@@ -174,17 +166,11 @@ func processMirrorSessionData(sessions map[string]map[string]interface{}, sessio
 	for name := range sessions {
 		sessionNames = append(sessionNames, name)
 	}
-	sort.Strings(sessionNames)
+	sort.Sort(natural.StringSlice(sessionNames))
 
 	for _, sessionName := range sessionNames {
 		sessionInfo := sessions[sessionName]
-		
-		// Log all fields for debugging
-		fmt.Printf("DEBUG: Session %s fields:\n", sessionName)
-		for key, value := range sessionInfo {
-			fmt.Printf("  %s = %v (type: %T)\n", key, value, value)
-		}
-		
+
 		// Python: if session_name and key != session_name: continue
 		if sessionFilter != "" && sessionName != sessionFilter {
 			continue
@@ -193,9 +179,7 @@ func processMirrorSessionData(sessions map[string]map[string]interface{}, sessio
 		// Extract values - Python uses val.get("field", "") with .lower() for direction
 		sessionType := common.GetValueOrDefault(sessionInfo, "type", "")
 		status := common.GetValueOrDefault(sessionInfo, "status", "")
-		
-		fmt.Printf("DEBUG: Processing session %s, type: %s, status: %s\n", sessionName, sessionType, status)
-		
+
 		// Python: if val.get("type") == "SPAN":
 		if sessionType == "SPAN" {
 			spanSession := SPANSession{
@@ -208,7 +192,6 @@ func processMirrorSessionData(sessions map[string]map[string]interface{}, sessio
 				Policer:   common.GetValueOrDefault(sessionInfo, "policer", ""),
 			}
 			output.SPANSessions = append(output.SPANSessions, spanSession)
-			fmt.Printf("DEBUG: Added SPAN session %s\n", sessionName)
 		} else {
 			// Python: else: (defaults to ERSPAN for any non-SPAN type)
 			erspanSession := ERSPANSession{
@@ -226,10 +209,8 @@ func processMirrorSessionData(sessions map[string]map[string]interface{}, sessio
 				Direction:   strings.ToLower(common.GetValueOrDefault(sessionInfo, "direction", "")),
 			}
 			output.ERSPANSessions = append(output.ERSPANSessions, erspanSession)
-			fmt.Printf("DEBUG: Added ERSPAN session %s\n", sessionName)
 		}
 	}
 
-	fmt.Printf("DEBUG: Final output - ERSPAN: %d, SPAN: %d\n", len(output.ERSPANSessions), len(output.SPANSessions))
 	return output, nil
 }

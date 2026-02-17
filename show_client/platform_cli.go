@@ -11,6 +11,10 @@ import (
 	sdc "github.com/sonic-net/sonic-gnmi/sonic_data_client"
 )
 
+const (
+	chassisKey = "chassis 1"
+)
+
 // PlatformSummary represents the output structure for show platform summary
 type PlatformSummary struct {
 	Platform         string `json:"platform"`
@@ -28,14 +32,14 @@ type PsuStatus struct {
 	Index    string `json:"index"`
 	Name     string `json:"name"`
 	Presence string `json:"presence"`
-	Status   string `json:"status"`
-	LED      string `json:"led_status"`
 	Model    string `json:"model"`
 	Serial   string `json:"serial"`
 	Revision string `json:"revision"`
 	Voltage  string `json:"voltage"`
 	Current  string `json:"current"`
 	Power    string `json:"power"`
+	Status   string `json:"status"`
+	LED      string `json:"led_status"`
 }
 
 // getPlatformSummary implements the "show platform summary" command
@@ -92,21 +96,19 @@ func getPlatformPsustatus(args sdc.CmdArgs, options sdc.OptionMap) ([]byte, erro
 		psuIndex = idx
 	}
 
-	queries := [][]string{
-		{"STATE_DB", "PSU_INFO"},
+	// Get CHASSIS_INFO
+	chassisQueries := [][]string{
 		{"STATE_DB", "CHASSIS_INFO"},
 	}
-
-	allData, err := common.GetMapFromQueries(queries)
+	chassisData, err := common.GetMapFromQueries(chassisQueries)
 	if err != nil {
-		log.Errorf("Failed to get PSU info from STATE_DB: %v", err)
+		log.Errorf("Failed to get CHASSIS_INFO from STATE_DB: %v", err)
 		return nil, err
 	}
 
 	// Check if PSUs exist by checking chassis info
-	chassisKey := "chassis 1"
 	numPsusStr := ""
-	if chassisInfo, ok := allData[chassisKey].(map[string]interface{}); ok {
+	if chassisInfo, ok := chassisData[chassisKey].(map[string]interface{}); ok {
 		numPsusStr = common.GetValueOrDefault(chassisInfo, "psu_num", "")
 	}
 
@@ -115,12 +117,20 @@ func getPlatformPsustatus(args sdc.CmdArgs, options sdc.OptionMap) ([]byte, erro
 		return nil, fmt.Errorf("no PSUs detected")
 	}
 
+	// Get PSU_INFO
+	psuQueries := [][]string{
+		{"STATE_DB", "PSU_INFO"},
+	}
+	psuData, err := common.GetMapFromQueries(psuQueries)
+	if err != nil {
+		log.Errorf("Failed to get PSU_INFO from STATE_DB: %v", err)
+		return nil, err
+	}
+
 	// Collect all PSU keys and sort them naturally
 	psuKeys := make([]string, 0)
-	for key := range allData {
-		if key != chassisKey {
-			psuKeys = append(psuKeys, key)
-		}
+	for key := range psuData {
+		psuKeys = append(psuKeys, key)
 	}
 	sort.Sort(natural.StringSlice(psuKeys))
 
@@ -129,21 +139,20 @@ func getPlatformPsustatus(args sdc.CmdArgs, options sdc.OptionMap) ([]byte, erro
 
 	// Iterate through sorted PSU keys with 1-based index
 	for psuIdx, psuName := range psuKeys {
-		value := allData[psuName]
-		psuData, ok := value.(map[string]interface{})
+		value := psuData[psuName]
+		psuInfo, ok := value.(map[string]interface{})
 		if !ok {
 			continue
 		}
 
-		presence := common.GetValueOrDefault(psuData, "presence", "false")
+		presence := common.GetValueOrDefault(psuInfo, "presence", "false")
 
 		// Determine PSU status
 		var status string
 		if presence == "true" {
-			operStatus := common.GetValueOrDefault(psuData, "status", "")
+			operStatus := common.GetValueOrDefault(psuInfo, "status", "")
 			if operStatus == "true" {
-				powerOverload := common.GetValueOrDefault(psuData, "power_overload", "")
-				// Python checks: 'WARNING' if power_overload == 'True' else 'OK'
+				powerOverload := common.GetValueOrDefault(psuInfo, "power_overload", "")
 				if powerOverload == "True" {
 					status = "WARNING"
 				} else {
@@ -165,15 +174,15 @@ func getPlatformPsustatus(args sdc.CmdArgs, options sdc.OptionMap) ([]byte, erro
 		}
 
 		// LED status
-		psuStatus.LED = common.GetValueOrDefault(psuData, "led_status", "")
+		psuStatus.LED = common.GetValueOrDefault(psuInfo, "led_status", "")
 
 		if presence == "true" {
-			psuStatus.Model = common.GetValueOrDefault(psuData, "model", "N/A")
-			psuStatus.Serial = common.GetValueOrDefault(psuData, "serial", "N/A")
-			psuStatus.Revision = common.GetValueOrDefault(psuData, "revision", "N/A")
-			psuStatus.Voltage = common.GetValueOrDefault(psuData, "voltage", "N/A")
-			psuStatus.Current = common.GetValueOrDefault(psuData, "current", "N/A")
-			psuStatus.Power = common.GetValueOrDefault(psuData, "power", "N/A")
+			psuStatus.Model = common.GetValueOrDefault(psuInfo, "model", "N/A")
+			psuStatus.Serial = common.GetValueOrDefault(psuInfo, "serial", "N/A")
+			psuStatus.Revision = common.GetValueOrDefault(psuInfo, "revision", "N/A")
+			psuStatus.Voltage = common.GetValueOrDefault(psuInfo, "voltage", "N/A")
+			psuStatus.Current = common.GetValueOrDefault(psuInfo, "current", "N/A")
+			psuStatus.Power = common.GetValueOrDefault(psuInfo, "power", "N/A")
 		} else {
 			psuStatus.Model = "N/A"
 			psuStatus.Serial = "N/A"

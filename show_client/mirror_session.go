@@ -98,8 +98,7 @@ func readSessionsInfo() (map[string]map[string]interface{}, error) {
 		}
 	}
 
-	// Now enrich with STATE_DB data for each session
-	// Python logic: state_db_info = self.statedb.get_all(self.statedb.STATE_DB, "{}|{}".format(self.STATE_MIRROR_SESSION_TABLE, key))
+	// Add STATE_DB data for each session
 	for sessionName := range sessions {
 		stateQueries := [][]string{
 			{common.StateDb, StateMirrorSessionTable, sessionName},
@@ -108,45 +107,41 @@ func readSessionsInfo() (map[string]map[string]interface{}, error) {
 		stateResult, err := common.GetMapFromQueries(stateQueries)
 		if err != nil {
 			log.Errorf("Failed to get state data for session %s: %v", sessionName, err)
-			// Set default values as per Python logic: "error" if state_db_info doesn't exist
+			// Set default values if state_db_info doesn't exist
 			sessions[sessionName]["status"] = "error"
 			sessions[sessionName]["monitor_port"] = ""
 			continue
 		}
 
 		// When querying a specific key, GetMapFromQueries may return data directly or wrapped with session name
-		// Try both approaches
 		var stateMap map[string]interface{}
 		var hasStateData bool
 		
-		// First try: check if result has session name as key
+		// Check if result has session name as key
 		if stateData, exists := stateResult[sessionName]; exists {
 			if sm, ok := stateData.(map[string]interface{}); ok {
 				stateMap = sm
 				hasStateData = true
 			}
 		} else if len(stateResult) > 0 {
-			// Second try: result might be the state data directly
+			// If result is the state data directly
 			stateMap = stateResult
 			hasStateData = true
 		}
 
 		if hasStateData {
-			// Python logic: state_db_info.get("status", "inactive") if state_db_info else "error"
 			if status, hasStatus := stateMap["status"]; hasStatus {
 				sessions[sessionName]["status"] = status
 			} else {
 				sessions[sessionName]["status"] = "inactive"
 			}
 
-			// Python logic: state_db_info.get("monitor_port", "") if state_db_info else ""
 			if monitorPort, hasMonitorPort := stateMap["monitor_port"]; hasMonitorPort {
 				sessions[sessionName]["monitor_port"] = monitorPort
 			} else {
 				sessions[sessionName]["monitor_port"] = ""
 			}
 		} else {
-			// No state data found, set defaults as per Python logic
 			sessions[sessionName]["status"] = "error"
 			sessions[sessionName]["monitor_port"] = ""
 		}
@@ -161,7 +156,7 @@ func processMirrorSessionData(sessions map[string]map[string]interface{}, sessio
 		SPANSessions:   []SPANSession{},
 	}
 
-	// Get sorted session names for consistent output (matches Python's natsorted)
+	// Get natsorted session names
 	sessionNames := make([]string, 0, len(sessions))
 	for name := range sessions {
 		sessionNames = append(sessionNames, name)
@@ -176,11 +171,10 @@ func processMirrorSessionData(sessions map[string]map[string]interface{}, sessio
 			continue
 		}
 
-		// Extract values - Python uses val.get("field", "") with .lower() for direction
+		// Extract values
 		sessionType := common.GetValueOrDefault(sessionInfo, "type", "")
 		status := common.GetValueOrDefault(sessionInfo, "status", "")
 
-		// Python: if val.get("type") == "SPAN":
 		if sessionType == "SPAN" {
 			spanSession := SPANSession{
 				Name:      sessionName,
@@ -193,7 +187,6 @@ func processMirrorSessionData(sessions map[string]map[string]interface{}, sessio
 			}
 			output.SPANSessions = append(output.SPANSessions, spanSession)
 		} else {
-			// Python: else: (defaults to ERSPAN for any non-SPAN type)
 			erspanSession := ERSPANSession{
 				Name:        sessionName,
 				Status:      status,

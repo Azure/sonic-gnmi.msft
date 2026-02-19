@@ -943,5 +943,29 @@ func init() {
 		1,
 		nil,
 		showCmdOptionVerbose,
+  )
+  
+	// SHOW/platform/summary
+	sdc.RegisterCliPath(
+		[]string{"SHOW", "platform", "summary"},
+		getPlatformSummary,
+		"SHOW/platform/summary[OPTIONS]: Show hardware platform information",
+		0,
+		0,
+		nil,
+		showCmdOptionJson,
+	)
+
+	// SHOW/platform/psustatus
+	sdc.RegisterCliPath(
+		[]string{"SHOW", "platform", "psustatus"},
+		getPlatformPsustatus,
+		"SHOW/platform/psustatus[OPTIONS]: Show platform psu status",
+		0,
+		0,
+		nil,
+		showCmdOptionJson,
+		showCmdOptionVerbose,
+		showCmdOptionPsuIndex,
 	)
 }

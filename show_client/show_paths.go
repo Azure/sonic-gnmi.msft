@@ -935,6 +935,16 @@ func init() {
 		showCmdOptionVerbose,
 	)
 
+	sdc.RegisterCliPath(
+		[]string{"SHOW", "mirror_session"},
+		getMirrorSession,
+		"SHOW/mirror_session/{SESSION_NAME}[OPTIONS]: Show mirror session configuration",
+		0,
+		1,
+		nil,
+		showCmdOptionVerbose,
+  )
+  
 	// SHOW/platform/summary
 	sdc.RegisterCliPath(
 		[]string{"SHOW", "platform", "summary"},
@@ -943,13 +953,14 @@ func init() {
 		0,
 		0,
 		nil,
+		showCmdOptionJson,
 	)
 
 	// SHOW/platform/psustatus
 	sdc.RegisterCliPath(
 		[]string{"SHOW", "platform", "psustatus"},
 		getPlatformPsustatus,
-		"SHOW/platform/psustatus[OPTIONS]: Show power supply unit status",
+		"SHOW/platform/psustatus[OPTIONS]: Show platform psu status",
 		0,
 		0,
 		nil,

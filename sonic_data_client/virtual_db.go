@@ -60,7 +60,7 @@ var (
 	// SONiC interface name to their Fabric port name map, then to oid map
 	countersFabricPortNameMap = make(map[string]string)
 
-	// sync.Once guards for each init function to prevent concurrent map writes.
+	// sync.Once guards for each init function
 	initCountersPortNameMapOnce      sync.Once
 	initCountersQueueNameMapOnce     sync.Once
 	initCountersPGNameMapOnce        sync.Once

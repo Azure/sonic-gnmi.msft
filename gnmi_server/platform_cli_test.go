@@ -234,7 +234,7 @@ func TestGetShowPlatformFan(t *testing.T) {
 				elem: <name: "fan" >
 			`,
 			wantRetCode: codes.OK,
-			wantRespVal: []byte(`[]`),
+			wantRespVal: []byte(`"Fan not detected"`),
 			valTest:     true,
 			testInit: func() {
 				ResetDataSetsAndMappings(t)
@@ -324,7 +324,7 @@ func TestGetShowPlatformTemperature(t *testing.T) {
 				elem: <name: "temperature" >
 			`,
 			wantRetCode: codes.OK,
-			wantRespVal: []byte(`[]`),
+			wantRespVal: []byte(`"Sensor not detected"`),
 			valTest:     true,
 			testInit: func() {
 				ResetDataSetsAndMappings(t)
@@ -399,7 +399,7 @@ func TestGetShowPlatformVoltage(t *testing.T) {
 				elem: <name: "voltage" >
 			`,
 			wantRetCode: codes.OK,
-			wantRespVal: []byte(`[]`),
+			wantRespVal: []byte(`"Sensor not detected"`),
 			valTest:     true,
 			testInit: func() {
 				ResetDataSetsAndMappings(t)
@@ -474,7 +474,7 @@ func TestGetShowPlatformCurrent(t *testing.T) {
 				elem: <name: "current" >
 			`,
 			wantRetCode: codes.OK,
-			wantRespVal: []byte(`[]`),
+			wantRespVal: []byte(`"Sensor not detected"`),
 			valTest:     true,
 			testInit: func() {
 				ResetDataSetsAndMappings(t)

@@ -79,7 +79,7 @@ func GetSensorJSON[T any](tableName, valueFieldName string, mapper func(map[stri
 	}
 
 	if len(sensorData) == 0 {
-		return json.Marshal("Sensor not detected")
+		return json.Marshal(map[string]string{"message": "Sensor not detected"})
 	}
 
 	result := make([]T, 0, len(sensorData))

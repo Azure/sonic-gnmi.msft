@@ -274,7 +274,7 @@ func getPlatformFan(args sdc.CmdArgs, options sdc.OptionMap) ([]byte, error) {
 
 	if len(fanData) == 0 {
 		log.Info("Fan Not detected")
-		return json.Marshal("Fan not detected")
+		return json.Marshal(map[string]string{"message": "Fan not detected"})
 	}
 
 	// Collect all fan keys and sort them naturally

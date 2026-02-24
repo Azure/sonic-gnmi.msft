@@ -1,0 +1,29 @@
+{
+	"FAN_INFO|FAN 1": {
+		"drawer_name": "Drawer 1",
+		"led_status": "green",
+		"speed": "60",
+		"direction": "intake",
+		"presence": "true",
+		"status": "true",
+		"timestamp": "20250217 12:00:00"
+	},
+	"FAN_INFO|FAN 2": {
+		"drawer_name": "Drawer 1",
+		"led_status": "green",
+		"speed": "65",
+		"direction": "intake",
+		"presence": "true",
+		"status": "true",
+		"timestamp": "20250217 12:00:00"
+	},
+	"FAN_INFO|FAN 3": {
+		"drawer_name": "Drawer 2",
+		"led_status": "red",
+		"speed": "0",
+		"direction": "N/A",
+		"presence": "false",
+		"status": "false",
+		"timestamp": "20250217 12:00:00"
+	}
+}

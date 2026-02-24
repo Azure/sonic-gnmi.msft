@@ -1,0 +1,22 @@
+{
+	"CURRENT_INFO|CurrentSensor 1": {
+		"current": "5.5",
+		"unit": "A",
+		"high_threshold": "10.0",
+		"low_threshold": "0.5",
+		"critical_high_threshold": "12.0",
+		"critical_low_threshold": "0.0",
+		"warning_status": "False",
+		"timestamp": "20250217 12:00:00"
+	},
+	"CURRENT_INFO|CurrentSensor 2": {
+		"current": "3.2",
+		"unit": "A",
+		"high_threshold": "8.0",
+		"low_threshold": "0.5",
+		"critical_high_threshold": "10.0",
+		"critical_low_threshold": "0.0",
+		"warning_status": "False",
+		"timestamp": "20250217 12:00:00"
+	}
+}

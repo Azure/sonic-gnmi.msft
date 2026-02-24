@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"strings"
+	"sync"
 
 	log "github.com/golang/glog"
 	sdcfg "github.com/sonic-net/sonic-gnmi/sonic_db_config"
@@ -58,6 +59,16 @@ var (
 
 	// SONiC interface name to their Fabric port name map, then to oid map
 	countersFabricPortNameMap = make(map[string]string)
+
+	// sync.Once guards for each init function to prevent concurrent map writes.
+	initCountersPortNameMapOnce      sync.Once
+	initCountersQueueNameMapOnce     sync.Once
+	initCountersPGNameMapOnce        sync.Once
+	initCountersSidMapOnce           sync.Once
+	initCountersAclRuleMapOnce       sync.Once
+	initAliasMapOnce                 sync.Once
+	initCountersPfcwdNameMapOnce     sync.Once
+	initCountersFabricPortNameMapOnce sync.Once
 
 	// path2TFuncTbl is used to populate trie tree which is reponsible
 	// for virtual path to real data path translation
@@ -117,35 +128,39 @@ func (t *Trie) v2rTriePopulate() {
 }
 
 func initCountersQueueNameMap() error {
-	var err error
-	if len(countersQueueNameMap) == 0 {
+	var initErr error
+	initCountersQueueNameMapOnce.Do(func() {
+		var err error
 		countersQueueNameMap, err = getCountersMap("COUNTERS_QUEUE_NAME_MAP")
 		if err != nil {
-			return err
+			initErr = err
 		}
-	}
-	return nil
+	})
+	return initErr
 }
 
 func initCountersPGNameMap() error {
-	if len(countersPGNameMap) == 0 {
+	var initErr error
+	initCountersPGNameMapOnce.Do(func() {
 		pgOidMap, err := getCountersMap("COUNTERS_PG_NAME_MAP")
 		if err != nil {
-			return err
+			initErr = err
+			return
 		}
 		for pg, oid := range pgOidMap {
 			// pg is in format of "Ethernet64:7"
 			pg_parts := strings.Split(pg, ":")
 			if len(pg_parts) != 2 {
-				return fmt.Errorf("invalid pg name %v", pg)
+				initErr = fmt.Errorf("invalid pg name %v", pg)
+				return
 			}
 			if _, ok := countersPGNameMap[pg_parts[0]]; !ok {
 				countersPGNameMap[pg_parts[0]] = make(map[string]string)
 			}
 			countersPGNameMap[pg_parts[0]][pg_parts[1]] = oid
 		}
-	}
-	return nil
+	})
+	return initErr
 }
 
 func GetCountersQueueTypeMap() (map[string]string, error) {
@@ -176,74 +191,77 @@ func GetCountersQueueTypeMap() (map[string]string, error) {
 }
 
 func initCountersPortNameMap() error {
-	var err error
-	if len(countersPortNameMap) == 0 {
+	var initErr error
+	initCountersPortNameMapOnce.Do(func() {
+		var err error
 		countersPortNameMap, err = getCountersMap("COUNTERS_PORT_NAME_MAP")
 		if err != nil {
-			return err
+			initErr = err
 		}
-	}
-	return nil
+	})
+	return initErr
 }
 
 func initCountersSidMap() error {
-	var err error
-	if len(countersSidMap) == 0 {
+	var initErr error
+	initCountersSidMapOnce.Do(func() {
+		var err error
 		countersSidMap, err = getCountersMap("COUNTERS_SRV6_NAME_MAP")
 		if err != nil {
-			return err
+			initErr = err
 		}
-	}
-	return nil
+	})
+	return initErr
 }
 
 func initCountersAclRuleMap() error {
-	var err error
-	if len(countersAclRuleMap) == 0 {
+	var initErr error
+	initCountersAclRuleMapOnce.Do(func() {
+		var err error
 		// ACL_COUNTER_RULE_MAP is a hash in COUNTERS_DB:
 		//   "DATAACL:RULE_1" -> "oid:0x9000000000711"
 		countersAclRuleMap, err = getCountersMap("ACL_COUNTER_RULE_MAP")
 		if err != nil {
-			return err
+			initErr = err
 		}
-	}
-	return nil
+	})
+	return initErr
 }
 
 func initAliasMap() error {
-	var err error
-	if len(alias2nameMap) == 0 {
+	var initErr error
+	initAliasMapOnce.Do(func() {
+		var err error
 		alias2nameMap, name2aliasMap, port2namespaceMap, err = getAliasMap()
 		if err != nil {
-			return err
+			initErr = err
 		}
-	}
-	return nil
+	})
+	return initErr
 }
 
 func initCountersPfcwdNameMap() error {
-	var err error
-	if len(countersPfcwdNameMap) == 0 {
+	var initErr error
+	initCountersPfcwdNameMapOnce.Do(func() {
+		var err error
 		countersPfcwdNameMap, err = GetPfcwdMap()
 		if err != nil {
-			return err
+			initErr = err
 		}
-	}
-	return nil
+	})
+	return initErr
 }
 
 func initCountersFabricPortNameMap() error {
-	var err error
-	// Reset map for Unit test to ensure that counters db is updated
-	// after changing from single to multi-asic config
-	value := os.Getenv("UNIT_TEST")
-	if len(countersFabricPortNameMap) == 0 || value == "1" {
+	var initErr error
+	initCountersFabricPortNameMapOnce.Do(func() {
+		var err error
 		countersFabricPortNameMap, err = getFabricCountersMap("COUNTERS_FABRIC_PORT_NAME_MAP")
 		if err != nil {
-			return err
+			initErr = err
 		}
-	}
-	return nil
+	})
+	return initErr
 }
 
 // Get the mapping between sonic interface name and oids of their PFC-WD enabled queues in COUNTERS_DB
@@ -921,6 +939,16 @@ func ClearMappings() {
 			delete(counterMap, entry)
 		}
 	}
+
+	// Reset sync.Once guards so the next call re-initializes.
+	initCountersPortNameMapOnce = sync.Once{}
+	initCountersQueueNameMapOnce = sync.Once{}
+	initCountersPGNameMapOnce = sync.Once{}
+	initCountersSidMapOnce = sync.Once{}
+	initCountersAclRuleMapOnce = sync.Once{}
+	initAliasMapOnce = sync.Once{}
+	initCountersPfcwdNameMapOnce = sync.Once{}
+	initCountersFabricPortNameMapOnce = sync.Once{}
 }
 
 func AliasToPortNameMap() map[string]string {

@@ -987,7 +987,6 @@ func init() {
                 0,
                 0,
                 nil,
-                showCmdOptionJson,
         )
 
         // SHOW/platform/voltage

@@ -8,11 +8,14 @@ import (
 	"sort"
 	"strconv"
 	"strings"
+	"sync"
 
 	log "github.com/golang/glog"
 	"github.com/sonic-net/sonic-gnmi/show_client/common"
 	sdc "github.com/sonic-net/sonic-gnmi/sonic_data_client"
 )
+
+var statCacheMu sync.Mutex
 
 // simple process-local stat lookup cache
 var statLookupCache = make(map[string]map[string]string)
@@ -237,6 +240,9 @@ func getCountsTable(counters []string, objectTable string) (map[string]map[strin
 //	    // ...other configured counters...
 //	}
 func GetStatLookup(objectStatMap string) map[string]string {
+	statCacheMu.Lock()
+	defer statCacheMu.Unlock()
+
 	if v, ok := statLookupCache[objectStatMap]; ok {
 		return v
 	}
@@ -264,11 +270,28 @@ func GetStatLookup(objectStatMap string) map[string]string {
 //	   // ...other stat->name entries...
 //	}
 func GetReverseStatLookup(objectStatMap string) map[string]string {
+	statCacheMu.Lock()
+	defer statCacheMu.Unlock()
+
 	if v, ok := reverseStatLookupCache[objectStatMap]; ok {
 		return v
 	}
 
-	statMap := GetStatLookup(objectStatMap)
+	statMap, ok := statLookupCache[objectStatMap]
+	if !ok {
+		raw, err := common.GetMapFromQueries([][]string{{"COUNTERS_DB", objectStatMap}})
+		if err != nil || len(raw) == 0 {
+			statLookupCache[objectStatMap] = nil
+			reverseStatLookupCache[objectStatMap] = nil
+			return nil
+		}
+		statMap = make(map[string]string, len(raw))
+		for k, val := range raw {
+			statMap[k] = fmt.Sprint(val)
+		}
+		statLookupCache[objectStatMap] = statMap
+	}
+
 	if len(statMap) == 0 {
 		reverseStatLookupCache[objectStatMap] = nil
 		return nil
@@ -420,6 +443,8 @@ func loadPortDropCheckpoint(fileName string) map[string]map[string]int64 {
 
 // clear in-memory lookup caches.
 func ClearDropstatStatCaches() {
+	statCacheMu.Lock()
+	defer statCacheMu.Unlock()
 	statLookupCache = make(map[string]map[string]string)
 	reverseStatLookupCache = make(map[string]map[string]string)
 }

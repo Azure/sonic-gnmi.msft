@@ -131,7 +131,7 @@ func initCountersQueueNameMap() error {
 	var initErr error
 	initCountersQueueNameMapOnce.Do(func() {
 		var err error
-		countersQueueNameMap, err = getCountersMap("COUNTERS_QUEUE_NAME_MAP")
+		countersQueueNameMap, err = GetCountersMap("COUNTERS_QUEUE_NAME_MAP")
 		if err != nil {
 			initErr = err
 		}
@@ -142,7 +142,7 @@ func initCountersQueueNameMap() error {
 func initCountersPGNameMap() error {
 	var initErr error
 	initCountersPGNameMapOnce.Do(func() {
-		pgOidMap, err := getCountersMap("COUNTERS_PG_NAME_MAP")
+		pgOidMap, err := GetCountersMap("COUNTERS_PG_NAME_MAP")
 		if err != nil {
 			initErr = err
 			return
@@ -164,7 +164,7 @@ func initCountersPGNameMap() error {
 }
 
 func GetCountersQueueTypeMap() (map[string]string, error) {
-	oidTypeMap, err := getCountersMap("COUNTERS_QUEUE_TYPE_MAP")
+	oidTypeMap, err := GetCountersMap("COUNTERS_QUEUE_TYPE_MAP")
 	if err != nil {
 		return nil, err
 	}
@@ -194,7 +194,7 @@ func initCountersPortNameMap() error {
 	var initErr error
 	initCountersPortNameMapOnce.Do(func() {
 		var err error
-		countersPortNameMap, err = getCountersMap("COUNTERS_PORT_NAME_MAP")
+		countersPortNameMap, err = GetCountersMap("COUNTERS_PORT_NAME_MAP")
 		if err != nil {
 			initErr = err
 		}
@@ -206,7 +206,7 @@ func initCountersSidMap() error {
 	var initErr error
 	initCountersSidMapOnce.Do(func() {
 		var err error
-		countersSidMap, err = getCountersMap("COUNTERS_SRV6_NAME_MAP")
+		countersSidMap, err = GetCountersMap("COUNTERS_SRV6_NAME_MAP")
 		if err != nil {
 			initErr = err
 		}
@@ -220,7 +220,7 @@ func initCountersAclRuleMap() error {
 		var err error
 		// ACL_COUNTER_RULE_MAP is a hash in COUNTERS_DB:
 		//   "DATAACL:RULE_1" -> "oid:0x9000000000711"
-		countersAclRuleMap, err = getCountersMap("ACL_COUNTER_RULE_MAP")
+		countersAclRuleMap, err = GetCountersMap("ACL_COUNTER_RULE_MAP")
 		if err != nil {
 			initErr = err
 		}
@@ -232,7 +232,7 @@ func initAliasMap() error {
 	var initErr error
 	initAliasMapOnce.Do(func() {
 		var err error
-		alias2nameMap, name2aliasMap, port2namespaceMap, err = getAliasMap()
+		alias2nameMap, name2aliasMap, port2namespaceMap, err = GetAliasMap()
 		if err != nil {
 			initErr = err
 		}
@@ -256,7 +256,7 @@ func initCountersFabricPortNameMap() error {
 	var initErr error
 	initCountersFabricPortNameMapOnce.Do(func() {
 		var err error
-		countersFabricPortNameMap, err = getFabricCountersMap("COUNTERS_FABRIC_PORT_NAME_MAP")
+		countersFabricPortNameMap, err = GetFabricCountersMap("COUNTERS_FABRIC_PORT_NAME_MAP")
 		if err != nil {
 			initErr = err
 		}
@@ -372,7 +372,7 @@ func GetPfcwdMap() (map[string]map[string]string, error) {
 }
 
 // Get the mapping between sonic interface name and vendor alias and sonic-interface to namespace map
-func getAliasMap() (map[string]string, map[string]string, map[string]string, error) {
+func GetAliasMap() (map[string]string, map[string]string, map[string]string, error) {
 	var alias2name_map = make(map[string]string)
 	var name2alias_map = make(map[string]string)
 	var port2namespace_map = make(map[string]string)
@@ -423,7 +423,7 @@ func addmap(a map[string]string, b map[string]string) {
 
 // Get the mapping between objects in counters DB, Ex. port name to oid in "COUNTERS_PORT_NAME_MAP" table.
 // Aussuming static port name to oid map in COUNTERS table
-func getCountersMap(tableName string) (map[string]string, error) {
+func GetCountersMap(tableName string) (map[string]string, error) {
 	counter_map := make(map[string]string)
 	dbName := "COUNTERS_DB"
 	redis_client_map, err := GetRedisClientsForDb(dbName)
@@ -444,7 +444,7 @@ func getCountersMap(tableName string) (map[string]string, error) {
 
 // Get the mapping between objects in counters DB, Ex. port name to oid in "COUNTERS_FABRIC_PORT_NAME_MAP" table.
 // Aussuming static port name to oid map in COUNTERS table
-func getFabricCountersMap(tableName string) (map[string]string, error) {
+func GetFabricCountersMap(tableName string) (map[string]string, error) {
 	counter_map := make(map[string]string)
 	dbName := "COUNTERS_DB"
 	redis_client_map, err := GetRedisClientsForDb(dbName)
@@ -972,6 +972,13 @@ func PortToAliasNameMap() map[string]string {
 	}
 	return output
 }
+
+func InitCountersPortNameMap() error       { return initCountersPortNameMap() }
+func InitCountersQueueNameMap() error      { return initCountersQueueNameMap() }
+func InitCountersPGNameMap() error         { return initCountersPGNameMap() }
+func InitCountersSidMap() error            { return initCountersSidMap() }
+func InitCountersAclRuleMap() error        { return initCountersAclRuleMap() }
+func InitCountersFabricPortNameMap() error { return initCountersFabricPortNameMap() }
 
 // Populate real data paths from paths like
 // [COUNTERS_DB PERIODIC_WATERMARKS Ethernet* PriorityGroups] or

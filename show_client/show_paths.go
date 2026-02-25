@@ -968,4 +968,23 @@ func init() {
 		showCmdOptionVerbose,
 		showCmdOptionPsuIndex,
 	)
+
+	sdc.RegisterCliPath(
+		[]string{"SHOW", "asic-sdk-health-event", "suppress-configuration"},
+		getAsicSdkHealthEventSuppressConfig,
+		"SHOW/asic-sdk-health-event/suppress-configuration[OPTIONS]: Show the suppress configuration for ASIC/SDK health events",
+		0,
+		0,
+		nil,
+	)
+
+	sdc.RegisterCliPath(
+		[]string{"SHOW", "asic-sdk-health-event", "received"},
+		getAsicSdkHealthEventReceived,
+		"SHOW/asic-sdk-health-event/received[OPTIONS]: Show the received ASIC/SDK health events",
+		0,
+		0,
+		nil,
+	)
+
 }

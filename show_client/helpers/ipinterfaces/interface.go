@@ -39,7 +39,7 @@ func GetIPInterfaces(addressFamily string, opts *GetInterfacesOptions) ([]IPInte
 			dispOptVal = *opts.Display
 		}
 	}
-	log.Infof(
+	log.V(6).Infof(
 		"GetIPInterfaces(family=%s namespace_opt=%s display_opt=%s) from namespaces '%v':",
 		addressFamily, nsOptVal, dispOptVal, nsList,
 	)
@@ -84,7 +84,7 @@ func GetIPInterfaces(addressFamily string, opts *GetInterfacesOptions) ([]IPInte
 	for _, v := range interfaceMap {
 		all = append(all, *v)
 	}
-	log.Infof("Aggregated %d interfaces across namespaces", len(all))
+	log.V(6).Infof("Aggregated %d interfaces across namespaces", len(all))
 
 	if err := enrichWithBGPData(all); err != nil {
 		log.Warningf("failed to enrich with BGP data: %v", err)

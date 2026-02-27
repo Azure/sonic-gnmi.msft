@@ -324,7 +324,7 @@ func GetPfcwdMap() (map[string]map[string]string, error) {
 		for _, p := range strings.Split(priorities, ",") {
 			_, ok := pfc_queue_map[p]
 			if !ok {
-				log.V(1).Infof("Missing mapping between PFC priority %v to queue", p)
+				log.V(6).Infof("Missing mapping between PFC priority %v to queue", p)
 			} else {
 				indices = append(indices, pfc_queue_map[p])
 			}

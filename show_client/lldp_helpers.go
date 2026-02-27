@@ -110,7 +110,7 @@ func getLLDPDataFromHostCommand(ifaceName string) (lldpData, error) {
 		lldpShowJsonCommand = lldpShowJsonCommand + " " + ifaceName
 	}
 
-	log.V(2).Infof("Start to get lldp data from lldpctl, command: %s", lldpShowJsonCommand)
+	log.V(6).Infof("Start to get lldp data from lldpctl, command: %s", lldpShowJsonCommand)
 	// Execute the command to get lldp data in json format
 	lldpOutput, err := common.GetDataFromHostCommand(lldpShowJsonCommand)
 	if err != nil {

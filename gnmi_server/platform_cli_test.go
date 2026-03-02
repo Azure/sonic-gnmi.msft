@@ -214,7 +214,7 @@ func TestGetShowPlatformFan(t *testing.T) {
 	expectedHighSpeedOutput := `[{"drawer":"Drawer 1","led":"green","fan":"FAN 1","speed":"5000RPM","direction":"exhaust","presence":"Present","status":"OK","timestamp":"20250217 13:00:00"}]`
 
 	fanDataFilename := "../testdata/FAN_STATUS.json"
-	fanEmptyFilename := "../testdata/FAN_STATUS_EMPTY.json"
+	fanEmptyFilename := "../testdata/EMPTY_JSON.txt"
 	fanHighSpeedFilename := "../testdata/FAN_STATUS_HIGH_SPEED.json"
 
 	tests := []struct {
@@ -305,7 +305,7 @@ func TestGetShowPlatformTemperature(t *testing.T) {
 	expectedOutput := `[{"sensor":"Sensor 1","temperature":"45.5","high_th":"75.0","low_th":"5.0","crit_high_th":"85.0","crit_low_th":"0.0","warning":"False","timestamp":"20250217 12:00:00"},{"sensor":"Sensor 2","temperature":"50.0","high_th":"75.0","low_th":"5.0","crit_high_th":"85.0","crit_low_th":"0.0","warning":"False","timestamp":"20250217 12:00:00"},{"sensor":"Sensor 3","temperature":"78.0","high_th":"75.0","low_th":"5.0","crit_high_th":"85.0","crit_low_th":"0.0","warning":"True","timestamp":"20250217 12:00:00"}]`
 
 	tempDataFilename := "../testdata/TEMPERATURE_STATUS.json"
-	tempEmptyFilename := "../testdata/TEMPERATURE_STATUS_EMPTY.json"
+	tempEmptyFilename := "../testdata/EMPTY_JSON.txt"
 
 	tests := []struct {
 		desc        string
@@ -380,7 +380,7 @@ func TestGetShowPlatformVoltage(t *testing.T) {
 	expectedOutput := `[{"sensor":"VoltSensor 1","voltage":"12.0 V","high_th":"13.2","low_th":"10.8","crit_high_th":"14.0","crit_low_th":"10.0","warning":"False","timestamp":"20250217 12:00:00"},{"sensor":"VoltSensor 2","voltage":"5.0 V","high_th":"5.5","low_th":"4.5","crit_high_th":"6.0","crit_low_th":"4.0","warning":"False","timestamp":"20250217 12:00:00"}]`
 
 	voltageDataFilename := "../testdata/VOLTAGE_STATUS.json"
-	voltageEmptyFilename := "../testdata/VOLTAGE_STATUS_EMPTY.json"
+	voltageEmptyFilename := "../testdata/EMPTY_JSON.txt"
 
 	tests := []struct {
 		desc        string
@@ -455,7 +455,7 @@ func TestGetShowPlatformCurrent(t *testing.T) {
 	expectedOutput := `[{"sensor":"CurrentSensor 1","current":"5.5 A","high_th":"10.0","low_th":"0.5","crit_high_th":"12.0","crit_low_th":"0.0","warning":"False","timestamp":"20250217 12:00:00"},{"sensor":"CurrentSensor 2","current":"3.2 A","high_th":"8.0","low_th":"0.5","crit_high_th":"10.0","crit_low_th":"0.0","warning":"False","timestamp":"20250217 12:00:00"}]`
 
 	currentDataFilename := "../testdata/CURRENT_STATUS.json"
-	currentEmptyFilename := "../testdata/CURRENT_STATUS_EMPTY.json"
+	currentEmptyFilename := "../testdata/EMPTY_JSON.txt"
 
 	tests := []struct {
 		desc        string

@@ -14,7 +14,7 @@ import (
 func GetDataFromFile(fileName string) ([]byte, error) {
 	fileContent, err := sdc.ImplIoutilReadFile(fileName)
 	if err != nil {
-		log.V(6).Infof("Failed to read '%v', %v", fileName, err)
+		log.Errorf("Failed to read '%v', %v", fileName, err)
 		return nil, err
 	}
 	log.V(4).Infof("getDataFromFile, output: %v", string(fileContent))

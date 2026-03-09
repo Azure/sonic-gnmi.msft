@@ -842,6 +842,7 @@ func prepareStateDb(t *testing.T, namespace string) {
 }
 
 func prepareDb(t *testing.T, namespace string) {
+	sdc.ClearMappings()
 	rclient := getRedisClient(t, namespace)
 	defer rclient.Close()
 	rclient.FlushDB()
@@ -1057,6 +1058,7 @@ func prepareDb(t *testing.T, namespace string) {
 }
 
 func prepareDbTranslib(t *testing.T) {
+	sdc.ClearMappings()
 	ns, _ := sdcfg.GetDbDefaultNamespace()
 	rclient := getRedisClient(t, ns)
 	rclient.FlushDB()
@@ -5158,6 +5160,7 @@ func TestGNMINative(t *testing.T) {
 	go runServer(t, s)
 	defer s.Stop()
 	ns, _ := sdcfg.GetDbDefaultNamespace()
+	sdc.ClearMappings()
 	initFullConfigDb(t, ns)
 	initFullCountersDb(t, ns)
 

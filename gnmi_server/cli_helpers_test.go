@@ -88,6 +88,7 @@ func FlushDataSet(t *testing.T, dbNum int) {
 }
 
 func AddDataSet(t *testing.T, dbNum int, fileName string) {
+	sdc.ClearMappings()
 	ns, _ := sdcfg.GetDbDefaultNamespace()
 	rclient := getRedisClientN(t, dbNum, ns)
 	defer rclient.Close()

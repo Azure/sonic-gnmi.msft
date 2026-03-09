@@ -549,10 +549,7 @@ func getTimestampClearedCounters(oldTS, newTS string) string {
 }
 
 func getPortStatCacheSnapshot() (map[string]InterfaceCountersSnapshot, bool) {
-	if !common.FileExists(portStatCachePath) {
-		return nil, false
-	}
-	portStatCacheStr, err := common.GetDataFromFile(portStatCachePath)
+	portStatCacheStr, err := sdc.ImplIoutilReadFile(portStatCachePath)
 	if err != nil || len(portStatCacheStr) == 0 {
 		return nil, false
 	}

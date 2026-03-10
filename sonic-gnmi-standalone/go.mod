@@ -5,7 +5,7 @@ go 1.19
 require (
 	github.com/alicebob/miniredis/v2 v2.35.0
 	github.com/fsnotify/fsnotify v1.9.0
-	github.com/golang/glog v1.0.0
+	github.com/golang/glog v1.2.4
 	github.com/openconfig/gnoi v0.2.0
 	github.com/redis/go-redis/v9 v9.12.1
 	github.com/spf13/cobra v1.9.1

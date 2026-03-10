@@ -149,3 +149,19 @@ go tool cover -html=coverage.out
 - **Dial-out reconnection**: Dial-out client must handle connection failures gracefully
 - **Performance**: High-frequency subscriptions can overwhelm Redis — use appropriate sampling intervals
 - **Multi-ASIC**: gNMI must handle namespace-aware database connections for multi-ASIC platforms
+
+## GitHub Copilot Coding Agent
+
+This repository is configured for the [GitHub Copilot coding agent](https://github.com/copilot/agents). The `.github/copilot-instructions.md` file provides the agent with project-specific context, coding conventions, and guidance so it can work effectively. When assigned to an issue, the agent opens a pull request with the proposed changes.
+
+### Prerequisites for a repository to appear in the Copilot "Select repository" dropdown
+
+When selecting a repository at `github.com/copilot/agents`, a repository will only appear if **all** of the following conditions are met:
+
+1. **Copilot is enabled** for the GitHub organization or account that owns the repository (requires Copilot Business or Enterprise for org-owned repositories).
+2. **You have write access** to the repository — read-only access is not sufficient.
+3. **GitHub Actions is enabled** for the repository — the coding agent submits work via GitHub Actions pull request workflows.
+4. **The repository is not archived** — archived repositories do not accept new pull requests and are excluded.
+5. **You are authenticated with the correct account** — if you have multiple GitHub accounts, confirm you are signed in with the account that has access to the target repository.
+
+If a repository does not appear in the dropdown, check each of the above in the repository and organization settings, then sign out and back in to refresh your session.

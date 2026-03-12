@@ -51,19 +51,30 @@ type pfcPriorityResponse struct {
 }
 
 // getPfcCounters fetches PFC RX and TX counters for all ports from COUNTERS_DB.
-// Corresponds to "show pfc counters".
+// Uses COUNTERS_PORT_NAME_MAP to resolve port names to OIDs, then fetches
+// COUNTERS:<oid> for each port. Corresponds to "show pfc counters".
 func getPfcCounters(args sdc.CmdArgs, options sdc.OptionMap) ([]byte, error) {
-	queries := [][]string{
-		{"COUNTERS_DB", "COUNTERS", "Ethernet*"},
-	}
-
-	aliasCountersOutput, err := common.GetMapFromQueries(queries)
+	// Step 1: Fetch COUNTERS_PORT_NAME_MAP to get port name -> OID mapping
+	portNameMap, err := common.GetMapFromQueries([][]string{{"COUNTERS_DB", "COUNTERS_PORT_NAME_MAP"}})
 	if err != nil {
-		log.Errorf("Unable to pull PFC counter data from queries %v, err: %v", queries, err)
+		log.Errorf("Unable to pull COUNTERS_PORT_NAME_MAP from COUNTERS_DB, err: %v", err)
 		return nil, err
 	}
 
-	portCounters := common.RemapAliasToPortName(aliasCountersOutput)
+	// Step 2: For each port, fetch its counters by OID
+	portCounters := make(map[string]interface{})
+	for port, oidVal := range portNameMap {
+		oid := fmt.Sprint(oidVal)
+		tableKey := "COUNTERS:" + oid
+		counters, err := common.GetMapFromQueries([][]string{{"COUNTERS_DB", tableKey}})
+		if err != nil {
+			log.Errorf("Unable to pull counters for %s (oid %s), err: %v", port, oid, err)
+			continue
+		}
+		if len(counters) > 0 {
+			portCounters[port] = interface{}(counters)
+		}
+	}
 
 	rxCounters := make(map[string]pfcCountersRxResponse)
 	txCounters := make(map[string]pfcCountersTxResponse)

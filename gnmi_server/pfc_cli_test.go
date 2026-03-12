@@ -268,7 +268,7 @@ func TestShowPfcPriority(t *testing.T) {
 				elem: <name: "priority" >
 				elem: <name: "EthernetNotExist" >
 			`,
-			wantRetCode: codes.Internal,
+			wantRetCode: codes.NotFound,
 		},
 	}
 

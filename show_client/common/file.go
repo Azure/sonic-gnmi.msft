@@ -65,6 +65,14 @@ func FileExists(path string) bool {
 	return !info.IsDir()
 }
 
+func DirExists(path string) bool {
+	info, err := os.Stat(path)
+	if err != nil {
+		return false
+	}
+	return info.IsDir()
+}
+
 func GetMapFromFile(filePath string) (map[string]interface{}, error) {
 	jsonBytes, err := GetDataFromFile(filePath)
 	if err != nil {
@@ -78,4 +86,37 @@ func GetMapFromFile(filePath string) (map[string]interface{}, error) {
 	}
 
 	return result, nil
+}
+
+func ReadJsonToMap(filePath string) (map[string]interface{}, error) {
+	data, err := GetDataFromFile(filePath)
+	if err != nil {
+		log.Errorf("Error reading file: %v", err)
+		return nil, err
+	}
+
+	var parsedData map[string]interface{}
+	err = json.Unmarshal(data, &parsedData)
+	if err != nil {
+		return nil, fmt.Errorf("failed to parse JSON from %s: %w", filePath, err)
+	}
+
+	return parsedData, nil
+}
+
+func WriteFile(filePath string, content string) bool {
+	err := os.WriteFile(filePath, []byte(content), 0644)
+	if err != nil {
+		log.Errorf("Failed to write %s to file %s - %v", content, filePath, err)
+		return false
+	}
+	return true
+}
+
+func ReadStringFromFile(filePath string, defaultVal string) string {
+	data, err := os.ReadFile(filePath)
+	if err != nil {
+		return defaultVal
+	}
+	return strings.TrimSpace(string(data))
 }

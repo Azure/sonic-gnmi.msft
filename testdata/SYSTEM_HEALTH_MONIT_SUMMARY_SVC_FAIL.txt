@@ -1,0 +1,6 @@
+Monit 5.26.0 uptime: 10d 5h 20m
+ Name                            Status                   Type
+ container_checker               Not Running              Process
+ sonic                           Running                  System
+ root-overlay                    Accessible               Filesystem
+ var-log                         Accessible               Filesystem

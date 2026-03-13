@@ -729,7 +729,20 @@ func init() {
 		showCmdOptionVerbose,
 	)
 
-	// SHOW/ "version"},
+	// SHOW/uptime
+	sdc.RegisterCliPath(
+		[]string{"SHOW", "uptime"},
+		getUptime,
+		"SHOW/uptime[OPTIONS]: Show system uptime",
+		0,
+		0,
+		nil,
+		showCmdOptionVerbose,
+	)
+
+	// SHOW/version
+	sdc.RegisterCliPath(
+		[]string{"SHOW", "version"},
 		getVersion,
 		"SHOW/version[OPTIONS]: Show version information",
 		0,
@@ -956,7 +969,7 @@ func init() {
 		showCmdOptionPsuIndex,
 	)
 
-	// SHOW/system-health
+	// SHOW/system-health/summary
 	sdc.RegisterCliPath(
 		[]string{"SHOW", "system_health", "summary"},
 		getSystemHealthSummary,

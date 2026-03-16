@@ -12,7 +12,7 @@ import (
 func getSuppressFibPending(args sdc.CmdArgs, options sdc.OptionMap) ([]byte, error) {
 	state := common.GetLocalhostInfo("suppress-fib-pending")
 	if state == "" {
-		state = "disabled"
+		state = "enabled"
 	}
 
 	result := map[string]string{

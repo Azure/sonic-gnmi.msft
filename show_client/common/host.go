@@ -231,3 +231,69 @@ func GetAsicPresenceList() []int {
 	}
 	return asicsList
 }
+
+func GetPlatformConfigFilePath() string {
+	candidate := filepath.Join(containerPlatformPath, platformEnvConfFile)
+	if FileExists(candidate) {
+		return candidate
+	}
+
+	// Check host device path with platform
+	platform := GetPlatform()
+	if platform != "" {
+		candidate = filepath.Join(HostDevicePath, platform, platformEnvConfFile)
+		if FileExists(candidate) {
+			return candidate
+		}
+	}
+
+	// Not found
+	return ""
+}
+
+func GetPlatformEnvConfig(varName string) (string, bool) {
+    	platformConfigFilePath := GetPlatformConfigFilePath()
+	if platformConfigFilePath == "" {
+		return "", false
+	}
+	file, err := os.Open(platformConfigFilePath)
+	if err != nil {
+		return "", false
+	}
+	defer file.Close()
+	scanner := bufio.NewScanner(file)
+	for scanner.Scan() {
+		line := scanner.Text()
+		tokens := strings.SplitN(line, "=", 2)
+		if len(tokens) < 2 {
+			continue
+		}
+		if strings.ToLower(tokens[0]) == varName {
+            return tokens[1], true
+		}
+	}
+	return "", false
+
+}
+
+func IsExpectedValue(val string, expectedVal string) bool {
+    	if strings.TrimSpace(val) == expectedVal {
+        	return true
+    	}
+	
+    	return false
+}
+
+func IsSupervisor() bool {
+    	val, found := GetPlatformEnvConfig("supervisor")
+    	if !found {
+        	return found
+    	}
+    	return IsExpectedValue(val, "1")
+}
+
+// IsSimxPlatform returns true if the current platform is a SimX (simulation) platform.
+func IsSimxPlatform() bool {
+	platformName := GetPlatform()
+	return platformName != "" && strings.Contains(strings.ToLower(platformName), "simx")
+}

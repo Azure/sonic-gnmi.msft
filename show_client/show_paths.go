@@ -968,4 +968,15 @@ func init() {
 		showCmdOptionVerbose,
 		showCmdOptionPsuIndex,
 	)
+
+	// SHOW/system-health
+	sdc.RegisterCliPath(
+		[]string{"SHOW", "system-health", "summary"},
+		getSystemHealthSummary,
+		"SHOW/system-health/summary[OPTIONS]: Show system health summary",
+		0,
+		0,
+		nil,
+		showCmdOptionJson,
+	)
 }

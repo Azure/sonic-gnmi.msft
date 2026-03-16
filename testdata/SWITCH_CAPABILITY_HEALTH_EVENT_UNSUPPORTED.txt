@@ -1,6 +1,0 @@
-{
-  "SWITCH_CAPABILITY|switch": {
-    "ASIC_SDK_HEALTH_EVENT": "false"
-  }
-}
-

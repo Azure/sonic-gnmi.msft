@@ -549,7 +549,7 @@ func getTimestampClearedCounters(oldTS, newTS string) string {
 }
 
 func getPortStatCacheSnapshot() (map[string]InterfaceCountersSnapshot, bool) {
-	portStatCacheStr, err := common.GetDataFromFile(portStatCachePath)
+	portStatCacheStr, err := sdc.ImplIoutilReadFile(portStatCachePath)
 	if err != nil || len(portStatCacheStr) == 0 {
 		return nil, false
 	}
@@ -772,6 +772,9 @@ func calculateDiff(oldValue, newValue string, raw bool) string {
 
 // Validate counter value is an integer, return common.DefaultMissingCounterValue if not
 func validateAndGetIntValue(value string) string {
+	if value == common.DefaultMissingCounterValue {
+		return common.DefaultMissingCounterValue
+	}
 	_, valueParseErr := strconv.ParseInt(value, common.Base10, 64)
 	if valueParseErr != nil {
 		log.Warningf("Invalid counter value %s: %v", value, valueParseErr)

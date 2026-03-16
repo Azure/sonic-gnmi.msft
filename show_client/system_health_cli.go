@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"strings"
 
-	helpers "github.com/sonic-net/sonic-gnmi/show_client/helpers/health_check_manager"
+	helpers "github.com/sonic-net/sonic-gnmi/show_client/helpers/health_checker"
 	"github.com/sonic-net/sonic-gnmi/show_client/helpers/platform"
 	sdc "github.com/sonic-net/sonic-gnmi/sonic_data_client"
 )

@@ -971,7 +971,7 @@ func init() {
 
 	// SHOW/system-health
 	sdc.RegisterCliPath(
-		[]string{"SHOW", "system_health", "summary"},
+		[]string{"SHOW", "system-health", "summary"},
 		getSystemHealthSummary,
 		"SHOW/system-health/summary[OPTIONS]: Show system health summary",
 		0,

@@ -37,7 +37,7 @@ func TestGetShowSuppressFibPending(t *testing.T) {
 
 	suppressFibPendingExpectedEnabled := `{"status":"Enabled"}`
 	suppressFibPendingExpectedDisabled := `{"status":"Disabled"}`
-	suppressFibPendingExpectedDefault := `{"status":"Disabled"}`
+	suppressFibPendingExpectedDefault := `{"status":"Enabled"}`
 
 	suppressFibPendingEnabledFilename := "../testdata/SUPPRESS_FIB_PENDING_CONFIG_DB_DATA_ENABLED.txt"
 	suppressFibPendingDisabledFilename := "../testdata/SUPPRESS_FIB_PENDING_CONFIG_DB_DATA_DISABLED.txt"

@@ -13,7 +13,7 @@ import (
 // It uses the ipinterfaces library to get all interface details and returns them
 // as a JSON byte slice.
 func getIPv6Interfaces(args sdc.CmdArgs, options sdc.OptionMap) ([]byte, error) {
-	log.V(2).Info("Executing 'show ipv6 interfaces' command via ipinterfaces library.")
+	log.V(6).Info("Executing 'show ipv6 interfaces' command via ipinterfaces library.")
 
 	// Extract optional namespace and display options from validated options.
 	opts := &ipinterfaces.GetInterfacesOptions{}

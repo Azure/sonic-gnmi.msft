@@ -47,7 +47,7 @@ func getSRv6Stats(args sdc.CmdArgs, options sdc.OptionMap) ([]byte, error) {
 	for _, sid := range sids {
 		counterOid := fmt.Sprint(sidCounterMap[sid])
 		// Pull statistics for each sid and counterOid pair
-		log.V(2).Infof("Processing SID: %s with Counter OID: %v", sid, counterOid)
+		log.V(6).Infof("Processing SID: %s with Counter OID: %v", sid, counterOid)
 		queries := [][]string{
 			{"COUNTERS_DB", "COUNTERS", counterOid},
 		}

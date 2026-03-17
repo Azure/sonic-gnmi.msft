@@ -29,7 +29,7 @@ func getIPv6Fib(args sdc.CmdArgs, options sdc.OptionMap) ([]byte, error) {
 		return nil, err
 	}
 
-	log.Infof("[show ipv6 fib]|Found %d entries", len(entries))
+	log.V(6).Infof("[show ipv6 fib]|Found %d entries", len(entries))
 	res := fibResult{
 		Total:   len(entries),
 		Entries: entries,

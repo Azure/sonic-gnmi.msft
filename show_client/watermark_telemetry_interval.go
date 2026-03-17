@@ -37,10 +37,10 @@ func getWatermarkTelemetryInterval(args sdc.CmdArgs, options sdc.OptionMap) ([]b
 		if strVal != "" {
 			interval = strVal
 		} else {
-			log.Warningf("Key 'interval' found but empty in data")
+			log.V(6).Infof("Key 'interval' found but empty in data")
 		}
 	} else {
-		log.Warningf("Key 'interval' not found or empty in data")
+		log.V(6).Infof("Key 'interval' not found or empty in data")
 	}
 
 	// Append "s" for seconds

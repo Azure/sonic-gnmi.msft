@@ -59,14 +59,14 @@ type FanStatus struct {
 
 // TemperatureInfo represents temperature sensor information
 type TemperatureInfo struct {
-	Sensor        string `json:"sensor"`
-	Temperature   string `json:"temperature"`
-	HighTH        string `json:"high_th"`
-	LowTH         string `json:"low_th"`
-	CritHighTH    string `json:"crit_high_th"`
-	CritLowTH     string `json:"crit_low_th"`
-	Warning       string `json:"warning"`
-	Timestamp     string `json:"timestamp"`
+	Sensor      string `json:"sensor"`
+	Temperature string `json:"temperature"`
+	HighTH      string `json:"high_th"`
+	LowTH       string `json:"low_th"`
+	CritHighTH  string `json:"crit_high_th"`
+	CritLowTH   string `json:"crit_low_th"`
+	Warning     string `json:"warning"`
+	Timestamp   string `json:"timestamp"`
 }
 
 // VoltageInfo represents voltage sensor information

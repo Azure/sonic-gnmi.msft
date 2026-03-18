@@ -21,4 +21,3 @@ func getSuppressFibPending(args sdc.CmdArgs, options sdc.OptionMap) ([]byte, err
 
 	return json.Marshal(result)
 }
-

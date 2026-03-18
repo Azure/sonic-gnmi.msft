@@ -26,6 +26,26 @@ func init() {
 		sdc.UnimplementedOption(showCmdOptionNamespace),
 	)
 
+	// SHOW/chassis
+	sdc.RegisterCliPath(
+		[]string{"SHOW", "chassis", "modules", "status"},
+		getChassisModuleStatus,
+		"SHOW/chassis/modules/status[OPTIONS]: Show chassis module status",
+		0,
+		0,
+		nil,
+		showCmdOptionDpu,
+	)
+	sdc.RegisterCliPath(
+		[]string{"SHOW", "chassis", "modules", "midplane-status"},
+		getChassisModuleMidplaneStatus,
+		"SHOW/chassis/modules/midplane-status[OPTIONS]: Show chassis module midplane status",
+		0,
+		0,
+		nil,
+		showCmdOptionDpu,
+	)
+
 	// SHOW/clock
 	sdc.RegisterCliPath(
 		[]string{"SHOW", "clock"},
@@ -718,6 +738,17 @@ func init() {
 		showCmdOptionVerbose,
 	)
 
+	// SHOW/system-health
+	sdc.RegisterCliPath(
+		[]string{"SHOW", "system-health", "dpu"},
+		getSystemHealthDpu,
+		"SHOW/system-health/dpu[OPTIONS]: Show system health DPU status",
+		0,
+		0,
+		nil,
+		showCmdOptionDpu,
+	)
+
 	// SHOW/system-memory
 	sdc.RegisterCliPath(
 		[]string{"SHOW", "system-memory"},
@@ -943,8 +974,8 @@ func init() {
 		1,
 		nil,
 		showCmdOptionVerbose,
-  )
-  
+	)
+
 	// SHOW/platform/summary
 	sdc.RegisterCliPath(
 		[]string{"SHOW", "platform", "summary"},

@@ -103,4 +103,3 @@ func TestGetShowSuppressFibPending(t *testing.T) {
 		})
 	}
 }
-

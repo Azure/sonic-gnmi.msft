@@ -1,0 +1,11 @@
+{
+	"FAN_INFO|FAN 1": {
+		"drawer_name": "Drawer 1",
+		"led_status": "green",
+		"speed": "5000",
+		"direction": "exhaust",
+		"presence": "true",
+		"status": "true",
+		"timestamp": "20250217 13:00:00"
+	}
+}

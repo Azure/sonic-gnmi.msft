@@ -26,26 +26,6 @@ func init() {
 		sdc.UnimplementedOption(showCmdOptionNamespace),
 	)
 
-	// SHOW/chassis
-	sdc.RegisterCliPath(
-		[]string{"SHOW", "chassis", "modules", "status"},
-		getChassisModuleStatus,
-		"SHOW/chassis/modules/status[OPTIONS]: Show chassis module status",
-		0,
-		0,
-		nil,
-		showCmdOptionDpu,
-	)
-	sdc.RegisterCliPath(
-		[]string{"SHOW", "chassis", "modules", "midplane-status"},
-		getChassisModuleMidplaneStatus,
-		"SHOW/chassis/modules/midplane-status[OPTIONS]: Show chassis module midplane status",
-		0,
-		0,
-		nil,
-		showCmdOptionDpu,
-	)
-
 	// SHOW/clock
 	sdc.RegisterCliPath(
 		[]string{"SHOW", "clock"},
@@ -738,17 +718,6 @@ func init() {
 		showCmdOptionVerbose,
 	)
 
-	// SHOW/system-health
-	sdc.RegisterCliPath(
-		[]string{"SHOW", "system-health", "dpu"},
-		getSystemHealthDpu,
-		"SHOW/system-health/dpu[OPTIONS]: Show system health DPU status",
-		0,
-		0,
-		nil,
-		showCmdOptionDpu,
-	)
-
 	// SHOW/system-memory
 	sdc.RegisterCliPath(
 		[]string{"SHOW", "system-memory"},
@@ -974,8 +943,8 @@ func init() {
 		1,
 		nil,
 		showCmdOptionVerbose,
-	)
-
+  )
+  
 	// SHOW/platform/summary
 	sdc.RegisterCliPath(
 		[]string{"SHOW", "platform", "summary"},
@@ -999,4 +968,44 @@ func init() {
 		showCmdOptionVerbose,
 		showCmdOptionPsuIndex,
 	)
+
+	// SHOW/platform/fan
+        sdc.RegisterCliPath(
+                []string{"SHOW", "platform", "fan"},
+                getPlatformFan,
+                "SHOW/platform/fan[OPTIONS]: Show fan status information",
+                0,
+                0,
+                nil,
+        )
+
+        // SHOW/platform/temperature
+        sdc.RegisterCliPath(
+                []string{"SHOW", "platform", "temperature"},
+                getPlatformTemperature,
+                "SHOW/platform/temperature[OPTIONS]: Show device temperature information",
+                0,
+                0,
+                nil,
+        )
+
+        // SHOW/platform/voltage
+        sdc.RegisterCliPath(
+                []string{"SHOW", "platform", "voltage"},
+                getPlatformVoltage,
+                "SHOW/platform/voltage[OPTIONS]: Show device voltage information",
+                0,
+                0,
+                nil,
+        )
+
+        // SHOW/platform/current
+        sdc.RegisterCliPath(
+                []string{"SHOW", "platform", "current"},
+                getPlatformCurrent,
+                "SHOW/platform/current[OPTIONS]: Show device current information",
+                0,
+                0,
+                nil,
+        )
 }

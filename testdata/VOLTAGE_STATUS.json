@@ -1,0 +1,22 @@
+{
+	"VOLTAGE_INFO|VoltSensor 1": {
+		"voltage": "12.0",
+		"unit": "V",
+		"high_threshold": "13.2",
+		"low_threshold": "10.8",
+		"critical_high_threshold": "14.0",
+		"critical_low_threshold": "10.0",
+		"warning_status": "False",
+		"timestamp": "20250217 12:00:00"
+	},
+	"VOLTAGE_INFO|VoltSensor 2": {
+		"voltage": "5.0",
+		"unit": "V",
+		"high_threshold": "5.5",
+		"low_threshold": "4.5",
+		"critical_high_threshold": "6.0",
+		"critical_low_threshold": "4.0",
+		"warning_status": "False",
+		"timestamp": "20250217 12:00:00"
+	}
+}

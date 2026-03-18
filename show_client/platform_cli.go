@@ -4,10 +4,13 @@ import (
 	"encoding/json"
 	"fmt"
 	"sort"
+	"strconv"
+	"strings"
 
 	log "github.com/golang/glog"
 	natural "github.com/maruel/natural"
 	"github.com/sonic-net/sonic-gnmi/show_client/common"
+	"github.com/sonic-net/sonic-gnmi/show_client/helpers"
 	sdc "github.com/sonic-net/sonic-gnmi/sonic_data_client"
 )
 
@@ -40,6 +43,54 @@ type PsuStatus struct {
 	Voltage  string `json:"voltage"`
 	Current  string `json:"current"`
 	Power    string `json:"power"`
+}
+
+// FanStatus represents the status information for a single fan
+type FanStatus struct {
+	Drawer    string `json:"drawer"`
+	LED       string `json:"led"`
+	FAN       string `json:"fan"`
+	Speed     string `json:"speed"`
+	Direction string `json:"direction"`
+	Presence  string `json:"presence"`
+	Status    string `json:"status"`
+	Timestamp string `json:"timestamp"`
+}
+
+// TemperatureInfo represents temperature sensor information
+type TemperatureInfo struct {
+	Sensor        string `json:"sensor"`
+	Temperature   string `json:"temperature"`
+	HighTH        string `json:"high_th"`
+	LowTH         string `json:"low_th"`
+	CritHighTH    string `json:"crit_high_th"`
+	CritLowTH     string `json:"crit_low_th"`
+	Warning       string `json:"warning"`
+	Timestamp     string `json:"timestamp"`
+}
+
+// VoltageInfo represents voltage sensor information
+type VoltageInfo struct {
+	Sensor     string `json:"sensor"`
+	Voltage    string `json:"voltage"`
+	HighTH     string `json:"high_th"`
+	LowTH      string `json:"low_th"`
+	CritHighTH string `json:"crit_high_th"`
+	CritLowTH  string `json:"crit_low_th"`
+	Warning    string `json:"warning"`
+	Timestamp  string `json:"timestamp"`
+}
+
+// CurrentInfo represents current sensor information
+type CurrentInfo struct {
+	Sensor     string `json:"sensor"`
+	Current    string `json:"current"`
+	HighTH     string `json:"high_th"`
+	LowTH      string `json:"low_th"`
+	CritHighTH string `json:"crit_high_th"`
+	CritLowTH  string `json:"crit_low_th"`
+	Warning    string `json:"warning"`
+	Timestamp  string `json:"timestamp"`
 }
 
 // getPlatformSummary implements the "show platform summary" command
@@ -98,7 +149,7 @@ func getPlatformPsustatus(args sdc.CmdArgs, options sdc.OptionMap) ([]byte, erro
 
 	// Get CHASSIS_INFO
 	chassisQueries := [][]string{
-		{"STATE_DB", "CHASSIS_INFO"},
+		{common.StateDb, "CHASSIS_INFO"},
 	}
 	chassisData, err := common.GetMapFromQueries(chassisQueries)
 	if err != nil {
@@ -119,7 +170,7 @@ func getPlatformPsustatus(args sdc.CmdArgs, options sdc.OptionMap) ([]byte, erro
 
 	// Get PSU_INFO
 	psuQueries := [][]string{
-		{"STATE_DB", "PSU_INFO"},
+		{common.StateDb, "PSU_INFO"},
 	}
 	psuData, err := common.GetMapFromQueries(psuQueries)
 	if err != nil {
@@ -207,4 +258,138 @@ func getPlatformPsustatus(args sdc.CmdArgs, options sdc.OptionMap) ([]byte, erro
 
 	// Marshal to JSON
 	return json.Marshal(psuStatusList)
+}
+
+// getPlatformFan implements the "show platform fan" command
+func getPlatformFan(args sdc.CmdArgs, options sdc.OptionMap) ([]byte, error) {
+	queries := [][]string{
+		{common.StateDb, "FAN_INFO"},
+	}
+
+	fanData, err := common.GetMapFromQueries(queries)
+	if err != nil {
+		log.Errorf("Failed to get FAN_INFO from STATE_DB: %v", err)
+		return nil, err
+	}
+
+	if len(fanData) == 0 {
+		log.Info("Fan Not detected")
+		return json.Marshal(map[string]string{"message": "Fan not detected"})
+	}
+
+	// Collect all fan keys and sort them naturally
+	fanKeys := make([]string, 0)
+	for key := range fanData {
+		fanKeys = append(fanKeys, key)
+	}
+	sort.Sort(natural.StringSlice(fanKeys))
+
+	// Collect all fan status information
+	fanStatusList := make([]FanStatus, 0)
+
+	for _, fanKey := range fanKeys {
+		value := fanData[fanKey]
+		fanInfo, ok := value.(map[string]interface{})
+		if !ok {
+			continue
+		}
+
+		// Extract fan name from key (after the pipe)
+		fanName := fanKey
+
+		// Format presence value: "true" -> "Present", "false" -> "Not Present"
+		presence := common.GetValueOrDefault(fanInfo, "presence", "false")
+		presenceLower := strings.ToLower(presence)
+		presence = "Not Present"
+		if presenceLower == "true" {
+			presence = "Present"
+		}
+
+		// Format status value: "true" -> "OK", "false" -> "Not OK"
+		status := common.GetValueOrDefault(fanInfo, "status", "false")
+		statusLower := strings.ToLower(status)
+		status = "Not OK"
+		if statusLower == "true" {
+			status = "OK"
+		}
+
+		// Format speed value: if > 100 -> "{speed}RPM", if <= 100 -> "{speed}%"
+		speedRaw := common.GetValueOrDefault(fanInfo, "speed", "N/A")
+		speed := speedRaw
+		speedFloat, err := strconv.ParseFloat(speedRaw, 64)
+		if err != nil {
+			// Parsing failed (e.g., "N/A" or invalid value), use raw value as-is
+			speed = speedRaw
+		} else {
+			// Successfully parsed, format based on value
+			if speedFloat > 100 {
+				speed = fmt.Sprintf("%dRPM", int(speedFloat))
+			} else {
+				speed = fmt.Sprintf("%s%%", speedRaw)
+			}
+		}
+
+		fanStatus := FanStatus{
+			Drawer:    common.GetValueOrDefault(fanInfo, "drawer_name", "N/A"),
+			LED:       common.GetValueOrDefault(fanInfo, "led_status", "N/A"),
+			FAN:       fanName,
+			Speed:     speed,
+			Direction: common.GetValueOrDefault(fanInfo, "direction", "N/A"),
+			Presence:  presence,
+			Status:    status,
+			Timestamp: common.GetValueOrDefault(fanInfo, "timestamp", "N/A"),
+		}
+
+		fanStatusList = append(fanStatusList, fanStatus)
+	}
+
+	return json.Marshal(fanStatusList)
+}
+
+// getPlatformTemperature implements the "show platform temperature" command
+func getPlatformTemperature(args sdc.CmdArgs, options sdc.OptionMap) ([]byte, error) {
+	return helpers.GetSensorJSON("TEMPERATURE_INFO", "temperature", func(data map[string]string) TemperatureInfo {
+		return TemperatureInfo{
+			Sensor:      data["sensor"],
+			Temperature: data["value"],
+			HighTH:      data["high_th"],
+			LowTH:       data["low_th"],
+			CritHighTH:  data["crit_high_th"],
+			CritLowTH:   data["crit_low_th"],
+			Warning:     data["warning"],
+			Timestamp:   data["timestamp"],
+		}
+	})
+}
+
+// getPlatformVoltage implements the "show platform voltage" command
+func getPlatformVoltage(args sdc.CmdArgs, options sdc.OptionMap) ([]byte, error) {
+	return helpers.GetSensorJSON("VOLTAGE_INFO", "voltage", func(data map[string]string) VoltageInfo {
+		return VoltageInfo{
+			Sensor:     data["sensor"],
+			Voltage:    data["value"],
+			HighTH:     data["high_th"],
+			LowTH:      data["low_th"],
+			CritHighTH: data["crit_high_th"],
+			CritLowTH:  data["crit_low_th"],
+			Warning:    data["warning"],
+			Timestamp:  data["timestamp"],
+		}
+	})
+}
+
+// getPlatformCurrent implements the "show platform current" command
+func getPlatformCurrent(args sdc.CmdArgs, options sdc.OptionMap) ([]byte, error) {
+	return helpers.GetSensorJSON("CURRENT_INFO", "current", func(data map[string]string) CurrentInfo {
+		return CurrentInfo{
+			Sensor:     data["sensor"],
+			Current:    data["value"],
+			HighTH:     data["high_th"],
+			LowTH:      data["low_th"],
+			CritHighTH: data["crit_high_th"],
+			CritLowTH:  data["crit_low_th"],
+			Warning:    data["warning"],
+			Timestamp:  data["timestamp"],
+		}
+	})
 }

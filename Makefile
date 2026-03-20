@@ -419,6 +419,7 @@ endif
 	$(INSTALL) -D $(BUILD_DIR)/gnoi_openconfig_client $(DESTDIR)/usr/sbin/gnoi_openconfig_client
 	$(INSTALL) -D $(BUILD_DIR)/gnoi_sonic_client $(DESTDIR)/usr/sbin/gnoi_sonic_client
 	$(INSTALL) -D $(BUILD_DIR)/gnmi_dump $(DESTDIR)/usr/sbin/gnmi_dump
+	$(INSTALL) -D scripts/system_health.py $(DESTDIR)/usr/sbin/system_health.py
 
 
 deinstall:

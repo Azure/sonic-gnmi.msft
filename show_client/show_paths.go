@@ -1000,6 +1000,7 @@ func init() {
 		showCmdOptionPsuIndex,
 	)
 
+<<<<<<< HEAD
 	// SHOW/asic-sdk-health-event
 	sdc.RegisterCliPath(
 		[]string{"SHOW", "asic-sdk-health-event", "suppress-configuration"},
@@ -1066,5 +1067,39 @@ func init() {
 		0,
 		0,
 		nil,
+	)
+
+	// SHOW/pfc
+	sdc.RegisterCliPath(
+		[]string{"SHOW", "pfc", "counters"},
+		getPfcCounters,
+		"SHOW/pfc/counters[OPTIONS]: Show PFC counters",
+		0,
+		0,
+		nil,
+		showCmdOptionHistory,
+		showCmdOptionVerbose,
+		sdc.UnimplementedOption(showCmdOptionNamespace),
+		showCmdOptionDisplay,
+	)
+
+	sdc.RegisterCliPath(
+		[]string{"SHOW", "pfc", "asymmetric"},
+		getPfcAsymmetric,
+		"SHOW/pfc/asymmetric/{INTERFACENAME}[OPTIONS]: Show asymmetric PFC configuration",
+		0,
+		1,
+		nil,
+		sdc.UnimplementedOption(showCmdOptionNamespace),
+	)
+	
+	sdc.RegisterCliPath(
+		[]string{"SHOW", "pfc", "priority"},
+		getPfcPriority,
+		"SHOW/pfc/priority/{INTERFACENAME}[OPTIONS]: Show PFC priority configuration",
+		0,
+		1,
+		nil,
+		sdc.UnimplementedOption(showCmdOptionNamespace),
 	)
 }

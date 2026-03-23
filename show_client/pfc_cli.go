@@ -66,9 +66,9 @@ var pfcPriorities = []string{"PFC0", "PFC1", "PFC2", "PFC3", "PFC4", "PFC5", "PF
 
 // SAI/EST stat field templates for history stats (the * is replaced by priority index 0-7).
 var totalStatFields = []struct {
-	jsonKey    string
-	saiPrefix  string
-	estPrefix  string
+	jsonKey   string
+	saiPrefix string
+	estPrefix string
 }{
 	{"RX Pause Transitions", "SAI_PORT_STAT_PFC_*_ON2OFF_RX_PKTS", "EST_PORT_STAT_PFC_*_ON2OFF_RX_PKTS"},
 	{"Total RX Pause Time US", "SAI_PORT_STAT_PFC_*_RX_PAUSE_DURATION_US", "EST_PORT_STAT_PFC_*_RX_PAUSE_DURATION_US"},
@@ -313,4 +313,3 @@ func getPfcPriority(args sdc.CmdArgs, options sdc.OptionMap) ([]byte, error) {
 
 	return json.Marshal(response)
 }
-

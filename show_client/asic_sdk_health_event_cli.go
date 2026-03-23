@@ -10,11 +10,11 @@ import (
 )
 
 const (
-	switchCapabilityTable          = "SWITCH_CAPABILITY"
-	switchCapabilityKey            = "switch"
-	asicSdkHealthEventField        = "ASIC_SDK_HEALTH_EVENT"
+	switchCapabilityTable           = "SWITCH_CAPABILITY"
+	switchCapabilityKey             = "switch"
+	asicSdkHealthEventField         = "ASIC_SDK_HEALTH_EVENT"
 	suppressAsicSdkHealthEventTable = "SUPPRESS_ASIC_SDK_HEALTH_EVENT"
-	asicSdkHealthEventTable        = "ASIC_SDK_HEALTH_EVENT_TABLE"
+	asicSdkHealthEventTable         = "ASIC_SDK_HEALTH_EVENT_TABLE"
 )
 
 // getAsicSdkHealthEventSuppressConfig handles "show asic-sdk-health-event suppress-configuration".
@@ -124,5 +124,3 @@ func getAsicSdkHealthEventReceived(args sdc.CmdArgs, options sdc.OptionMap) ([]b
 	}
 	return json.Marshal(response)
 }
-
-

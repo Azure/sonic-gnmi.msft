@@ -23,4 +23,3 @@ func CheckFeatureSupported(db, table, key, field string) (bool, error) {
 	}
 	return false, nil
 }
-

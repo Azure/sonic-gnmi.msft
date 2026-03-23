@@ -302,4 +302,3 @@ func TestShowPfcPriority(t *testing.T) {
 		})
 	}
 }
-

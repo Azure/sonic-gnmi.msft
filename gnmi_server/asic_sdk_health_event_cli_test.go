@@ -272,4 +272,3 @@ func TestShowAsicSdkHealthEventReceived(t *testing.T) {
 		})
 	}
 }
-

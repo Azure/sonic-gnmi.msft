@@ -1,0 +1,14 @@
+{
+  "SUPPRESS_ASIC_SDK_HEALTH_EVENT|fatal": {
+    "categories": "software",
+    "max_events": "0"
+  },
+  "SUPPRESS_ASIC_SDK_HEALTH_EVENT|notice": {
+    "max_events": "1024"
+  },
+  "SUPPRESS_ASIC_SDK_HEALTH_EVENT|warning": {
+    "categories": "firmware,asic_hw",
+    "max_events": "10240"
+  }
+}
+

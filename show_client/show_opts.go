@@ -34,6 +34,7 @@ const (
 	showCmdOptionIfaceDesc             = "[iface=TEXT] Filter by interface name"
 	showCmdOptionLinesDesc             = "[lines=INTEGER] Number of lines to show (default: 10)"
 	showCmdOptionPsuIndexDesc          = "[index=INTEGER] Display a specific PSU by index"
+	showCmdOptionHistoryDesc           = "[history=true] Display historical PFC statistics"
 )
 
 // Option keys
@@ -219,6 +220,12 @@ var (
 		"index",
 		showCmdOptionPsuIndexDesc,
 		sdc.IntValue,
+	)
+
+	showCmdOptionHistory = sdc.NewShowCmdOption(
+		"history",
+		showCmdOptionHistoryDesc,
+		sdc.BoolValue,
 	)
 )
 

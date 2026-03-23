@@ -40,6 +40,11 @@ func TestShowPfcCounters(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Failed to read expected PFC counters results: %v", err)
 	}
+	pfcHistoryFileName := "../testdata/PFC_HISTORY_COUNTERS.txt"
+	pfcHistoryExpected, err := os.ReadFile("../testdata/PFC_HISTORY_EXPECTED.txt")
+	if err != nil {
+		t.Fatalf("Failed to read expected PFC history results: %v", err)
+	}
 
 	ResetDataSetsAndMappings(t)
 
@@ -74,6 +79,22 @@ func TestShowPfcCounters(t *testing.T) {
 			testInit: func() {
 				AddDataSet(t, CountersDbNum, portOidMappingFileName)
 				AddDataSet(t, CountersDbNum, pfcCountersFileName)
+			},
+		},
+		{
+			desc:       "query SHOW pfc counters with history flag",
+			pathTarget: "SHOW",
+			textPbPath: `
+				elem: <name: "pfc" >
+				elem: <name: "counters" key: { key: "history" value: "true" }>
+			`,
+			wantRetCode: codes.OK,
+			wantRespVal: pfcHistoryExpected,
+			valTest:     true,
+			testInit: func() {
+				ResetDataSetsAndMappings(t)
+				AddDataSet(t, CountersDbNum, portOidMappingFileName)
+				AddDataSet(t, CountersDbNum, pfcHistoryFileName)
 			},
 		},
 	}

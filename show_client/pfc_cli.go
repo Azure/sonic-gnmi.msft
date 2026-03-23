@@ -50,18 +50,46 @@ type pfcPriorityResponse struct {
 	LosslessPriorities string `json:"Lossless priorities"`
 }
 
-// getPfcCounters fetches PFC RX and TX counters for all ports from COUNTERS_DB.
-// Uses COUNTERS_PORT_NAME_MAP to resolve port names to OIDs, then fetches
-// COUNTERS:<oid> for each port. Corresponds to "show pfc counters".
-func getPfcCounters(args sdc.CmdArgs, options sdc.OptionMap) ([]byte, error) {
-	// Step 1: Fetch COUNTERS_PORT_NAME_MAP to get port name -> OID mapping
+// pfcHistoryStatsResponse represents historical PFC stats for a single priority on a single port.
+type pfcHistoryStatsResponse struct {
+	NumTransitions       string `json:"RX Pause Transitions"`
+	TotalPauseTime       string `json:"Total RX Pause Time US"`
+	RecentPauseTime      string `json:"Recent RX Pause Time US"`
+	RecentPauseTimestamp string `json:"Recent RX Pause Timestamp"`
+}
+
+// pfcHistoryPortResponse represents historical PFC stats for all priorities on a single port.
+type pfcHistoryPortResponse map[string]pfcHistoryStatsResponse
+
+// PFC priority names used for history stats.
+var pfcPriorities = []string{"PFC0", "PFC1", "PFC2", "PFC3", "PFC4", "PFC5", "PFC6", "PFC7"}
+
+// SAI/EST stat field templates for history stats (the * is replaced by priority index 0-7).
+var totalStatFields = []struct {
+	jsonKey    string
+	saiPrefix  string
+	estPrefix  string
+}{
+	{"RX Pause Transitions", "SAI_PORT_STAT_PFC_*_ON2OFF_RX_PKTS", "EST_PORT_STAT_PFC_*_ON2OFF_RX_PKTS"},
+	{"Total RX Pause Time US", "SAI_PORT_STAT_PFC_*_RX_PAUSE_DURATION_US", "EST_PORT_STAT_PFC_*_RX_PAUSE_DURATION_US"},
+}
+
+var recentStatFields = []struct {
+	jsonKey  string
+	statName string
+}{
+	{"Recent RX Pause Timestamp", "EST_PORT_STAT_PFC_*_RECENT_PAUSE_TIMESTAMP"},
+	{"Recent RX Pause Time US", "EST_PORT_STAT_PFC_*_RECENT_PAUSE_TIME_US"},
+}
+
+// fetchPortCounters fetches COUNTERS_PORT_NAME_MAP and per-port counter data from COUNTERS_DB.
+func fetchPortCounters() (map[string]interface{}, error) {
 	portNameMap, err := common.GetMapFromQueries([][]string{{"COUNTERS_DB", "COUNTERS_PORT_NAME_MAP"}})
 	if err != nil {
 		log.Errorf("Unable to pull COUNTERS_PORT_NAME_MAP from COUNTERS_DB, err: %v", err)
 		return nil, err
 	}
 
-	// Step 2: For each port, fetch its counters by OID
 	portCounters := make(map[string]interface{})
 	for port, oidVal := range portNameMap {
 		oid := fmt.Sprint(oidVal)
@@ -74,6 +102,21 @@ func getPfcCounters(args sdc.CmdArgs, options sdc.OptionMap) ([]byte, error) {
 		if len(counters) > 0 {
 			portCounters[port] = interface{}(counters)
 		}
+	}
+	return portCounters, nil
+}
+
+// getPfcCounters fetches PFC RX and TX counters for all ports from COUNTERS_DB.
+// When the "history" option is true, it returns historical PFC statistics instead.
+// Corresponds to "show pfc counters" / "show pfc counters --history".
+func getPfcCounters(args sdc.CmdArgs, options sdc.OptionMap) ([]byte, error) {
+	if historyOpt, ok := options["history"].Bool(); ok && historyOpt {
+		return getPfcCountersHistory()
+	}
+
+	portCounters, err := fetchPortCounters()
+	if err != nil {
+		return nil, err
 	}
 
 	rxCounters := make(map[string]pfcCountersRxResponse)
@@ -106,6 +149,84 @@ func getPfcCounters(args sdc.CmdArgs, options sdc.OptionMap) ([]byte, error) {
 	response := pfcCountersFullResponse{
 		Rx: rxCounters,
 		Tx: txCounters,
+	}
+
+	return json.Marshal(response)
+}
+
+// getPfcCountersHistory fetches historical PFC statistics from COUNTERS_DB.
+// For each port and each PFC priority (PFC0-PFC7), it reads:
+//   - SAI_PORT_STAT_PFC_*_ON2OFF_RX_PKTS or EST fallback (numTransitions)
+//   - SAI_PORT_STAT_PFC_*_RX_PAUSE_DURATION_US or EST fallback (totalPauseTime)
+//   - EST_PORT_STAT_PFC_*_RECENT_PAUSE_TIMESTAMP (recentPauseTimestamp)
+//   - EST_PORT_STAT_PFC_*_RECENT_PAUSE_TIME_US (recentPauseTime)
+//
+// Corresponds to "show pfc counters --history".
+func getPfcCountersHistory() ([]byte, error) {
+	portCounters, err := fetchPortCounters()
+	if err != nil {
+		return nil, err
+	}
+
+	response := make(map[string]pfcHistoryPortResponse)
+
+	for port := range portCounters {
+		portHist := make(pfcHistoryPortResponse)
+		counterData, ok := portCounters[port].(map[string]interface{})
+		if !ok {
+			continue
+		}
+
+		for pfcIdx, pfcName := range pfcPriorities {
+			idxStr := fmt.Sprintf("%d", pfcIdx)
+
+			stats := pfcHistoryStatsResponse{
+				NumTransitions:       common.DefaultMissingCounterValue,
+				TotalPauseTime:       common.DefaultMissingCounterValue,
+				RecentPauseTime:      common.DefaultMissingCounterValue,
+				RecentPauseTimestamp: common.DefaultMissingCounterValue,
+			}
+
+			// Total stat fields: try SAI prefix first, then EST prefix
+			for _, field := range totalStatFields {
+				saiKey := strings.Replace(field.saiPrefix, "*", idxStr, 1)
+				estKey := strings.Replace(field.estPrefix, "*", idxStr, 1)
+
+				val := common.DefaultMissingCounterValue
+				if v, exists := counterData[saiKey]; exists {
+					val = fmt.Sprint(v)
+				} else if v, exists := counterData[estKey]; exists {
+					val = fmt.Sprint(v)
+				}
+
+				switch field.jsonKey {
+				case "RX Pause Transitions":
+					stats.NumTransitions = val
+				case "Total RX Pause Time US":
+					stats.TotalPauseTime = val
+				}
+			}
+
+			// Recent stat fields: EST only
+			for _, field := range recentStatFields {
+				statKey := strings.Replace(field.statName, "*", idxStr, 1)
+
+				val := common.DefaultMissingCounterValue
+				if v, exists := counterData[statKey]; exists {
+					val = fmt.Sprint(v)
+				}
+
+				switch field.jsonKey {
+				case "Recent RX Pause Timestamp":
+					stats.RecentPauseTimestamp = val
+				case "Recent RX Pause Time US":
+					stats.RecentPauseTime = val
+				}
+			}
+
+			portHist[pfcName] = stats
+		}
+		response[port] = portHist
 	}
 
 	return json.Marshal(response)

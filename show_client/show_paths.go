@@ -977,6 +977,7 @@ func init() {
 		0,
 		0,
 		nil,
+		showCmdOptionHistory,
 		showCmdOptionVerbose,
 		sdc.UnimplementedOption(showCmdOptionNamespace),
 		showCmdOptionDisplay,

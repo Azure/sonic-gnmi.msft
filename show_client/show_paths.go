@@ -999,4 +999,44 @@ func init() {
 		showCmdOptionVerbose,
 		showCmdOptionPsuIndex,
 	)
+
+	// SHOW/system-health/summary
+	sdc.RegisterCliPath(
+		[]string{"SHOW", "system-health", "summary"},
+		getSystemHealthSummary,
+		"SHOW/system-health/summary[OPTIONS]: Show system-health summary information",
+		0,
+		0,
+		nil,
+	)
+
+	// SHOW/system-health/detail
+	sdc.RegisterCliPath(
+		[]string{"SHOW", "system-health", "detail"},
+		getSystemHealthDetail,
+		"SHOW/system-health/detail[OPTIONS]: Show system-health detail information",
+		0,
+		0,
+		nil,
+	)
+
+	// SHOW/system-health/monitor-list
+	sdc.RegisterCliPath(
+		[]string{"SHOW", "system-health", "monitor-list"},
+		getSystemHealthMonitorList,
+		"SHOW/system-health/monitor-list[OPTIONS]: Show system-health monitored services and devices name list",
+		0,
+		0,
+		nil,
+	)
+
+	// SHOW/system-health/sysready-status
+	sdc.RegisterCliPath(
+		[]string{"SHOW", "system-health", "sysready-status"},
+		getSysreadyStatus,
+		"SHOW/system-health/sysready-status[OPTIONS]: Show system-health system ready status",
+		0,
+		0,
+		nil,
+	)
 }

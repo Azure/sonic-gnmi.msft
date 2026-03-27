@@ -1,0 +1,1 @@
+{"led": "red", "stat": {"Services": {"container_checker": {"status": "OK", "message": "container_checker is running", "type": "Process"}}, "Hardware": {"ASIC0": {"status": "Not OK", "message": "ASIC0 temperature is too hot, temperature=120, threshold=100", "type": "ASIC"}}}}

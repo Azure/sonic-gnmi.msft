@@ -1,0 +1,1 @@
+{"led": "red", "stat": {"Services": {"container_checker": {"status": "Not OK", "message": "container_checker is not running", "type": "Process"}, "root-overlay": {"status": "OK", "message": "root-overlay is Accessible", "type": "Filesystem"}}, "Hardware": {"ASIC0": {"status": "OK", "message": "ASIC0 temperature is normal", "type": "ASIC"}}}}

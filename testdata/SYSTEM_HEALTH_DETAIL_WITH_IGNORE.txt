@@ -1,0 +1,1 @@
+{"led": "green", "stat": {"Services": {"container_checker": {"status": "OK", "message": "container_checker is running", "type": "Process"}}, "Hardware": {"ASIC0": {"status": "OK", "message": "ASIC0 temperature is normal", "type": "ASIC"}}}, "ignore_services": ["snmp", "telemetry"], "ignore_devices": ["psu.voltage"]}

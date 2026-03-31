@@ -1,0 +1,6 @@
+{
+    "DEVICE_METADATA|localhost": {
+        "suppress-fib-pending": "enabled"
+    }
+}
+

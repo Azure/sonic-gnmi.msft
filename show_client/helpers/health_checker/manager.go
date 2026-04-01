@@ -26,15 +26,15 @@ func NewHealthCheckerManager() *HealthCheckerManager {
 
 func (manager *HealthCheckerManager) initialize() {
 	/* initialize creates service checker and hardware checker by default.
-		:return:*/
+	:return:*/
 	manager.checkers = append(manager.checkers, NewServiceChecker())
 	manager.checkers = append(manager.checkers, NewHardwareChecker())
 }
 
 func (manager *HealthCheckerManager) Check() map[string]interface{} {
 	/* Check loads new configuration if any and performs the system health check
-		for all existing checkers.
-		:return: A dictionary that contains the status for all objects that was checked.*/
+	for all existing checkers.
+	:return: A dictionary that contains the status for all objects that was checked.*/
 	Summary = StatusOK
 	stats := make(map[string]interface{})
 
@@ -55,9 +55,9 @@ func (manager *HealthCheckerManager) Check() map[string]interface{} {
 
 func (manager *HealthCheckerManager) doCheck(c Checker, stats map[string]interface{}) {
 	/* doCheck does check for a particular checker and collects the check statistic.
-		:param c: A checker object.
-		:param stats: Check statistic.
-		:return:*/
+	:param c: A checker object.
+	:param stats: Check statistic.
+	:return:*/
 	defer func() {
 		if r := recover(); r != nil {
 			Summary = StatusNotOK
@@ -67,7 +67,7 @@ func (manager *HealthCheckerManager) doCheck(c Checker, stats map[string]interfa
 		}
 	}()
 
-	c.Check(manager.Config)	
+	c.Check(manager.Config)
 	category := c.GetCategory()
 	info := c.GetInfo()
 
@@ -84,7 +84,7 @@ func (manager *HealthCheckerManager) doCheck(c Checker, stats map[string]interfa
 
 func (manager *HealthCheckerManager) addInternalError(stats map[string]interface{}, c Checker, msg string) {
 	/* addInternalError records an internal error entry in stats
-		under the "Internal" category.*/
+	under the "Internal" category.*/
 	entry := map[string]interface{}{
 		c.String(): map[string]interface{}{
 			INFO_FIELD_OBJECT_STATUS: StatusNotOK,
@@ -135,7 +135,7 @@ func (manager *HealthCheckerManager) setSystemLED() {
 
 func (manager *HealthCheckerManager) getLEDTargetColor() string {
 	/* getLEDTargetColor gets target LED color according to health status and system uptime.
-		:return: String LED color.*/
+	:return: String LED color.*/
 	if Summary == StatusOK {
 		return manager.Config.GetLEDColor("normal")
 	}
@@ -154,9 +154,9 @@ func (manager *HealthCheckerManager) getLEDTargetColor() string {
 
 func parseUptimeSeconds(uptimeStr string) int {
 	/* parseUptimeSeconds converts the "uptime -s" output (boot timestamp) to
-		seconds since boot. Returns a large value if parsing fails (assumes not booting).
-		Note: Go-specific helper. Python uses utils.get_uptime() which returns
-		elapsed seconds directly.*/
+	seconds since boot. Returns a large value if parsing fails (assumes not booting).
+	Note: Go-specific helper. Python uses utils.get_uptime() which returns
+	elapsed seconds directly.*/
 	uptimeStr = strings.TrimSpace(uptimeStr)
 	if uptimeStr == "" || uptimeStr == "N/A" {
 		return int(^uint(0) >> 1) // max int — assume not booting

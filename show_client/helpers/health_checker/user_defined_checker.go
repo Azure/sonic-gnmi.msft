@@ -35,10 +35,10 @@ type UserDefinedChecker struct {
 
 func NewUserDefinedChecker(cmd string) *UserDefinedChecker {
 	/* NewUserDefinedChecker creates a new UserDefinedChecker.
-		:param cmd: Command string of the user defined checker.*/
+	:param cmd: Command string of the user defined checker.*/
 	return &UserDefinedChecker{
 		HealthChecker: NewHealthChecker(),
-		cmd:               cmd,
+		cmd:           cmd,
 	}
 }
 
@@ -54,8 +54,8 @@ func (udc *UserDefinedChecker) String() string {
 
 func (udc *UserDefinedChecker) Check(config *Config) {
 	/* Check executes the user defined command and parses the output.
-		:param config: Health checker configuration.
-		:return:*/
+	:param config: Health checker configuration.
+	:return:*/
 	udc.Reset()
 	udc.category = "UserDefine"
 

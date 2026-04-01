@@ -16,9 +16,9 @@ const (
 	// Command to query the status of monit service.
 	checkMonitServiceCmd = "systemctl is-active monit.service"
 	// Command to get summary of critical system service.
-	checkMonitCmd        = "monit summary -B"
+	checkMonitCmd = "monit summary -B"
 	// Minimum number of lines expected from monit summary output.
-	minCheckCmdLines     = 3
+	minCheckCmdLines = 3
 )
 
 const (
@@ -74,7 +74,7 @@ func (sc *ServiceChecker) String() string {
 
 func (sc *ServiceChecker) Check(config *Config) {
 	/* Check checks critical system service status.
-		:param config: Health checker configuration.*/
+	:param config: Health checker configuration.*/
 	sc.Reset()
 	sc.checkByMonit(config)
 	sc.checkServices(config)
@@ -82,9 +82,9 @@ func (sc *ServiceChecker) Check(config *Config) {
 
 func (sc *ServiceChecker) checkByMonit(config *Config) {
 	/* checkByMonit gets and analyzes the output of CHECK_CMD, collects status for
-		file system or customize checker if any.
-		:param config: Health checker configuration.
-		:return:*/
+	file system or customize checker if any.
+	:param config: Health checker configuration.
+	:return:*/
 	output, err := common.GetDataFromHostCommand(checkMonitServiceCmd)
 	if err != nil {
 		log.Errorf("Unable to execute monit service check command: %v", err)
@@ -141,7 +141,7 @@ func (sc *ServiceChecker) checkByMonit(config *Config) {
 
 func (sc *ServiceChecker) checkServices(config *Config) {
 	/* checkServices checks status of critical services and critical processes.
-		:param config: Health checker configuration.*/
+	:param config: Health checker configuration.*/
 	queries := [][]string{{"CONFIG_DB", "FEATURE"}}
 	featureData, err := common.GetMapFromQueries(queries)
 	if err != nil {
@@ -191,9 +191,9 @@ func (sc *ServiceChecker) checkServices(config *Config) {
 
 func (sc *ServiceChecker) getExpectedRunningContainers(featureTable map[string]interface{}) (map[string]struct{}, error) {
 	/* getExpectedRunningContainers gets a set of containers that are expected to be running on SONiC.
-		:param featureTable: FEATURE table in CONFIG_DB.
-		:return: expected_running_containers: A set of container names that are expected running.
-		         container_feature_dict: Populated via sc.containerFeatureDict.*/
+	:param featureTable: FEATURE table in CONFIG_DB.
+	:return: expected_running_containers: A set of container names that are expected running.
+	         container_feature_dict: Populated via sc.containerFeatureDict.*/
 	expectedRunningContainers := make(map[string]struct{})
 	sc.containerFeatureDict = make(map[string]string)
 
@@ -241,15 +241,15 @@ func (sc *ServiceChecker) getExpectedRunningContainers(featureTable map[string]i
 
 func CheckDockerImageExist(imageName string) bool {
 	/* CheckDockerImageExist checks if docker image exists.
-		:return: True if the image exists, otherwise False.*/
+	:return: True if the image exists, otherwise False.*/
 	allImagesData := common.GetDockerInfo()
 	return strings.Contains(allImagesData, imageName)
 }
 
 func (sc *ServiceChecker) getDockerRunningContainers() map[string]struct{} {
 	/* getDockerRunningContainers gets current running containers, if the running container is not
-		in containerCriticalProcesses, tries to get the critical process list.
-		:return: running_containers: A set of running container names.*/
+	in containerCriticalProcesses, tries to get the critical process list.
+	:return: running_containers: A set of running container names.*/
 	cmdOutput, err := common.GetDataFromHostCommand(`bash -o pipefail -c 'docker ps --format "{{.Names}}"'`)
 	if err != nil {
 		log.Errorf("Failed to retrieve the running container list. Error: '%v'", err)
@@ -281,7 +281,7 @@ func GetContainerFolder(containerName string) string {
 
 func (sc *ServiceChecker) fillCriticalProcessByContainer(container string) {
 	/* fillCriticalProcessByContainer gets critical process for a given container.
-		:param container: Container name.*/
+	:param container: Container name.*/
 	// Get container volume folder
 	containerFolder := GetContainerFolder(container)
 	if containerFolder == "" {
@@ -312,7 +312,7 @@ func (sc *ServiceChecker) fillCriticalProcessByContainer(container string) {
 
 func (sc *ServiceChecker) loadCriticalProcessCache() {
 	/* loadCriticalProcessCache loads containerCriticalProcesses from a cache file.
-		Note: Go uses JSON deserialization instead of Python's pickle.*/
+	Note: Go uses JSON deserialization instead of Python's pickle.*/
 	if !common.FileExists(CriticalProcessCache) {
 		// cache file does not exist
 		return
@@ -337,9 +337,9 @@ func (sc *ServiceChecker) loadCriticalProcessCache() {
 
 func (sc *ServiceChecker) getCriticalProcessListFromFile(container string, criticalProcessesFile string) []string {
 	/* getCriticalProcessListFromFile reads critical process name list from critical processes file.
-		:param container: Container name.
-		:param criticalProcessesFile: Critical processes file path.
-		:return: critical_process_list: A list of critical process names.*/
+	:param container: Container name.
+	:param criticalProcessesFile: Critical processes file path.
+	:return: critical_process_list: A list of critical process names.*/
 	data, err := common.GetDataFromFile(criticalProcessesFile)
 	if err != nil {
 		return []string{}
@@ -372,11 +372,11 @@ func (sc *ServiceChecker) getCriticalProcessListFromFile(container string, criti
 
 func ParseSupervisorctlStatus(processStatus []string) map[string]string {
 	/* ParseSupervisorctlStatus parses supervisorctl status output into a process→status map.
-		Expected input:
-			arp_update                       RUNNING   pid 67, uptime 1:03:56
-			buffermgrd                       RUNNING   pid 81, uptime 1:03:56
-		:param processStatus: List of process status.
-		:return: A map of process name to status string.*/
+	Expected input:
+		arp_update                       RUNNING   pid 67, uptime 1:03:56
+		buffermgrd                       RUNNING   pid 81, uptime 1:03:56
+	:param processStatus: List of process status.
+	:return: A map of process name to status string.*/
 	data := make(map[string]string)
 	for _, line := range processStatus {
 		line = strings.TrimSpace(line)
@@ -394,10 +394,10 @@ func ParseSupervisorctlStatus(processStatus []string) map[string]string {
 
 func (sc *ServiceChecker) checkProcessExistence(containerName string, criticalProcesses []string, ignoreServices map[string]struct{}, featureData map[string]interface{}) {
 	/* checkProcessExistence checks whether the process in the specified container is running or not.
-		:param containerName: Container name.
-		:param criticalProcesses: Critical processes.
-		:param ignoreServices: Services to ignore from config.
-		:param featureData: Feature table.*/
+	:param containerName: Container name.
+	:param criticalProcesses: Critical processes.
+	:param ignoreServices: Services to ignore from config.
+	:param featureData: Feature table.*/
 	featureName, ok := sc.containerFeatureDict[containerName]
 	if !ok {
 		return

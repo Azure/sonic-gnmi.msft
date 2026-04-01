@@ -47,13 +47,13 @@ type Config struct {
 
 func NewConfig() *Config {
 	/* NewConfig creates a new Config instance.
-		Initialize all configuration entry to default value in case there is no
-		configuration file.*/
+	Initialize all configuration entry to default value in case there is no
+	configuration file.*/
 	platformName := common.GetPlatform()
 	return &Config{
-		platformName: platformName,
-		configFile:   filepath.Join(DevicePath, platformName, ConfigFile),
-		ConfigData:   nil,
+		platformName:        platformName,
+		configFile:          filepath.Join(DevicePath, platformName, ConfigFile),
+		ConfigData:          nil,
 		IgnoreServices:      nil,
 		IgnoreDevices:       nil,
 		IncludeDevices:      nil,
@@ -63,18 +63,18 @@ func NewConfig() *Config {
 
 func (c *Config) ConfigFileExists() bool {
 	/* ConfigFileExists checks if the configuration file exists on disk.
-		:return: True if configuration file exists.*/
+	:return: True if configuration file exists.*/
 	return common.FileExists(c.configFile)
 }
 
 func (c *Config) LoadConfig() {
 	/* LoadConfig loads the configuration file from disk.
-		1. If there is no configuration file, current config entries will reset to default value.
-		2. If there is any format issues in configuration file, current config entries will
-		   reset to default value.
-		:return:
-		Note: Go implementation does not track last_mtime for incremental reload.
-		The file is re-read on every call.*/
+	1. If there is no configuration file, current config entries will reset to default value.
+	2. If there is any format issues in configuration file, current config entries will
+	   reset to default value.
+	:return:
+	Note: Go implementation does not track last_mtime for incremental reload.
+	The file is re-read on every call.*/
 	// the config data, catch the panic and reset to defaults.
 	defer func() {
 		if r := recover(); r != nil {
@@ -99,7 +99,7 @@ func (c *Config) LoadConfig() {
 
 func (c *Config) reset() {
 	/* reset resets current configuration entry to default value.
-		:return:*/
+	:return:*/
 	c.ConfigData = nil
 	c.IgnoreServices = nil
 	c.IgnoreDevices = nil
@@ -117,8 +117,8 @@ func (c *Config) reset() {
 
 func (c *Config) GetLEDColor(status string) string {
 	/* GetLEDColor gets desired LED color according to the input status.
-		:param status: System health status.
-		:return: String LED color.*/
+	:param status: System health status.
+	:return: String LED color.*/
 	if c.ConfigData != nil {
 		if ledColorRaw, ok := c.ConfigData["led_color"]; ok {
 			if ledColorMap, ok := ledColorRaw.(map[string]interface{}); ok {
@@ -128,16 +128,16 @@ func (c *Config) GetLEDColor(status string) string {
 			}
 		}
 	}
-	
+
 	return DefaultLEDConfig[status]
 }
 
 func getListData(configData map[string]interface{}, key string) map[string]struct{} {
 	/* getListData gets list type configuration data by key and removes duplicate element.
-		:param key: Key of the configuration entry.
-		:return: A set of configuration data if key exists.
-		Note: In Go this is a package-level function taking configData as a parameter
-		instead of a method on Config, since Go uses map[string]struct{} as a set.*/
+	:param key: Key of the configuration entry.
+	:return: A set of configuration data if key exists.
+	Note: In Go this is a package-level function taking configData as a parameter
+	instead of a method on Config, since Go uses map[string]struct{} as a set.*/
 	result := make(map[string]struct{})
 	if configData == nil {
 		return result
@@ -160,10 +160,10 @@ func getListData(configData map[string]interface{}, key string) map[string]struc
 
 func GetBootupTimeout() int {
 	/* GetBootupTimeout gets boot up timeout from monit configuration file.
-		1. If monit configuration file does not exist, return default value.
-		2. If there is any exception while parsing monit config, return default value.
-		:return: Integer timeout value.
-		Note: In Go this is a package-level function instead of a method on Config.*/
+	1. If monit configuration file does not exist, return default value.
+	2. If there is any exception while parsing monit config, return default value.
+	:return: Integer timeout value.
+	Note: In Go this is a package-level function instead of a method on Config.*/
 	data, err := os.ReadFile(MonitConfigFile)
 	if err != nil {
 		return DefaultBootupTimeout

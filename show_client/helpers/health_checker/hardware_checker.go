@@ -37,7 +37,7 @@ func (hwc *HardwareChecker) String() string {
 
 func (hwc *HardwareChecker) Check(config *Config) {
 	/* Check performs all hardware health checks.
-		Note: Go adds checkLiquidCoolingStatus which has no Python equivalent.*/
+	Note: Go adds checkLiquidCoolingStatus which has no Python equivalent.*/
 	hwc.Reset()
 	hwc.checkAsicStatus(config)
 	hwc.checkFanStatus(config)
@@ -47,8 +47,8 @@ func (hwc *HardwareChecker) Check(config *Config) {
 
 func (hwc *HardwareChecker) checkAsicStatus(config *Config) {
 	/* checkAsicStatus checks if ASIC temperature is in valid range.
-		:param config: Health checker configuration.
-		:return:*/
+	:param config: Health checker configuration.
+	:return:*/
 	if _, ok := config.IgnoreDevices["asic"]; ok {
 		return
 	}
@@ -107,12 +107,12 @@ func (hwc *HardwareChecker) checkAsicStatus(config *Config) {
 
 func (hwc *HardwareChecker) checkFanStatus(config *Config) {
 	/* checkFanStatus checks fan status including:
-		1. Check all fans are present.
-		2. Check all fans are in good state.
-		3. Check fan speed is in valid range.
-		4. Check all fans direction are the same.
-		:param config: Health checker configuration.
-		:return:*/
+	1. Check all fans are present.
+	2. Check all fans are in good state.
+	3. Check fan speed is in valid range.
+	4. Check all fans direction are the same.
+	:param config: Health checker configuration.
+	:return:*/
 	if _, ok := config.IgnoreDevices["fan"]; ok {
 		return
 	}
@@ -220,12 +220,12 @@ func (hwc *HardwareChecker) checkFanStatus(config *Config) {
 
 func (hwc *HardwareChecker) checkPsuStatus(config *Config) {
 	/* checkPsuStatus checks PSU status including:
-		1. Check all PSUs are present.
-		2. Check all PSUs are power on.
-		3. Check PSU temperature is in valid range.
-		4. Check PSU voltage is in valid range.
-		:param config: Health checker configuration.
-		:return:*/
+	1. Check all PSUs are present.
+	2. Check all PSUs are power on.
+	3. Check PSU temperature is in valid range.
+	4. Check PSU voltage is in valid range.
+	:param config: Health checker configuration.
+	:return:*/
 	if _, ok := config.IgnoreDevices["psu"]; ok {
 		return
 	}
@@ -352,8 +352,8 @@ func (hwc *HardwareChecker) checkPsuStatus(config *Config) {
 
 func ignoreCheck(config *Config, category, objectName, checkPoint string) bool {
 	/* ignoreCheck checks if a specific check point should be ignored based on the
-		devices_to_ignore config list. Supports patterns: "category.checkPoint"
-		and "objectName.checkPoint".*/
+	devices_to_ignore config list. Supports patterns: "category.checkPoint"
+	and "objectName.checkPoint".*/
 	if config == nil {
 		return false
 	}
@@ -368,9 +368,9 @@ func ignoreCheck(config *Config, category, objectName, checkPoint string) bool {
 
 func (hwc *HardwareChecker) checkLiquidCoolingStatus(config *Config) {
 	/* checkLiquidCoolingStatus checks liquid cooling leak sensor status.
-		Only runs if "liquid_cooling" is explicitly listed in config.IncludeDevices.
-		:param config: Health checker configuration.
-		Note: Go-specific addition. No Python equivalent in hardware_checker.py.*/
+	Only runs if "liquid_cooling" is explicitly listed in config.IncludeDevices.
+	:param config: Health checker configuration.
+	Note: Go-specific addition. No Python equivalent in hardware_checker.py.*/
 	// Only check liquid cooling if explicitly included in config
 	if len(config.IncludeDevices) == 0 {
 		return
@@ -433,6 +433,3 @@ func (hwc *HardwareChecker) checkLiquidCoolingStatus(config *Config) {
 
 	_ = newLeakingSensors // publish_events not implemented
 }
-
-
-

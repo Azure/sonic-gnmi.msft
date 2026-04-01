@@ -61,20 +61,20 @@ const (
 
 // Testdata file paths — DB query responses
 const (
-	systemHealthFeatureDBFile      = "../testdata/SYSTEM_HEALTH_FEATURE_DB.json"
-	systemHealthTemperatureOKFile  = "../testdata/SYSTEM_HEALTH_TEMPERATURE_OK.json"
+	systemHealthFeatureDBFile       = "../testdata/SYSTEM_HEALTH_FEATURE_DB.json"
+	systemHealthTemperatureOKFile   = "../testdata/SYSTEM_HEALTH_TEMPERATURE_OK.json"
 	systemHealthTemperatureFailFile = "../testdata/SYSTEM_HEALTH_TEMPERATURE_FAIL.json"
-	systemHealthFanOKFile          = "../testdata/SYSTEM_HEALTH_FAN_OK.json"
-	systemHealthPsuOKFile          = "../testdata/SYSTEM_HEALTH_PSU_OK.json"
+	systemHealthFanOKFile           = "../testdata/SYSTEM_HEALTH_FAN_OK.json"
+	systemHealthPsuOKFile           = "../testdata/SYSTEM_HEALTH_PSU_OK.json"
 )
 
 // Inline mock data — short, fixed host command outputs that never vary across scenarios.
 const (
-	mockDockerPS             = "swss\nbgp\nteamd\n"
-	mockDockerInspect        = "/var/lib/docker/overlay2/merged\n"
-	mockDockerImages         = "docker-sonic-telemetry\n"
-	mockSupervisorctlStatus  = "orchagent RUNNING pid 100, uptime 1:00:00\n"
-	mockCriticalProcesses    = "program:orchagent\n"
+	mockDockerPS                 = "swss\nbgp\nteamd\n"
+	mockDockerInspect            = "/var/lib/docker/overlay2/merged\n"
+	mockDockerImages             = "docker-sonic-telemetry\n"
+	mockSupervisorctlStatus      = "orchagent RUNNING pid 100, uptime 1:00:00\n"
+	mockCriticalProcesses        = "program:orchagent\n"
 	mockUserDefinedCheckerOutput = "CustomHardware\nSensor1:Temperature too high\n"
 )
 

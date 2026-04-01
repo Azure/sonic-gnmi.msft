@@ -26,26 +26,6 @@ func init() {
 		sdc.UnimplementedOption(showCmdOptionNamespace),
 	)
 
-	// SHOW/chassis
-	sdc.RegisterCliPath(
-		[]string{"SHOW", "chassis", "modules", "status"},
-		getChassisModuleStatus,
-		"SHOW/chassis/modules/status[OPTIONS]: Show chassis module status",
-		0,
-		0,
-		nil,
-		showCmdOptionDpu,
-	)
-	sdc.RegisterCliPath(
-		[]string{"SHOW", "chassis", "modules", "midplane-status"},
-		getChassisModuleMidplaneStatus,
-		"SHOW/chassis/modules/midplane-status[OPTIONS]: Show chassis module midplane status",
-		0,
-		0,
-		nil,
-		showCmdOptionDpu,
-	)
-
 	// SHOW/clock
 	sdc.RegisterCliPath(
 		[]string{"SHOW", "clock"},
@@ -738,17 +718,6 @@ func init() {
 		showCmdOptionVerbose,
 	)
 
-	// SHOW/system-health
-	sdc.RegisterCliPath(
-		[]string{"SHOW", "system-health", "dpu"},
-		getSystemHealthDpu,
-		"SHOW/system-health/dpu[OPTIONS]: Show system health DPU status",
-		0,
-		0,
-		nil,
-		showCmdOptionDpu,
-	)
-
 	// SHOW/system-memory
 	sdc.RegisterCliPath(
 		[]string{"SHOW", "system-memory"},
@@ -998,5 +967,35 @@ func init() {
 		showCmdOptionJson,
 		showCmdOptionVerbose,
 		showCmdOptionPsuIndex,
+	)
+
+	// SHOW/system-health/summary
+	sdc.RegisterCliPath(
+		[]string{"SHOW", "system-health", "summary"},
+		getSystemHealthSummary,
+		"SHOW/system-health/summary[OPTIONS]: Show system-health summary information",
+		0,
+		0,
+		nil,
+	)
+
+	// SHOW/system-health/detail
+	sdc.RegisterCliPath(
+		[]string{"SHOW", "system-health", "detail"},
+		getSystemHealthDetail,
+		"SHOW/system-health/detail[OPTIONS]: Show system-health detail information",
+		0,
+		0,
+		nil,
+	)
+
+	// SHOW/system-health/monitor-list
+	sdc.RegisterCliPath(
+		[]string{"SHOW", "system-health", "monitor-list"},
+		getSystemHealthMonitorList,
+		"SHOW/system-health/monitor-list[OPTIONS]: Show system-health monitored services and devices name list",
+		0,
+		0,
+		nil,
 	)
 }

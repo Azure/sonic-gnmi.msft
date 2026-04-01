@@ -252,9 +252,9 @@ func GetPlatformConfigFilePath() string {
 }
 
 func GetPlatformEnvConfig(varName string) (string, bool) {
-    platformConfigFilePath := GetPlatformConfigFilePath()
+	platformConfigFilePath := GetPlatformConfigFilePath()
 	if platformConfigFilePath == "" {
-		return "", false 
+		return "", false
 	}
 	file, err := os.Open(platformConfigFilePath)
 	if err != nil {
@@ -269,26 +269,26 @@ func GetPlatformEnvConfig(varName string) (string, bool) {
 			continue
 		}
 		if strings.ToLower(tokens[0]) == varName {
-            return tokens[1], true
+			return tokens[1], true
 		}
 	}
-	return "", false 
+	return "", false
 }
 
 func IsExpectedValue(val string, expectedVal string) bool {
-    if strings.TrimSpace(val) == expectedVal {
-        return true
-    }
-    
-    return false
+	if strings.TrimSpace(val) == expectedVal {
+		return true
+	}
+
+	return false
 }
 
 func IsSupervisor() bool {
-    val, found := GetPlatformEnvConfig("supervisor")
-    if !found {
-        return found
-    }
-    return IsExpectedValue(val, "1")
+	val, found := GetPlatformEnvConfig("supervisor")
+	if !found {
+		return found
+	}
+	return IsExpectedValue(val, "1")
 }
 
 // IsSimxPlatform returns true if the current platform is a SimX (simulation) platform.

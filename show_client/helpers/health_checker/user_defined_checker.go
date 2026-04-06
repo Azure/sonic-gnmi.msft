@@ -43,7 +43,7 @@ func NewUserDefinedChecker(cmd string) *UserDefinedChecker {
 }
 
 func (udc *UserDefinedChecker) GetCategory() string {
-	/* GetCategory returns the category determined from command output. */
+	/* GetCategory returns the category determined from command output.*/
 	return udc.category
 }
 

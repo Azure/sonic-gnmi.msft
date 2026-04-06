@@ -47,8 +47,8 @@ func (udc *UserDefinedChecker) GetCategory() string {
 	return udc.category
 }
 
-func (udc *UserDefinedChecker) String() string {
-	/* String returns "UserDefinedChecker - <cmd>". */
+func (udc *UserDefinedChecker) Str() string {
+	/* Str returns "UserDefinedChecker - <cmd>". */
 	return fmt.Sprintf("UserDefinedChecker - %s", udc.cmd)
 }
 

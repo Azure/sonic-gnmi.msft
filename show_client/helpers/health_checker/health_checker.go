@@ -25,8 +25,8 @@ type Checker interface {
 	// :return: Check result.
 	GetInfo() map[string]interface{}
 
-	// String returns a human-readable name for the checker (used in error messages).
-	String() string
+	// Str returns a human-readable name for the checker (used in error messages).
+	Str() string
 }
 
 // HealthChecker is the base type for health checker. A checker is an object that

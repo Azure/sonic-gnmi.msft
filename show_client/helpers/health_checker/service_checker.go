@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"reflect"
 	"regexp"
 	"strings"
 
@@ -35,12 +36,17 @@ const (
 	CriticalProcessCache = "/tmp/critical_process_cache"
 )
 
-// ExpectStatusDict defines the expected status for different system service categories.
-var ExpectStatusDict = map[string]string{
-	"System":     "Running",
-	"Process":    "Running",
-	"Filesystem": "Accessible",
-	"Program":    "Status ok",
+// ExpectedStatus is the universal expected status for all Monit service types.
+// Monit 5.34.3+ (Debian 13) uses 'OK' for all service types.
+const ExpectedStatus = "OK"
+
+// ContainerK8SWhitelist is the whitelist of containers managed by KubeSonic
+// to bypass health checking entirely. These containers will be excluded from
+// both expected and running container sets.
+var ContainerK8SWhitelist = map[string]struct{}{
+	"telemetry": {},
+	"acms":      {},
+	"restapi":   {},
 }
 
 // ServiceChecker checks critical system service status via monit service.
@@ -49,7 +55,6 @@ type ServiceChecker struct {
 	containerCriticalProcesses map[string][]string
 	badContainers              map[string]struct{}
 	containerFeatureDict       map[string]string
-	needSaveCache              bool
 }
 
 func NewServiceChecker() *ServiceChecker {
@@ -67,9 +72,9 @@ func (sc *ServiceChecker) GetCategory() string {
 	return "Services"
 }
 
-func (sc *ServiceChecker) String() string {
-	//String returns the checker name for error messages.
-	return "ServiceChecker"
+func (sc *ServiceChecker) Str() string {
+	// Str returns the checker name for error messages.
+	return reflect.TypeOf(sc).Elem().Name()
 }
 
 func (sc *ServiceChecker) Check(config *Config) {
@@ -126,13 +131,9 @@ func (sc *ServiceChecker) checkByMonit(config *Config) {
 		}
 		status := strings.TrimSpace(line[statusBegin:typeBegin])
 		serviceType := strings.TrimSpace(line[typeBegin:])
-		expectStatus, ok := ExpectStatusDict[serviceType]
-		if !ok {
-			continue
-		}
-		if expectStatus != status {
+		if status != ExpectedStatus {
 			sc.SetObjectNotOK(serviceType, serviceName,
-				fmt.Sprintf("%s is not %s", serviceName, expectStatus))
+				fmt.Sprintf("%s status is %s, expected %s", serviceName, status, ExpectedStatus))
 		} else {
 			sc.SetObjectOK(serviceType, serviceName)
 		}
@@ -199,6 +200,15 @@ func (sc *ServiceChecker) getExpectedRunningContainers(featureTable map[string]i
 
 	containerList := []string{}
 	for containerName := range featureTable {
+		// Skip containers in the KubeSonic whitelist
+		if _, ok := ContainerK8SWhitelist[containerName]; ok {
+			log.V(1).Infof("Skipping whitelisted kubesonic managed container '%s' from expected running check", containerName)
+			continue
+		}
+		// skip frr_bmp since it's not a container, just a bmp option used by bgpd
+		if containerName == "frr_bmp" {
+			continue
+		}
 		// slim image does not have telemetry container and corresponding docker image
 		if containerName == "telemetry" {
 			if !CheckDockerImageExist("docker-sonic-telemetry") {
@@ -210,6 +220,13 @@ func (sc *ServiceChecker) getExpectedRunningContainers(featureTable map[string]i
 				} else {
 					containerList = append(containerList, "gnmi")
 				}
+				continue
+			}
+		}
+		// Some platforms may not include the OTEL container; skip when image absent
+		if containerName == "otel" {
+			if !CheckDockerImageExist("docker-sonic-otel") {
+				log.V(1).Infof("Ignoring otel container check on image which has no corresponding docker image")
 				continue
 			}
 		}
@@ -231,7 +248,7 @@ func (sc *ServiceChecker) getExpectedRunningContainers(featureTable map[string]i
 		}
 	}
 
-	if common.IsSupervisor() {
+	if common.IsSupervisor() || common.IsDisaggregatedChassis() {
 		expectedRunningContainers["database-chassis"] = struct{}{}
 		sc.containerFeatureDict["database-chassis"] = "database"
 	}
@@ -259,11 +276,16 @@ func (sc *ServiceChecker) getDockerRunningContainers() map[string]struct{} {
 	runningContainers := make(map[string]struct{})
 	for _, name := range strings.Split(strings.TrimSpace(cmdOutput), "\n") {
 		name = strings.TrimSpace(name)
-		if name != "" {
-			runningContainers[name] = struct{}{}
-			if _, exists := sc.containerCriticalProcesses[name]; !exists {
-				sc.fillCriticalProcessByContainer(name)
-			}
+		if name == "" {
+			continue
+		}
+		// Skip kubesonic managed containers in the whitelist
+		if _, ok := ContainerK8SWhitelist[name]; ok {
+			continue
+		}
+		runningContainers[name] = struct{}{}
+		if _, exists := sc.containerCriticalProcesses[name]; !exists {
+			sc.fillCriticalProcessByContainer(name)
 		}
 	}
 	return runningContainers
@@ -300,14 +322,12 @@ func (sc *ServiceChecker) fillCriticalProcessByContainer(container string) {
 		// Critical process file does not exist, the container has no critical processes.
 		log.V(1).Infof("Failed to get critical process file for %s, %s does not exist", container, criticalProcessesFile)
 		sc.containerCriticalProcesses[container] = []string{}
-		sc.needSaveCache = true
 		return
 	}
 
 	// Get critical process list from critical_processes
 	criticalProcessList := sc.getCriticalProcessListFromFile(container, criticalProcessesFile)
 	sc.containerCriticalProcesses[container] = criticalProcessList
-	sc.needSaveCache = true
 }
 
 func (sc *ServiceChecker) loadCriticalProcessCache() {

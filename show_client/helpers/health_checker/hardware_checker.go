@@ -2,6 +2,7 @@ package helpers
 
 import (
 	"fmt"
+	"reflect"
 	"slices"
 	"sort"
 	"strconv"
@@ -30,14 +31,13 @@ func (hwc *HardwareChecker) GetCategory() string {
 	return "Hardware"
 }
 
-func (hwc *HardwareChecker) String() string {
-	/* String returns the checker name for error messages. */
-	return "HardwareChecker"
+func (hwc *HardwareChecker) Str() string {
+	/* Str returns the checker name for error messages. */
+	return reflect.TypeOf(hwc).Elem().Name()
 }
 
 func (hwc *HardwareChecker) Check(config *Config) {
-	/* Check performs all hardware health checks.
-	Note: Go adds checkLiquidCoolingStatus which has no Python equivalent.*/
+	/* Check performs all hardware health checks.*/
 	hwc.Reset()
 	hwc.checkAsicStatus(config)
 	hwc.checkFanStatus(config)
@@ -194,8 +194,11 @@ func (hwc *HardwareChecker) checkFanStatus(config *Config) {
 		}
 
 		if !ignoreCheck(config, "fan", name, "direction") {
-			direction, _ := dataDict["direction"].(string)
-			if direction != "N/A" && direction != "" {
+			direction, ok := dataDict["direction"].(string)
+			if !ok {
+				direction = "N/A"
+			}
+			if direction != "N/A" {
 				if expectFanDirection == "" {
 					expectFanDirection = direction
 					expectFanName = name
@@ -333,11 +336,11 @@ func (hwc *HardwareChecker) checkPsuStatus(config *Config) {
 		if !ignoreCheck(config, "psu", name, "power_threshold") {
 			powerOverload, _ := dataDict["power_overload"].(string)
 			if powerOverload == "True" {
-				_, powerExists := dataDict["power"].(string)
-				powerCritical, criticalExists := dataDict["power_critical_threshold"].(string)
-				if powerExists && criticalExists && powerCritical != "" {
+				_, powerExists := dataDict["power"]
+				powerCriticalVal, criticalExists := dataDict["power_critical_threshold"]
+				if powerExists && criticalExists {
 					hwc.SetObjectNotOK("PSU", name,
-						fmt.Sprintf("System power exceeds threshold (%sw)", powerCritical))
+						fmt.Sprintf("System power exceeds threshold (%vw)", powerCriticalVal))
 				} else {
 					hwc.SetObjectNotOK("PSU", name,
 						"System power exceeds threshold but power_critical_threshold is invalid")

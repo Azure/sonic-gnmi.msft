@@ -61,7 +61,7 @@ func (manager *HealthCheckerManager) doCheck(c Checker, stats map[string]interfa
 	defer func() {
 		if r := recover(); r != nil {
 			Summary = StatusNotOK
-			errMsg := fmt.Sprintf("Failed to perform health check for %s due to exception - %v", c, r)
+			errMsg := fmt.Sprintf("Failed to perform health check for %s due to exception - %v", c.Str(), r)
 			log.Errorf(errMsg)
 			manager.addInternalError(stats, c, errMsg)
 		}
@@ -74,7 +74,6 @@ func (manager *HealthCheckerManager) doCheck(c Checker, stats map[string]interfa
 	if _, ok := stats[category]; !ok {
 		stats[category] = info
 	} else {
-		// Merge like Python's dict.update()
 		existing := stats[category].(map[string]interface{})
 		for k, v := range info {
 			existing[k] = v
@@ -86,7 +85,7 @@ func (manager *HealthCheckerManager) addInternalError(stats map[string]interface
 	/* addInternalError records an internal error entry in stats
 	under the "Internal" category.*/
 	entry := map[string]interface{}{
-		c.String(): map[string]interface{}{
+		c.Str(): map[string]interface{}{
 			INFO_FIELD_OBJECT_STATUS: StatusNotOK,
 			INFO_FIELD_OBJECT_MSG:    msg,
 			INFO_FIELD_OBJECT_TYPE:   "Internal",
@@ -105,15 +104,6 @@ func (manager *HealthCheckerManager) addInternalError(stats map[string]interface
 
 // setSystemLED sets the system status LED by calling the platform-specific
 // sonic_platform.chassis module via nsenter into the host namespace.
-// This replaces the Go ChassisBase interface approach because chassis code
-// varies by platform and is only available as Python packages installed at
-// build time.
-//
-// Equivalent Python:
-//   from sonic_platform.chassis import Chassis
-//   chassis = Chassis()
-//   chassis.initizalize_system_led()
-//   chassis.set_status_led(color)
 func (manager *HealthCheckerManager) setSystemLED() {
 	color := manager.getLEDTargetColor()
 
@@ -133,54 +123,33 @@ func (manager *HealthCheckerManager) setSystemLED() {
 	}
 }
 
+// getLEDTargetColor gets target LED color according to health status and system uptime.
 func (manager *HealthCheckerManager) getLEDTargetColor() string {
-	/* getLEDTargetColor gets target LED color according to health status and system uptime.
-	:return: String LED color.*/
 	if Summary == StatusOK {
 		return manager.Config.GetLEDColor("normal")
 	}
 
-	uptimeStr := common.GetUptime([]string{"-s"})
-	bootupTimeout := GetBootupTimeout()
-
-	// Parse uptime; if we can't determine it, assume booting is done
-	uptimeSeconds := parseUptimeSeconds(uptimeStr)
-	if uptimeSeconds < bootupTimeout {
+	uptime := getUptime()
+	if uptime < float64(GetBootupTimeout()) {
 		return manager.Config.GetLEDColor("booting")
 	}
 
 	return manager.Config.GetLEDColor("fault")
 }
 
-func parseUptimeSeconds(uptimeStr string) int {
-	/* parseUptimeSeconds converts the "uptime -s" output (boot timestamp) to
-	seconds since boot. Returns a large value if parsing fails (assumes not booting).
-	Note: Go-specific helper. Python uses utils.get_uptime() which returns
-	elapsed seconds directly.*/
-	uptimeStr = strings.TrimSpace(uptimeStr)
-	if uptimeStr == "" || uptimeStr == "N/A" {
-		return int(^uint(0) >> 1) // max int — assume not booting
-	}
-
-	// "uptime -s" returns the boot time, not elapsed seconds.
-	// We need elapsed time. Use /proc/uptime instead for raw seconds.
+// getUptime reads system uptime in seconds from /proc/uptime.
+func getUptime() float64 {
 	raw := common.ReadStringFromFile("/proc/uptime", "")
 	if raw == "" {
-		return int(^uint(0) >> 1)
+		return 0
 	}
 	fields := strings.Fields(raw)
 	if len(fields) == 0 {
-		return int(^uint(0) >> 1)
+		return 0
 	}
-	// /proc/uptime first field is seconds since boot (float)
-	dotPos := strings.Index(fields[0], ".")
-	intPart := fields[0]
-	if dotPos >= 0 {
-		intPart = fields[0][:dotPos]
-	}
-	seconds, err := strconv.Atoi(intPart)
+	seconds, err := strconv.ParseFloat(fields[0], 64)
 	if err != nil {
-		return int(^uint(0) >> 1)
+		return 0
 	}
 	return seconds
 }

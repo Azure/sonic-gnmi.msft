@@ -53,9 +53,7 @@ require (
 	github.com/dgryski/go-rendezvous v0.0.0-20200823014737-9f7001d12a5f // indirect
 	github.com/envoyproxy/go-control-plane v0.12.0 // indirect
 	github.com/envoyproxy/protoc-gen-validate v1.0.4 // indirect
-	github.com/go-redis/redis/v7 v7.4.1 // indirect
 	github.com/golang/groupcache v0.0.0-20210331224755-41bb18bfe9da // indirect
-	github.com/google/go-cmp v0.7.0 // indirect
 	github.com/josharian/native v1.1.0 // indirect
 	github.com/mdlayher/socket v0.4.1 // indirect
 	github.com/onsi/ginkgo v1.10.3 // indirect
@@ -84,6 +82,7 @@ replace (
 	golang.org/x/crypto => golang.org/x/crypto v0.24.0
 	golang.org/x/sys => golang.org/x/sys v0.26.0
 	google.golang.org/grpc => google.golang.org/grpc v1.64.1
+	golang.org/x/sync => golang.org/x/sync v0.6.0
 	google.golang.org/protobuf => google.golang.org/protobuf v1.34.1
 )
 

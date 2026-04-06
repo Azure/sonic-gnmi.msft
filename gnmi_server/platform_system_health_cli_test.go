@@ -122,7 +122,6 @@ func TestGetShowSystemHealthSummary(t *testing.T) {
 		defer patches.Reset()
 
 		wantRespVal := []byte(`{
-			"summary": "OK",
 			"system_status_led": "",
 			"services": {"status": "OK"},
 			"hardware": {"status": "OK"}
@@ -136,7 +135,6 @@ func TestGetShowSystemHealthSummary(t *testing.T) {
 		defer patches.Reset()
 
 		wantRespVal := []byte(`{
-			"summary": "Not OK",
 			"system_status_led": "",
 			"services": {
 				"status": "Not OK",
@@ -153,7 +151,6 @@ func TestGetShowSystemHealthSummary(t *testing.T) {
 		defer patches.Reset()
 
 		wantRespVal := []byte(`{
-			"summary": "Not OK",
 			"system_status_led": "",
 			"services": {
 				"status": "Not OK",
@@ -170,7 +167,6 @@ func TestGetShowSystemHealthSummary(t *testing.T) {
 		defer patches.Reset()
 
 		wantRespVal := []byte(`{
-			"summary": "Not OK",
 			"system_status_led": "",
 			"services": {"status": "OK"},
 			"hardware": {
@@ -187,7 +183,6 @@ func TestGetShowSystemHealthSummary(t *testing.T) {
 		defer patches.Reset()
 
 		wantRespVal := []byte(`{
-			"summary": "Not OK",
 			"system_status_led": "",
 			"services": {
 				"status": "Not OK",
@@ -204,7 +199,6 @@ func TestGetShowSystemHealthSummary(t *testing.T) {
 		defer patches.Reset()
 
 		wantRespVal := []byte(`{
-			"summary": "Not OK",
 			"system_status_led": "",
 			"services": {
 				"status": "Not OK",
@@ -224,7 +218,6 @@ func TestGetShowSystemHealthSummary(t *testing.T) {
 		defer patches.Reset()
 
 		wantRespVal := []byte(`{
-			"summary": "Not OK",
 			"system_status_led": "",
 			"services": {
 				"status": "Not OK",
@@ -241,7 +234,6 @@ func TestGetShowSystemHealthSummary(t *testing.T) {
 		defer patches.Reset()
 
 		wantRespVal := []byte(`{
-			"summary": "Not OK",
 			"system_status_led": "",
 			"services": {"status": "OK"},
 			"hardware": {
@@ -258,7 +250,6 @@ func TestGetShowSystemHealthSummary(t *testing.T) {
 		defer patches.Reset()
 
 		wantRespVal := []byte(`{
-			"summary": "OK",
 			"system_status_led": "",
 			"services": {"status": "OK"},
 			"hardware": {"status": "OK"}
@@ -311,7 +302,6 @@ func TestGetShowSystemHealthDetail(t *testing.T) {
 		defer patches.Reset()
 
 		wantRespVal := []byte(`{
-			"summary": "OK",
 			"system_status_led": "",
 			"services": {"status": "OK"},
 			"hardware": {"status": "OK"},
@@ -337,7 +327,6 @@ func TestGetShowSystemHealthDetail(t *testing.T) {
 		defer patches.Reset()
 
 		wantRespVal := []byte(`{
-			"summary": "Not OK",
 			"system_status_led": "",
 			"services": {
 				"status": "Not OK",
@@ -366,7 +355,6 @@ func TestGetShowSystemHealthDetail(t *testing.T) {
 		defer patches.Reset()
 
 		wantRespVal := []byte(`{
-			"summary": "Not OK",
 			"system_status_led": "",
 			"services": {"status": "OK"},
 			"hardware": {
@@ -395,7 +383,6 @@ func TestGetShowSystemHealthDetail(t *testing.T) {
 		defer patches.Reset()
 
 		wantRespVal := []byte(`{
-			"summary": "OK",
 			"system_status_led": "",
 			"services": {"status": "OK"},
 			"hardware": {"status": "OK"},
@@ -422,7 +409,6 @@ func TestGetShowSystemHealthDetail(t *testing.T) {
 		defer patches.Reset()
 
 		wantRespVal := []byte(`{
-			"summary": "Not OK",
 			"system_status_led": "",
 			"services": {"status": "OK"},
 			"hardware": {

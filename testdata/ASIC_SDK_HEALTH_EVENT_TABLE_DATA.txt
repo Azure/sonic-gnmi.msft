@@ -1,0 +1,20 @@
+{
+  "ASIC_SDK_HEALTH_EVENT_TABLE|2023-11-22 09:18:12": {
+    "severity": "fatal",
+    "category": "firmware",
+    "description": "ASIC SDK health event occurred",
+    "asic_id": "0"
+  },
+  "ASIC_SDK_HEALTH_EVENT_TABLE|2023-11-23 10:30:00": {
+    "severity": "warning",
+    "category": "software",
+    "description": "SDK warning event detected",
+    "asic_id": "0"
+  },
+  "ASIC_SDK_HEALTH_EVENT_TABLE|2023-11-24 15:45:30": {
+    "severity": "notice",
+    "category": "cpu_hw",
+    "description": "CPU hardware notice",
+    "asic_id": "0"
+  }
+}

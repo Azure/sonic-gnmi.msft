@@ -1,0 +1,1 @@
+{"Ethernet0":{"Asymmetric":"off"},"Ethernet40":{"Asymmetric":"off"},"Ethernet80":{"Asymmetric":"off"}}

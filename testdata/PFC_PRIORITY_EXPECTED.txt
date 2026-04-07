@@ -1,0 +1,1 @@
+{"Ethernet0":{"Lossless priorities":"3,4"},"Ethernet40":{"Lossless priorities":"3,4"},"Ethernet80":{"Lossless priorities":"2,3,4,7"}}

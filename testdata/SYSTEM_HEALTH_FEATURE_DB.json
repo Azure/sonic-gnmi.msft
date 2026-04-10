@@ -1,0 +1,5 @@
+{
+    "swss": {"state": "enabled", "has_global_scope": "True"},
+    "bgp": {"state": "enabled", "has_global_scope": "True"},
+    "teamd": {"state": "enabled", "has_global_scope": "True"}
+}

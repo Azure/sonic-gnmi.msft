@@ -1,0 +1,11 @@
+{
+    "PSU 1": {
+        "presence": "True",
+        "status": "True",
+        "temp": "25",
+        "temp_threshold": "60",
+        "voltage": "12.0",
+        "voltage_min_threshold": "11.0",
+        "voltage_max_threshold": "13.0"
+    }
+}

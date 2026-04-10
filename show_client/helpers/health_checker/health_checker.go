@@ -1,4 +1,4 @@
-package helpers
+package health_checker
 
 const (
 	StatusOK    = "OK"
@@ -25,7 +25,7 @@ type Checker interface {
 	// :return: Check result.
 	GetInfo() map[string]interface{}
 
-	// Str returns a human-readable name for the checker (used in error messages).
+	// Str returns a human-readable name for the checker.
 	Str() string
 }
 

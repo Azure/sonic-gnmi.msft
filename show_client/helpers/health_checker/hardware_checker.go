@@ -1,15 +1,21 @@
-package helpers
+package health_checker
 
 import (
 	"fmt"
 	"reflect"
-	"slices"
 	"sort"
 	"strconv"
 	"strings"
 
 	natural "github.com/maruel/natural"
 	"github.com/sonic-net/sonic-gnmi/show_client/common"
+)
+
+const (
+	TEMPERATURE_TABLE_NAME    = "TEMPERATURE_INFO"
+	FAN_TABLE_NAME            = "FAN_INFO"
+	PSU_TABLE_NAME            = "PSU_INFO"
+	LIQUID_COOLING_TABLE_NAME = "LIQUID_COOLING_INFO"
 )
 
 // HardwareChecker checks system hardware status. For now, it checks ASIC, PSU, fan,
@@ -54,7 +60,7 @@ func (hwc *HardwareChecker) checkAsicStatus(config *Config) {
 	}
 
 	queries := [][]string{
-		{"STATE_DB", "TEMPERATURE_INFO"},
+		{common.StateDb, TEMPERATURE_TABLE_NAME},
 	}
 	asicTempData, err := common.GetMapFromQueries(queries)
 	if err != nil {
@@ -79,28 +85,23 @@ func (hwc *HardwareChecker) checkAsicStatus(config *Config) {
 		if temperatureStr == "" {
 			hwc.SetObjectNotOK("ASIC", asicName,
 				fmt.Sprintf("Failed to get %s temperature", asicName))
-			continue
-		}
-		if thresholdStr == "" {
+		} else if thresholdStr == "" {
 			hwc.SetObjectNotOK("ASIC", asicName,
 				fmt.Sprintf("Failed to get %s temperature threshold", asicName))
-			continue
-		}
-
-		temperature, errT := strconv.ParseFloat(temperatureStr, 64)
-		threshold, errTh := strconv.ParseFloat(thresholdStr, 64)
-		if errT != nil || errTh != nil {
-			hwc.SetObjectNotOK("ASIC", asicName,
-				fmt.Sprintf("Invalid %s temperature data, temperature=%s, threshold=%s",
-					asicName, temperatureStr, thresholdStr))
-			continue
-		}
-		if temperature > threshold {
-			hwc.SetObjectNotOK("ASIC", asicName,
-				fmt.Sprintf("%s temperature is too hot, temperature=%v, threshold=%v",
-					asicName, temperature, threshold))
 		} else {
-			hwc.SetObjectOK("ASIC", asicName)
+			temperature, errT := strconv.ParseFloat(temperatureStr, 64)
+			threshold, errTh := strconv.ParseFloat(thresholdStr, 64)
+			if errT != nil || errTh != nil {
+				hwc.SetObjectNotOK("ASIC", asicName,
+					fmt.Sprintf("Invalid %s temperature data, temperature=%s, threshold=%s",
+						asicName, temperatureStr, thresholdStr))
+			} else if temperature > threshold {
+				hwc.SetObjectNotOK("ASIC", asicName,
+					fmt.Sprintf("%s temperature is too hot, temperature=%v, threshold=%v",
+						asicName, temperature, threshold))
+			} else {
+				hwc.SetObjectOK("ASIC", asicName)
+			}
 		}
 	}
 }
@@ -118,7 +119,7 @@ func (hwc *HardwareChecker) checkFanStatus(config *Config) {
 	}
 
 	queries := [][]string{
-		{"STATE_DB", "FAN_INFO"},
+		{common.StateDb, FAN_TABLE_NAME},
 	}
 	fanInfoData, err := common.GetMapFromQueries(queries)
 	if err != nil {
@@ -130,8 +131,8 @@ func (hwc *HardwareChecker) checkFanStatus(config *Config) {
 	}
 
 	keys := make([]string, 0, len(fanInfoData))
-	for k := range fanInfoData {
-		keys = append(keys, k)
+	for fanName := range fanInfoData {
+		keys = append(keys, fanName)
 	}
 	sort.Sort(natural.StringSlice(keys))
 
@@ -157,39 +158,36 @@ func (hwc *HardwareChecker) checkFanStatus(config *Config) {
 
 		if !ignoreCheck(config, "fan", name, "speed") {
 			speedStr, _ := dataDict["speed"].(string)
-			speedTargetStr, _ := dataDict["speed_target"].(string)
-			isUnder, _ := dataDict["is_under_speed"].(string)
-			isOver, _ := dataDict["is_over_speed"].(string)
+			speedTarget, _ := dataDict["speed_target"].(string)
+			isUnderSpeed, _ := dataDict["is_under_speed"].(string)
+			isOverSpeed, _ := dataDict["is_over_speed"].(string)
 
 			if speedStr == "" {
 				hwc.SetObjectNotOK("Fan", name, fmt.Sprintf("Failed to get actual speed data for %s", name))
 				continue
-			}
-			if speedTargetStr == "" {
+			} else if speedTarget == "" {
 				hwc.SetObjectNotOK("Fan", name, fmt.Sprintf("Failed to get target speed data for %s", name))
 				continue
-			}
-			if isUnder == "" {
+			} else if isUnderSpeed == "" {
 				hwc.SetObjectNotOK("Fan", name, fmt.Sprintf("Failed to get under speed threshold check for %s", name))
 				continue
-			}
-			if isOver == "" {
+			} else if isOverSpeed == "" {
 				hwc.SetObjectNotOK("Fan", name, fmt.Sprintf("Failed to get over speed threshold check for %s", name))
 				continue
-			}
-
-			_, errSpeed := strconv.ParseFloat(speedStr, 64)
-			_, errTarget := strconv.ParseFloat(speedTargetStr, 64)
-			if errSpeed != nil || errTarget != nil {
-				hwc.SetObjectNotOK("Fan", name,
-					fmt.Sprintf("Invalid fan speed data for %s, speed=%s, target=%s, is_under_speed=%s, is_over_speed=%s",
-						name, speedStr, speedTargetStr, isUnder, isOver))
-				continue
-			}
-			if strings.ToLower(isUnder) == "true" || strings.ToLower(isOver) == "true" {
-				hwc.SetObjectNotOK("Fan", name,
-					fmt.Sprintf("%s speed is out of range, speed=%s, target=%s", name, speedStr, speedTargetStr))
-				continue
+			} else {
+				_, errSpeed := strconv.ParseFloat(speedStr, 64)
+				_, errTarget := strconv.ParseFloat(speedTarget, 64)
+				if errSpeed != nil || errTarget != nil {
+					hwc.SetObjectNotOK("Fan", name,
+						fmt.Sprintf("Invalid fan speed data for %s, speed=%s, target=%s, is_under_speed=%s, is_over_speed=%s",
+							name, speedStr, speedTarget, isUnderSpeed, isOverSpeed))
+					continue
+				}
+				if strings.ToLower(isUnderSpeed) == "true" || strings.ToLower(isOverSpeed) == "true" {
+					hwc.SetObjectNotOK("Fan", name,
+						fmt.Sprintf("%s speed is out of range, speed=%s, target=%s", name, speedStr, speedTarget))
+					continue
+				}
 			}
 		}
 
@@ -234,7 +232,7 @@ func (hwc *HardwareChecker) checkPsuStatus(config *Config) {
 	}
 
 	queries := [][]string{
-		{"STATE_DB", "PSU_INFO"},
+		{common.StateDb, PSU_TABLE_NAME},
 	}
 	psuInfoData, err := common.GetMapFromQueries(queries)
 	if err != nil {
@@ -246,8 +244,8 @@ func (hwc *HardwareChecker) checkPsuStatus(config *Config) {
 	}
 
 	keys := make([]string, 0, len(psuInfoData))
-	for k := range psuInfoData {
-		keys = append(keys, k)
+	for psuName := range psuInfoData {
+		keys = append(keys, psuName)
 	}
 	sort.Sort(natural.StringSlice(keys))
 
@@ -281,54 +279,53 @@ func (hwc *HardwareChecker) checkPsuStatus(config *Config) {
 			if tempStr == "" {
 				hwc.SetObjectNotOK("PSU", name, fmt.Sprintf("Failed to get temperature data for %s", name))
 				continue
-			}
-			if tempThStr == "" {
+			} else if tempThStr == "" {
 				hwc.SetObjectNotOK("PSU", name, fmt.Sprintf("Failed to get temperature threshold data for %s", name))
 				continue
-			}
-			temp, errT := strconv.ParseFloat(tempStr, 64)
-			tempTh, errTh := strconv.ParseFloat(tempThStr, 64)
-			if errT != nil || errTh != nil {
-				hwc.SetObjectNotOK("PSU", name,
-					fmt.Sprintf("Invalid temperature data for %s, temperature=%s, threshold=%s", name, tempStr, tempThStr))
-				continue
-			}
-			if temp > tempTh {
-				hwc.SetObjectNotOK("PSU", name,
-					fmt.Sprintf("%s temperature is too hot, temperature=%v, threshold=%v", name, temp, tempTh))
-				continue
+			} else {
+				temp, errT := strconv.ParseFloat(tempStr, 64)
+				tempTh, errTh := strconv.ParseFloat(tempThStr, 64)
+				if errT != nil || errTh != nil {
+					hwc.SetObjectNotOK("PSU", name,
+						fmt.Sprintf("Invalid temperature data for %s, temperature=%s, threshold=%s", name, tempStr, tempThStr))
+					continue
+				}
+				if temp > tempTh {
+					hwc.SetObjectNotOK("PSU", name,
+						fmt.Sprintf("%s temperature is too hot, temperature=%v, threshold=%v", name, temp, tempTh))
+					continue
+				}
 			}
 		}
 
 		// Check voltage
 		if !ignoreCheck(config, "psu", name, "voltage") {
-			voltStr, _ := dataDict["voltage"].(string)
-			voltMinStr, _ := dataDict["voltage_min_threshold"].(string)
-			voltMaxStr, _ := dataDict["voltage_max_threshold"].(string)
-			if voltStr == "" {
+			voltage, _ := dataDict["voltage"].(string)
+			voltMinTh, _ := dataDict["voltage_min_threshold"].(string)
+			voltMaxTh, _ := dataDict["voltage_max_threshold"].(string)
+			if voltage == "" {
 				hwc.SetObjectNotOK("PSU", name, fmt.Sprintf("Failed to get voltage data for %s", name))
 				continue
-			}
-			if voltMinStr == "" {
+			} else if voltMinTh == "" {
 				hwc.SetObjectNotOK("PSU", name, fmt.Sprintf("Failed to get voltage minimum threshold data for %s", name))
 				continue
-			}
-			if voltMaxStr == "" {
+			} else if voltMaxTh == "" {
 				hwc.SetObjectNotOK("PSU", name, fmt.Sprintf("Failed to get voltage maximum threshold data for %s", name))
 				continue
-			}
-			volt, errV := strconv.ParseFloat(voltStr, 64)
-			voltMin, errMin := strconv.ParseFloat(voltMinStr, 64)
-			voltMax, errMax := strconv.ParseFloat(voltMaxStr, 64)
-			if errV != nil || errMin != nil || errMax != nil {
-				hwc.SetObjectNotOK("PSU", name,
-					fmt.Sprintf("Invalid voltage data for %s, voltage=%s, range=[%s,%s]", name, voltStr, voltMinStr, voltMaxStr))
-				continue
-			}
-			if volt < voltMin || volt > voltMax {
-				hwc.SetObjectNotOK("PSU", name,
-					fmt.Sprintf("%s voltage is out of range, voltage=%s, range=[%s,%s]", name, voltStr, voltMinStr, voltMaxStr))
-				continue
+			} else {
+				volt, errV := strconv.ParseFloat(voltage, 64)
+				voltMinTh, errMin := strconv.ParseFloat(voltMinTh, 64)
+				voltMaxTh, errMax := strconv.ParseFloat(voltMaxTh, 64)
+				if errV != nil || errMin != nil || errMax != nil {
+					hwc.SetObjectNotOK("PSU", name,
+						fmt.Sprintf("Invalid voltage data for %s, voltage=%s, range=[%s,%s]", name, voltage, voltMinTh, voltMaxTh))
+					continue
+				}
+				if volt < voltMinTh || volt > voltMaxTh {
+					hwc.SetObjectNotOK("PSU", name,
+						fmt.Sprintf("%s voltage is out of range, voltage=%s, range=[%s,%s]", name, voltage, voltMinTh, voltMaxTh))
+					continue
+				}
 			}
 		}
 
@@ -336,8 +333,8 @@ func (hwc *HardwareChecker) checkPsuStatus(config *Config) {
 		if !ignoreCheck(config, "psu", name, "power_threshold") {
 			powerOverload, _ := dataDict["power_overload"].(string)
 			if powerOverload == "True" {
-				_, powerExists := dataDict["power"]
 				powerCriticalVal, criticalExists := dataDict["power_critical_threshold"]
+				_, powerExists := dataDict["power"]
 				if powerExists && criticalExists {
 					hwc.SetObjectNotOK("PSU", name,
 						fmt.Sprintf("System power exceeds threshold (%vw)", powerCriticalVal))
@@ -370,11 +367,9 @@ func ignoreCheck(config *Config, category, objectName, checkPoint string) bool {
 }
 
 func (hwc *HardwareChecker) checkLiquidCoolingStatus(config *Config) {
-	/* checkLiquidCoolingStatus checks liquid cooling leak sensor status.
-	Only runs if "liquid_cooling" is explicitly listed in config.IncludeDevices.
-	:param config: Health checker configuration.
-	Note: Go-specific addition. No Python equivalent in hardware_checker.py.*/
-	// Only check liquid cooling if explicitly included in config
+	/* Check liquid cooling status including:
+	   1. Check all leakage sensors are in good state
+	   :param config: Health checker configuration*/
 	if len(config.IncludeDevices) == 0 {
 		return
 	}
@@ -383,7 +378,7 @@ func (hwc *HardwareChecker) checkLiquidCoolingStatus(config *Config) {
 	}
 
 	queries := [][]string{
-		{"STATE_DB", "LIQUID_COOLING_INFO"},
+		{common.StateDb, LIQUID_COOLING_TABLE_NAME},
 	}
 	liquidCoolingData, err := common.GetMapFromQueries(queries)
 	if err != nil {
@@ -395,8 +390,8 @@ func (hwc *HardwareChecker) checkLiquidCoolingStatus(config *Config) {
 	}
 
 	keys := make([]string, 0, len(liquidCoolingData))
-	for k := range liquidCoolingData {
-		keys = append(keys, k)
+	for sensorName := range liquidCoolingData {
+		keys = append(keys, sensorName)
 	}
 	sort.Sort(natural.StringSlice(keys))
 
@@ -419,7 +414,7 @@ func (hwc *HardwareChecker) checkLiquidCoolingStatus(config *Config) {
 			continue
 		}
 
-		if strings.ToLower(leakStatus) == "yes" && !slices.Contains(hwc.leakingSensors, name) {
+		if strings.ToLower(leakStatus) == "yes" && !containsString(hwc.leakingSensors, name) {
 			hwc.leakingSensors = append(hwc.leakingSensors, name)
 			newLeakingSensors = append(newLeakingSensors, name)
 			hwc.SetObjectNotOK("Liquid Cooling", name, fmt.Sprintf("Leakage sensor %s is leaking", name))
@@ -428,11 +423,31 @@ func (hwc *HardwareChecker) checkLiquidCoolingStatus(config *Config) {
 
 		if strings.ToLower(leakStatus) == "no" {
 			hwc.SetObjectOK("Liquid Cooling", name)
-			if slices.Contains(hwc.leakingSensors, name) {
-				hwc.leakingSensors = slices.DeleteFunc(hwc.leakingSensors, func(v string) bool { return v == name })
+			if containsString(hwc.leakingSensors, name) {
+				// publish_events not implemented
+				hwc.leakingSensors = removeString(hwc.leakingSensors, name)
 			}
 		}
 	}
+}
 
-	_ = newLeakingSensors // publish_events not implemented
+// containsString checks if a string slice contains a given value.
+func containsString(s []string, v string) bool {
+	for _, item := range s {
+		if item == v {
+			return true
+		}
+	}
+	return false
+}
+
+// removeString returns a new slice with all occurrences of v removed.
+func removeString(s []string, v string) []string {
+	result := make([]string, 0, len(s))
+	for _, item := range s {
+		if item != v {
+			result = append(result, item)
+		}
+	}
+	return result
 }

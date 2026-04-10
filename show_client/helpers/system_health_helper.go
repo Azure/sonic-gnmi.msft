@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"strings"
 
-	hc "github.com/sonic-net/sonic-gnmi/show_client/helpers/health_checker"
+	"github.com/sonic-net/sonic-gnmi/show_client/helpers/health_checker"
 )
 
 // SystemHealthSummary represents the output structure for show system-health summary.
@@ -34,12 +34,12 @@ type HealthListEntry struct {
 	Type   string `json:"type"`
 }
 
-func GetSystemHealthStatus() (*hc.HealthCheckerManager, map[string]interface{}, error) {
+func GetSystemHealthStatus() (*health_checker.HealthCheckerManager, map[string]interface{}, error) {
 	/* GetSystemHealthStatus creates a HealthCheckerManager, verifies config exists,
 	and performs the system health check.
 	:return: manager, stat (check results), error.
 	*/
-	manager := hc.NewHealthCheckerManager()
+	manager := health_checker.NewHealthCheckerManager()
 
 	if !manager.Config.ConfigFileExists() {
 		return nil, nil, fmt.Errorf("System health configuration file not found")
@@ -74,17 +74,17 @@ func DisplaySystemHealthSummary(stat map[string]interface{}, led string) SystemH
 			if !ok {
 				continue
 			}
-			status, _ := detail[hc.INFO_FIELD_OBJECT_STATUS].(string)
-			if status != hc.StatusOK {
+			status, _ := detail[health_checker.INFO_FIELD_OBJECT_STATUS].(string)
+			if status != health_checker.StatusOK {
 				if category == "Services" {
-					msg, _ := detail[hc.INFO_FIELD_OBJECT_MSG].(string)
+					msg, _ := detail[health_checker.INFO_FIELD_OBJECT_MSG].(string)
 					if strings.Contains(msg, "Accessible") {
 						fsList = append(fsList, element)
 					} else {
 						servicesList = append(servicesList, element)
 					}
 				} else {
-					msg, _ := detail[hc.INFO_FIELD_OBJECT_MSG].(string)
+					msg, _ := detail[health_checker.INFO_FIELD_OBJECT_MSG].(string)
 					deviceList = append(deviceList, msg)
 				}
 			}
@@ -93,7 +93,7 @@ func DisplaySystemHealthSummary(stat map[string]interface{}, led string) SystemH
 
 	// Build services status
 	services := ServiceHealthStatus{
-		Status: hc.StatusOK,
+		Status: health_checker.StatusOK,
 	}
 	if len(servicesList) > 0 || len(fsList) > 0 {
 		services.Status = "Not OK"
@@ -107,7 +107,7 @@ func DisplaySystemHealthSummary(stat map[string]interface{}, led string) SystemH
 
 	// Build hardware status
 	hardware := HardwareHealthStatus{
-		Status: hc.StatusOK,
+		Status: health_checker.StatusOK,
 	}
 	if len(deviceList) > 0 {
 		hardware.Status = "Not OK"
@@ -148,7 +148,7 @@ func DisplayMonitorList(stat map[string]interface{}) []HealthListEntry {
 	return entries
 }
 
-func DisplayIgnoreList(manager *hc.HealthCheckerManager) []HealthListEntry {
+func DisplayIgnoreList(manager *health_checker.HealthCheckerManager) []HealthListEntry {
 	/* DisplayIgnoreList builds the ignore list from the manager's config.
 	Services get Type="Service", devices get Type="Device", both get Status="Ignored".
 	*/

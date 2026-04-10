@@ -291,6 +291,16 @@ func IsSupervisor() bool {
 	return IsExpectedValue(val, "1")
 }
 
+// IsDisaggregatedChassis returns true if the current platform is a disaggregated chassis.
+// Matches Python's device_info.is_disaggregated_chassis().
+func IsDisaggregatedChassis() bool {
+	val, found := GetPlatformEnvConfig("disaggregated_chassis")
+	if !found {
+		return false
+	}
+	return IsExpectedValue(val, "1")
+}
+
 // IsSimxPlatform returns true if the current platform is a SimX (simulation) platform.
 func IsSimxPlatform() bool {
 	platformName := GetPlatform()

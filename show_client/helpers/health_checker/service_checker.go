@@ -1,4 +1,4 @@
-package helpers
+package health_checker
 
 import (
 	"encoding/json"
@@ -16,13 +16,13 @@ import (
 const (
 	// Command to query the status of monit service.
 	checkMonitServiceCmd = "systemctl is-active monit.service"
+
 	// Command to get summary of critical system service.
 	checkMonitCmd = "monit summary -B"
+
 	// Minimum number of lines expected from monit summary output.
 	minCheckCmdLines = 3
-)
 
-const (
 	// Command to get merged directory of a container.
 	GetContainerFolderCmd = `docker inspect %s --format "{{.GraphDriver.Data.MergedDir}}"`
 
@@ -34,11 +34,11 @@ const (
 
 	// Cache file to save container_critical_processes.
 	CriticalProcessCache = "/tmp/critical_process_cache"
-)
 
-// ExpectedStatus is the universal expected status for all Monit service types.
-// Monit 5.34.3+ (Debian 13) uses 'OK' for all service types.
-const ExpectedStatus = "OK"
+	// Expect status for all system service categories.
+	// Monit 5.34.3+ (Debian 13) uses 'OK' for all service types.
+	ExpectedStatus = "OK"
+)
 
 // ContainerK8SWhitelist is the whitelist of containers managed by KubeSonic
 // to bypass health checking entirely. These containers will be excluded from
@@ -143,20 +143,25 @@ func (sc *ServiceChecker) checkByMonit(config *Config) {
 func (sc *ServiceChecker) checkServices(config *Config) {
 	/* checkServices checks status of critical services and critical processes.
 	:param config: Health checker configuration.*/
-	queries := [][]string{{"CONFIG_DB", "FEATURE"}}
+	queries := [][]string{{common.ConfigDb, "FEATURE"}}
 	featureData, err := common.GetMapFromQueries(queries)
 	if err != nil {
 		return
 	}
 
-	expectedRunningContainers, err := sc.getExpectedRunningContainers(featureData)
+	expectedRunningContainers, containerFeatureDict, err := sc.getExpectedRunningContainers(featureData)
 	if err != nil {
 		log.Errorf("Failed to get expected running containers: %v", err)
 		return
 	}
+	sc.containerFeatureDict = containerFeatureDict
 
 	sc.loadCriticalProcessCache()
-	currentRunningContainers := sc.getDockerRunningContainers()
+	currentRunningContainers, err := sc.getCurrentRunningContainers()
+	if err != nil {
+		log.Errorf("%v", err)
+		return
+	}
 
 	// Remove newly disabled containers from critical process tracking
 	for containerName := range sc.containerCriticalProcesses {
@@ -190,13 +195,19 @@ func (sc *ServiceChecker) checkServices(config *Config) {
 	}
 }
 
-func (sc *ServiceChecker) getExpectedRunningContainers(featureTable map[string]interface{}) (map[string]struct{}, error) {
+func (sc *ServiceChecker) getExpectedRunningContainers(featureTable map[string]interface{}) (map[string]struct{}, map[string]string, error) {
 	/* getExpectedRunningContainers gets a set of containers that are expected to be running on SONiC.
 	:param featureTable: FEATURE table in CONFIG_DB.
 	:return: expected_running_containers: A set of container names that are expected running.
-	         container_feature_dict: Populated via sc.containerFeatureDict.*/
+	         container_feature_dict: A dictionary {<container_name>:<feature_name>}.*/
 	expectedRunningContainers := make(map[string]struct{})
-	sc.containerFeatureDict = make(map[string]string)
+	containerFeatureDict := make(map[string]string)
+
+	// Fetch docker image list once to avoid repeated heavy calls
+	allImagesData := common.GetDockerInfo()
+	checkDockerImage := func(imageName string) bool {
+		return strings.Contains(allImagesData, imageName)
+	}
 
 	containerList := []string{}
 	for containerName := range featureTable {
@@ -211,11 +222,11 @@ func (sc *ServiceChecker) getExpectedRunningContainers(featureTable map[string]i
 		}
 		// slim image does not have telemetry container and corresponding docker image
 		if containerName == "telemetry" {
-			if !CheckDockerImageExist("docker-sonic-telemetry") {
+			if !checkDockerImage("docker-sonic-telemetry") {
 				// If telemetry container image is not present, check gnmi container image
 				// If gnmi container image is not present, ignore telemetry container check
 				// if gnmi container image is present, check gnmi container instead of telemetry
-				if !CheckDockerImageExist("docker-sonic-gnmi") {
+				if !checkDockerImage("docker-sonic-gnmi") {
 					log.Warningf("Ignoring telemetry container check on image which has no corresponding docker image")
 				} else {
 					containerList = append(containerList, "gnmi")
@@ -225,7 +236,7 @@ func (sc *ServiceChecker) getExpectedRunningContainers(featureTable map[string]i
 		}
 		// Some platforms may not include the OTEL container; skip when image absent
 		if containerName == "otel" {
-			if !CheckDockerImageExist("docker-sonic-otel") {
+			if !checkDockerImage("docker-sonic-otel") {
 				log.V(1).Infof("Ignoring otel container check on image which has no corresponding docker image")
 				continue
 			}
@@ -241,19 +252,19 @@ func (sc *ServiceChecker) getExpectedRunningContainers(featureTable map[string]i
 		state, _ := featureEntry["state"].(string)
 		if state != "disabled" && state != "always_disabled" {
 			if common.IsMultiAsic() {
-				return nil, fmt.Errorf("multi-ASIC is not supported")
+				return nil, nil, fmt.Errorf("multi-ASIC is not supported")
 			}
 			expectedRunningContainers[containerName] = struct{}{}
-			sc.containerFeatureDict[containerName] = containerName
+			containerFeatureDict[containerName] = containerName
 		}
 	}
 
 	if common.IsSupervisor() || common.IsDisaggregatedChassis() {
 		expectedRunningContainers["database-chassis"] = struct{}{}
-		sc.containerFeatureDict["database-chassis"] = "database"
+		containerFeatureDict["database-chassis"] = "database"
 	}
 
-	return expectedRunningContainers, nil
+	return expectedRunningContainers, containerFeatureDict, nil
 }
 
 func CheckDockerImageExist(imageName string) bool {
@@ -263,20 +274,29 @@ func CheckDockerImageExist(imageName string) bool {
 	return strings.Contains(allImagesData, imageName)
 }
 
-func (sc *ServiceChecker) getDockerRunningContainers() map[string]struct{} {
-	/* getDockerRunningContainers gets current running containers, if the running container is not
+func (sc *ServiceChecker) getCurrentRunningContainers() (map[string]struct{}, error) {
+	/* getCurrentRunningContainers gets current running containers, if the running container is not
 	in containerCriticalProcesses, tries to get the critical process list.
 	:return: running_containers: A set of running container names.*/
-	cmdOutput, err := common.GetDataFromHostCommand(`bash -o pipefail -c 'docker ps --format "{{.Names}}"'`)
-	if err != nil {
-		log.Errorf("Failed to retrieve the running container list. Error: '%v'", err)
-		return nil
-	}
-
 	runningContainers := make(map[string]struct{})
-	for _, name := range strings.Split(strings.TrimSpace(cmdOutput), "\n") {
-		name = strings.TrimSpace(name)
+
+	cmdOutput, err := common.GetDataFromHostCommand(
+		`bash -o pipefail -c 'docker ps --format "{{.Names}}\t{{.Label \"io.kubernetes.pod.namespace\"}}"'`)
+	if err != nil {
+		return runningContainers, fmt.Errorf("Failed to retrieve the running container list. Error: '%v'", err)
+	}
+	for _, line := range strings.Split(strings.TrimSpace(cmdOutput), "\n") {
+		line = strings.TrimSpace(line)
+		if line == "" {
+			continue
+		}
+		parts := strings.SplitN(line, "\t", 2)
+		name := strings.TrimSpace(parts[0])
 		if name == "" {
+			continue
+		}
+		// Check if this is a Kubernetes-managed container
+		if len(parts) > 1 && strings.TrimSpace(parts[1]) == "sonic" {
 			continue
 		}
 		// Skip kubesonic managed containers in the whitelist
@@ -288,7 +308,7 @@ func (sc *ServiceChecker) getDockerRunningContainers() map[string]struct{} {
 			sc.fillCriticalProcessByContainer(name)
 		}
 	}
-	return runningContainers
+	return runningContainers, nil
 }
 
 func GetContainerFolder(containerName string) string {
@@ -350,8 +370,8 @@ func (sc *ServiceChecker) loadCriticalProcessCache() {
 		return
 	}
 
-	for k, v := range cached {
-		sc.containerCriticalProcesses[k] = v
+	for containerName, criticalProcesses := range cached {
+		sc.containerCriticalProcesses[containerName] = criticalProcesses
 	}
 }
 
@@ -428,11 +448,16 @@ func (sc *ServiceChecker) checkProcessExistence(containerName string, criticalPr
 		return
 	}
 
+	// We look into the 'FEATURE' table to verify whether the container is disabled or not.
+	// If the container is disabled, we exit.
 	state, _ := featureEntry["state"].(string)
 	if state == "disabled" || state == "always_disabled" {
 		return
 	}
 
+	// We are using supervisorctl status to check the critical process status. We cannot leverage psutil here because
+	// it not always possible to get process cmdline in supervisor.conf. E.g, cmdline of orchagent is "/usr/bin/orchagent",
+	// however, in supervisor.conf it is "/usr/bin/orchagent.sh"
 	cmd := fmt.Sprintf(SupervisorctlStatusCmd, containerName)
 	output, err := common.GetDataFromHostCommand(cmd)
 	if err != nil {

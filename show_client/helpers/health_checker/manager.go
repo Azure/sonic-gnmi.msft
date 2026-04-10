@@ -1,4 +1,4 @@
-package helpers
+package health_checker
 
 import (
 	"fmt"
@@ -39,13 +39,13 @@ func (manager *HealthCheckerManager) Check() map[string]interface{} {
 	stats := make(map[string]interface{})
 
 	manager.Config.LoadConfig()
-	for _, c := range manager.checkers {
-		manager.doCheck(c, stats)
+	for _, checker := range manager.checkers {
+		manager.doCheck(checker, stats)
 	}
 
 	for cmd := range manager.Config.UserDefinedCheckers {
-		c := NewUserDefinedChecker(cmd)
-		manager.doCheck(c, stats)
+		checker := NewUserDefinedChecker(cmd)
+		manager.doCheck(checker, stats)
 	}
 
 	manager.setSystemLED()
@@ -53,39 +53,39 @@ func (manager *HealthCheckerManager) Check() map[string]interface{} {
 	return stats
 }
 
-func (manager *HealthCheckerManager) doCheck(c Checker, stats map[string]interface{}) {
-	/* doCheck does check for a particular checker and collects the check statistic.
-	:param c: A checker object.
+func (manager *HealthCheckerManager) doCheck(checker Checker, stats map[string]interface{}) {
+	/* do Check for a particular checker and collects the check statistic.
+	:param checker: A checker object.
 	:param stats: Check statistic.
 	:return:*/
 	defer func() {
 		if r := recover(); r != nil {
 			Summary = StatusNotOK
-			errMsg := fmt.Sprintf("Failed to perform health check for %s due to exception - %v", c.Str(), r)
+			errMsg := fmt.Sprintf("Failed to perform health check for %s due to exception - %v", checker.Str(), r)
 			log.Errorf(errMsg)
-			manager.addInternalError(stats, c, errMsg)
+			manager.addInternalError(stats, checker, errMsg)
 		}
 	}()
 
-	c.Check(manager.Config)
-	category := c.GetCategory()
-	info := c.GetInfo()
+	checker.Check(manager.Config)
+	category := checker.GetCategory()
+	info := checker.GetInfo()
 
 	if _, ok := stats[category]; !ok {
 		stats[category] = info
 	} else {
 		existing := stats[category].(map[string]interface{})
-		for k, v := range info {
-			existing[k] = v
+		for objectName, objectInfo := range info {
+			existing[objectName] = objectInfo
 		}
 	}
 }
 
-func (manager *HealthCheckerManager) addInternalError(stats map[string]interface{}, c Checker, msg string) {
+func (manager *HealthCheckerManager) addInternalError(stats map[string]interface{}, checker Checker, msg string) {
 	/* addInternalError records an internal error entry in stats
 	under the "Internal" category.*/
 	entry := map[string]interface{}{
-		c.Str(): map[string]interface{}{
+		checker.Str(): map[string]interface{}{
 			INFO_FIELD_OBJECT_STATUS: StatusNotOK,
 			INFO_FIELD_OBJECT_MSG:    msg,
 			INFO_FIELD_OBJECT_TYPE:   "Internal",
@@ -96,8 +96,8 @@ func (manager *HealthCheckerManager) addInternalError(stats map[string]interface
 		stats["Internal"] = entry
 	} else {
 		existing := stats["Internal"].(map[string]interface{})
-		for k, v := range entry {
-			existing[k] = v
+		for checkerName, errorInfo := range entry {
+			existing[checkerName] = errorInfo
 		}
 	}
 }
@@ -108,7 +108,7 @@ func (manager *HealthCheckerManager) setSystemLED() {
 	color := manager.getLEDTargetColor()
 
 	pyCmd := fmt.Sprintf(
-		`python3 -c "from sonic_platform.chassis import Chassis; c = Chassis(); c.initizalize_system_led(); c.set_status_led('%s')"`,
+		`python3 -c "from sonic_platform.chassis import Chassis; chassis = Chassis(); chassis.set_status_led('%s')"`,
 		color,
 	)
 
@@ -130,7 +130,7 @@ func (manager *HealthCheckerManager) getLEDTargetColor() string {
 	}
 
 	uptime := getUptime()
-	if uptime < float64(GetBootupTimeout()) {
+	if uptime < float64(manager.Config.GetBootupTimeout()) {
 		return manager.Config.GetLEDColor("booting")
 	}
 

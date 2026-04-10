@@ -1,4 +1,4 @@
-package helpers
+package health_checker
 
 import (
 	"fmt"
@@ -11,10 +11,10 @@ import (
 /*
 UserDefinedChecker allows user to implement a script or program to perform
 customize check for particular system. In order to enable a user defined checker:
-  1. Add an element to "user_defined_checkers" in the configuration file.
-     The element must be a command string that can be executed by shell.
-     For example: "python my_checker.py".
-  2. The command output must match the following pattern:
+	1. Add an element to "user_defined_checkers" in the configuration file.
+	The element must be a command string that can be executed by shell.
+	For example: "python my_checker.py".
+	2. The command output must match the following pattern:
 
 	${UserDefinedCategory}
 	${Object1}:${ObjectStatusMessage1}
@@ -43,7 +43,7 @@ func NewUserDefinedChecker(cmd string) *UserDefinedChecker {
 }
 
 func (udc *UserDefinedChecker) GetCategory() string {
-	/* GetCategory returns the category determined from command output.*/
+	/* GetCategory returns the category determined from command output. */
 	return udc.category
 }
 
@@ -59,26 +59,24 @@ func (udc *UserDefinedChecker) Check(config *Config) {
 	udc.Reset()
 	udc.category = "UserDefine"
 
-	checkerName := fmt.Sprintf("UserDefinedChecker - %s", udc.cmd)
-
 	output, err := common.GetDataFromHostCommand(udc.cmd)
 	if err != nil {
 		log.Errorf("Failed to run user defined checker command '%s': %v", udc.cmd, err)
-		udc.SetObjectNotOK("UserDefine", checkerName,
+		udc.SetObjectNotOK("UserDefine", udc.Str(),
 			fmt.Sprintf("Failed to get output of command \"%s\"", udc.cmd))
 		return
 	}
 
 	output = strings.TrimSpace(output)
 	if output == "" {
-		udc.SetObjectNotOK("UserDefine", checkerName,
+		udc.SetObjectNotOK("UserDefine", udc.Str(),
 			fmt.Sprintf("Failed to get output of command \"%s\"", udc.cmd))
 		return
 	}
 
 	rawLines := strings.Split(output, "\n")
 	if len(rawLines) == 0 {
-		udc.SetObjectNotOK("UserDefine", checkerName,
+		udc.SetObjectNotOK("UserDefine", udc.Str(),
 			fmt.Sprintf("Invalid output of command \"%s\"", udc.cmd))
 		return
 	}
@@ -93,7 +91,7 @@ func (udc *UserDefinedChecker) Check(config *Config) {
 	}
 
 	if len(lines) == 0 {
-		udc.SetObjectNotOK("UserDefine", checkerName,
+		udc.SetObjectNotOK("UserDefine", udc.Str(),
 			fmt.Sprintf("Invalid output of command \"%s\"", udc.cmd))
 		return
 	}

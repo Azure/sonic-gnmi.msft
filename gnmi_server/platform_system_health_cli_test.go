@@ -34,28 +34,28 @@ const (
 	mockMonitStatusActive   = "active\n"
 	mockMonitStatusInactive = "inactive\n"
 
-	mockMonitSummaryOK = "Monit 5.26.0 uptime: 10d 5h 20m\n" +
+	mockMonitSummaryOK = "Monit 5.34.3 uptime: 10d 5h 20m\n" +
 		" Name                            Status                   Type\n" +
-		" container_checker               Running                  Process\n" +
-		" sonic                           Running                  System\n" +
-		" root-overlay                    Accessible               Filesystem\n" +
-		" var-log                         Accessible               Filesystem\n"
+		" container_checker               OK                       Process\n" +
+		" sonic                           OK                       System\n" +
+		" root-overlay                    OK                       Filesystem\n" +
+		" var-log                         OK                       Filesystem\n"
 
-	mockMonitSummarySvcFail = "Monit 5.26.0 uptime: 10d 5h 20m\n" +
+	mockMonitSummarySvcFail = "Monit 5.34.3 uptime: 10d 5h 20m\n" +
 		" Name                            Status                   Type\n" +
-		" container_checker               Not Running              Process\n" +
-		" sonic                           Running                  System\n" +
-		" root-overlay                    Accessible               Filesystem\n" +
-		" var-log                         Accessible               Filesystem\n"
+		" container_checker               Does not exist           Process\n" +
+		" sonic                           OK                       System\n" +
+		" root-overlay                    OK                       Filesystem\n" +
+		" var-log                         OK                       Filesystem\n"
 
-	mockMonitSummaryFsFail = "Monit 5.26.0 uptime: 10d 5h 20m\n" +
+	mockMonitSummaryFsFail = "Monit 5.34.3 uptime: 10d 5h 20m\n" +
 		" Name                            Status                   Type\n" +
-		" container_checker               Running                  Process\n" +
-		" sonic                           Running                  System\n" +
-		" root-overlay                    Not Accessible           Filesystem\n" +
-		" var-log                         Accessible               Filesystem\n"
+		" container_checker               OK                       Process\n" +
+		" sonic                           OK                       System\n" +
+		" root-overlay                    Does not exist           Filesystem\n" +
+		" var-log                         OK                       Filesystem\n"
 
-	mockMonitSummaryNotReady = "Monit 5.26.0 uptime: 10d 5h 20m\n" +
+	mockMonitSummaryNotReady = "Monit 5.34.3 uptime: 10d 5h 20m\n" +
 		" Name                            Status                   Type\n"
 )
 
@@ -70,7 +70,7 @@ const (
 
 // Inline mock data — short, fixed host command outputs that never vary across scenarios.
 const (
-	mockDockerPS                 = "swss\nbgp\nteamd\n"
+	mockDockerPS                 = "swss\t\nbgp\t\nteamd\t\n"
 	mockDockerInspect            = "/var/lib/docker/overlay2/merged\n"
 	mockDockerImages             = "docker-sonic-telemetry\n"
 	mockSupervisorctlStatus      = "orchagent RUNNING pid 100, uptime 1:00:00\n"
@@ -145,7 +145,9 @@ func TestGetShowSystemHealthSummary(t *testing.T) {
 		runTestGet(t, ctx, gClient, "SHOW", textPbPath, codes.OK, wantRespVal, true, true)
 	})
 
-	// Test 4: Filesystem not accessible → services Not OK with not_accessible
+	// Test 4: Filesystem not accessible → with Monit 5.34+ the message format is
+	// "root-overlay status is Does not exist, expected OK" which does not contain
+	// "Accessible", so it falls into not_running (matching Python master behavior).
 	t.Run("query SHOW system-health summary filesystem not accessible", func(t *testing.T) {
 		patches := mockSystemWithFailedFilesystem(t)
 		defer patches.Reset()
@@ -154,7 +156,7 @@ func TestGetShowSystemHealthSummary(t *testing.T) {
 			"system_status_led": "",
 			"services": {
 				"status": "Not OK",
-				"not_accessible": ["root-overlay"]
+				"not_running": ["root-overlay"]
 			},
 			"hardware": {"status": "OK"}
 		}`)
@@ -314,6 +316,7 @@ func TestGetShowSystemHealthDetail(t *testing.T) {
 				{"name": "root-overlay", "status": "OK", "type": "Filesystem"},
 				{"name": "sonic", "status": "OK", "type": "System"},
 				{"name": "swss:orchagent", "status": "OK", "type": "Process"},
+				{"name": "teamd:orchagent", "status": "OK", "type": "Process"},
 				{"name": "var-log", "status": "OK", "type": "Filesystem"}
 			],
 			"ignore_list": []
@@ -342,6 +345,7 @@ func TestGetShowSystemHealthDetail(t *testing.T) {
 				{"name": "root-overlay", "status": "OK", "type": "Filesystem"},
 				{"name": "sonic", "status": "OK", "type": "System"},
 				{"name": "swss:orchagent", "status": "OK", "type": "Process"},
+				{"name": "teamd:orchagent", "status": "OK", "type": "Process"},
 				{"name": "var-log", "status": "OK", "type": "Filesystem"}
 			],
 			"ignore_list": []
@@ -370,6 +374,7 @@ func TestGetShowSystemHealthDetail(t *testing.T) {
 				{"name": "root-overlay", "status": "OK", "type": "Filesystem"},
 				{"name": "sonic", "status": "OK", "type": "System"},
 				{"name": "swss:orchagent", "status": "OK", "type": "Process"},
+				{"name": "teamd:orchagent", "status": "OK", "type": "Process"},
 				{"name": "var-log", "status": "OK", "type": "Filesystem"}
 			],
 			"ignore_list": []
@@ -393,6 +398,7 @@ func TestGetShowSystemHealthDetail(t *testing.T) {
 				{"name": "root-overlay", "status": "OK", "type": "Filesystem"},
 				{"name": "sonic", "status": "OK", "type": "System"},
 				{"name": "swss:orchagent", "status": "OK", "type": "Process"},
+				{"name": "teamd:orchagent", "status": "OK", "type": "Process"},
 				{"name": "var-log", "status": "OK", "type": "Filesystem"}
 			],
 			"ignore_list": [
@@ -425,6 +431,7 @@ func TestGetShowSystemHealthDetail(t *testing.T) {
 				{"name": "root-overlay", "status": "OK", "type": "Filesystem"},
 				{"name": "sonic", "status": "OK", "type": "System"},
 				{"name": "swss:orchagent", "status": "OK", "type": "Process"},
+				{"name": "teamd:orchagent", "status": "OK", "type": "Process"},
 				{"name": "var-log", "status": "OK", "type": "Filesystem"}
 			],
 			"ignore_list": []
@@ -486,6 +493,7 @@ func TestGetShowSystemHealthMonitorList(t *testing.T) {
 				{"name": "root-overlay", "status": "OK", "type": "Filesystem"},
 				{"name": "sonic", "status": "OK", "type": "System"},
 				{"name": "swss:orchagent", "status": "OK", "type": "Process"},
+				{"name": "teamd:orchagent", "status": "OK", "type": "Process"},
 				{"name": "var-log", "status": "OK", "type": "Filesystem"}
 			]
 		}`)
@@ -507,6 +515,7 @@ func TestGetShowSystemHealthMonitorList(t *testing.T) {
 				{"name": "root-overlay", "status": "OK", "type": "Filesystem"},
 				{"name": "sonic", "status": "OK", "type": "System"},
 				{"name": "swss:orchagent", "status": "OK", "type": "Process"},
+				{"name": "teamd:orchagent", "status": "OK", "type": "Process"},
 				{"name": "var-log", "status": "OK", "type": "Filesystem"}
 			]
 		}`)
@@ -528,6 +537,7 @@ func TestGetShowSystemHealthMonitorList(t *testing.T) {
 				{"name": "root-overlay", "status": "OK", "type": "Filesystem"},
 				{"name": "sonic", "status": "OK", "type": "System"},
 				{"name": "swss:orchagent", "status": "OK", "type": "Process"},
+				{"name": "teamd:orchagent", "status": "OK", "type": "Process"},
 				{"name": "var-log", "status": "OK", "type": "Filesystem"}
 			]
 		}`)
@@ -546,7 +556,8 @@ func TestGetShowSystemHealthMonitorList(t *testing.T) {
 				{"name": "Fan1", "status": "OK", "type": "Fan"},
 				{"name": "PSU 1", "status": "OK", "type": "PSU"},
 				{"name": "bgp:orchagent", "status": "OK", "type": "Process"},
-				{"name": "swss:orchagent", "status": "OK", "type": "Process"}
+				{"name": "swss:orchagent", "status": "OK", "type": "Process"},
+				{"name": "teamd:orchagent", "status": "OK", "type": "Process"}
 			]
 		}`)
 		runTestGet(t, ctx, gClient, "SHOW", textPbPath, codes.OK, wantRespVal, true, true)
@@ -637,10 +648,11 @@ func mockDBQueries(t *testing.T, patches *gomonkey.Patches, temperatureFile stri
 	})
 }
 
-// mockHealthySystem sets up gomonkey patches for a fully healthy system.
-// All data is loaded from testdata files. Monit reports all services running,
-// no hardware issues, config file exists with empty ignore lists.
-func mockHealthySystem(t *testing.T) *gomonkey.Patches {
+// mockBaseSystem sets up gomonkey patches for common system mocks
+// (platform, config, multi-asic, docker, etc.) WITHOUT patching host commands
+// or DB queries. Callers add those separately to avoid double-patching.
+// configFile specifies which health config JSON to use for ReadJsonToMap.
+func mockBaseSystem(t *testing.T, configFile string) *gomonkey.Patches {
 	t.Helper()
 	patches := gomonkey.ApplyFunc(sccommon.GetPlatform, func() string {
 		return "x86_64-test_platform"
@@ -650,13 +662,10 @@ func mockHealthySystem(t *testing.T) *gomonkey.Patches {
 		return true
 	})
 
-	configData := readTestFileJSON(t, systemHealthConfigFile)
+	configData := readTestFileJSON(t, configFile)
 	patches.ApplyFunc(sccommon.ReadJsonToMap, func(filePath string) (map[string]interface{}, error) {
 		return configData, nil
 	})
-
-	mockHostCommands(t, patches, mockMonitStatusActive, mockMonitSummaryOK, nil)
-	mockDBQueries(t, patches, systemHealthTemperatureOKFile)
 
 	patches.ApplyFunc(sccommon.IsMultiAsic, func() bool { return false })
 	patches.ApplyFunc(sccommon.IsSupervisor, func() bool { return false })
@@ -674,26 +683,40 @@ func mockHealthySystem(t *testing.T) *gomonkey.Patches {
 	return patches
 }
 
+// mockHealthySystem sets up gomonkey patches for a fully healthy system.
+// All data is loaded from testdata files. Monit reports all services running,
+// no hardware issues, config file exists with empty ignore lists.
+func mockHealthySystem(t *testing.T) *gomonkey.Patches {
+	t.Helper()
+	patches := mockBaseSystem(t, systemHealthConfigFile)
+	mockHostCommands(t, patches, mockMonitStatusActive, mockMonitSummaryOK, nil)
+	mockDBQueries(t, patches, systemHealthTemperatureOKFile)
+	return patches
+}
+
 // mockSystemWithFailedService patches for a system where monit reports a failed process.
 func mockSystemWithFailedService(t *testing.T) *gomonkey.Patches {
 	t.Helper()
-	patches := mockHealthySystem(t)
+	patches := mockBaseSystem(t, systemHealthConfigFile)
 	mockHostCommands(t, patches, mockMonitStatusActive, mockMonitSummarySvcFail, nil)
+	mockDBQueries(t, patches, systemHealthTemperatureOKFile)
 	return patches
 }
 
 // mockSystemWithFailedFilesystem patches for a system where monit reports an inaccessible filesystem.
 func mockSystemWithFailedFilesystem(t *testing.T) *gomonkey.Patches {
 	t.Helper()
-	patches := mockHealthySystem(t)
+	patches := mockBaseSystem(t, systemHealthConfigFile)
 	mockHostCommands(t, patches, mockMonitStatusActive, mockMonitSummaryFsFail, nil)
+	mockDBQueries(t, patches, systemHealthTemperatureOKFile)
 	return patches
 }
 
 // mockSystemWithHardwareFailure patches for a system where ASIC temperature exceeds threshold.
 func mockSystemWithHardwareFailure(t *testing.T) *gomonkey.Patches {
 	t.Helper()
-	patches := mockHealthySystem(t)
+	patches := mockBaseSystem(t, systemHealthConfigFile)
+	mockHostCommands(t, patches, mockMonitStatusActive, mockMonitSummaryOK, nil)
 	mockDBQueries(t, patches, systemHealthTemperatureFailFile)
 	return patches
 }
@@ -702,15 +725,16 @@ func mockSystemWithHardwareFailure(t *testing.T) *gomonkey.Patches {
 // checkByMonit sets monit as Not OK and returns early; checkServices still runs.
 func mockMonitInactive(t *testing.T) *gomonkey.Patches {
 	t.Helper()
-	patches := mockHealthySystem(t)
+	patches := mockBaseSystem(t, systemHealthConfigFile)
 	mockHostCommands(t, patches, mockMonitStatusInactive, "", nil)
+	mockDBQueries(t, patches, systemHealthTemperatureOKFile)
 	return patches
 }
 
 // mockMultipleFailures patches for a system with both a failed service and failed hardware.
 func mockMultipleFailures(t *testing.T) *gomonkey.Patches {
 	t.Helper()
-	patches := mockHealthySystem(t)
+	patches := mockBaseSystem(t, systemHealthConfigFile)
 	mockHostCommands(t, patches, mockMonitStatusActive, mockMonitSummarySvcFail, nil)
 	mockDBQueries(t, patches, systemHealthTemperatureFailFile)
 	return patches
@@ -720,8 +744,9 @@ func mockMultipleFailures(t *testing.T) *gomonkey.Patches {
 // output is too short (fewer than 3 lines), indicating monit is not ready.
 func mockMonitNotReady(t *testing.T) *gomonkey.Patches {
 	t.Helper()
-	patches := mockHealthySystem(t)
+	patches := mockBaseSystem(t, systemHealthConfigFile)
 	mockHostCommands(t, patches, mockMonitStatusActive, mockMonitSummaryNotReady, nil)
+	mockDBQueries(t, patches, systemHealthTemperatureOKFile)
 	return patches
 }
 
@@ -730,16 +755,11 @@ func mockMonitNotReady(t *testing.T) *gomonkey.Patches {
 // because its category ("CustomHardware") is not "Services".
 func mockUserDefinedCheckerFailure(t *testing.T) *gomonkey.Patches {
 	t.Helper()
-	patches := mockHealthySystem(t)
-
-	configData := readTestFileJSON(t, systemHealthConfigUserDefinedFile)
-	patches.ApplyFunc(sccommon.ReadJsonToMap, func(filePath string) (map[string]interface{}, error) {
-		return configData, nil
-	})
-
+	patches := mockBaseSystem(t, systemHealthConfigUserDefinedFile)
 	mockHostCommands(t, patches, mockMonitStatusActive, mockMonitSummaryOK, map[string]string{
 		"check_my_hardware.py": mockUserDefinedCheckerOutput,
 	})
+	mockDBQueries(t, patches, systemHealthTemperatureOKFile)
 
 	return patches
 }
@@ -749,13 +769,7 @@ func mockUserDefinedCheckerFailure(t *testing.T) *gomonkey.Patches {
 // container_checker is Not Running but ignored; ASIC temperature is too hot but "asic" is ignored.
 func mockSystemWithIgnoreConfig(t *testing.T) *gomonkey.Patches {
 	t.Helper()
-	patches := mockHealthySystem(t)
-
-	configData := readTestFileJSON(t, systemHealthConfigIgnoreFile)
-	patches.ApplyFunc(sccommon.ReadJsonToMap, func(filePath string) (map[string]interface{}, error) {
-		return configData, nil
-	})
-
+	patches := mockBaseSystem(t, systemHealthConfigIgnoreFile)
 	mockHostCommands(t, patches, mockMonitStatusActive, mockMonitSummarySvcFail, nil)
 	mockDBQueries(t, patches, systemHealthTemperatureFailFile)
 

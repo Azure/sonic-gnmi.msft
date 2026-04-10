@@ -1,4 +1,4 @@
-package helpers
+package health_checker
 
 import (
 	"os"
@@ -73,7 +73,7 @@ func (c *Config) LoadConfig() {
 	2. If there is any format issues in configuration file, current config entries will
 	   reset to default value.
 	:return:
-	Note: Go implementation does not track last_mtime for incremental reload.
+	Note: Go implementation does not track last_mtime for incremental reload - used for daemon logic.
 	The file is re-read on every call.*/
 	// the config data, catch the panic and reset to defaults.
 	defer func() {
@@ -91,10 +91,10 @@ func (c *Config) LoadConfig() {
 	}
 
 	c.ConfigData = configData
-	c.IgnoreServices = getListData(configData, "services_to_ignore")
-	c.IgnoreDevices = getListData(configData, "devices_to_ignore")
-	c.IncludeDevices = getListData(configData, "include_devices")
-	c.UserDefinedCheckers = getListData(configData, "user_defined_checkers")
+	c.IgnoreServices = c.getListData(configData, "services_to_ignore")
+	c.IgnoreDevices = c.getListData(configData, "devices_to_ignore")
+	c.IncludeDevices = c.getListData(configData, "include_devices")
+	c.UserDefinedCheckers = c.getListData(configData, "user_defined_checkers")
 }
 
 func (c *Config) reset() {
@@ -106,14 +106,6 @@ func (c *Config) reset() {
 	c.IncludeDevices = nil
 	c.UserDefinedCheckers = nil
 }
-
-// LoadHealthConfig is a convenience function that creates a Config and loads it.
-// Kept for backward compatibility with callers that don't use HealthCheckerManager.
-/*func LoadHealthConfig() *Config {
-	config := NewConfig()
-	config.LoadConfig()
-	return config
-}*/
 
 func (c *Config) GetLEDColor(status string) string {
 	/* GetLEDColor gets desired LED color according to the input status.
@@ -132,24 +124,24 @@ func (c *Config) GetLEDColor(status string) string {
 	return DefaultLEDConfig[status]
 }
 
-func getListData(configData map[string]interface{}, key string) map[string]struct{} {
+func (c *Config) getListData(configData map[string]interface{}, key string) map[string]struct{} {
 	/* getListData gets list type configuration data by key and removes duplicate element.
 	:param key: Key of the configuration entry.
-	:return: A set of configuration data if key exists.
-	Note: In Go this is a package-level function taking configData as a parameter
-	instead of a method on Config, since Go uses map[string]struct{} as a set.*/
-	result := make(map[string]struct{})
+	:return: A set of configuration data if key exists, nil otherwise.
+	Returns nil when the key is missing or the value is not a list,
+	matching Python's return of None.*/
 	if configData == nil {
-		return result
+		return nil
 	}
 	val, ok := configData[key]
 	if !ok {
-		return result
+		return nil
 	}
 	rawList, ok := val.([]interface{})
-	if !ok || len(rawList) == 0 {
-		return result
+	if !ok {
+		return nil
 	}
+	result := make(map[string]struct{})
 	for _, item := range rawList {
 		if s, ok := item.(string); ok {
 			result[s] = struct{}{}
@@ -158,12 +150,21 @@ func getListData(configData map[string]interface{}, key string) map[string]struc
 	return result
 }
 
-func GetBootupTimeout() int {
+func (c *Config) GetBootupTimeout() (result int) {
 	/* GetBootupTimeout gets boot up timeout from monit configuration file.
 	1. If monit configuration file does not exist, return default value.
 	2. If there is any exception while parsing monit config, return default value.
-	:return: Integer timeout value.
-	Note: In Go this is a package-level function instead of a method on Config.*/
+	:return: Integer timeout value.*/
+	if !common.FileExists(MonitConfigFile) {
+		return DefaultBootupTimeout
+	}
+
+	defer func() {
+		if r := recover(); r != nil {
+			result = DefaultBootupTimeout
+		}
+	}()
+
 	data, err := os.ReadFile(MonitConfigFile)
 	if err != nil {
 		return DefaultBootupTimeout
@@ -171,19 +172,25 @@ func GetBootupTimeout() int {
 
 	lines := strings.Split(string(data), "\n")
 	for _, line := range lines {
+		if line == "" {
+			continue
+		}
+
 		line = strings.TrimSpace(line)
 		if line == "" {
 			continue
 		}
-		// Skip comment lines
-		if strings.HasPrefix(line, "#") {
+
+		pos := strings.Index(line, "#")
+		if pos == 0 {
 			continue
 		}
-		// Strip inline comments
-		if pos := strings.Index(line, "#"); pos >= 0 {
+		if pos != -1 {
 			line = line[:pos]
 		}
-		if pos := strings.Index(line, MonitStartDelayConfig); pos != -1 {
+
+		pos = strings.Index(line, MonitStartDelayConfig)
+		if pos != -1 {
 			valStr := strings.TrimSpace(line[pos+len(MonitStartDelayConfig):])
 			if val, err := strconv.Atoi(valStr); err == nil {
 				return val

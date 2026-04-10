@@ -11,14 +11,16 @@ import (
 /*
 UserDefinedChecker allows user to implement a script or program to perform
 customize check for particular system. In order to enable a user defined checker:
-	1. Add an element to "user_defined_checkers" in the configuration file.
-	The element must be a command string that can be executed by shell.
-	For example: "python my_checker.py".
-	2. The command output must match the following pattern:
 
-	${UserDefinedCategory}
-	${Object1}:${ObjectStatusMessage1}
-	${Object2}:${ObjectStatusMessage2}
+ 1. Add an element to "user_defined_checkers" in the configuration file.
+    The element must be a command string that can be executed by shell.
+    For example: "python my_checker.py".
+
+ 2. The command output must match the following pattern:
+
+    ${UserDefinedCategory}
+    ${Object1}:${ObjectStatusMessage1}
+    ${Object2}:${ObjectStatusMessage2}
 
 An example of the command output:
 

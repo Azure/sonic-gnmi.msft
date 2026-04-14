@@ -80,7 +80,7 @@ type Server struct {
 	udsListener   net.Listener
 	config        *Config
 	cMu           sync.Mutex
-	clients       map[string]*Client
+	clients       map[ClientKey]*Client
 	certProviders []certprovider.Provider
 	// SaveStartupConfig points to a function that is called to save changes of
 	// configuration to a file. By default it points to an empty function -
@@ -217,22 +217,23 @@ type Config struct {
 	ImgDir     string
 	GetOptions func(*Config) ([]grpc.ServerOption, []certprovider.Provider, error)
 	// gnsi.certz mTLS flags
-	CaCertLnk       string // Path to symlink pointing to current CA certificate.
-	SrvCertLnk      string // Path to symlink pointing to current server's certificate.
-	SrvKeyLnk       string // Path to symlink pointing to current server's private key.
-	CaCertFile      string // Path to the first CA certificate.
-	SrvCertFile     string // Path to the first server's certificate.
-	SrvKeyFile      string // Path to the first server's private key.
-	CertCRLConfig   string // Path to the CRL directory. Disable if empty.
-	IntManFile      string // Path to the Integrity Manifest file.
-	CertzMetaFile   string // Path to JSON file with gRPC credential metadata.
-	FedPolicyFile   string // Path to federation policy file.
-	AuthzPolicy     bool   // Enable authz policy.
-	AuthzPolicyFile string // Path to JSON file with authz policies.
-	AuthzMetaFile   string // Path to JSON file with authz metadata.
-	PathzPolicy     bool   // Enable gNMI pathz policy.
-	PathzPolicyFile string // Path to gNMI pathz policy file.
-	PathzMetaFile   string // Path to JSON file with pathz metadata.
+	CaCertLnk                string // Path to symlink pointing to current CA certificate.
+	SrvCertLnk               string // Path to symlink pointing to current server's certificate.
+	SrvKeyLnk                string // Path to symlink pointing to current server's private key.
+	CaCertFile               string // Path to the first CA certificate.
+	SrvCertFile              string // Path to the first server's certificate.
+	SrvKeyFile               string // Path to the first server's private key.
+	CertCRLConfig            string // Path to the CRL directory. Disable if empty.
+	IntManFile               string // Path to the Integrity Manifest file.
+	CertzMetaFile            string // Path to JSON file with gRPC credential metadata.
+	FedPolicyFile            string // Path to federation policy file.
+	AuthzPolicy              bool   // Enable authz policy.
+	AuthzPolicyFile          string // Path to JSON file with authz policies.
+	AuthzMetaFile            string // Path to JSON file with authz metadata.
+	PathzPolicy              bool   // Enable gNMI pathz policy.
+	PathzPolicyFile          string // Path to gNMI pathz policy file.
+	PathzMetaFile            string // Path to JSON file with pathz metadata.
+	EnableStreamMultiplexing bool   // Allow multiple Subscribe RPCs on a single TCP connection.
 }
 
 // DBusOSBackend is a concrete implementation of OSBackend
@@ -511,7 +512,7 @@ func NewServer(config *Config, tlsOpts []grpc.ServerOption, commonOpts []grpc.Se
 
 	srv := &Server{
 		config:            config,
-		clients:           map[string]*Client{},
+		clients:           map[ClientKey]*Client{},
 		certProviders:     providers,
 		SaveStartupConfig: saveOnSetDisabled,
 		// ReqFromMaster point to a function that is called to verify if
@@ -554,10 +555,12 @@ func NewServer(config *Config, tlsOpts []grpc.ServerOption, commonOpts []grpc.Se
 
 		srv.lis, err = net.Listen("tcp", fmt.Sprintf(":%d", config.Port))
 		if err != nil {
-			return nil, fmt.Errorf("failed to open listener port %d: %v", config.Port, err)
+			log.Warningf("Failed to open listener port %d: %v; disabling TCP listener", config.Port, err)
+			srv.s.Stop()
+			srv.s = nil
+		} else {
+			registerAllServices(srv.s, srv, fileSrv, osSrv, containerzSrv, debugSrv, healthzSrv, certzSrv, authzSrv, pathzSrv)
 		}
-
-		registerAllServices(srv.s, srv, fileSrv, osSrv, containerzSrv, debugSrv, healthzSrv, certzSrv, authzSrv, pathzSrv)
 	}
 
 	// UDS Server (UnixSocket set)
@@ -570,30 +573,29 @@ func NewServer(config *Config, tlsOpts []grpc.ServerOption, commonOpts []grpc.Se
 		// during the window between socket creation and permission setting)
 		socketDir := filepath.Dir(config.UnixSocket)
 		if err := os.MkdirAll(socketDir, 0750); err != nil {
-			if srv.lis != nil {
-				srv.lis.Close()
-			}
-			return nil, fmt.Errorf("failed to create socket directory %s: %v", socketDir, err)
-		}
-
-		os.Remove(config.UnixSocket) // Remove stale socket
-		srv.udsListener, err = net.Listen("unix", config.UnixSocket)
-		if err != nil {
-			// Cleanup TCP listener if it was created
-			if srv.lis != nil {
-				srv.lis.Close()
-			}
-			return nil, fmt.Errorf("failed to listen on unix socket %s: %v", config.UnixSocket, err)
-		}
-		// Restrict socket access to container user (root) and group
-		if err := os.Chmod(config.UnixSocket, 0660); err != nil {
-			log.Warningf("Failed to set permissions on unix socket %s: %v; disabling UDS listener", config.UnixSocket, err)
-			srv.udsListener.Close()
-			os.Remove(config.UnixSocket)
-			srv.udsListener = nil
+			log.Warningf("Failed to create socket directory %s: %v; disabling UDS listener", socketDir, err)
+			srv.udsServer.Stop()
 			srv.udsServer = nil
 		} else {
-			registerAllServices(srv.udsServer, srv, fileSrv, osSrv, containerzSrv, debugSrv, healthzSrv, certzSrv, authzSrv, pathzSrv)
+			os.Remove(config.UnixSocket) // Remove stale socket
+			srv.udsListener, err = net.Listen("unix", config.UnixSocket)
+			if err != nil {
+				log.Warningf("Failed to listen on unix socket %s: %v; disabling UDS listener", config.UnixSocket, err)
+				srv.udsServer.Stop()
+				srv.udsServer = nil
+			} else {
+				// Restrict socket access to container user (root) and group
+				if err := os.Chmod(config.UnixSocket, 0660); err != nil {
+					log.Warningf("Failed to set permissions on unix socket %s: %v; disabling UDS listener", config.UnixSocket, err)
+					srv.udsListener.Close()
+					os.Remove(config.UnixSocket)
+					srv.udsListener = nil
+					srv.udsServer.Stop()
+					srv.udsServer = nil
+				} else {
+					registerAllServices(srv.udsServer, srv, fileSrv, osSrv, containerzSrv, debugSrv, healthzSrv, certzSrv, authzSrv, pathzSrv)
+				}
+			}
 		}
 	}
 
@@ -608,41 +610,53 @@ func NewServer(config *Config, tlsOpts []grpc.ServerOption, commonOpts []grpc.Se
 
 // Serve will start the Server serving and block until closed.
 // If both TCP and UDS listeners are configured, both are served concurrently.
+// A failure in one listener does not affect the other; Serve blocks until all
+// active listeners have stopped.
 func (srv *Server) Serve() error {
 	if srv.s == nil && srv.udsServer == nil {
 		return fmt.Errorf("Serve() failed: not initialized")
 	}
 
-	errChan := make(chan error, 2)
+	var wg sync.WaitGroup
+	var mu sync.Mutex
+	var errs []string
 
 	// Start TCP server if configured
 	if srv.s != nil && srv.lis != nil {
+		wg.Add(1)
 		go func() {
+			defer wg.Done()
 			log.V(1).Infof("Starting TCP server on %s", srv.lis.Addr().String())
-			err := srv.s.Serve(srv.lis)
-			if err != nil {
-				errChan <- fmt.Errorf("TCP server: %w", err)
-			} else {
-				errChan <- nil
+			if err := srv.s.Serve(srv.lis); err != nil {
+				log.Errorf("TCP server error: %v", err)
+				mu.Lock()
+				errs = append(errs, fmt.Sprintf("TCP server: %v", err))
+				mu.Unlock()
 			}
 		}()
 	}
 
 	// Start UDS server if configured
 	if srv.udsServer != nil && srv.udsListener != nil {
+		wg.Add(1)
 		go func() {
+			defer wg.Done()
 			log.V(1).Infof("Starting UDS server on %s", srv.udsListener.Addr().String())
-			err := srv.udsServer.Serve(srv.udsListener)
-			if err != nil {
-				errChan <- fmt.Errorf("UDS server: %w", err)
-			} else {
-				errChan <- nil
+			if err := srv.udsServer.Serve(srv.udsListener); err != nil {
+				log.Errorf("UDS server error: %v", err)
+				mu.Lock()
+				errs = append(errs, fmt.Sprintf("UDS server: %v", err))
+				mu.Unlock()
 			}
 		}()
 	}
 
-	// Block until first error (or server stop)
-	return <-errChan
+	wg.Wait()
+
+	if len(errs) > 0 {
+		return fmt.Errorf("%s", strings.Join(errs, "; "))
+	}
+	return nil
 }
 
 // ForceStop stops the server immediately without waiting for connections to close.
@@ -801,22 +815,28 @@ func (s *Server) Subscribe(stream gnmipb.GNMI_SubscribeServer) error {
 	*/
 
 	c := NewClient(pr.Addr)
+	c.enableStreamMultiplexing = s.config.EnableStreamMultiplexing
 
 	c.setLogLevel(s.config.LogLevel)
 	c.setConnectionManager(s.config.Threshold)
 
+	clientKey := c.Key()
+
 	s.cMu.Lock()
-	if oc, ok := s.clients[c.String()]; ok {
+	log.V(1).Infof("New Subscribe RPC: client %s (peer: %s, total active: %d)", c.String(), pr.Addr, len(s.clients))
+	if oc, ok := s.clients[clientKey]; ok {
 		log.V(2).Infof("Delete duplicate client %s", oc)
 		oc.Close()
-		delete(s.clients, c.String())
+		delete(s.clients, clientKey)
 	}
-	s.clients[c.String()] = c
+	s.clients[clientKey] = c
+	log.V(1).Infof("Client %s registered (total active: %d)", c.String(), len(s.clients))
 	s.cMu.Unlock()
 
 	err := c.Run(stream, s.config)
 	s.cMu.Lock()
-	delete(s.clients, c.String())
+	log.V(1).Infof("Client %s completed, removing (total active: %d)", c.String(), len(s.clients)-1)
+	delete(s.clients, clientKey)
 	s.cMu.Unlock()
 
 	log.Flush()
@@ -920,6 +940,15 @@ func (s *Server) Get(ctx context.Context, req *gnmipb.GetRequest) (*gnmipb.GetRe
 		authTarget = "gnmi_show"
 	} else if targetDbName, ok, _, _ := sdc.IsTargetDb(target); ok {
 		dc, err = sdc.NewDbClient(paths, prefix)
+		if err == nil {
+			// For Get requests, validate that all requested keys exist in Redis.
+			// NewDbClient allows non-existent paths (needed for Subscribe to monitor
+			// future data per gNMI spec), but Get should return NOT_FOUND immediately
+			// if any path doesn't exist (per gNMI spec Section 3.3.4).
+			if dbClient, ok := dc.(*sdc.DbClient); ok {
+				err = dbClient.ValidatePaths()
+			}
+		}
 		authTarget = "gnmi_" + targetDbName
 	} else {
 		if origin == "" {
@@ -948,7 +977,6 @@ func (s *Server) Get(ctx context.Context, req *gnmipb.GetRequest) (*gnmipb.GetRe
 		common_utils.IncCounter(common_utils.GNMI_GET_FAIL)
 		return nil, err
 	}
-	notifications := make([]*gnmipb.Notification, len(paths))
 	spbValues, err := dc.Get(nil)
 	if err != nil {
 		common_utils.IncCounter(common_utils.GNMI_GET_FAIL)
@@ -958,17 +986,18 @@ func (s *Server) Get(ctx context.Context, req *gnmipb.GetRequest) (*gnmipb.GetRe
 		return nil, status.Error(codes.NotFound, err.Error())
 	}
 
-	for index, spbValue := range spbValues {
+	notifications := make([]*gnmipb.Notification, 0, len(spbValues))
+	for _, spbValue := range spbValues {
 		update := &gnmipb.Update{
 			Path: spbValue.GetPath(),
 			Val:  spbValue.GetVal(),
 		}
 
-		notifications[index] = &gnmipb.Notification{
+		notifications = append(notifications, &gnmipb.Notification{
 			Timestamp: spbValue.GetTimestamp(),
 			Prefix:    prefix,
 			Update:    []*gnmipb.Update{update},
-		}
+		})
 	}
 	return &gnmipb.GetResponse{Notification: notifications}, nil
 }

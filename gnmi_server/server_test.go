@@ -332,7 +332,7 @@ func TestPFCWDErrors(t *testing.T) {
 	})
 	defer mock.Reset()
 
-	fileName := "../testdata/COUNTERS:Ethernet_wildcard_alias.txt"
+	fileName := "../testdata/COUNTERS:Ethernet_wildcard_alias_expected.txt"
 	countersEthernetWildcardByte, err := ioutil.ReadFile(fileName)
 	if err != nil {
 		t.Fatalf("read file %v err: %v", fileName, err)
@@ -1746,7 +1746,7 @@ func runGnmiTestGet(t *testing.T, namespace string) {
 		t.Fatalf("read file %v err: %v", fileName, err)
 	}
 
-	fileName = "../testdata/COUNTERS:Ethernet_wildcard_alias.txt"
+	fileName = "../testdata/COUNTERS:Ethernet_wildcard_alias_expected.txt"
 	countersEthernetWildcardByte, err := ioutil.ReadFile(fileName)
 	if err != nil {
 		t.Fatalf("read file %v err: %v", fileName, err)
@@ -1758,7 +1758,7 @@ func runGnmiTestGet(t *testing.T, namespace string) {
 		t.Fatalf("read file %v err: %v", fileName, err)
 	}
 
-	fileName = "../testdata/COUNTERS:Ethernet_wildcard_Pfcwd_alias.txt"
+	fileName = "../testdata/COUNTERS:Ethernet_wildcard_Pfcwd_alias_expected.txt"
 	countersEthernetWildcardPfcwdByte, err := ioutil.ReadFile(fileName)
 	if err != nil {
 		t.Fatalf("read file %v err: %v", fileName, err)
@@ -1814,7 +1814,7 @@ func runGnmiTestGet(t *testing.T, namespace string) {
 	}
 
 	// PORT_PHY_ATTR test vectors
-	fileName = "../testdata/PORT_PHY_ATTR:Ethernet_wildcard.json"
+	fileName = "../testdata/PORT_PHY_ATTR:Ethernet_wildcard_expected.json"
 	phyAttrWildcardByte, err := os.ReadFile(fileName)
 	if err != nil {
 		t.Fatalf("failed to open %s, err: %v", fileName, err)
@@ -2236,9 +2236,11 @@ func TestGnmiGetMultiNs(t *testing.T) {
 	if err != nil {
 		t.Fatalf("error Setting up MultiNamespace files with err %T", err)
 	}
+	sdc.ResetRedisClients()
 
 	/* https://www.gopherguides.com/articles/test-cleanup-in-go-1-14*/
 	t.Cleanup(func() {
+		sdc.ResetRedisClients()
 		if err := test_utils.CleanUpMultiNamespace(); err != nil {
 			t.Fatalf("error Cleaning up MultiNamespace files with err %T", err)
 
@@ -2423,7 +2425,7 @@ func createQueueCountersJsonObjects(ethNum int, queueNum int, updatedCounters ma
 
 	ethName := fmt.Sprintf("Ethernet%d", ethNum)
 	queueName := fmt.Sprintf("%s:%d", ethName, queueNum)
-	queueFile := fmt.Sprintf("../testdata/COUNTERS:%s:Queues.txt", ethName)
+	queueFile := fmt.Sprintf("../testdata/COUNTERS:%s:Queues_expected.txt", ethName)
 	queueCountersByte, err := ioutil.ReadFile(queueFile)
 	if err != nil {
 		err = fmt.Errorf("read file %v err: %v", queueFile, err)
@@ -2437,7 +2439,7 @@ func createQueueCountersJsonObjects(ethNum int, queueNum int, updatedCounters ma
 
 	// Alias translation
 	queueAliasName := fmt.Sprintf("%s/1:%d", ethName, queueNum)
-	queueAliasFile := fmt.Sprintf("../testdata/COUNTERS:%s:Queues_alias.txt", ethName)
+	queueAliasFile := fmt.Sprintf("../testdata/COUNTERS:%s:Queues_alias_expected.txt", ethName)
 	queueAliasCountersByte, err := ioutil.ReadFile(queueAliasFile)
 	if err != nil {
 		err = fmt.Errorf("read file %v err: %v", queueAliasFile, err)
@@ -2559,7 +2561,7 @@ func runTestSubscribe(t *testing.T, namespace string) {
 	tmp5.(map[string]interface{})["Ethernet68/1:3"].(map[string]interface{})["PFC_WD_QUEUE_STATS_DEADLOCK_DETECTED"] = "1"
 	countersEthernet68PfcwdAliasPollUpdate := tmp5
 
-	fileName = "../testdata/COUNTERS:Ethernet_wildcard_alias.txt"
+	fileName = "../testdata/COUNTERS:Ethernet_wildcard_alias_expected.txt"
 	countersEthernetWildcardByte, err := ioutil.ReadFile(fileName)
 	if err != nil {
 		t.Fatalf("read file %v err: %v", fileName, err)
@@ -2569,7 +2571,7 @@ func runTestSubscribe(t *testing.T, namespace string) {
 	// Will have "test_field" : "test_value" in Ethernet68,
 	countersEtherneWildcardJsonUpdate := map[string]interface{}{"Ethernet68/1": countersEthernet68JsonUpdate}
 
-	fileName = "../testdata/RATES:Ethernet_wildcard_alias.txt"
+	fileName = "../testdata/RATES:Ethernet_wildcard_alias_expected.txt"
 	ratesEthernetWildcardByte, err := ioutil.ReadFile(fileName)
 	if err != nil {
 		t.Fatalf("read file %v err: %v", fileName, err)
@@ -2607,7 +2609,7 @@ func runTestSubscribe(t *testing.T, namespace string) {
 	allPortPfcJsonUpdate["Ethernet68/1"] = pfc7Map
 
 	// for Ethernet*/Pfcwd subscription
-	fileName = "../testdata/COUNTERS:Ethernet_wildcard_Pfcwd_alias.txt"
+	fileName = "../testdata/COUNTERS:Ethernet_wildcard_Pfcwd_alias_expected.txt"
 	countersEthernetWildPfcwdByte, err := ioutil.ReadFile(fileName)
 	if err != nil {
 		t.Fatalf("read file %v err: %v", fileName, err)
@@ -2655,7 +2657,7 @@ func runTestSubscribe(t *testing.T, namespace string) {
 
 	// PORT_PHY_ATTR wildcard + single entry update for subscriptions
 	var phyAttrWildcardJson interface{}
-	fileName = "../testdata/PORT_PHY_ATTR:Ethernet_wildcard.json"
+	fileName = "../testdata/PORT_PHY_ATTR:Ethernet_wildcard_expected.json"
 	phyAttrWildcardJsonByte, err := ioutil.ReadFile(fileName)
 	if err != nil {
 		t.Fatalf("failed to open %s, err: %v", fileName, err)
@@ -2673,7 +2675,7 @@ func runTestSubscribe(t *testing.T, namespace string) {
 	singlePhyAttrJsonUpdate := make(map[string]interface{})
 	singlePhyAttrJsonUpdate["Ethernet68"] = tmp
 
-	fileName = "../testdata/COUNTERS:Ethernet_wildcard_Queues_alias.txt"
+	fileName = "../testdata/COUNTERS:Ethernet_wildcard_Queues_alias_expected.txt"
 	countersEthernetWildQueuesByte, err := ioutil.ReadFile(fileName)
 	if err != nil {
 		t.Fatalf("read file %v err: %v", fileName, err)
@@ -2713,7 +2715,7 @@ func runTestSubscribe(t *testing.T, namespace string) {
 
 	///////////////////////////////////////////////////////////////////////////////////////////////
 
-	fileName = "../testdata/PERIODIC_WATERMARKS:Ethernet_wildcard:PriorityGroups_alias.txt"
+	fileName = "../testdata/PERIODIC_WATERMARKS:Ethernet_wildcard:PriorityGroups_alias_expected.txt"
 	pgWatermarksEthernetWildByte, err := ioutil.ReadFile(fileName)
 	if err != nil {
 		t.Fatalf("read file %v err: %v", fileName, err)
@@ -2721,7 +2723,7 @@ func runTestSubscribe(t *testing.T, namespace string) {
 	var pgWatermarksEthernetWildJson interface{}
 	json.Unmarshal(pgWatermarksEthernetWildByte, &pgWatermarksEthernetWildJson)
 
-	fileName = "../testdata/PERIODIC_WATERMARKS:Ethernet16:PriorityGroups.txt"
+	fileName = "../testdata/PERIODIC_WATERMARKS:Ethernet16:PriorityGroups_expected.txt"
 	pgWatermarksEthernet16Byte, err := ioutil.ReadFile(fileName)
 	if err != nil {
 		t.Fatalf("read file %v err: %v", fileName, err)
@@ -2738,7 +2740,7 @@ func runTestSubscribe(t *testing.T, namespace string) {
 	pgWatermarksEthernet16JsonUpdate["Ethernet16:5"] = eth16_5
 
 	// Alias translation for query PERIODIC_WATERMARKS:Ethernet16/1:PriorityGroups
-	fileName = "../testdata/PERIODIC_WATERMARKS:Ethernet16:PriorityGroups_alias.txt"
+	fileName = "../testdata/PERIODIC_WATERMARKS:Ethernet16:PriorityGroups_alias_expected.txt"
 	pgWatermarksEthernet16AliasByte, err := ioutil.ReadFile(fileName)
 	if err != nil {
 		t.Fatalf("read file %v err: %v", fileName, err)
@@ -4128,9 +4130,11 @@ func TestGnmiSubscribeMultiNs(t *testing.T) {
 	if err != nil {
 		t.Fatalf("error Setting up MultiNamespace files with err %T", err)
 	}
+	sdc.ResetRedisClients()
 
 	/* https://www.gopherguides.com/articles/test-cleanup-in-go-1-14*/
 	t.Cleanup(func() {
+		sdc.ResetRedisClients()
 		if err := test_utils.CleanUpMultiNamespace(); err != nil {
 			t.Fatalf("error Cleaning up MultiNamespace files with err %T", err)
 
@@ -5082,10 +5086,7 @@ func TestNonExistentTableNoError(t *testing.T) {
 				Queries: []client.Path{{"TRANSCEIVER_DOM_SENSOR"}},
 				TLS:     &tls.Config{InsecureSkipVerify: true},
 			},
-			wantNoti: []client.Notification{
-				client.Update{Path: []string{"STATE_DB", "TRANSCEIVER_DOM_SENSOR"}, TS: time.Unix(0, 200), Val: transceiverDomSensorTableJson},
-				client.Update{Path: []string{"STATE_DB", "TRANSCEIVER_DOM_SENSOR"}, TS: time.Unix(0, 200), Val: transceiverDomSensorTableJson},
-			},
+			wantNoti: []client.Notification{},
 		},
 	}
 	namespace, _ := sdcfg.GetDbDefaultNamespace()
@@ -5101,10 +5102,7 @@ func TestNonExistentTableNoError(t *testing.T) {
 			var gotNoti []client.Notification
 			q.NotificationHandler = func(n client.Notification) error {
 				mutexNoti.Lock()
-				if nn, ok := n.(client.Update); ok {
-					nn.TS = time.Unix(0, 200)
-					gotNoti = append(gotNoti, nn)
-				}
+				gotNoti = append(gotNoti, n)
 				mutexNoti.Unlock()
 				return nil
 			}
@@ -5133,10 +5131,11 @@ func TestNonExistentTableNoError(t *testing.T) {
 				t.Errorf("expected non zero notifications")
 			}
 
-			if diff := pretty.Compare(tt.wantNoti, gotNoti); diff != "" {
-				t.Log("\n Want: \n", tt.wantNoti)
-				t.Log("\n Got: \n", gotNoti)
-				t.Errorf("unexpected updates: \n%s", diff)
+			// Verify no updates are sent for non-existent table, only syncs
+			for _, n := range gotNoti {
+				if _, isUpdate := n.(client.Update); isUpdate {
+					t.Errorf("unexpected Update notification for non-existent table")
+				}
 			}
 
 			mutexNoti.Unlock()
@@ -5464,7 +5463,7 @@ func TestTableData2MsiUseKey(t *testing.T) {
 	newMsi := make(map[string]interface{})
 	sdc.TableData2Msi(&tblPath, true, nil, &newMsi)
 	newMsiData, _ := json.MarshalIndent(newMsi, "", "  ")
-	t.Logf(string(newMsiData))
+	t.Logf("%s", string(newMsiData))
 	expectedMsi := map[string]interface{}{
 		"10.0.0.57": map[string]interface{}{
 			"peerType": "e-BGP",
@@ -5472,7 +5471,7 @@ func TestTableData2MsiUseKey(t *testing.T) {
 		},
 	}
 	expectedMsiData, _ := json.MarshalIndent(expectedMsi, "", "  ")
-	t.Logf(string(expectedMsiData))
+	t.Logf("%s", string(expectedMsiData))
 
 	if !reflect.DeepEqual(newMsi, expectedMsi) {
 		t.Errorf("Msi data does not match for use key = true")
@@ -5680,9 +5679,11 @@ func TestGNMINativeMultiNamespace(t *testing.T) {
 	if err != nil {
 		t.Fatalf("error Setting up MultiNamespace files with err %T", err)
 	}
+	sdc.ResetRedisClients()
 
 	/* https://www.gopherguides.com/articles/test-cleanup-in-go-1-14*/
 	t.Cleanup(func() {
+		sdc.ResetRedisClients()
 		if err := test_utils.CleanUpMultiNamespace(); err != nil {
 			t.Fatalf("error Cleaning up MultiNamespace files with err %T", err)
 
@@ -6905,4 +6906,266 @@ func TestSrvTestConfigLogsAndReturns(t *testing.T) {
 			t.Errorf("Return values must be nil")
 		}
 	})
+}
+
+func TestTCPListenerFailsUDSContinues(t *testing.T) {
+	// Pre-bind a port so the server's TCP listener fails to bind
+	blocker, err := net.Listen("tcp", ":18282")
+	if err != nil {
+		t.Fatalf("Failed to pre-bind port: %v", err)
+	}
+	defer blocker.Close()
+
+	socketPath := "/tmp/gnmi_test_tcp_fail_uds.sock"
+	os.Remove(socketPath)
+	defer os.Remove(socketPath)
+
+	cfg := &Config{
+		Port:       18282, // Same port as blocker — will fail
+		UnixSocket: socketPath,
+		Threshold:  100,
+	}
+	s, err := NewServer(cfg, nil, nil)
+	if err != nil {
+		t.Fatalf("NewServer should succeed with UDS when TCP fails: %v", err)
+	}
+	if s == nil {
+		t.Fatal("Server should not be nil")
+	}
+	if s.s != nil {
+		t.Error("TCP server should be nil when TCP bind fails")
+	}
+	if s.lis != nil {
+		t.Error("TCP listener should be nil when TCP bind fails")
+	}
+	if s.udsServer == nil {
+		t.Error("UDS server should not be nil")
+	}
+	if s.udsListener == nil {
+		t.Error("UDS listener should not be nil")
+	}
+
+	s.ForceStop()
+}
+
+func TestUDSListenerFailsTCPContinues(t *testing.T) {
+	// Use a socket path under /dev/null (a file, not a directory) to force
+	// MkdirAll failure when creating the socket directory
+	socketPath := "/dev/null/gnmi_test.sock"
+
+	certificate, err := testcert.NewCert()
+	if err != nil {
+		t.Fatalf("could not load server key pair: %s", err)
+	}
+	tlsCfg := &tls.Config{
+		ClientAuth:   tls.RequestClientCert,
+		Certificates: []tls.Certificate{certificate},
+	}
+	tlsOpts := []grpc.ServerOption{grpc.Creds(credentials.NewTLS(tlsCfg))}
+
+	cfg := &Config{
+		Port:       18283,
+		UnixSocket: socketPath,
+		Threshold:  100,
+	}
+	s, err := NewServer(cfg, tlsOpts, nil)
+	if err != nil {
+		t.Fatalf("NewServer should succeed with TCP when UDS fails: %v", err)
+	}
+	if s == nil {
+		t.Fatal("Server should not be nil")
+	}
+	if s.s == nil {
+		t.Error("TCP server should not be nil")
+	}
+	if s.lis == nil {
+		t.Error("TCP listener should not be nil")
+	}
+	if s.udsServer != nil {
+		t.Error("UDS server should be nil when UDS setup fails")
+	}
+	if s.udsListener != nil {
+		t.Error("UDS listener should be nil when UDS setup fails")
+	}
+
+	s.ForceStop()
+}
+
+func TestBothListenersFail(t *testing.T) {
+	// Pre-bind port to force TCP failure
+	blocker, err := net.Listen("tcp", ":18284")
+	if err != nil {
+		t.Fatalf("Failed to pre-bind port: %v", err)
+	}
+	defer blocker.Close()
+
+	// Use invalid socket path to force UDS failure
+	socketPath := "/dev/null/gnmi_test.sock"
+
+	cfg := &Config{
+		Port:       18284,
+		UnixSocket: socketPath,
+		Threshold:  100,
+	}
+	s, err := NewServer(cfg, nil, nil)
+	if err == nil {
+		s.ForceStop()
+		t.Error("NewServer should fail when both listeners fail")
+	}
+	if s != nil {
+		t.Error("Server should be nil when both listeners fail")
+	}
+}
+
+func TestServeBlocksWhenOneListenerCloses(t *testing.T) {
+	// Verify that Serve() does not return when only one listener fails;
+	// it should keep blocking until all listeners have stopped.
+	socketPath := "/tmp/gnmi_test_serve_block.sock"
+	os.Remove(socketPath)
+	defer os.Remove(socketPath)
+
+	certificate, err := testcert.NewCert()
+	if err != nil {
+		t.Fatalf("could not load server key pair: %s", err)
+	}
+	tlsCfg := &tls.Config{
+		ClientAuth:   tls.RequestClientCert,
+		Certificates: []tls.Certificate{certificate},
+	}
+	tlsOpts := []grpc.ServerOption{grpc.Creds(credentials.NewTLS(tlsCfg))}
+
+	cfg := &Config{
+		Port:       18285,
+		UnixSocket: socketPath,
+		Threshold:  100,
+	}
+	s, err := NewServer(cfg, tlsOpts, nil)
+	if err != nil {
+		t.Fatalf("Failed to create server: %v", err)
+	}
+
+	serveDone := make(chan error, 1)
+	go func() {
+		serveDone <- s.Serve()
+	}()
+
+	time.Sleep(50 * time.Millisecond)
+
+	// Close TCP listener to simulate a runtime failure
+	s.lis.Close()
+
+	// Serve() should NOT return yet — UDS listener is still active
+	select {
+	case <-serveDone:
+		t.Error("Serve() should not return when only one listener fails")
+	case <-time.After(200 * time.Millisecond):
+		// Expected: Serve still blocking
+	}
+
+	// Stop the server so both listeners shut down
+	s.Stop()
+
+	select {
+	case <-serveDone:
+		// Serve returned after Stop — correct behavior
+	case <-time.After(2 * time.Second):
+		t.Error("Serve() did not return after Stop()")
+	}
+}
+
+func TestUDSBindFailsTCPContinues(t *testing.T) {
+	// Directory creation succeeds but socket bind fails (path too long for unix socket)
+	tmpDir, err := os.MkdirTemp("", "gnmi_test_uds_bind")
+	if err != nil {
+		t.Fatalf("Failed to create temp dir: %v", err)
+	}
+	defer os.RemoveAll(tmpDir)
+
+	// Unix domain socket paths are limited to ~108 chars; exceed that limit
+	longName := strings.Repeat("a", 200)
+	socketPath := filepath.Join(tmpDir, longName)
+
+	certificate, err := testcert.NewCert()
+	if err != nil {
+		t.Fatalf("could not load server key pair: %s", err)
+	}
+	tlsCfg := &tls.Config{
+		ClientAuth:   tls.RequestClientCert,
+		Certificates: []tls.Certificate{certificate},
+	}
+	tlsOpts := []grpc.ServerOption{grpc.Creds(credentials.NewTLS(tlsCfg))}
+
+	cfg := &Config{
+		Port:       18286,
+		UnixSocket: socketPath,
+		Threshold:  100,
+	}
+	s, err := NewServer(cfg, tlsOpts, nil)
+	if err != nil {
+		t.Fatalf("NewServer should succeed with TCP when UDS bind fails: %v", err)
+	}
+	if s.udsServer != nil {
+		t.Error("UDS server should be nil when socket bind fails")
+	}
+	if s.udsListener != nil {
+		t.Error("UDS listener should be nil when socket bind fails")
+	}
+	if s.s == nil || s.lis == nil {
+		t.Error("TCP server and listener should still work")
+	}
+
+	s.ForceStop()
+}
+
+func TestServeUDSErrorDoesNotStopTCP(t *testing.T) {
+	socketPath := "/tmp/gnmi_test_uds_serve_err.sock"
+	os.Remove(socketPath)
+	defer os.Remove(socketPath)
+
+	certificate, err := testcert.NewCert()
+	if err != nil {
+		t.Fatalf("could not load server key pair: %s", err)
+	}
+	tlsCfg := &tls.Config{
+		ClientAuth:   tls.RequestClientCert,
+		Certificates: []tls.Certificate{certificate},
+	}
+	tlsOpts := []grpc.ServerOption{grpc.Creds(credentials.NewTLS(tlsCfg))}
+
+	cfg := &Config{
+		Port:       18288,
+		UnixSocket: socketPath,
+		Threshold:  100,
+	}
+	s, err := NewServer(cfg, tlsOpts, nil)
+	if err != nil {
+		t.Fatalf("Failed to create server: %v", err)
+	}
+
+	serveDone := make(chan error, 1)
+	go func() {
+		serveDone <- s.Serve()
+	}()
+
+	time.Sleep(50 * time.Millisecond)
+
+	// Close UDS listener to simulate a UDS runtime failure
+	s.udsListener.Close()
+
+	// Serve() should NOT return — TCP listener is still active
+	select {
+	case <-serveDone:
+		t.Error("Serve() should not return when only UDS listener fails")
+	case <-time.After(200 * time.Millisecond):
+		// Expected: Serve still blocking
+	}
+
+	s.Stop()
+
+	select {
+	case <-serveDone:
+		// Serve returned after Stop — correct behavior
+	case <-time.After(2 * time.Second):
+		t.Error("Serve() did not return after Stop()")
+	}
 }

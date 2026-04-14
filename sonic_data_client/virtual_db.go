@@ -78,6 +78,19 @@ var (
 	// SONiC Switch ID to Switch Stat packet integrity drop counters
 	countersDebugNameSwitchStatMap = make(map[string]string)
 
+	// sync.Once guards for each init function
+	initCountersPortNameMapOnce       sync.Once
+	initCountersQueueNameMapOnce      sync.Once
+	initCountersPGNameMapOnce         sync.Once
+	initCountersSidMapOnce            sync.Once
+	initCountersAclRuleMapOnce        sync.Once
+	initAliasMapOnce                  sync.Once
+	initCountersPfcwdNameMapOnce      sync.Once
+	initCountersFabricPortNameMapOnce sync.Once
+
+	// Mutex to protect ClearMappings from racing with init functions
+	clearMappingsMu sync.RWMutex
+
 	// path2TFuncTbl is used to populate trie tree which is reponsible
 	// for virtual path to real data path translation
 	pathTransFuncTbl = []pathTransFunc{
@@ -132,6 +145,15 @@ var (
 	}
 )
 
+// Function variables for map fetching. Init functions call these instead of
+// the concrete implementations, allowing tests to inject errors.
+var (
+	getCountersMapFn       = func(t string) (map[string]string, error) { return GetCountersMap(t) }
+	getAliasMapFn          = func() (map[string]string, map[string]string, map[string]string, error) { return GetAliasMap() }
+	getFabricCountersMapFn = func(t string) (map[string]string, error) { return GetFabricCountersMap(t) }
+	getPfcwdMapFn          = func() (map[string]map[string]string, error) { return GetPfcwdMap() }
+)
+
 func (t *Trie) v2rTriePopulate() {
 	for _, pt := range pathTransFuncTbl {
 		n := t.Add(pt.path, pt.transFunc)
@@ -150,7 +172,7 @@ func initCountersQueueNameMap() error {
 	var initErr error
 	initCountersQueueNameMapOnce.Do(func() {
 		var err error
-		countersQueueNameMap, err = GetCountersMap("COUNTERS_QUEUE_NAME_MAP")
+		countersQueueNameMap, err = getCountersMapFn("COUNTERS_QUEUE_NAME_MAP")
 		if err != nil {
 			initErr = err
 		}
@@ -163,7 +185,7 @@ func initCountersPGNameMap() error {
 	defer clearMappingsMu.RUnlock()
 	var initErr error
 	initCountersPGNameMapOnce.Do(func() {
-		pgOidMap, err := GetCountersMap("COUNTERS_PG_NAME_MAP")
+		pgOidMap, err := getCountersMapFn("COUNTERS_PG_NAME_MAP")
 		if err != nil {
 			initErr = err
 			return
@@ -217,7 +239,7 @@ func initCountersPortNameMap() error {
 	var initErr error
 	initCountersPortNameMapOnce.Do(func() {
 		var err error
-		countersPortNameMap, err = GetCountersMap("COUNTERS_PORT_NAME_MAP")
+		countersPortNameMap, err = getCountersMapFn("COUNTERS_PORT_NAME_MAP")
 		if err != nil {
 			initErr = err
 		}
@@ -231,7 +253,7 @@ func initCountersSidMap() error {
 	var initErr error
 	initCountersSidMapOnce.Do(func() {
 		var err error
-		countersSidMap, err = GetCountersMap("COUNTERS_SRV6_NAME_MAP")
+		countersSidMap, err = getCountersMapFn("COUNTERS_SRV6_NAME_MAP")
 		if err != nil {
 			initErr = err
 		}
@@ -247,7 +269,7 @@ func initCountersAclRuleMap() error {
 		var err error
 		// ACL_COUNTER_RULE_MAP is a hash in COUNTERS_DB:
 		//   "DATAACL:RULE_1" -> "oid:0x9000000000711"
-		countersAclRuleMap, err = GetCountersMap("ACL_COUNTER_RULE_MAP")
+		countersAclRuleMap, err = getCountersMapFn("ACL_COUNTER_RULE_MAP")
 		if err != nil {
 			initErr = err
 		}
@@ -261,7 +283,7 @@ func initAliasMap() error {
 	var initErr error
 	initAliasMapOnce.Do(func() {
 		var err error
-		alias2nameMap, name2aliasMap, port2namespaceMap, err = GetAliasMap()
+		alias2nameMap, name2aliasMap, port2namespaceMap, err = getAliasMapFn()
 		if err != nil {
 			initErr = err
 		}
@@ -275,7 +297,7 @@ func initCountersPfcwdNameMap() error {
 	var initErr error
 	initCountersPfcwdNameMapOnce.Do(func() {
 		var err error
-		countersPfcwdNameMap, err = GetPfcwdMap()
+		countersPfcwdNameMap, err = getPfcwdMapFn()
 		if err != nil {
 			initErr = err
 		}
@@ -289,7 +311,7 @@ func initCountersFabricPortNameMap() error {
 	var initErr error
 	initCountersFabricPortNameMapOnce.Do(func() {
 		var err error
-		countersFabricPortNameMap, err = GetFabricCountersMap("COUNTERS_FABRIC_PORT_NAME_MAP")
+		countersFabricPortNameMap, err = getFabricCountersMapFn("COUNTERS_FABRIC_PORT_NAME_MAP")
 		if err != nil {
 			initErr = err
 		}

@@ -78,19 +78,6 @@ var (
 	// SONiC Switch ID to Switch Stat packet integrity drop counters
 	countersDebugNameSwitchStatMap = make(map[string]string)
 
-	// sync.Once guards for each init function
-	initCountersPortNameMapOnce       sync.Once
-	initCountersQueueNameMapOnce      sync.Once
-	initCountersPGNameMapOnce         sync.Once
-	initCountersSidMapOnce            sync.Once
-	initCountersAclRuleMapOnce        sync.Once
-	initAliasMapOnce                  sync.Once
-	initCountersPfcwdNameMapOnce      sync.Once
-	initCountersFabricPortNameMapOnce sync.Once
-
-	// Mutex to protect ClearMappings from racing with init functions
-	clearMappingsMu sync.RWMutex
-
 	// path2TFuncTbl is used to populate trie tree which is reponsible
 	// for virtual path to real data path translation
 	pathTransFuncTbl = []pathTransFunc{

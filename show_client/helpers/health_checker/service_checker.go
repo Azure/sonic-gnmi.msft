@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
-	"path/filepath"
 	"reflect"
 	"regexp"
 	"strings"
@@ -23,13 +22,16 @@ const (
 	// Minimum number of lines expected from monit summary output.
 	minCheckCmdLines = 3
 
-	// Command to get merged directory of a container.
-	GetContainerFolderCmd = `docker inspect %s --format "{{.GraphDriver.Data.MergedDir}}"`
-
-	// Path to critical processes file inside a container.
-	CriticalProcessesPath = "etc/supervisor/critical_processes"
+	// Command to read critical processes file from inside a container.
+	// No shell wrapper (sh -c) or redirection (2>/dev/null) — those
+	// get mangled by shlex.Split + exec.Command + nsenter + docker exec.
+	// If the file doesn't exist, cat exits non-zero and the error
+	// message (from CombinedOutput) is harmlessly ignored by
+	// parseCriticalProcesses since it won't match "program:xxx".
+	CriticalProcessesCatCmd = `docker exec %s cat /etc/supervisor/critical_processes`
 
 	// Command to get supervisorctl status inside a container.
+	// Uses docker exec for the same reason as CriticalProcessesCatCmd.
 	SupervisorctlStatusCmd = `docker exec %s bash -c "supervisorctl status"`
 
 	// Cache file to save container_critical_processes.
@@ -163,9 +165,13 @@ func (sc *ServiceChecker) checkServices(config *Config) {
 		return
 	}
 
+	log.V(1).Infof("checkServices: expectedRunning=%d, containerFeatureDict=%d, containerCriticalProcesses=%d",
+		len(expectedRunningContainers), len(containerFeatureDict), len(sc.containerCriticalProcesses))
+
 	// Remove newly disabled containers from critical process tracking
 	for containerName := range sc.containerCriticalProcesses {
 		if _, expected := expectedRunningContainers[containerName]; !expected {
+			log.V(1).Infof("Removing non-expected container from critical process tracking: %s", containerName)
 			delete(sc.containerCriticalProcesses, containerName)
 		}
 	}
@@ -178,6 +184,7 @@ func (sc *ServiceChecker) checkServices(config *Config) {
 		}
 	}
 
+	log.V(1).Infof("checkServices: after pruning, containerCriticalProcesses has %d entries", len(sc.containerCriticalProcesses))
 	if len(sc.containerCriticalProcesses) == 0 {
 		sc.SetObjectNotOK("Service", "system", "no critical process found")
 		return
@@ -301,6 +308,7 @@ func (sc *ServiceChecker) getCurrentRunningContainers() (map[string]struct{}, er
 		}
 		// Skip kubesonic managed containers in the whitelist
 		if _, ok := ContainerK8SWhitelist[name]; ok {
+			log.V(1).Infof("Skipping whitelisted container from running set: %s", name)
 			continue
 		}
 		runningContainers[name] = struct{}{}
@@ -308,46 +316,37 @@ func (sc *ServiceChecker) getCurrentRunningContainers() (map[string]struct{}, er
 			sc.fillCriticalProcessByContainer(name)
 		}
 	}
+	log.V(1).Infof("getCurrentRunningContainers found %d containers, containerCriticalProcesses has %d entries", len(runningContainers), len(sc.containerCriticalProcesses))
 	return runningContainers, nil
-}
-
-func GetContainerFolder(containerName string) string {
-	/* GetContainerFolder returns the merged directory of a container. */
-	cmd := fmt.Sprintf(GetContainerFolderCmd, containerName)
-	output, err := common.GetDataFromHostCommand(cmd)
-	if err != nil {
-		return ""
-	}
-	return strings.TrimSpace(output)
 }
 
 func (sc *ServiceChecker) fillCriticalProcessByContainer(container string) {
 	/* fillCriticalProcessByContainer gets critical process for a given container.
+	Uses docker exec  to read critical processes file from inside a container
+	An alternative is to run docker inspect on the host to obtain the
+	overlay filesystem path, then cat that path. However:
+	- This code runs inside the gnmi container where host overlay
+	paths are not accessible.
+	- docker inspect + cat requires 2 nsenter calls per container
+	vs 1 with docker exec.
+	docker exec avoids all two issues: it is atomic, needs only a single call.
 	:param container: Container name.*/
-	// Get container volume folder
-	containerFolder := GetContainerFolder(container)
-	if containerFolder == "" {
-		log.Warningf("Could not find MergedDir of container %s, was container stopped?", container)
-		return
-	}
-
-	if !common.DirExists(containerFolder) {
-		log.Warningf("MergedDir %s of container %s not found in filesystem, was container stopped?", containerFolder, container)
-		return
-	}
-
-	// Get critical_processes file path
-	criticalProcessesFile := filepath.Join(containerFolder, CriticalProcessesPath)
-	if !common.FileExists(criticalProcessesFile) {
-		// Critical process file does not exist, the container has no critical processes.
-		log.V(1).Infof("Failed to get critical process file for %s, %s does not exist", container, criticalProcessesFile)
+	cmd := fmt.Sprintf(CriticalProcessesCatCmd, container)
+	output, err := common.GetDataFromHostCommand(cmd)
+	log.V(1).Infof("CriticalProcessesCatCmd for %s: err=%v, output=%q", container, err, output)
+	if strings.TrimSpace(output) == "" {
+		// Critical process file does not exist or container is not accessible.
+		if err != nil {
+			log.V(1).Infof("Failed to get critical process file for %s: %v", container, err)
+		}
 		sc.containerCriticalProcesses[container] = []string{}
 		return
 	}
 
-	// Get critical process list from critical_processes
-	criticalProcessList := sc.getCriticalProcessListFromFile(container, criticalProcessesFile)
+	// Parse critical process list from file content
+	criticalProcessList := sc.parseCriticalProcesses(container, output)
 	sc.containerCriticalProcesses[container] = criticalProcessList
+	log.V(1).Infof("Stored %d critical processes for %s: %v", len(criticalProcessList), container, criticalProcessList)
 }
 
 func (sc *ServiceChecker) loadCriticalProcessCache() {
@@ -375,19 +374,14 @@ func (sc *ServiceChecker) loadCriticalProcessCache() {
 	}
 }
 
-func (sc *ServiceChecker) getCriticalProcessListFromFile(container string, criticalProcessesFile string) []string {
-	/* getCriticalProcessListFromFile reads critical process name list from critical processes file.
+func (sc *ServiceChecker) parseCriticalProcesses(container string, data string) []string {
+	/* parseCriticalProcesses parses critical process names from critical_processes file content.
 	:param container: Container name.
-	:param criticalProcessesFile: Critical processes file path.
+	:param data: Content of the critical_processes file.
 	:return: critical_process_list: A list of critical process names.*/
-	data, err := common.GetDataFromFile(criticalProcessesFile)
-	if err != nil {
-		return []string{}
-	}
-
 	criticalProcessList := []string{}
 	re := regexp.MustCompile(`^\s*(?:(.+):(.*))*\s*$`)
-	lines := strings.Split(string(data), "\n")
+	lines := strings.Split(data, "\n")
 	for _, line := range lines {
 		match := re.FindStringSubmatch(line)
 		if match == nil {
@@ -440,11 +434,13 @@ func (sc *ServiceChecker) checkProcessExistence(containerName string, criticalPr
 	:param featureData: Feature table.*/
 	featureName, ok := sc.containerFeatureDict[containerName]
 	if !ok {
+		log.V(1).Infof("checkProcessExistence: container %s not in containerFeatureDict, skipping", containerName)
 		return
 	}
 
 	featureEntry, ok := featureData[featureName].(map[string]interface{})
 	if !ok {
+		log.V(1).Infof("checkProcessExistence: feature %s not in featureData, skipping container %s", featureName, containerName)
 		return
 	}
 
@@ -460,7 +456,11 @@ func (sc *ServiceChecker) checkProcessExistence(containerName string, criticalPr
 	// however, in supervisor.conf it is "/usr/bin/orchagent.sh"
 	cmd := fmt.Sprintf(SupervisorctlStatusCmd, containerName)
 	output, err := common.GetDataFromHostCommand(cmd)
-	if err != nil {
+	log.V(1).Infof("SupervisorctlStatusCmd for %s: err=%v, output=%q", containerName, err, output)
+	if err != nil && strings.TrimSpace(output) == "" {
+		// Only treat as fatal if there is no output at all.
+		// supervisorctl status exits 3 when any process is not RUNNING
+		// but still produces valid output that we need to parse.
 		log.Errorf("Command execution failed for container %s: %v", containerName, err)
 		return
 	}
@@ -475,6 +475,7 @@ func (sc *ServiceChecker) checkProcessExistence(containerName string, criticalPr
 
 	allStatus := strings.Split(strings.TrimSpace(output), "\n")
 	allProcessStatus := ParseSupervisorctlStatus(allStatus)
+	log.V(1).Infof("checkProcessExistence for %s: %d status entries, criticalProcesses=%v", containerName, len(allProcessStatus), criticalProcesses)
 
 	for _, processName := range criticalProcesses {
 		if _, ignored := ignoreServices[processName]; ignored {

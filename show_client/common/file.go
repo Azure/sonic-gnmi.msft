@@ -1,6 +1,7 @@
 package common
 
 import (
+	"bufio"
 	"encoding/json"
 	"fmt"
 	"os"
@@ -88,22 +89,6 @@ func DirExists(path string) bool {
 	return info.IsDir()
 }
 
-func ReadJsonToMap(filePath string) (map[string]interface{}, error) {
-	data, err := GetDataFromFile(filePath)
-	if err != nil {
-		log.Errorf("Error reading file: %v", err)
-		return nil, err
-	}
-
-	var parsedData map[string]interface{}
-	err = json.Unmarshal(data, &parsedData)
-	if err != nil {
-		return nil, fmt.Errorf("failed to parse JSON from %s: %w", filePath, err)
-	}
-
-	return parsedData, nil
-}
-
 func WriteFile(filePath string, content string) bool {
 	err := os.WriteFile(filePath, []byte(content), 0644)
 	if err != nil {
@@ -113,10 +98,24 @@ func WriteFile(filePath string, content string) bool {
 	return true
 }
 
-func ReadStringFromFile(filePath string, defaultVal string) string {
-	data, err := os.ReadFile(filePath)
+// ReadConfKey scans a key=value config file for the given key (case-insensitive)
+// and returns its value. Returns ("", false) if the key is not found.
+func ReadConfKey(filePath string, key string) (string, bool) {
+	file, err := os.Open(filePath)
 	if err != nil {
-		return defaultVal
+		return "", false
 	}
-	return strings.TrimSpace(string(data))
+	defer file.Close()
+	scanner := bufio.NewScanner(file)
+	for scanner.Scan() {
+		line := scanner.Text()
+		tokens := strings.SplitN(line, "=", 2)
+		if len(tokens) < 2 {
+			continue
+		}
+		if strings.ToLower(tokens[0]) == key {
+			return tokens[1], true
+		}
+	}
+	return "", false
 }

@@ -23,9 +23,6 @@ const MonitConfigFile = "/etc/monit/monitrc"
 // Monit service start delay configuration entry.
 const MonitStartDelayConfig = "with start delay"
 
-// Device path where platform-specific config files are stored.
-const DevicePath = "/usr/share/sonic/device/"
-
 // DefaultLEDConfig is the default LED configuration. Different platform has different LED capability.
 // This configuration allows vendor to override the default behavior.
 var DefaultLEDConfig = map[string]string{
@@ -50,15 +47,39 @@ func NewConfig() *Config {
 	Initialize all configuration entry to default value in case there is no
 	configuration file.*/
 	platformName := common.GetPlatform()
+	configFilePath := resolveConfigFilePath(platformName)
 	return &Config{
 		platformName:        platformName,
-		configFile:          filepath.Join(DevicePath, platformName, ConfigFile),
+		configFile:          configFilePath,
 		ConfigData:          nil,
 		IgnoreServices:      nil,
 		IgnoreDevices:       nil,
 		IncludeDevices:      nil,
 		UserDefinedCheckers: nil,
 	}
+}
+
+func resolveConfigFilePath(platformName string) string {
+	/* resolveConfigFilePath finds the config file path by checking:
+	1. Container platform path (/usr/share/sonic/platform/) — always accessible inside container.
+	2. Host device path (/usr/share/sonic/device/<platform>/) — fallback.*/
+	// 1. Check container platform path first
+	candidate := filepath.Join(common.ContainerPlatformPath, ConfigFile)
+	if common.FileExists(candidate) {
+		return candidate
+	}
+
+	// 2. Check host device path with platform
+	if platformName != "" {
+		candidate = filepath.Join(common.HostDevicePath, platformName, ConfigFile)
+		if common.FileExists(candidate) {
+			return candidate
+		}
+	}
+
+	// Return the expected host path even if not found — ConfigFileExists will
+	// check and report the failure.
+	return filepath.Join(common.HostDevicePath, platformName, ConfigFile)
 }
 
 func (c *Config) ConfigFileExists() bool {
@@ -83,7 +104,7 @@ func (c *Config) LoadConfig() {
 		}
 	}()
 
-	configData, err := common.ReadJsonToMap(c.configFile)
+	configData, err := common.GetMapFromFile(c.configFile)
 	if err != nil {
 		log.Errorf("Failed to read health config from %s: %v", c.configFile, err)
 		c.reset()

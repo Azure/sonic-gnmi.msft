@@ -71,7 +71,6 @@ const (
 // Inline mock data — short, fixed host command outputs that never vary across scenarios.
 const (
 	mockDockerPS                 = "swss\t\nbgp\t\nteamd\t\n"
-	mockDockerInspect            = "/var/lib/docker/overlay2/merged\n"
 	mockDockerImages             = "docker-sonic-telemetry\n"
 	mockSupervisorctlStatus      = "orchagent RUNNING pid 100, uptime 1:00:00\n"
 	mockCriticalProcesses        = "program:orchagent\n"
@@ -308,16 +307,16 @@ func TestGetShowSystemHealthDetail(t *testing.T) {
 			"services": {"status": "OK"},
 			"hardware": {"status": "OK"},
 			"monitor_list": [
-				{"name": "ASIC0", "status": "OK", "type": "ASIC"},
-				{"name": "Fan1", "status": "OK", "type": "Fan"},
-				{"name": "PSU 1", "status": "OK", "type": "PSU"},
-				{"name": "bgp:orchagent", "status": "OK", "type": "Process"},
+				{"name": "sonic", "status": "OK", "type": "System"},
 				{"name": "container_checker", "status": "OK", "type": "Process"},
 				{"name": "root-overlay", "status": "OK", "type": "Filesystem"},
-				{"name": "sonic", "status": "OK", "type": "System"},
+				{"name": "var-log", "status": "OK", "type": "Filesystem"},
+				{"name": "bgp:orchagent", "status": "OK", "type": "Process"},
 				{"name": "swss:orchagent", "status": "OK", "type": "Process"},
 				{"name": "teamd:orchagent", "status": "OK", "type": "Process"},
-				{"name": "var-log", "status": "OK", "type": "Filesystem"}
+				{"name": "ASIC0", "status": "OK", "type": "ASIC"},
+				{"name": "Fan1", "status": "OK", "type": "Fan"},
+				{"name": "PSU 1", "status": "OK", "type": "PSU"}
 			],
 			"ignore_list": []
 		}`)
@@ -338,15 +337,15 @@ func TestGetShowSystemHealthDetail(t *testing.T) {
 			"hardware": {"status": "OK"},
 			"monitor_list": [
 				{"name": "container_checker", "status": "Not OK", "type": "Process"},
-				{"name": "ASIC0", "status": "OK", "type": "ASIC"},
-				{"name": "Fan1", "status": "OK", "type": "Fan"},
-				{"name": "PSU 1", "status": "OK", "type": "PSU"},
-				{"name": "bgp:orchagent", "status": "OK", "type": "Process"},
-				{"name": "root-overlay", "status": "OK", "type": "Filesystem"},
 				{"name": "sonic", "status": "OK", "type": "System"},
+				{"name": "root-overlay", "status": "OK", "type": "Filesystem"},
+				{"name": "var-log", "status": "OK", "type": "Filesystem"},
+				{"name": "bgp:orchagent", "status": "OK", "type": "Process"},
 				{"name": "swss:orchagent", "status": "OK", "type": "Process"},
 				{"name": "teamd:orchagent", "status": "OK", "type": "Process"},
-				{"name": "var-log", "status": "OK", "type": "Filesystem"}
+				{"name": "ASIC0", "status": "OK", "type": "ASIC"},
+				{"name": "Fan1", "status": "OK", "type": "Fan"},
+				{"name": "PSU 1", "status": "OK", "type": "PSU"}
 			],
 			"ignore_list": []
 		}`)
@@ -367,15 +366,15 @@ func TestGetShowSystemHealthDetail(t *testing.T) {
 			},
 			"monitor_list": [
 				{"name": "ASIC0", "status": "Not OK", "type": "ASIC"},
-				{"name": "Fan1", "status": "OK", "type": "Fan"},
-				{"name": "PSU 1", "status": "OK", "type": "PSU"},
-				{"name": "bgp:orchagent", "status": "OK", "type": "Process"},
+				{"name": "sonic", "status": "OK", "type": "System"},
 				{"name": "container_checker", "status": "OK", "type": "Process"},
 				{"name": "root-overlay", "status": "OK", "type": "Filesystem"},
-				{"name": "sonic", "status": "OK", "type": "System"},
+				{"name": "var-log", "status": "OK", "type": "Filesystem"},
+				{"name": "bgp:orchagent", "status": "OK", "type": "Process"},
 				{"name": "swss:orchagent", "status": "OK", "type": "Process"},
 				{"name": "teamd:orchagent", "status": "OK", "type": "Process"},
-				{"name": "var-log", "status": "OK", "type": "Filesystem"}
+				{"name": "Fan1", "status": "OK", "type": "Fan"},
+				{"name": "PSU 1", "status": "OK", "type": "PSU"}
 			],
 			"ignore_list": []
 		}`)
@@ -392,14 +391,14 @@ func TestGetShowSystemHealthDetail(t *testing.T) {
 			"services": {"status": "OK"},
 			"hardware": {"status": "OK"},
 			"monitor_list": [
-				{"name": "Fan1", "status": "OK", "type": "Fan"},
-				{"name": "PSU 1", "status": "OK", "type": "PSU"},
-				{"name": "bgp:orchagent", "status": "OK", "type": "Process"},
-				{"name": "root-overlay", "status": "OK", "type": "Filesystem"},
 				{"name": "sonic", "status": "OK", "type": "System"},
+				{"name": "root-overlay", "status": "OK", "type": "Filesystem"},
+				{"name": "var-log", "status": "OK", "type": "Filesystem"},
+				{"name": "bgp:orchagent", "status": "OK", "type": "Process"},
 				{"name": "swss:orchagent", "status": "OK", "type": "Process"},
 				{"name": "teamd:orchagent", "status": "OK", "type": "Process"},
-				{"name": "var-log", "status": "OK", "type": "Filesystem"}
+				{"name": "Fan1", "status": "OK", "type": "Fan"},
+				{"name": "PSU 1", "status": "OK", "type": "PSU"}
 			],
 			"ignore_list": [
 				{"name": "asic", "status": "Ignored", "type": "Device"},
@@ -423,16 +422,16 @@ func TestGetShowSystemHealthDetail(t *testing.T) {
 			},
 			"monitor_list": [
 				{"name": "Sensor1", "status": "Not OK", "type": "UserDefine"},
-				{"name": "ASIC0", "status": "OK", "type": "ASIC"},
-				{"name": "Fan1", "status": "OK", "type": "Fan"},
-				{"name": "PSU 1", "status": "OK", "type": "PSU"},
-				{"name": "bgp:orchagent", "status": "OK", "type": "Process"},
+				{"name": "sonic", "status": "OK", "type": "System"},
 				{"name": "container_checker", "status": "OK", "type": "Process"},
 				{"name": "root-overlay", "status": "OK", "type": "Filesystem"},
-				{"name": "sonic", "status": "OK", "type": "System"},
+				{"name": "var-log", "status": "OK", "type": "Filesystem"},
+				{"name": "bgp:orchagent", "status": "OK", "type": "Process"},
 				{"name": "swss:orchagent", "status": "OK", "type": "Process"},
 				{"name": "teamd:orchagent", "status": "OK", "type": "Process"},
-				{"name": "var-log", "status": "OK", "type": "Filesystem"}
+				{"name": "ASIC0", "status": "OK", "type": "ASIC"},
+				{"name": "Fan1", "status": "OK", "type": "Fan"},
+				{"name": "PSU 1", "status": "OK", "type": "PSU"}
 			],
 			"ignore_list": []
 		}`)
@@ -485,16 +484,16 @@ func TestGetShowSystemHealthMonitorList(t *testing.T) {
 
 		wantRespVal := []byte(`{
 			"monitor_list": [
-				{"name": "ASIC0", "status": "OK", "type": "ASIC"},
-				{"name": "Fan1", "status": "OK", "type": "Fan"},
-				{"name": "PSU 1", "status": "OK", "type": "PSU"},
-				{"name": "bgp:orchagent", "status": "OK", "type": "Process"},
+				{"name": "sonic", "status": "OK", "type": "System"},
 				{"name": "container_checker", "status": "OK", "type": "Process"},
 				{"name": "root-overlay", "status": "OK", "type": "Filesystem"},
-				{"name": "sonic", "status": "OK", "type": "System"},
+				{"name": "var-log", "status": "OK", "type": "Filesystem"},
+				{"name": "bgp:orchagent", "status": "OK", "type": "Process"},
 				{"name": "swss:orchagent", "status": "OK", "type": "Process"},
 				{"name": "teamd:orchagent", "status": "OK", "type": "Process"},
-				{"name": "var-log", "status": "OK", "type": "Filesystem"}
+				{"name": "ASIC0", "status": "OK", "type": "ASIC"},
+				{"name": "Fan1", "status": "OK", "type": "Fan"},
+				{"name": "PSU 1", "status": "OK", "type": "PSU"}
 			]
 		}`)
 		runTestGet(t, ctx, gClient, "SHOW", textPbPath, codes.OK, wantRespVal, true, true)
@@ -508,15 +507,15 @@ func TestGetShowSystemHealthMonitorList(t *testing.T) {
 		wantRespVal := []byte(`{
 			"monitor_list": [
 				{"name": "container_checker", "status": "Not OK", "type": "Process"},
-				{"name": "ASIC0", "status": "OK", "type": "ASIC"},
-				{"name": "Fan1", "status": "OK", "type": "Fan"},
-				{"name": "PSU 1", "status": "OK", "type": "PSU"},
-				{"name": "bgp:orchagent", "status": "OK", "type": "Process"},
-				{"name": "root-overlay", "status": "OK", "type": "Filesystem"},
 				{"name": "sonic", "status": "OK", "type": "System"},
+				{"name": "root-overlay", "status": "OK", "type": "Filesystem"},
+				{"name": "var-log", "status": "OK", "type": "Filesystem"},
+				{"name": "bgp:orchagent", "status": "OK", "type": "Process"},
 				{"name": "swss:orchagent", "status": "OK", "type": "Process"},
 				{"name": "teamd:orchagent", "status": "OK", "type": "Process"},
-				{"name": "var-log", "status": "OK", "type": "Filesystem"}
+				{"name": "ASIC0", "status": "OK", "type": "ASIC"},
+				{"name": "Fan1", "status": "OK", "type": "Fan"},
+				{"name": "PSU 1", "status": "OK", "type": "PSU"}
 			]
 		}`)
 		runTestGet(t, ctx, gClient, "SHOW", textPbPath, codes.OK, wantRespVal, true, true)
@@ -529,16 +528,16 @@ func TestGetShowSystemHealthMonitorList(t *testing.T) {
 
 		wantRespVal := []byte(`{
 			"monitor_list": [
-				{"name": "ASIC0", "status": "Not OK", "type": "ASIC"},
 				{"name": "container_checker", "status": "Not OK", "type": "Process"},
-				{"name": "Fan1", "status": "OK", "type": "Fan"},
-				{"name": "PSU 1", "status": "OK", "type": "PSU"},
-				{"name": "bgp:orchagent", "status": "OK", "type": "Process"},
-				{"name": "root-overlay", "status": "OK", "type": "Filesystem"},
+				{"name": "ASIC0", "status": "Not OK", "type": "ASIC"},
 				{"name": "sonic", "status": "OK", "type": "System"},
+				{"name": "root-overlay", "status": "OK", "type": "Filesystem"},
+				{"name": "var-log", "status": "OK", "type": "Filesystem"},
+				{"name": "bgp:orchagent", "status": "OK", "type": "Process"},
 				{"name": "swss:orchagent", "status": "OK", "type": "Process"},
 				{"name": "teamd:orchagent", "status": "OK", "type": "Process"},
-				{"name": "var-log", "status": "OK", "type": "Filesystem"}
+				{"name": "Fan1", "status": "OK", "type": "Fan"},
+				{"name": "PSU 1", "status": "OK", "type": "PSU"}
 			]
 		}`)
 		runTestGet(t, ctx, gClient, "SHOW", textPbPath, codes.OK, wantRespVal, true, true)
@@ -552,12 +551,12 @@ func TestGetShowSystemHealthMonitorList(t *testing.T) {
 		wantRespVal := []byte(`{
 			"monitor_list": [
 				{"name": "monit", "status": "Not OK", "type": "Service"},
-				{"name": "ASIC0", "status": "OK", "type": "ASIC"},
-				{"name": "Fan1", "status": "OK", "type": "Fan"},
-				{"name": "PSU 1", "status": "OK", "type": "PSU"},
 				{"name": "bgp:orchagent", "status": "OK", "type": "Process"},
 				{"name": "swss:orchagent", "status": "OK", "type": "Process"},
-				{"name": "teamd:orchagent", "status": "OK", "type": "Process"}
+				{"name": "teamd:orchagent", "status": "OK", "type": "Process"},
+				{"name": "ASIC0", "status": "OK", "type": "ASIC"},
+				{"name": "Fan1", "status": "OK", "type": "Fan"},
+				{"name": "PSU 1", "status": "OK", "type": "PSU"}
 			]
 		}`)
 		runTestGet(t, ctx, gClient, "SHOW", textPbPath, codes.OK, wantRespVal, true, true)
@@ -609,8 +608,8 @@ func mockHostCommands(t *testing.T, patches *gomonkey.Patches, monitStatus, moni
 			return monitSummary, nil
 		case strings.Contains(command, "docker ps"):
 			return mockDockerPS, nil
-		case strings.Contains(command, "docker inspect"):
-			return mockDockerInspect, nil
+		case strings.Contains(command, "cat /etc/supervisor/critical_processes"):
+			return mockCriticalProcesses, nil
 		case strings.Contains(command, "docker images"):
 			return mockDockerImages, nil
 		case strings.Contains(command, "supervisorctl status"):
@@ -651,7 +650,7 @@ func mockDBQueries(t *testing.T, patches *gomonkey.Patches, temperatureFile stri
 // mockBaseSystem sets up gomonkey patches for common system mocks
 // (platform, config, multi-asic, docker, etc.) WITHOUT patching host commands
 // or DB queries. Callers add those separately to avoid double-patching.
-// configFile specifies which health config JSON to use for ReadJsonToMap.
+// configFile specifies which health config JSON to use for GetMapFromFile.
 func mockBaseSystem(t *testing.T, configFile string) *gomonkey.Patches {
 	t.Helper()
 	patches := gomonkey.ApplyFunc(sccommon.GetPlatform, func() string {
@@ -663,7 +662,7 @@ func mockBaseSystem(t *testing.T, configFile string) *gomonkey.Patches {
 	})
 
 	configData := readTestFileJSON(t, configFile)
-	patches.ApplyFunc(sccommon.ReadJsonToMap, func(filePath string) (map[string]interface{}, error) {
+	patches.ApplyFunc(sccommon.GetMapFromFile, func(filePath string) (map[string]interface{}, error) {
 		return configData, nil
 	})
 
@@ -672,12 +671,6 @@ func mockBaseSystem(t *testing.T, configFile string) *gomonkey.Patches {
 
 	patches.ApplyFunc(sccommon.GetDockerInfo, func() string {
 		return "docker-sonic-telemetry"
-	})
-
-	patches.ApplyFunc(sccommon.DirExists, func(path string) bool { return true })
-
-	patches.ApplyFunc(sccommon.GetDataFromFile, func(fileName string) ([]byte, error) {
-		return []byte(mockCriticalProcesses), nil
 	})
 
 	return patches

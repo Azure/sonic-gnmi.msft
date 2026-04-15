@@ -2,6 +2,7 @@ package helpers
 
 import (
 	"fmt"
+	"sort"
 	"strings"
 
 	"github.com/sonic-net/sonic-gnmi/show_client/helpers/health_checker"
@@ -99,9 +100,11 @@ func DisplaySystemHealthSummary(stat map[string]interface{}, led string) SystemH
 		services.Status = "Not OK"
 	}
 	if len(servicesList) > 0 {
+		sort.Strings(servicesList)
 		services.NotRunning = servicesList
 	}
 	if len(fsList) > 0 {
+		sort.Strings(fsList)
 		services.NotAccessible = fsList
 	}
 
@@ -145,7 +148,62 @@ func DisplayMonitorList(stat map[string]interface{}) []HealthListEntry {
 			entries = append(entries, HealthListEntry{Name: name, Status: status, Type: typ})
 		}
 	}
+	// Sort to match CLI output ordering:
+	// Status ("Not OK" before "OK") → type group → alphabetical by name.
+	sort.Slice(entries, func(i, j int) bool {
+		return compareMonitorEntries(entries[i], entries[j]) < 0
+	})
 	return entries
+}
+
+// monitorTypePriority maps Type strings to a numeric sort order matching
+// the CLI's category iteration: monit entries (System, standalone
+// Process, Filesystem, Program) → container Processes → hardware.
+var monitorTypePriority = map[string]int{
+	"System": 0, "Filesystem": 2, "Program": 3,
+	"ASIC": 5, "Fan": 6, "PSU": 7,
+}
+
+func entryPriority(entry HealthListEntry) int {
+	if entry.Type == "Process" {
+		if strings.Contains(entry.Name, ":") {
+			return 4 // container:process from service checker
+		}
+		return 1 // standalone process from monit (e.g. rsyslog)
+	}
+	if p, ok := monitorTypePriority[entry.Type]; ok {
+		return p
+	}
+	return 8
+}
+
+// compareMonitorEntries compares two HealthListEntry values using a three-level
+// tiebreaker: Status first ("Not OK" < "OK" lexicographically, so failures
+// sort before healthy), then type priority (grouping by category), then name
+// (alphabetical within the same group). Returns -1, 0, or 1.
+func compareMonitorEntries(entryA, entryB HealthListEntry) int {
+	// Level 1: Status — failed entries ("Not OK") come before healthy ("OK")
+	if entryA.Status < entryB.Status {
+		return -1
+	} else if entryA.Status > entryB.Status {
+		return 1
+	}
+
+	// Level 2: Type priority — group by category (System → Process → ASIC → Fan → …)
+	pA, pB := entryPriority(entryA), entryPriority(entryB)
+	if pA < pB {
+		return -1
+	} else if pA > pB {
+		return 1
+	}
+
+	// Level 3: Name — alphabetical order within the same status and type group
+	if entryA.Name < entryB.Name {
+		return -1
+	} else if entryA.Name > entryB.Name {
+		return 1
+	}
+	return 0
 }
 
 func DisplayIgnoreList(manager *health_checker.HealthCheckerManager) []HealthListEntry {
@@ -159,5 +217,8 @@ func DisplayIgnoreList(manager *health_checker.HealthCheckerManager) []HealthLis
 	for dev := range manager.Config.IgnoreDevices {
 		entries = append(entries, HealthListEntry{Name: dev, Status: "Ignored", Type: "Device"})
 	}
+	sort.Slice(entries, func(i, j int) bool {
+		return entries[i].Name < entries[j].Name
+	})
 	return entries
 }

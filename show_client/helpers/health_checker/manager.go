@@ -139,10 +139,11 @@ func (manager *HealthCheckerManager) getLEDTargetColor() string {
 
 // getUptime reads system uptime in seconds from /proc/uptime.
 func getUptime() float64 {
-	raw := common.ReadStringFromFile("/proc/uptime", "")
-	if raw == "" {
+	data, err := common.GetDataFromFile("/proc/uptime")
+	if err != nil {
 		return 0
 	}
+	raw := strings.TrimSpace(string(data))
 	fields := strings.Fields(raw)
 	if len(fields) == 0 {
 		return 0

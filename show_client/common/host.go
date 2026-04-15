@@ -15,7 +15,7 @@ var MachineConfPath string = "/host/machine.conf"
 
 const (
 	asicConfFilename      = "asic.conf"
-	containerPlatformPath = "/usr/share/sonic/platform"
+	ContainerPlatformPath = "/usr/share/sonic/platform"
 	platformEnvConfFile   = "platform_env.conf"
 	serial                = "serial"
 	model                 = "model"
@@ -200,7 +200,7 @@ func GetLocalhostInfo(field string) string {
 // Returns the path as a string if found, or an empty string if not found.
 func GetAsicConfFilePath() string {
 	// 1. Check container platform path
-	candidate := filepath.Join(containerPlatformPath, asicConfFilename)
+	candidate := filepath.Join(ContainerPlatformPath, asicConfFilename)
 	if FileExists(candidate) {
 		return candidate
 	}
@@ -233,7 +233,7 @@ func GetAsicPresenceList() []int {
 }
 
 func GetPlatformConfigFilePath() string {
-	candidate := filepath.Join(containerPlatformPath, platformEnvConfFile)
+	candidate := filepath.Join(ContainerPlatformPath, platformEnvConfFile)
 	if FileExists(candidate) {
 		return candidate
 	}
@@ -251,30 +251,6 @@ func GetPlatformConfigFilePath() string {
 	return ""
 }
 
-func GetPlatformEnvConfig(varName string) (string, bool) {
-	platformConfigFilePath := GetPlatformConfigFilePath()
-	if platformConfigFilePath == "" {
-		return "", false
-	}
-	file, err := os.Open(platformConfigFilePath)
-	if err != nil {
-		return "", false
-	}
-	defer file.Close()
-	scanner := bufio.NewScanner(file)
-	for scanner.Scan() {
-		line := scanner.Text()
-		tokens := strings.SplitN(line, "=", 2)
-		if len(tokens) < 2 {
-			continue
-		}
-		if strings.ToLower(tokens[0]) == varName {
-			return tokens[1], true
-		}
-	}
-	return "", false
-}
-
 func IsExpectedValue(val string, expectedVal string) bool {
 	if strings.TrimSpace(val) == expectedVal {
 		return true
@@ -284,7 +260,8 @@ func IsExpectedValue(val string, expectedVal string) bool {
 }
 
 func IsSupervisor() bool {
-	val, found := GetPlatformEnvConfig("supervisor")
+	configFilePath := GetPlatformConfigFilePath()
+	val, found := ReadConfKey(configFilePath, "supervisor")
 	if !found {
 		return found
 	}
@@ -294,7 +271,8 @@ func IsSupervisor() bool {
 // IsDisaggregatedChassis returns true if the current platform is a disaggregated chassis.
 // Matches Python's device_info.is_disaggregated_chassis().
 func IsDisaggregatedChassis() bool {
-	val, found := GetPlatformEnvConfig("disaggregated_chassis")
+	configFilePath := GetPlatformConfigFilePath()
+	val, found := ReadConfKey(configFilePath, "disaggregated_chassis")
 	if !found {
 		return false
 	}

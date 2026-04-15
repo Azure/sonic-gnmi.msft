@@ -13,7 +13,6 @@ import (
 
 	"context"
 	"github.com/agiledragon/gomonkey/v2"
-	sc "github.com/sonic-net/sonic-gnmi/show_client"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/credentials"
@@ -399,7 +398,7 @@ func TestGetInterfaceCounters(t *testing.T) {
 		}
 		var patches *gomonkey.Patches
 		if test.mockSleep {
-			patches = gomonkey.ApplyGlobalVar(&sc.SleepFunc, func(d time.Duration) {
+			patches = gomonkey.ApplyFunc(time.Sleep, func(d time.Duration) {
 				LoadDataSet(t, CountersDbNum, portCountersTwoFileName)
 				LoadDataSet(t, CountersDbNum, portRatesTwoFileName)
 			})

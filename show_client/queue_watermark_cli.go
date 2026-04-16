@@ -7,6 +7,8 @@ import (
 	log "github.com/golang/glog"
 	"github.com/sonic-net/sonic-gnmi/show_client/common"
 	sdc "github.com/sonic-net/sonic-gnmi/sonic_data_client"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 )
 
 const (
@@ -18,6 +20,24 @@ const (
 var countersQueueTypeMap map[string]string = make(map[string]string)
 
 func getQueueWatermarksSnapshot(ifaces []string, requestedQueueType int, watermarkType string) (map[string]map[string]string, error) {
+	countersDBSeparator := common.CountersDBSeparator()
+
+	ifaceSet := make(map[string]bool, len(ifaces))
+	for _, iface := range ifaces {
+		ifaceSet[iface] = false
+	}
+	for q := range countersQueueTypeMap {
+		port := strings.SplitN(q, countersDBSeparator, 2)[0]
+		if _, ok := ifaceSet[port]; ok {
+			ifaceSet[port] = true
+		}
+	}
+	for iface, found := range ifaceSet {
+		if !found {
+			return nil, status.Errorf(codes.NotFound, "interface %v has no queues", iface)
+		}
+	}
+
 	var queries [][]string
 	if len(ifaces) == 0 {
 		// Need queue watermarks for all interfaces
@@ -34,8 +54,20 @@ func getQueueWatermarksSnapshot(ifaces []string, requestedQueueType int, waterma
 		return nil, err
 	}
 
+	// Seed an empty entry for every expected queue missing from the query
+	// result so the loop below emits an N/A row via GetValueOrDefault.
+	for q := range countersQueueTypeMap {
+		if len(ifaces) > 0 {
+			if _, ok := ifaceSet[strings.SplitN(q, countersDBSeparator, 2)[0]]; !ok {
+				continue
+			}
+		}
+		if _, ok := queueWatermarks[q]; !ok {
+			queueWatermarks[q] = map[string]interface{}{}
+		}
+	}
+
 	response := make(map[string]map[string]string) // port => queue (e.g., UC0 or MC10) => watermark
-	countersDBSeparator := common.CountersDBSeparator()
 	for queue, watermark := range queueWatermarks {
 		watermarkMap, ok := watermark.(map[string]interface{})
 		if !ok {

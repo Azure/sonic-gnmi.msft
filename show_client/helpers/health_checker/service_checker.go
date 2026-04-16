@@ -23,11 +23,6 @@ const (
 	minCheckCmdLines = 3
 
 	// Command to read critical processes file from inside a container.
-	// No shell wrapper (sh -c) or redirection (2>/dev/null) — those
-	// get mangled by shlex.Split + exec.Command + nsenter + docker exec.
-	// If the file doesn't exist, cat exits non-zero and the error
-	// message (from CombinedOutput) is harmlessly ignored by
-	// parseCriticalProcesses since it won't match "program:xxx".
 	CriticalProcessesCatCmd = `docker exec %s cat /etc/supervisor/critical_processes`
 
 	// Command to get supervisorctl status inside a container.
@@ -325,7 +320,7 @@ func (sc *ServiceChecker) fillCriticalProcessByContainer(container string) {
 	Uses docker exec  to read critical processes file from inside a container
 	An alternative is to run docker inspect on the host to obtain the
 	overlay filesystem path, then cat that path. However:
-	- This code runs inside the gnmi container where host overlay
+	- This code runs inside the telemetry container where host overlay
 	paths are not accessible.
 	- docker inspect + cat requires 2 nsenter calls per container
 	vs 1 with docker exec.

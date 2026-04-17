@@ -155,7 +155,7 @@ func getQueueCountersMapping(queueCounters map[string]interface{}, onlyTrim bool
 }
 
 func getQueueCountersSnapshot(ifaces []string, onlyNonZero bool, onlyTrim bool, onlyWred bool) (map[string]interface{}, error) {
-	master, err := sdc.GetCountersQueueTypeMap()
+	master, err := sdc.GetCountersMap("COUNTERS_QUEUE_NAME_MAP")
 	if err != nil {
 		return nil, err
 	}

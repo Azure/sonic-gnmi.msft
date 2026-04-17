@@ -10,12 +10,25 @@ import (
 )
 
 const (
-	switchCapabilityTable           = "SWITCH_CAPABILITY"
-	switchCapabilityKey             = "switch"
-	asicSdkHealthEventField         = "ASIC_SDK_HEALTH_EVENT"
+	switchCapabilityTable          = "SWITCH_CAPABILITY"
+	switchCapabilityKey            = "switch"
+	asicSdkHealthEventField        = "ASIC_SDK_HEALTH_EVENT"
 	suppressAsicSdkHealthEventTable = "SUPPRESS_ASIC_SDK_HEALTH_EVENT"
-	asicSdkHealthEventTable         = "ASIC_SDK_HEALTH_EVENT_TABLE"
+	asicSdkHealthEventTable        = "ASIC_SDK_HEALTH_EVENT_TABLE"
 )
+
+type suppressConfigEntry struct {
+	Severity   string `json:"severity"`
+	Categories string `json:"categories"`
+	MaxEvents  string `json:"max_events"`
+}
+
+type healthEventEntry struct {
+	Date        string `json:"date"`
+	Severity    string `json:"severity"`
+	Category    string `json:"category"`
+	Description string `json:"description"`
+}
 
 // getAsicSdkHealthEventSuppressConfig handles "show asic-sdk-health-event suppress-configuration".
 // It reads the SUPPRESS_ASIC_SDK_HEALTH_EVENT table from CONFIG_DB and returns
@@ -38,7 +51,7 @@ func getAsicSdkHealthEventSuppressConfig(args sdc.CmdArgs, options sdc.OptionMap
 		return nil, err
 	}
 
-	var entries []map[string]interface{}
+	entries := make([]suppressConfigEntry, 0)
 	for _, severity := range common.NatsortInterfaces(common.GetSortedKeys(data)) {
 		entryData, ok := data[severity].(map[string]interface{})
 		if !ok {
@@ -59,15 +72,11 @@ func getAsicSdkHealthEventSuppressConfig(args sdc.CmdArgs, options sdc.OptionMap
 			}
 		}
 
-		entries = append(entries, map[string]interface{}{
-			"severity":   severity,
-			"categories": categories,
-			"max_events": maxEvents,
+		entries = append(entries, suppressConfigEntry{
+			Severity:   severity,
+			Categories: categories,
+			MaxEvents:  maxEvents,
 		})
-	}
-
-	if entries == nil {
-		entries = []map[string]interface{}{}
 	}
 
 	response := map[string]interface{}{
@@ -97,7 +106,7 @@ func getAsicSdkHealthEventReceived(args sdc.CmdArgs, options sdc.OptionMap) ([]b
 		return nil, err
 	}
 
-	var events []map[string]interface{}
+	events := make([]healthEventEntry, 0)
 	for _, key := range common.NatsortInterfaces(common.GetSortedKeys(data)) {
 		eventData, ok := data[key].(map[string]interface{})
 		if !ok {
@@ -107,16 +116,12 @@ func getAsicSdkHealthEventReceived(args sdc.CmdArgs, options sdc.OptionMap) ([]b
 		// The key is the timestamp portion (e.g. "2023-11-22 09:18:12")
 		date := key
 
-		events = append(events, map[string]interface{}{
-			"date":        date,
-			"severity":    common.GetValueOrDefault(eventData, "severity", ""),
-			"category":    common.GetValueOrDefault(eventData, "category", ""),
-			"description": common.GetValueOrDefault(eventData, "description", ""),
+		events = append(events, healthEventEntry{
+			Date:        date,
+			Severity:    common.GetValueOrDefault(eventData, "severity", ""),
+			Category:    common.GetValueOrDefault(eventData, "category", ""),
+			Description: common.GetValueOrDefault(eventData, "description", ""),
 		})
-	}
-
-	if events == nil {
-		events = []map[string]interface{}{}
 	}
 
 	response := map[string]interface{}{
@@ -124,3 +129,5 @@ func getAsicSdkHealthEventReceived(args sdc.CmdArgs, options sdc.OptionMap) ([]b
 	}
 	return json.Marshal(response)
 }
+
+

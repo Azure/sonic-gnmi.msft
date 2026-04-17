@@ -1,6 +1,8 @@
 package common
 
 import (
+	"strings"
+
 	log "github.com/golang/glog"
 )
 
@@ -14,12 +16,13 @@ func CheckFeatureSupported(db, table, key, field string) (bool, error) {
 	data, err := GetMapFromQueries(queries)
 	if err != nil {
 		log.V(2).Infof("Unable to query %s|%s: %v", table, key, err)
-		return false, nil
+		return false, err
 	}
 	if val, ok := data[field]; ok {
-		if strVal, isStr := val.(string); isStr && strVal == "true" {
+		if strVal, isStr := val.(string); isStr && strings.EqualFold(strVal, "true") {
 			return true, nil
 		}
 	}
 	return false, nil
 }
+

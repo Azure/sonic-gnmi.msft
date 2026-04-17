@@ -279,6 +279,7 @@ stages:
       parameters:
         buildBranch: $(BUILD_BRANCH)
         arch: amd64
+        publishArtifact: sonic-gnmi.msft.amd64
 
 - stage: BuildArm64
   dependsOn: []

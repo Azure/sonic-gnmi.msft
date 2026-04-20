@@ -1009,16 +1009,16 @@ func init() {
 		0,
 		nil,
 	)
-  
+
 	sdc.RegisterCliPath(
 		[]string{"SHOW", "asic-sdk-health-event", "received"},
 		getAsicSdkHealthEventReceived,
 		"SHOW/asic-sdk-health-event/received[OPTIONS]: Show the received ASIC/SDK health events",
-    0,
+		0,
 		0,
 		nil,
 	)
-  
+
 	sdc.RegisterCliPath(
 		[]string{"SHOW", "suppress-fib-pending"},
 		getSuppressFibPending,

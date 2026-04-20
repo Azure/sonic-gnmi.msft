@@ -1027,4 +1027,44 @@ func init() {
 		0,
 		nil,
 	)
+
+	// SHOW/platform/fan
+	sdc.RegisterCliPath(
+		[]string{"SHOW", "platform", "fan"},
+		getPlatformFan,
+		"SHOW/platform/fan[OPTIONS]: Show fan status information",
+		0,
+		0,
+		nil,
+	)
+
+	// SHOW/platform/temperature
+	sdc.RegisterCliPath(
+		[]string{"SHOW", "platform", "temperature"},
+		getPlatformTemperature,
+		"SHOW/platform/temperature[OPTIONS]: Show device temperature information",
+		0,
+		0,
+		nil,
+	)
+
+	// SHOW/platform/voltage
+	sdc.RegisterCliPath(
+		[]string{"SHOW", "platform", "voltage"},
+		getPlatformVoltage,
+		"SHOW/platform/voltage[OPTIONS]: Show device voltage information",
+		0,
+		0,
+		nil,
+	)
+
+	// SHOW/platform/current
+	sdc.RegisterCliPath(
+		[]string{"SHOW", "platform", "current"},
+		getPlatformCurrent,
+		"SHOW/platform/current[OPTIONS]: Show device current information",
+		0,
+		0,
+		nil,
+	)
 }

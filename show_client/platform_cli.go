@@ -315,7 +315,7 @@ func getPlatformFan(args sdc.CmdArgs, options sdc.OptionMap) ([]byte, error) {
 
 		// Format speed value: if > 100 -> "{speed}RPM", if <= 100 -> "{speed}%"
 		speedRaw := common.GetValueOrDefault(fanInfo, "speed", "N/A")
-		speed := speedRaw
+		var speed string
 		speedFloat, err := strconv.ParseFloat(speedRaw, 64)
 		if err != nil {
 			// Parsing failed (e.g., "N/A" or invalid value), use raw value as-is

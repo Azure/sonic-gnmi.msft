@@ -18,7 +18,7 @@ import (
 // 4) "10"
 func getDropcountersCapabilities(args sdc.CmdArgs, options sdc.OptionMap) ([]byte, error) {
 	queries := [][]string{
-		{"STATE_DB", "DEBUG_COUNTER_CAPABILITIES", "*"},
+		{"STATE_DB", "DEBUG_COUNTER_CAPABILITIES"},
 	}
 	data, err := common.GetMapFromQueries(queries)
 	if err != nil {

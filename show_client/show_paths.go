@@ -1000,7 +1000,7 @@ func init() {
 		showCmdOptionPsuIndex,
 	)
 
-    sdc.RegisterCliPath(
+	sdc.RegisterCliPath(
 		[]string{"SHOW", "suppress-fib-pending"},
 		getSuppressFibPending,
 		"SHOW/suppress-fib-pending[OPTIONS]: Show the status of suppress pending FIB feature",

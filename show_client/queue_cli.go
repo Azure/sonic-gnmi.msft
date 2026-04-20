@@ -7,6 +7,8 @@ import (
 	log "github.com/golang/glog"
 	"github.com/sonic-net/sonic-gnmi/show_client/common"
 	sdc "github.com/sonic-net/sonic-gnmi/sonic_data_client"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 )
 
 type queueCountersResponse struct {
@@ -153,6 +155,27 @@ func getQueueCountersMapping(queueCounters map[string]interface{}, onlyTrim bool
 }
 
 func getQueueCountersSnapshot(ifaces []string, onlyNonZero bool, onlyTrim bool, onlyWred bool) (map[string]interface{}, error) {
+	master, err := sdc.GetCountersMap("COUNTERS_QUEUE_NAME_MAP")
+	if err != nil {
+		return nil, err
+	}
+
+	ifaceSet := make(map[string]bool, len(ifaces))
+	for _, iface := range ifaces {
+		ifaceSet[iface] = false
+	}
+	for q := range master {
+		port := strings.SplitN(q, ":", 2)[0]
+		if _, ok := ifaceSet[port]; ok {
+			ifaceSet[port] = true
+		}
+	}
+	for iface, found := range ifaceSet {
+		if !found {
+			return nil, status.Errorf(codes.NotFound, "interface %v has no queues", iface)
+		}
+	}
+
 	var queries [][]string
 	if len(ifaces) == 0 {
 		// Need queue counters for all interfaces
@@ -170,6 +193,20 @@ func getQueueCountersSnapshot(ifaces []string, onlyNonZero bool, onlyTrim bool, 
 	}
 
 	queueCounters := common.RemapAliasToPortNameForQueues(queryMap)
+
+	// Seed an empty entry for every expected queue missing from the query
+	// result so the mapping code below produces an N/A-filled (or empty, in
+	// nonzero mode) row for it.
+	for q := range master {
+		if len(ifaces) > 0 {
+			if _, ok := ifaceSet[strings.SplitN(q, ":", 2)[0]]; !ok {
+				continue
+			}
+		}
+		if _, ok := queueCounters[q]; !ok {
+			queueCounters[q] = map[string]interface{}{}
+		}
+	}
 
 	var response map[string]interface{}
 	if onlyNonZero {

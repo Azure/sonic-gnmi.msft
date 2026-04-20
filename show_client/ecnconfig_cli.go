@@ -12,7 +12,7 @@ import (
 // Redis keys: "WRED_PROFILE|<profile_name>"
 func getEcnProfiles(args sdc.CmdArgs, options sdc.OptionMap) ([]byte, error) {
 	queries := [][]string{
-		{"CONFIG_DB", "WRED_PROFILE", "*"},
+		{"CONFIG_DB", "WRED_PROFILE"},
 	}
 	data, err := common.GetMapFromQueries(queries)
 

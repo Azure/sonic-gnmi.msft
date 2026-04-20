@@ -108,11 +108,7 @@ func GetMmuConfig(db string, verbose bool) ([]byte, error) {
 func getTableAsNestedMap(db string, table string) (map[string]map[string]interface{}, error) {
 	// Get all keys and values in the table
 	var queries [][]string
-	if db == StateDb {
-		queries = [][]string{{db, table, "*"}} // wildcard for StateDb
-	} else {
-		queries = [][]string{{db, table}} // exact table for ConfigDb
-	}
+	queries = [][]string{{db, table}}
 	msi, err := GetMapFromQueries(queries)
 	if err != nil {
 		return nil, err

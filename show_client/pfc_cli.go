@@ -10,6 +10,13 @@ import (
 	sdc "github.com/sonic-net/sonic-gnmi/sonic_data_client"
 )
 
+const (
+	countersTablePrefix = "COUNTERS:"
+	historyOption       = "history"
+	pfcAsymField        = "pfc_asym"
+	pfcEnableField      = "pfc_enable"
+)
+
 // pfcCountersRxResponse represents the RX PFC counters for a single port.
 type pfcCountersRxResponse struct {
 	PFC0 string `json:"PFC0"`
@@ -93,7 +100,7 @@ func fetchPortCounters() (map[string]interface{}, error) {
 	portCounters := make(map[string]interface{})
 	for port, oidVal := range portNameMap {
 		oid := fmt.Sprint(oidVal)
-		tableKey := "COUNTERS:" + oid
+		tableKey := countersTablePrefix + oid
 		counters, err := common.GetMapFromQueries([][]string{{"COUNTERS_DB", tableKey}})
 		if err != nil {
 			log.Errorf("Unable to pull counters for %s (oid %s), err: %v", port, oid, err)
@@ -110,7 +117,7 @@ func fetchPortCounters() (map[string]interface{}, error) {
 // When the "history" option is true, it returns historical PFC statistics instead.
 // Corresponds to "show pfc counters" / "show pfc counters --history".
 func getPfcCounters(args sdc.CmdArgs, options sdc.OptionMap) ([]byte, error) {
-	if historyOpt, ok := options["history"].Bool(); ok && historyOpt {
+	if historyOpt, ok := options[historyOption].Bool(); ok && historyOpt {
 		return getPfcCountersHistory()
 	}
 
@@ -199,10 +206,9 @@ func getPfcCountersHistory() ([]byte, error) {
 					val = fmt.Sprint(v)
 				}
 
-				switch field.jsonKey {
-				case "RX Pause Transitions":
+				if field.jsonKey == "RX Pause Transitions" {
 					stats.NumTransitions = val
-				case "Total RX Pause Time US":
+				} else if field.jsonKey == "Total RX Pause Time US" {
 					stats.TotalPauseTime = val
 				}
 			}
@@ -216,10 +222,9 @@ func getPfcCountersHistory() ([]byte, error) {
 					val = fmt.Sprint(v)
 				}
 
-				switch field.jsonKey {
-				case "Recent RX Pause Timestamp":
+				if field.jsonKey == "Recent RX Pause Timestamp" {
 					stats.RecentPauseTimestamp = val
-				case "Recent RX Pause Time US":
+				} else if field.jsonKey == "Recent RX Pause Time US" {
 					stats.RecentPauseTime = val
 				}
 			}
@@ -263,7 +268,7 @@ func getPfcAsymmetric(args sdc.CmdArgs, options sdc.OptionMap) ([]byte, error) {
 			continue
 		}
 
-		pfcAsym := common.GetValueOrDefault(entryMap, "pfc_asym", "N/A")
+		pfcAsym := common.GetValueOrDefault(entryMap, pfcAsymField, "N/A")
 		response[port] = pfcAsymmetricResponse{
 			Asymmetric: pfcAsym,
 		}
@@ -305,7 +310,7 @@ func getPfcPriority(args sdc.CmdArgs, options sdc.OptionMap) ([]byte, error) {
 			continue
 		}
 
-		pfcEnable := common.GetValueOrDefault(entryMap, "pfc_enable", "N/A")
+		pfcEnable := common.GetValueOrDefault(entryMap, pfcEnableField, "N/A")
 		response[intf] = pfcPriorityResponse{
 			LosslessPriorities: pfcEnable,
 		}

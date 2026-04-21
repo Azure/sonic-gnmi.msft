@@ -98,7 +98,7 @@ func getAsicSdkHealthEventReceived(args sdc.CmdArgs, options sdc.OptionMap) ([]b
 	}
 
 	queries := [][]string{
-		{common.StateDb, asicSdkHealthEventTable, "*"},
+		{common.StateDb, asicSdkHealthEventTable},
 	}
 	data, err := common.GetMapFromQueries(queries)
 	if err != nil {

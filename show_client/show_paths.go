@@ -1000,7 +1000,6 @@ func init() {
 		showCmdOptionPsuIndex,
 	)
 
-<<<<<<< HEAD
 	// SHOW/asic-sdk-health-event
 	sdc.RegisterCliPath(
 		[]string{"SHOW", "asic-sdk-health-event", "suppress-configuration"},
@@ -1092,7 +1091,7 @@ func init() {
 		nil,
 		sdc.UnimplementedOption(showCmdOptionNamespace),
 	)
-	
+
 	sdc.RegisterCliPath(
 		[]string{"SHOW", "pfc", "priority"},
 		getPfcPriority,

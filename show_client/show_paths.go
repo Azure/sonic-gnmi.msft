@@ -1101,8 +1101,8 @@ func init() {
 		nil,
 		sdc.UnimplementedOption(showCmdOptionNamespace),
 	)
-  
-  // SHOW/system-health/summary
+
+	// SHOW/system-health/summary
 	sdc.RegisterCliPath(
 		[]string{"SHOW", "system-health", "summary"},
 		getSystemHealthSummary,

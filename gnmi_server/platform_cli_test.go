@@ -11,8 +11,8 @@ import (
 
 	pb "github.com/openconfig/gnmi/proto/gnmi"
 
-	"context"
 	"github.com/agiledragon/gomonkey/v2"
+	"golang.org/x/net/context"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/credentials"
@@ -177,6 +177,323 @@ func TestGetShowPlatformPsustatus(t *testing.T) {
 			testInit: func() {
 				ResetDataSetsAndMappings(t)
 				AddDataSet(t, StateDbNum, psuWarningFilename)
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.desc, func(t *testing.T) {
+			if tt.testInit != nil {
+				tt.testInit()
+			}
+
+			s := createServer(t, ServerPort)
+			go runServer(t, s)
+			defer s.ForceStop()
+
+			tlsConfig := &tls.Config{InsecureSkipVerify: true}
+			opts := []grpc.DialOption{grpc.WithTransportCredentials(credentials.NewTLS(tlsConfig))}
+
+			conn, err := grpc.Dial(TargetAddr, opts...)
+			if err != nil {
+				t.Fatalf("Dialing to %q failed: %v", TargetAddr, err)
+			}
+			defer conn.Close()
+
+			gClient := pb.NewGNMIClient(conn)
+			ctx, cancel := context.WithTimeout(context.Background(), QueryTimeout*time.Second)
+			defer cancel()
+
+			runTestGet(t, ctx, gClient, tt.pathTarget, tt.textPbPath, tt.wantRetCode, tt.wantRespVal, tt.valTest)
+		})
+	}
+}
+
+func TestGetShowPlatformFan(t *testing.T) {
+	expectedOutput := `[{"drawer":"Drawer 1","led":"green","fan":"FAN 1","speed":"60%","direction":"intake","presence":"Present","status":"OK","timestamp":"20250217 12:00:00"},{"drawer":"Drawer 1","led":"green","fan":"FAN 2","speed":"65%","direction":"intake","presence":"Present","status":"OK","timestamp":"20250217 12:00:00"},{"drawer":"Drawer 2","led":"red","fan":"FAN 3","speed":"0%","direction":"N/A","presence":"Not Present","status":"Not OK","timestamp":"20250217 12:00:00"}]`
+	expectedHighSpeedOutput := `[{"drawer":"Drawer 1","led":"green","fan":"FAN 1","speed":"5000RPM","direction":"exhaust","presence":"Present","status":"OK","timestamp":"20250217 13:00:00"}]`
+
+	fanDataFilename := "../testdata/FAN_STATUS.json"
+	fanEmptyFilename := "../testdata/EMPTY_JSON.txt"
+	fanHighSpeedFilename := "../testdata/FAN_STATUS_HIGH_SPEED.json"
+
+	tests := []struct {
+		desc        string
+		pathTarget  string
+		textPbPath  string
+		wantRetCode codes.Code
+		wantRespVal interface{}
+		valTest     bool
+		testInit    func()
+	}{
+		{
+			desc:       "query SHOW platform fan with no fans",
+			pathTarget: "SHOW",
+			textPbPath: `
+				elem: <name: "platform" >
+				elem: <name: "fan" >
+			`,
+			wantRetCode: codes.OK,
+			wantRespVal: []byte(`{"message":"Fan not detected"}`),
+			valTest:     true,
+			testInit: func() {
+				ResetDataSetsAndMappings(t)
+				AddDataSet(t, StateDbNum, fanEmptyFilename)
+			},
+		},
+		{
+			desc:       "query SHOW platform fan with multiple fans",
+			pathTarget: "SHOW",
+			textPbPath: `
+				elem: <name: "platform" >
+				elem: <name: "fan" >
+			`,
+			wantRetCode: codes.OK,
+			wantRespVal: []byte(expectedOutput),
+			valTest:     true,
+			testInit: func() {
+				ResetDataSetsAndMappings(t)
+				AddDataSet(t, StateDbNum, fanDataFilename)
+			},
+		},
+		{
+			desc:       "query SHOW platform fan with high speed (RPM format)",
+			pathTarget: "SHOW",
+			textPbPath: `
+				elem: <name: "platform" >
+				elem: <name: "fan" >
+			`,
+			wantRetCode: codes.OK,
+			wantRespVal: []byte(expectedHighSpeedOutput),
+			valTest:     true,
+			testInit: func() {
+				ResetDataSetsAndMappings(t)
+				AddDataSet(t, StateDbNum, fanHighSpeedFilename)
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.desc, func(t *testing.T) {
+			if tt.testInit != nil {
+				tt.testInit()
+			}
+
+			s := createServer(t, ServerPort)
+			go runServer(t, s)
+			defer s.ForceStop()
+
+			tlsConfig := &tls.Config{InsecureSkipVerify: true}
+			opts := []grpc.DialOption{grpc.WithTransportCredentials(credentials.NewTLS(tlsConfig))}
+
+			conn, err := grpc.Dial(TargetAddr, opts...)
+			if err != nil {
+				t.Fatalf("Dialing to %q failed: %v", TargetAddr, err)
+			}
+			defer conn.Close()
+
+			gClient := pb.NewGNMIClient(conn)
+			ctx, cancel := context.WithTimeout(context.Background(), QueryTimeout*time.Second)
+			defer cancel()
+
+			runTestGet(t, ctx, gClient, tt.pathTarget, tt.textPbPath, tt.wantRetCode, tt.wantRespVal, tt.valTest)
+		})
+	}
+}
+
+func TestGetShowPlatformTemperature(t *testing.T) {
+	expectedOutput := `[{"sensor":"Sensor 1","temperature":"45.5","high_th":"75.0","low_th":"5.0","crit_high_th":"85.0","crit_low_th":"0.0","warning":"False","timestamp":"20250217 12:00:00"},{"sensor":"Sensor 2","temperature":"50.0","high_th":"75.0","low_th":"5.0","crit_high_th":"85.0","crit_low_th":"0.0","warning":"False","timestamp":"20250217 12:00:00"},{"sensor":"Sensor 3","temperature":"78.0","high_th":"75.0","low_th":"5.0","crit_high_th":"85.0","crit_low_th":"0.0","warning":"True","timestamp":"20250217 12:00:00"}]`
+
+	tempDataFilename := "../testdata/TEMPERATURE_STATUS.json"
+	tempEmptyFilename := "../testdata/EMPTY_JSON.txt"
+
+	tests := []struct {
+		desc        string
+		pathTarget  string
+		textPbPath  string
+		wantRetCode codes.Code
+		wantRespVal interface{}
+		valTest     bool
+		testInit    func()
+	}{
+		{
+			desc:       "query SHOW platform temperature with no sensors",
+			pathTarget: "SHOW",
+			textPbPath: `
+				elem: <name: "platform" >
+				elem: <name: "temperature" >
+			`,
+			wantRetCode: codes.OK,
+			wantRespVal: []byte(`{"message":"Sensor not detected"}`),
+			valTest:     true,
+			testInit: func() {
+				ResetDataSetsAndMappings(t)
+				AddDataSet(t, StateDbNum, tempEmptyFilename)
+			},
+		},
+		{
+			desc:       "query SHOW platform temperature",
+			pathTarget: "SHOW",
+			textPbPath: `
+				elem: <name: "platform" >
+				elem: <name: "temperature" >
+			`,
+			wantRetCode: codes.OK,
+			wantRespVal: []byte(expectedOutput),
+			valTest:     true,
+			testInit: func() {
+				ResetDataSetsAndMappings(t)
+				AddDataSet(t, StateDbNum, tempDataFilename)
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.desc, func(t *testing.T) {
+			if tt.testInit != nil {
+				tt.testInit()
+			}
+
+			s := createServer(t, ServerPort)
+			go runServer(t, s)
+			defer s.ForceStop()
+
+			tlsConfig := &tls.Config{InsecureSkipVerify: true}
+			opts := []grpc.DialOption{grpc.WithTransportCredentials(credentials.NewTLS(tlsConfig))}
+
+			conn, err := grpc.Dial(TargetAddr, opts...)
+			if err != nil {
+				t.Fatalf("Dialing to %q failed: %v", TargetAddr, err)
+			}
+			defer conn.Close()
+
+			gClient := pb.NewGNMIClient(conn)
+			ctx, cancel := context.WithTimeout(context.Background(), QueryTimeout*time.Second)
+			defer cancel()
+
+			runTestGet(t, ctx, gClient, tt.pathTarget, tt.textPbPath, tt.wantRetCode, tt.wantRespVal, tt.valTest)
+		})
+	}
+}
+
+func TestGetShowPlatformVoltage(t *testing.T) {
+	expectedOutput := `[{"sensor":"VoltSensor 1","voltage":"12.0 V","high_th":"13.2","low_th":"10.8","crit_high_th":"14.0","crit_low_th":"10.0","warning":"False","timestamp":"20250217 12:00:00"},{"sensor":"VoltSensor 2","voltage":"5.0 V","high_th":"5.5","low_th":"4.5","crit_high_th":"6.0","crit_low_th":"4.0","warning":"False","timestamp":"20250217 12:00:00"}]`
+
+	voltageDataFilename := "../testdata/VOLTAGE_STATUS.json"
+	voltageEmptyFilename := "../testdata/EMPTY_JSON.txt"
+
+	tests := []struct {
+		desc        string
+		pathTarget  string
+		textPbPath  string
+		wantRetCode codes.Code
+		wantRespVal interface{}
+		valTest     bool
+		testInit    func()
+	}{
+		{
+			desc:       "query SHOW platform voltage with no sensors",
+			pathTarget: "SHOW",
+			textPbPath: `
+				elem: <name: "platform" >
+				elem: <name: "voltage" >
+			`,
+			wantRetCode: codes.OK,
+			wantRespVal: []byte(`{"message":"Sensor not detected"}`),
+			valTest:     true,
+			testInit: func() {
+				ResetDataSetsAndMappings(t)
+				AddDataSet(t, StateDbNum, voltageEmptyFilename)
+			},
+		},
+		{
+			desc:       "query SHOW platform voltage",
+			pathTarget: "SHOW",
+			textPbPath: `
+				elem: <name: "platform" >
+				elem: <name: "voltage" >
+			`,
+			wantRetCode: codes.OK,
+			wantRespVal: []byte(expectedOutput),
+			valTest:     true,
+			testInit: func() {
+				ResetDataSetsAndMappings(t)
+				AddDataSet(t, StateDbNum, voltageDataFilename)
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.desc, func(t *testing.T) {
+			if tt.testInit != nil {
+				tt.testInit()
+			}
+
+			s := createServer(t, ServerPort)
+			go runServer(t, s)
+			defer s.ForceStop()
+
+			tlsConfig := &tls.Config{InsecureSkipVerify: true}
+			opts := []grpc.DialOption{grpc.WithTransportCredentials(credentials.NewTLS(tlsConfig))}
+
+			conn, err := grpc.Dial(TargetAddr, opts...)
+			if err != nil {
+				t.Fatalf("Dialing to %q failed: %v", TargetAddr, err)
+			}
+			defer conn.Close()
+
+			gClient := pb.NewGNMIClient(conn)
+			ctx, cancel := context.WithTimeout(context.Background(), QueryTimeout*time.Second)
+			defer cancel()
+
+			runTestGet(t, ctx, gClient, tt.pathTarget, tt.textPbPath, tt.wantRetCode, tt.wantRespVal, tt.valTest)
+		})
+	}
+}
+
+func TestGetShowPlatformCurrent(t *testing.T) {
+	expectedOutput := `[{"sensor":"CurrentSensor 1","current":"5.5 A","high_th":"10.0","low_th":"0.5","crit_high_th":"12.0","crit_low_th":"0.0","warning":"False","timestamp":"20250217 12:00:00"},{"sensor":"CurrentSensor 2","current":"3.2 A","high_th":"8.0","low_th":"0.5","crit_high_th":"10.0","crit_low_th":"0.0","warning":"False","timestamp":"20250217 12:00:00"}]`
+
+	currentDataFilename := "../testdata/CURRENT_STATUS.json"
+	currentEmptyFilename := "../testdata/EMPTY_JSON.txt"
+
+	tests := []struct {
+		desc        string
+		pathTarget  string
+		textPbPath  string
+		wantRetCode codes.Code
+		wantRespVal interface{}
+		valTest     bool
+		testInit    func()
+	}{
+		{
+			desc:       "query SHOW platform current with no sensors",
+			pathTarget: "SHOW",
+			textPbPath: `
+				elem: <name: "platform" >
+				elem: <name: "current" >
+			`,
+			wantRetCode: codes.OK,
+			wantRespVal: []byte(`{"message":"Sensor not detected"}`),
+			valTest:     true,
+			testInit: func() {
+				ResetDataSetsAndMappings(t)
+				AddDataSet(t, StateDbNum, currentEmptyFilename)
+			},
+		},
+		{
+			desc:       "query SHOW platform current",
+			pathTarget: "SHOW",
+			textPbPath: `
+				elem: <name: "platform" >
+				elem: <name: "current" >
+			`,
+			wantRetCode: codes.OK,
+			wantRespVal: []byte(expectedOutput),
+			valTest:     true,
+			testInit: func() {
+				ResetDataSetsAndMappings(t)
+				AddDataSet(t, StateDbNum, currentDataFilename)
 			},
 		},
 	}

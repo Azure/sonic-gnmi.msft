@@ -1,0 +1,12 @@
+{
+  "PORT_QOS_MAP|Ethernet0": {
+    "pfc_enable": "3,4"
+  },
+  "PORT_QOS_MAP|Ethernet40": {
+    "pfc_enable": "3,4"
+  },
+  "PORT_QOS_MAP|Ethernet80": {
+    "pfc_enable": "2,3,4,7"
+  }
+}
+

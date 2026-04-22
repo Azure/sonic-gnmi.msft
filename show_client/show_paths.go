@@ -1000,7 +1000,109 @@ func init() {
 		showCmdOptionPsuIndex,
 	)
 
-	// SHOW/system-health/summary
+	// SHOW/asic-sdk-health-event
+	sdc.RegisterCliPath(
+		[]string{"SHOW", "asic-sdk-health-event", "suppress-configuration"},
+		getAsicSdkHealthEventSuppressConfig,
+		"SHOW/asic-sdk-health-event/suppress-configuration[OPTIONS]: Show the suppress configuration for ASIC/SDK health events",
+		0,
+		0,
+		nil,
+	)
+
+	sdc.RegisterCliPath(
+		[]string{"SHOW", "asic-sdk-health-event", "received"},
+		getAsicSdkHealthEventReceived,
+		"SHOW/asic-sdk-health-event/received[OPTIONS]: Show the received ASIC/SDK health events",
+		0,
+		0,
+		nil,
+	)
+
+	sdc.RegisterCliPath(
+		[]string{"SHOW", "suppress-fib-pending"},
+		getSuppressFibPending,
+		"SHOW/suppress-fib-pending[OPTIONS]: Show the status of suppress pending FIB feature",
+		0,
+		0,
+		nil,
+	)
+
+	// SHOW/platform/fan
+	sdc.RegisterCliPath(
+		[]string{"SHOW", "platform", "fan"},
+		getPlatformFan,
+		"SHOW/platform/fan[OPTIONS]: Show fan status information",
+		0,
+		0,
+		nil,
+	)
+
+	// SHOW/platform/temperature
+	sdc.RegisterCliPath(
+		[]string{"SHOW", "platform", "temperature"},
+		getPlatformTemperature,
+		"SHOW/platform/temperature[OPTIONS]: Show device temperature information",
+		0,
+		0,
+		nil,
+	)
+
+	// SHOW/platform/voltage
+	sdc.RegisterCliPath(
+		[]string{"SHOW", "platform", "voltage"},
+		getPlatformVoltage,
+		"SHOW/platform/voltage[OPTIONS]: Show device voltage information",
+		0,
+		0,
+		nil,
+	)
+
+	// SHOW/platform/current
+	sdc.RegisterCliPath(
+		[]string{"SHOW", "platform", "current"},
+		getPlatformCurrent,
+		"SHOW/platform/current[OPTIONS]: Show device current information",
+		0,
+		0,
+		nil,
+	)
+
+	// SHOW/pfc
+	sdc.RegisterCliPath(
+		[]string{"SHOW", "pfc", "counters"},
+		getPfcCounters,
+		"SHOW/pfc/counters[OPTIONS]: Show PFC counters",
+		0,
+		0,
+		nil,
+		showCmdOptionHistory,
+		showCmdOptionVerbose,
+		sdc.UnimplementedOption(showCmdOptionNamespace),
+		showCmdOptionDisplay,
+	)
+
+	sdc.RegisterCliPath(
+		[]string{"SHOW", "pfc", "asymmetric"},
+		getPfcAsymmetric,
+		"SHOW/pfc/asymmetric/{INTERFACENAME}[OPTIONS]: Show asymmetric PFC configuration",
+		0,
+		1,
+		nil,
+		sdc.UnimplementedOption(showCmdOptionNamespace),
+	)
+
+	sdc.RegisterCliPath(
+		[]string{"SHOW", "pfc", "priority"},
+		getPfcPriority,
+		"SHOW/pfc/priority/{INTERFACENAME}[OPTIONS]: Show PFC priority configuration",
+		0,
+		1,
+		nil,
+		sdc.UnimplementedOption(showCmdOptionNamespace),
+	)
+  
+  // SHOW/system-health/summary
 	sdc.RegisterCliPath(
 		[]string{"SHOW", "system-health", "summary"},
 		getSystemHealthSummary,

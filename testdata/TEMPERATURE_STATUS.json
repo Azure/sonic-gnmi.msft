@@ -1,0 +1,29 @@
+{
+	"TEMPERATURE_INFO|Sensor 1": {
+		"temperature": "45.5",
+		"high_threshold": "75.0",
+		"low_threshold": "5.0",
+		"critical_high_threshold": "85.0",
+		"critical_low_threshold": "0.0",
+		"warning_status": "False",
+		"timestamp": "20250217 12:00:00"
+	},
+	"TEMPERATURE_INFO|Sensor 2": {
+		"temperature": "50.0",
+		"high_threshold": "75.0",
+		"low_threshold": "5.0",
+		"critical_high_threshold": "85.0",
+		"critical_low_threshold": "0.0",
+		"warning_status": "False",
+		"timestamp": "20250217 12:00:00"
+	},
+	"TEMPERATURE_INFO|Sensor 3": {
+		"temperature": "78.0",
+		"high_threshold": "75.0",
+		"low_threshold": "5.0",
+		"critical_high_threshold": "85.0",
+		"critical_low_threshold": "0.0",
+		"warning_status": "True",
+		"timestamp": "20250217 12:00:00"
+	}
+}

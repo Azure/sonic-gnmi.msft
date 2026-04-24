@@ -395,8 +395,6 @@ func (hwc *HardwareChecker) checkLiquidCoolingStatus(config *Config) {
 	}
 	sort.Sort(natural.StringSlice(keys))
 
-	newLeakingSensors := []string{}
-
 	for _, name := range keys {
 		if _, ok := config.IgnoreDevices[name]; ok {
 			continue
@@ -416,7 +414,6 @@ func (hwc *HardwareChecker) checkLiquidCoolingStatus(config *Config) {
 
 		if strings.ToLower(leakStatus) == "yes" && !containsString(hwc.leakingSensors, name) {
 			hwc.leakingSensors = append(hwc.leakingSensors, name)
-			newLeakingSensors = append(newLeakingSensors, name)
 			hwc.SetObjectNotOK("Liquid Cooling", name, fmt.Sprintf("Leakage sensor %s is leaking", name))
 			continue
 		}

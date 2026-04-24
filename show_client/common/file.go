@@ -1,6 +1,7 @@
 package common
 
 import (
+	"bufio"
 	"encoding/json"
 	"fmt"
 	"os"
@@ -78,4 +79,43 @@ func GetMapFromFile(filePath string) (map[string]interface{}, error) {
 	}
 
 	return result, nil
+}
+
+func DirExists(path string) bool {
+	info, err := os.Stat(path)
+	if err != nil {
+		return false
+	}
+	return info.IsDir()
+}
+
+func WriteFile(filePath string, content string) bool {
+	err := os.WriteFile(filePath, []byte(content), 0644)
+	if err != nil {
+		log.Errorf("Failed to write %s to file %s - %v", content, filePath, err)
+		return false
+	}
+	return true
+}
+
+// ReadConfKey scans a key=value config file for the given key (case-insensitive)
+// and returns its value. Returns ("", false) if the key is not found.
+func ReadConfKey(filePath string, key string) (string, bool) {
+	file, err := os.Open(filePath)
+	if err != nil {
+		return "", false
+	}
+	defer file.Close()
+	scanner := bufio.NewScanner(file)
+	for scanner.Scan() {
+		line := scanner.Text()
+		tokens := strings.SplitN(line, "=", 2)
+		if len(tokens) < 2 {
+			continue
+		}
+		if strings.ToLower(tokens[0]) == key {
+			return tokens[1], true
+		}
+	}
+	return "", false
 }

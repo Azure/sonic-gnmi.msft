@@ -1,0 +1,6 @@
+{
+    "ASIC0": {
+        "temperature": "120",
+        "high_threshold": "100"
+    }
+}

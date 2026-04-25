@@ -1101,4 +1101,12 @@ func init() {
 		nil,
 		sdc.UnimplementedOption(showCmdOptionNamespace),
 	)
+	sdc.RegisterCliPath(
+		[]string{"SHOW", "boot"},
+		getBoot,
+		"SHOW/boot[OPTIONS]: Show boot configuration",
+		0,
+		0,
+		nil,
+	)
 }

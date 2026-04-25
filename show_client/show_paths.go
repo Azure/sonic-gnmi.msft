@@ -1131,4 +1131,14 @@ func init() {
 		0,
 		nil,
 	)
+
+	//SHOW/boot
+	sdc.RegisterCliPath(
+		[]string{"SHOW", "boot"},
+		getBoot,
+		"SHOW/boot[OPTIONS]: Show boot configuration",
+		0,
+		0,
+		nil,
+	)
 }

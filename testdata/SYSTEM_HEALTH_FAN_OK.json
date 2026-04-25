@@ -1,0 +1,11 @@
+{
+    "Fan1": {
+        "presence": "True",
+        "status": "True",
+        "speed": "6000",
+        "speed_target": "6000",
+        "is_under_speed": "False",
+        "is_over_speed": "False",
+        "direction": "intake"
+    }
+}

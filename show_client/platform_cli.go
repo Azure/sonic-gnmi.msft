@@ -393,3 +393,29 @@ func getPlatformCurrent(args sdc.CmdArgs, options sdc.OptionMap) ([]byte, error)
 		}
 	})
 }
+
+func getPlatformPcieinfo(args sdc.CmdArgs, options sdc.OptionMap) ([]byte, error) {
+	apiCall := "get_pcie_device"
+	if checkOpt, ok := options["check"].Bool(); ok && checkOpt {
+		apiCall = "get_pcie_check"
+	}
+
+	pyCmd := fmt.Sprintf(`python3 -c 'import importlib.util, json; from sonic_py_common import device_info; platform_path, _ = device_info.get_paths_to_platform_and_hwsku_dirs(); spec = importlib.util.find_spec("sonic_platform.pcie"); cls = __import__("sonic_platform.pcie", fromlist=["Pcie"]).Pcie if spec is not None else __import__("sonic_platform_base.sonic_pcie.pcie_common", fromlist=["PcieUtil"]).PcieUtil; pcie = cls(platform_path); print(json.dumps(getattr(pcie, %q)()))'`, apiCall)
+
+	output, err := common.GetDataFromHostCommand(pyCmd)
+	if err != nil {
+		log.Errorf("Failed to get PCIe info from host command: %v", err)
+		return nil, err
+	}
+
+	output = strings.TrimSpace(output)
+	if output == "" {
+		return []byte("[]"), nil
+	}
+
+	if !json.Valid([]byte(output)) {
+		return nil, fmt.Errorf("invalid JSON output from PCIe host command")
+	}
+
+	return []byte(output), nil
+}

@@ -6,6 +6,9 @@ package gnmi
 
 import (
 	"crypto/tls"
+	"fmt"
+	"os"
+	"strings"
 	"testing"
 	"time"
 
@@ -503,6 +506,171 @@ func TestGetShowPlatformCurrent(t *testing.T) {
 			if tt.testInit != nil {
 				tt.testInit()
 			}
+
+			s := createServer(t, ServerPort)
+			go runServer(t, s)
+			defer s.ForceStop()
+
+			tlsConfig := &tls.Config{InsecureSkipVerify: true}
+			opts := []grpc.DialOption{grpc.WithTransportCredentials(credentials.NewTLS(tlsConfig))}
+
+			conn, err := grpc.Dial(TargetAddr, opts...)
+			if err != nil {
+				t.Fatalf("Dialing to %q failed: %v", TargetAddr, err)
+			}
+			defer conn.Close()
+
+			gClient := pb.NewGNMIClient(conn)
+			ctx, cancel := context.WithTimeout(context.Background(), QueryTimeout*time.Second)
+			defer cancel()
+
+			runTestGet(t, ctx, gClient, tt.pathTarget, tt.textPbPath, tt.wantRetCode, tt.wantRespVal, tt.valTest)
+		})
+	}
+}
+
+func TestGetShowPlatformPcieinfo(t *testing.T) {
+	showOutputFilename := "../testdata/PCIEINFO_SHOW.json"
+	checkOutputFilename := "../testdata/PCIEINFO_CHECK.json"
+	invalidOutputFilename := "../testdata/INVALID_JSON.txt"
+
+	showOutputBytes, err := os.ReadFile(showOutputFilename)
+	if err != nil {
+		t.Fatalf("read file %v err: %v", showOutputFilename, err)
+	}
+	checkOutputBytes, err := os.ReadFile(checkOutputFilename)
+	if err != nil {
+		t.Fatalf("read file %v err: %v", checkOutputFilename, err)
+	}
+
+	tests := []struct {
+		desc        string
+		pathTarget  string
+		textPbPath  string
+		wantRetCode codes.Code
+		wantRespVal interface{}
+		valTest     bool
+		testInit    func() *gomonkey.Patches
+	}{
+		{
+			desc:       "query SHOW platform pcieinfo",
+			pathTarget: "SHOW",
+			textPbPath: `
+				elem: <name: "platform" >
+				elem: <name: "pcieinfo" >
+			`,
+			wantRetCode: codes.OK,
+			wantRespVal: showOutputBytes,
+			valTest:     true,
+			testInit: func() *gomonkey.Patches {
+				return gomonkey.ApplyFunc(sccommon.GetDataFromHostCommand, func(cmd string) (string, error) {
+					if strings.Contains(cmd, "get_pcie_device") {
+						return string(showOutputBytes), nil
+					}
+					return "", fmt.Errorf("unexpected command: %s", cmd)
+				})
+			},
+		},
+		{
+			desc:       "query SHOW platform pcieinfo check",
+			pathTarget: "SHOW",
+			textPbPath: `
+				elem: <name: "platform" >
+				elem: <name: "pcieinfo" key: { key: "check" value: "true" } >
+			`,
+			wantRetCode: codes.OK,
+			wantRespVal: checkOutputBytes,
+			valTest:     true,
+			testInit: func() *gomonkey.Patches {
+				return gomonkey.ApplyFunc(sccommon.GetDataFromHostCommand, func(cmd string) (string, error) {
+					if strings.Contains(cmd, "get_pcie_check") {
+						return string(checkOutputBytes), nil
+					}
+					return "", fmt.Errorf("unexpected command: %s", cmd)
+				})
+			},
+		},
+		{
+			desc:       "query SHOW platform pcieinfo invalid JSON output",
+			pathTarget: "SHOW",
+			textPbPath: `
+				elem: <name: "platform" >
+				elem: <name: "pcieinfo" >
+			`,
+			wantRetCode: codes.NotFound,
+			wantRespVal: nil,
+			valTest:     false,
+			testInit: func() *gomonkey.Patches {
+				return MockNSEnterOutput(t, invalidOutputFilename)
+			},
+		},
+		{
+			desc:       "query SHOW platform pcieinfo host command error",
+			pathTarget: "SHOW",
+			textPbPath: `
+				elem: <name: "platform" >
+				elem: <name: "pcieinfo" >
+			`,
+			wantRetCode: codes.NotFound,
+			wantRespVal: nil,
+			valTest:     false,
+			testInit: func() *gomonkey.Patches {
+				return gomonkey.ApplyFunc(sccommon.GetDataFromHostCommand, func(cmd string) (string, error) {
+					return "", fmt.Errorf("simulated command failure")
+				})
+			},
+		},
+		{
+			desc:       "query SHOW platform pcieinfo with verbose flag",
+			pathTarget: "SHOW",
+			textPbPath: `
+				elem: <name: "platform" >
+				elem: <name: "pcieinfo" key: { key: "verbose" value: "true" } >
+			`,
+			wantRetCode: codes.OK,
+			wantRespVal: showOutputBytes,
+			valTest:     true,
+			testInit: func() *gomonkey.Patches {
+				return gomonkey.ApplyFunc(sccommon.GetDataFromHostCommand, func(cmd string) (string, error) {
+					if strings.Contains(cmd, "get_pcie_device") {
+						return string(showOutputBytes), nil
+					}
+					return "", fmt.Errorf("unexpected command: %s", cmd)
+				})
+			},
+		},
+		{
+			desc:       "query SHOW platform pcieinfo check with verbose flag",
+			pathTarget: "SHOW",
+			textPbPath: `
+				elem: <name: "platform" >
+				elem: <name: "pcieinfo" key: { key: "check" value: "true" } key: { key: "verbose" value: "true" } >
+			`,
+			wantRetCode: codes.OK,
+			wantRespVal: checkOutputBytes,
+			valTest:     true,
+			testInit: func() *gomonkey.Patches {
+				return gomonkey.ApplyFunc(sccommon.GetDataFromHostCommand, func(cmd string) (string, error) {
+					if strings.Contains(cmd, "get_pcie_check") {
+						return string(checkOutputBytes), nil
+					}
+					return "", fmt.Errorf("unexpected command: %s", cmd)
+				})
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.desc, func(t *testing.T) {
+			var patches *gomonkey.Patches
+			if tt.testInit != nil {
+				patches = tt.testInit()
+			}
+			defer func() {
+				if patches != nil {
+					patches.Reset()
+				}
+			}()
 
 			s := createServer(t, ServerPort)
 			go runServer(t, s)

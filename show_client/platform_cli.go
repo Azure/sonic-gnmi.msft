@@ -93,6 +93,15 @@ type CurrentInfo struct {
 	Timestamp  string `json:"timestamp"`
 }
 
+// FirmwareInfo represents firmware status information for a component
+type FirmwareInfo struct {
+	Chassis     string `json:"chassis"`
+	Module      string `json:"module"`
+	Component   string `json:"component"`
+	Version     string `json:"version"`
+	Description string `json:"description"`
+}
+
 // getPlatformSummary implements the "show platform summary" command
 func getPlatformSummary(args sdc.CmdArgs, options sdc.OptionMap) ([]byte, error) {
 	// Get version info to extract ASIC type
@@ -392,4 +401,28 @@ func getPlatformCurrent(args sdc.CmdArgs, options sdc.OptionMap) ([]byte, error)
 			Timestamp:  data["timestamp"],
 		}
 	})
+}
+
+// getPlatformFirmware implements the "show platform firmware status" command
+func getPlatformFirmware(args sdc.CmdArgs, options sdc.OptionMap) ([]byte, error) {
+	// Get all firmware data using helper
+	firmwareDataList, err := helpers.GetAllFirmwareData()
+	if err != nil {
+		log.V(1).Infof("Error getting firmware data: %v", err)
+		return json.Marshal([]FirmwareInfo{})
+	}
+
+	// Convert helper struct to API response struct
+	firmwareList := make([]FirmwareInfo, 0, len(firmwareDataList))
+	for _, data := range firmwareDataList {
+		firmwareList = append(firmwareList, FirmwareInfo{
+			Chassis:     data.Chassis,
+			Module:      data.Module,
+			Component:   data.Component,
+			Version:     data.Version,
+			Description: data.Description,
+		})
+	}
+
+	return json.Marshal(firmwareList)
 }

@@ -15,11 +15,16 @@ func readProcCmdline() (string, error) {
 	return strings.TrimSpace(string(data)), nil
 }
 
-func currentImageFromCmdline(cmdline string) (string, error) {
-	re := regexp.MustCompile(`loop=(\S+)/fs\.squashfs`)
+func getCurrentImageFromCmdline(regexPattern string) (string, error) {
+	cmdline, err := readProcCmdline()
+	if err != nil {
+		return "", err
+	}
+
+	re := regexp.MustCompile(regexPattern)
 	m := re.FindStringSubmatch(cmdline)
 	if len(m) < 2 {
-		return "", fmt.Errorf("loop mount with fs.squashfs not found in cmdline")
+		return "", fmt.Errorf("loop mount pattern not found in cmdline")
 	}
 
 	current := m[1]

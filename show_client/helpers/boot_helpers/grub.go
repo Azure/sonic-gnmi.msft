@@ -15,11 +15,7 @@ type GrubBootloader struct{}
 func (g *GrubBootloader) Name() string { return "grub" }
 
 func (g *GrubBootloader) GetCurrentImage() (string, error) {
-	cmdline, err := readProcCmdline()
-	if err != nil {
-		return "", err
-	}
-	return currentImageFromCmdline(cmdline)
+	return getCurrentImageFromCmdline(`loop=(\S+)/fs\.squashfs`)
 }
 
 func (g *GrubBootloader) GetInstalledImages() ([]string, error) {

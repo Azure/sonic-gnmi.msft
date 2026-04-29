@@ -5,6 +5,8 @@ import (
 	"os"
 	"regexp"
 	"strings"
+
+	"github.com/sonic-net/sonic-gnmi/show_client/common"
 )
 
 type AbootBootloader struct{}
@@ -12,11 +14,8 @@ type AbootBootloader struct{}
 func (a *AbootBootloader) Name() string { return "aboot" }
 
 func (a *AbootBootloader) GetCurrentImage() (string, error) {
-	cmdline, err := readProcCmdline()
-	if err != nil {
-		return "", err
-	}
-	return currentImageFromCmdline(cmdline)
+	// Use aboot-specific regex pattern
+	return getCurrentImageFromCmdline(`loop=/*(\S+)/`)
 }
 
 func (a *AbootBootloader) GetInstalledImages() ([]string, error) {
@@ -37,15 +36,19 @@ func (a *AbootBootloader) GetInstalledImages() ([]string, error) {
 }
 
 func (a *AbootBootloader) GetNextImage() (string, error) {
-	// Read boot config
-	config, err := a.bootConfigRead()
+	configData, err := common.ReadConfToMap(AbootBootConfigPath)
 	if err != nil {
 		return "", err
 	}
 
-	swi := config["SWI"]
-	if swi == "" {
+	swiInterface, exists := configData["SWI"]
+	if !exists {
 		return "", fmt.Errorf("SWI not found in boot config")
+	}
+
+	swi, ok := swiInterface.(string)
+	if !ok {
+		return "", fmt.Errorf("SWI value is not a string")
 	}
 
 	re := regexp.MustCompile(`flash:/*(\S+)/`)
@@ -61,29 +64,4 @@ func (a *AbootBootloader) GetNextImage() (string, error) {
 	}
 
 	return swi, nil
-}
-
-func (a *AbootBootloader) bootConfigRead() (map[string]string, error) {
-	config := make(map[string]string)
-
-	data, err := os.ReadFile(AbootBootConfigPath)
-	if err != nil {
-		return nil, err
-	}
-
-	lines := strings.Split(string(data), "\n")
-	for _, line := range lines {
-		line = strings.TrimSpace(line)
-		if line == "" || strings.HasPrefix(line, "#") {
-			continue
-		}
-
-		if parts := strings.SplitN(line, "=", 2); len(parts) == 2 {
-			key := strings.TrimSpace(parts[0])
-			value := strings.TrimSpace(parts[1])
-			config[key] = value
-		}
-	}
-
-	return config, nil
 }

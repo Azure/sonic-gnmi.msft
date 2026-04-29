@@ -47,6 +47,13 @@ func ReadConfToMap(filePath string) (map[string]interface{}, error) {
 	content := string(dataBytes)
 	lines := strings.Split(content, "\n")
 	for _, line := range lines {
+		line = strings.TrimSpace(line)
+
+		// Skip empty lines and comment lines (starting with #)
+		if line == "" || strings.HasPrefix(line, "#") {
+			continue
+		}
+
 		if strings.Contains(line, "=") {
 			parts := strings.SplitN(line, "=", 2)
 			key := strings.TrimSpace(parts[0])

@@ -10,6 +10,7 @@ import (
 	"github.com/agiledragon/gomonkey/v2"
 	"github.com/sonic-net/sonic-gnmi/show_client/common"
 	helpers "github.com/sonic-net/sonic-gnmi/show_client/helpers/boot_helpers"
+	sdc "github.com/sonic-net/sonic-gnmi/sonic_data_client"
 )
 
 func TestBootHelperDetectBootloader(t *testing.T) {
@@ -98,16 +99,25 @@ func TestBootHelperAbootBootloader(t *testing.T) {
 	patches := gomonkey.NewPatches()
 	defer patches.Reset()
 
+	// Store original and restore after test
+	origImplIoutilReadFile := sdc.ImplIoutilReadFile
+	defer func() { sdc.ImplIoutilReadFile = origImplIoutilReadFile }()
+
 	// Mock file operations for simplified Aboot implementation
 	patches.ApplyFunc(os.ReadFile, func(name string) ([]byte, error) {
 		if name == "/proc/cmdline" {
 			return []byte("loop=image-20240101.01/fs.squashfs"), nil
 		}
-		if name == "/host/boot-config" {
-			return []byte("# Boot configuration\nSWI=flash:/image-20240201.01/sonic.swi\n"), nil
-		}
 		return nil, os.ErrNotExist
 	})
+
+	// Mock sdc.ImplIoutilReadFile for boot-config (used by common.ReadConfToMap)
+	sdc.ImplIoutilReadFile = func(filePath string) ([]byte, error) {
+		if filePath == "/host/boot-config" {
+			return []byte("# Boot configuration\nSWI=flash:/image-20240201.01/sonic.swi\n"), nil
+		}
+		return origImplIoutilReadFile(filePath)
+	}
 
 	patches.ApplyFunc(os.ReadDir, func(name string) ([]os.DirEntry, error) {
 		if name == "/host" {
@@ -306,5 +316,87 @@ func TestBootHelperIntegration(t *testing.T) {
 		if err != nil {
 			t.Logf("Expected error in test environment: %v", err)
 		}
+	}
+}
+
+func TestAbootCurrentImageFromCmdlineRegexFix(t *testing.T) {
+	tests := []struct {
+		name        string
+		cmdline     string
+		expected    string
+		shouldError bool
+		description string
+	}{
+		{
+			name:        "Aboot flexible pattern without fs.squashfs",
+			cmdline:     "console=ttyS0,9600 Aboot=Aboot-veos-8.0.0 loop=/image-20240101.01/ quiet",
+			expected:    "SONiC-OS-20240101.01",
+			shouldError: false,
+			description: "Should work with aboot's flexible regex pattern (matches Python behavior)",
+		},
+		{
+			name:        "Aboot flexible pattern with fs.squashfs",
+			cmdline:     "console=ttyS0,9600 Aboot=Aboot-veos-8.0.0 loop=image-20240201.02/fs.squashfs quiet",
+			expected:    "SONiC-OS-20240201.02",
+			shouldError: false,
+			description: "Should also work with the standard onie pattern",
+		},
+		{
+			name:        "Aboot with multiple slashes",
+			cmdline:     "console=ttyS0,9600 loop=//image-test.03/ quiet",
+			expected:    "SONiC-OS-test.03",
+			shouldError: false,
+			description: "Should handle multiple slashes in loop parameter",
+		},
+		{
+			name:        "No loop parameter",
+			cmdline:     "console=ttyS0,9600 quiet",
+			expected:    "",
+			shouldError: true,
+			description: "Should fail when no loop parameter is present",
+		},
+		{
+			name:        "Invalid loop parameter format",
+			cmdline:     "console=ttyS0,9600 loop=invalid-format quiet",
+			expected:    "",
+			shouldError: true,
+			description: "Should fail when loop parameter doesn't match pattern",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			patches := gomonkey.NewPatches()
+			defer patches.Reset()
+
+			// Create aboot bootloader instance
+			bl := &helpers.AbootBootloader{}
+
+			// Mock readProcCmdline to return our test cmdline
+			patches.ApplyFunc(os.ReadFile, func(name string) ([]byte, error) {
+				if name == "/proc/cmdline" {
+					return []byte(tt.cmdline), nil
+				}
+				return nil, os.ErrNotExist
+			})
+
+			result, err := bl.GetCurrentImage()
+
+			if tt.shouldError {
+				if err == nil {
+					t.Errorf("Expected error but got none. Test: %s", tt.description)
+				}
+				return
+			}
+
+			if err != nil {
+				t.Errorf("Unexpected error: %v. Test: %s", err, tt.description)
+				return
+			}
+
+			if result != tt.expected {
+				t.Errorf("Expected %q, got %q. Test: %s", tt.expected, result, tt.description)
+			}
+		})
 	}
 }

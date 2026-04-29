@@ -1,6 +1,7 @@
 package helpers
 
 import (
+	"fmt"
 	"strings"
 
 	"github.com/sonic-net/sonic-gnmi/show_client/common"
@@ -11,27 +12,19 @@ type UbootBootloader struct{}
 func (u *UbootBootloader) Name() string { return "uboot" }
 
 func (u *UbootBootloader) GetCurrentImage() (string, error) {
-	cmdline, err := readProcCmdline()
-	if err != nil {
-		return "", err
-	}
-	return currentImageFromCmdline(cmdline)
+	return getCurrentImageFromCmdline(`loop=(\S+)/fs\.squashfs`)
 }
 
 func (u *UbootBootloader) GetInstalledImages() ([]string, error) {
 	var images []string
 
-	if output, err := common.GetDataFromHostCommand("/usr/bin/fw_printenv -n sonic_version_1"); err == nil {
-		image := strings.TrimSpace(output)
-		if strings.Contains(image, ImagePrefix) {
-			images = append(images, image)
-		}
-	}
-
-	if output, err := common.GetDataFromHostCommand("/usr/bin/fw_printenv -n sonic_version_2"); err == nil {
-		image := strings.TrimSpace(output)
-		if strings.Contains(image, ImagePrefix) {
-			images = append(images, image)
+	for i := 1; i <= 2; i++ {
+		cmd := fmt.Sprintf("/usr/bin/fw_printenv -n sonic_version_%d", i)
+		if output, err := common.GetDataFromHostCommand(cmd); err == nil {
+			image := strings.TrimSpace(output)
+			if strings.Contains(image, ImagePrefix) {
+				images = append(images, image)
+			}
 		}
 	}
 

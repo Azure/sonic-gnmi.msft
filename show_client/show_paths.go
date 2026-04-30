@@ -1131,4 +1131,14 @@ func init() {
 		0,
 		nil,
 	)
+
+	// SHOW/system-health/sysready-status
+	sdc.RegisterCliPath(
+		[]string{"SHOW", "system-health", "sysready-status"},
+		getSystemHealthSysreadyStatus,
+		"SHOW/system-health/sysready-status: Show system ready status",
+		0,
+		0,
+		nil,
+	)
 }

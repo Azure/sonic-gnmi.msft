@@ -93,6 +93,11 @@ type CurrentInfo struct {
 	Timestamp  string `json:"timestamp"`
 }
 
+type pcieCheckResult struct {
+	Name   string `json:"name"`
+	Result string `json:"result"`
+}
+
 // getPlatformSummary implements the "show platform summary" command
 func getPlatformSummary(args sdc.CmdArgs, options sdc.OptionMap) ([]byte, error) {
 	// Get version info to extract ASIC type
@@ -395,17 +400,32 @@ func getPlatformCurrent(args sdc.CmdArgs, options sdc.OptionMap) ([]byte, error)
 }
 
 func getPlatformPcieinfo(args sdc.CmdArgs, options sdc.OptionMap) ([]byte, error) {
-	apiCall := "get_pcie_device"
+	apiCall := "pcie.get_pcie_device()"
 	if checkOpt, ok := options["check"].Bool(); ok && checkOpt {
-		apiCall = "get_pcie_check"
+		apiCall = "pcie.get_pcie_check()"
 	}
 
-	pyCmd := fmt.Sprintf(`python3 -c 'import importlib.util, json; from sonic_py_common import device_info; platform_path, _ = device_info.get_paths_to_platform_and_hwsku_dirs(); spec = importlib.util.find_spec("sonic_platform.pcie"); cls = __import__("sonic_platform.pcie", fromlist=["Pcie"]).Pcie if spec is not None else __import__("sonic_platform_base.sonic_pcie.pcie_common", fromlist=["PcieUtil"]).PcieUtil; pcie = cls(platform_path); print(json.dumps(getattr(pcie, %q)()))'`, apiCall)
+	platformPath := common.GetPlatformPath()
+
+	pyScript := fmt.Sprintf(`
+import json
+platform_path = %s
+try:
+    from sonic_platform.pcie import Pcie
+    pcie = Pcie(platform_path)
+except ImportError:
+    from sonic_platform_base.sonic_pcie.pcie_common import PcieUtil
+    pcie = PcieUtil(platform_path)
+print(json.dumps(%s))
+`, strconv.Quote(platformPath), apiCall)
+	escaped := strings.ReplaceAll(pyScript, "'", `'\''`)
+	pyCmd := fmt.Sprintf("python3 -c '%s'", escaped)
 
 	output, err := common.GetDataFromHostCommand(pyCmd)
 	if err != nil {
-		log.Errorf("Failed to get PCIe info from host command: %v", err)
-		return nil, err
+		trimmedOutput := strings.TrimSpace(output)
+		log.Errorf("Failed to get PCIe info from host command: %v, output: %s", err, trimmedOutput)
+		return nil, fmt.Errorf("failed to get PCIe info from host command: %w, output: %s", err, trimmedOutput)
 	}
 
 	output = strings.TrimSpace(output)
@@ -414,7 +434,37 @@ func getPlatformPcieinfo(args sdc.CmdArgs, options sdc.OptionMap) ([]byte, error
 	}
 
 	if !json.Valid([]byte(output)) {
-		return nil, fmt.Errorf("invalid JSON output from PCIe host command")
+		lines := strings.Split(output, "\n")
+		for i := len(lines) - 1; i >= 0; i-- {
+			candidate := strings.TrimSpace(lines[i])
+			if candidate != "" && json.Valid([]byte(candidate)) {
+				output = candidate
+				break
+			}
+		}
+		if !json.Valid([]byte(output)) {
+			return nil, fmt.Errorf("invalid JSON output from PCIe host command: %s", strings.TrimSpace(output))
+		}
+	}
+
+	if checkOpt, ok := options["check"].Bool(); ok && checkOpt {
+		var normalized []pcieCheckResult
+		if err := json.Unmarshal([]byte(output), &normalized); err != nil {
+			return nil, fmt.Errorf("failed to parse PCIe check output: %w", err)
+		}
+
+		for i := range normalized {
+			if normalized[i].Result != "Passed" {
+				normalized[i].Result = "Failed"
+			}
+		}
+
+		normalizedBytes, err := json.Marshal(normalized)
+		if err != nil {
+			return nil, fmt.Errorf("failed to encode PCIe check output: %w", err)
+		}
+
+		return normalizedBytes, nil
 	}
 
 	return []byte(output), nil

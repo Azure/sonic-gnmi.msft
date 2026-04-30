@@ -251,6 +251,15 @@ func GetPlatformConfigFilePath() string {
 	return ""
 }
 
+func GetPlatformPath() string {
+	platform := GetPlatform()
+	if platform != "" {
+		return filepath.Join(HostDevicePath, platform)
+	}
+
+	return ContainerPlatformPath
+}
+
 func IsExpectedValue(val string, expectedVal string) bool {
 	if strings.TrimSpace(val) == expectedVal {
 		return true

@@ -532,6 +532,7 @@ func TestGetShowPlatformCurrent(t *testing.T) {
 func TestGetShowPlatformPcieinfo(t *testing.T) {
 	showOutputFilename := "../testdata/PCIEINFO_SHOW.json"
 	checkOutputFilename := "../testdata/PCIEINFO_CHECK.json"
+	checkRawOutputFilename := "../testdata/PCIEINFO_CHECK_RAW.json"
 	invalidOutputFilename := "../testdata/INVALID_JSON.txt"
 
 	showOutputBytes, err := os.ReadFile(showOutputFilename)
@@ -541,6 +542,10 @@ func TestGetShowPlatformPcieinfo(t *testing.T) {
 	checkOutputBytes, err := os.ReadFile(checkOutputFilename)
 	if err != nil {
 		t.Fatalf("read file %v err: %v", checkOutputFilename, err)
+	}
+	checkRawOutputBytes, err := os.ReadFile(checkRawOutputFilename)
+	if err != nil {
+		t.Fatalf("read file %v err: %v", checkRawOutputFilename, err)
 	}
 
 	tests := []struct {
@@ -584,7 +589,9 @@ func TestGetShowPlatformPcieinfo(t *testing.T) {
 			testInit: func() *gomonkey.Patches {
 				return gomonkey.ApplyFunc(sccommon.GetDataFromHostCommand, func(cmd string) (string, error) {
 					if strings.Contains(cmd, "get_pcie_check") {
-						return string(checkOutputBytes), nil
+						// Return raw output with extra fields (bus/dev/fn/id) as a real platform would.
+						// The handler must strip them and return only name/result.
+						return string(checkRawOutputBytes), nil
 					}
 					return "", fmt.Errorf("unexpected command: %s", cmd)
 				})
@@ -652,7 +659,7 @@ func TestGetShowPlatformPcieinfo(t *testing.T) {
 			testInit: func() *gomonkey.Patches {
 				return gomonkey.ApplyFunc(sccommon.GetDataFromHostCommand, func(cmd string) (string, error) {
 					if strings.Contains(cmd, "get_pcie_check") {
-						return string(checkOutputBytes), nil
+						return string(checkRawOutputBytes), nil
 					}
 					return "", fmt.Errorf("unexpected command: %s", cmd)
 				})

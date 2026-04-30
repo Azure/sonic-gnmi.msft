@@ -110,7 +110,9 @@ func ReadEepromViaPlatformApi() ([]byte, error) {
 		return nil, fmt.Errorf("empty response from platform EEPROM API")
 	}
 
-	return []byte(output), nil
+	// Wrap raw text in JSON since gNMI response uses JsonIetfVal
+	result := map[string]string{"eeprom_raw": output}
+	return json.Marshal(result)
 }
 
 // ReadEepromFromDb reads EEPROM data cached in STATE_DB by syseepromd.

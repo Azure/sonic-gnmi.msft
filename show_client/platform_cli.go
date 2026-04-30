@@ -395,7 +395,6 @@ func getPlatformCurrent(args sdc.CmdArgs, options sdc.OptionMap) ([]byte, error)
 }
 
 // getPlatformSyseeprom implements "show platform syseeprom".
-// Replicates the Python decode-syseeprom logic:
 //  1. Get platform name
 //  2. If platform matches kvm → return "does not support EEPROM"
 //  3. If platform matches arista or kvm → no DB support, use platform API via nsenter

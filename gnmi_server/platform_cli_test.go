@@ -640,8 +640,12 @@ func TestGetShowPlatformSyseeprom(t *testing.T) {
 				elem: <name: "syseeprom" >
 			`,
 			wantRetCode: codes.OK,
-			wantRespVal: []byte("SKU: DCS-7060X6-64PE-B\nSerialNumber: HBG251204WB\nMAC: d8:06:f3:5a:a9:b1\nHwRev: 11.00"),
-			valTest:     true,
+			wantRespVal: func() []byte {
+				result := map[string]string{"eeprom_raw": "SKU: DCS-7060X6-64PE-B\nSerialNumber: HBG251204WB\nMAC: d8:06:f3:5a:a9:b1\nHwRev: 11.00"}
+				jsonData, _ := json.Marshal(result)
+				return jsonData
+			}(),
+			valTest: true,
 			testInit: func() *gomonkey.Patches {
 				ResetDataSetsAndMappings(t)
 				patches := gomonkey.ApplyFunc(sccommon.GetPlatform, func() string {

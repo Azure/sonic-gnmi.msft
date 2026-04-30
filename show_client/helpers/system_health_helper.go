@@ -264,14 +264,7 @@ func GetSysreadyStatus() (string, error) {
 		return "", fmt.Errorf("failed to read system ready state: %v", err)
 	}
 
-	if len(data) == 0 {
-		return "", fmt.Errorf("no system ready status data available - system-health service might be down")
-	}
-
 	raw := common.GetValueOrDefault(data, sysreadyStatusField, "")
-	if raw == "" {
-		return "", nil
-	}
 	if strings.EqualFold(raw, "UP") {
 		return "System is ready", nil
 	}

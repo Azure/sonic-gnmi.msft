@@ -116,17 +116,18 @@ func getSystemHealthSysreadyStatus(args sdc.CmdArgs, options sdc.OptionMap) ([]b
 	/* getSystemHealthSysreadyStatus implements "show system-health sysready-status".
 	   Shows system ready status and per-service table.
 	*/
-	sysStatus, err := helpers.GetSysreadyStatus()
-	if err != nil {
-		return nil, err
-	}
-
 	services, err := helpers.GetSysreadyServices()
 	if err != nil {
 		return nil, fmt.Errorf("failed to query service status: %w", err)
 	}
-	if services == nil && sysStatus == "" {
-		return nil, fmt.Errorf("No system ready status data available")
+
+	if services == nil {
+		return nil, fmt.Errorf("No system ready status data available - system-health service might be down")
+	}
+
+	sysStatus, err := helpers.GetSysreadyStatus()
+	if err != nil {
+		return nil, err
 	}
 
 	result := helpers.SysreadyStatus{

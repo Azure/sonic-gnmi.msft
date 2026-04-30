@@ -858,7 +858,7 @@ func TestGetShowSystemHealthSysreadyStatus(t *testing.T) {
 				elem: <name: "system-health" >
 				elem: <name: "sysready-status" >
 			`,
-			wantRetCode: codes.Internal,
+			wantRetCode: codes.NotFound,
 			valTest:     false,
 			testInit: func() {
 				FlushDataSet(t, StateDbNum)

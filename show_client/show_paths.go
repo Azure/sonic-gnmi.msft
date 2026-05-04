@@ -1141,7 +1141,7 @@ func init() {
 		0,
 		nil,
 	)
-	
+
 	// SHOW/platform/ssdhealth
 	sdc.RegisterCliPath(
 		[]string{"SHOW", "platform", "ssdhealth"},

@@ -36,6 +36,7 @@ const (
 	showCmdOptionPsuIndexDesc          = "[index=INTEGER] Display a specific PSU by index"
 	showCmdOptionHistoryDesc           = "[history=true] Display historical PFC statistics"
 	showCmdOptionVendorDesc            = "[vendor=true] Show vendor output (extended output if provided by platform vendor)"
+	showCmdOptionCheckDesc             = "[check=true] Validate PCIe devices against expected list"
 )
 
 // Option keys
@@ -239,6 +240,12 @@ var (
 	showCmdOptionVendor = sdc.NewShowCmdOption(
 		OptionKeyVendor,
 		showCmdOptionVendorDesc,
+		sdc.BoolValue,
+	)
+
+	showCmdOptionCheck = sdc.NewShowCmdOption(
+		"check",
+		showCmdOptionCheckDesc,
 		sdc.BoolValue,
 	)
 )

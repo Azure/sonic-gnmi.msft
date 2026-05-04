@@ -5,8 +5,38 @@ import (
 	"sort"
 	"strings"
 
+	log "github.com/golang/glog"
+	natural "github.com/maruel/natural"
+	"github.com/sonic-net/sonic-gnmi/show_client/common"
 	"github.com/sonic-net/sonic-gnmi/show_client/helpers/health_checker"
 )
+
+// Redis table/field constants for sysready-status
+const (
+	sysreadyTable       = "SYSTEM_READY"
+	sysreadyKey         = "SYSTEM_STATE"
+	sysreadyStatusField = "Status"
+
+	serviceStatusTable = "ALL_SERVICE_STATUS"
+
+	serviceStatusField  = "service_status"
+	appReadyStatusField = "app_ready_status"
+	failReasonField     = "fail_reason"
+)
+
+// SysreadyStatus is the top-level JSON response for sysready-status commands.
+type SysreadyStatus struct {
+	SystemStatus string            `json:"system_status"`
+	Services     []SysreadyService `json:"services,omitempty"`
+}
+
+// SysreadyService represents one row in the sysready-status service table.
+type SysreadyService struct {
+	ServiceName    string `json:"service_name"`
+	ServiceStatus  string `json:"service_status"`
+	AppReadyStatus string `json:"app_ready_status"`
+	DownReason     string `json:"down_reason"`
+}
 
 // SystemHealthSummary represents the output structure for show system-health summary.
 type SystemHealthSummary struct {
@@ -221,4 +251,62 @@ func DisplayIgnoreList(manager *health_checker.HealthCheckerManager) []HealthLis
 		return entries[i].Name < entries[j].Name
 	})
 	return entries
+}
+
+// GetSysreadyStatus queries STATE_DB for the system ready state
+// and returns "System is ready" or "System is not ready".
+func GetSysreadyStatus() (string, error) {
+	queries := [][]string{
+		{common.StateDb, sysreadyTable, sysreadyKey},
+	}
+	data, err := common.GetMapFromQueries(queries)
+	if err != nil {
+		return "", fmt.Errorf("failed to read system ready state: %v", err)
+	}
+
+	raw := common.GetValueOrDefault(data, sysreadyStatusField, "")
+	if strings.EqualFold(raw, "UP") {
+		return "System is ready", nil
+	}
+	return "System is not ready - one or more services are not up", nil
+}
+
+// GetSysreadyServices queries ALL_SERVICE_STATUS from STATE_DB and returns
+// the naturally sorted list of service entries.
+func GetSysreadyServices() ([]SysreadyService, error) {
+	queries := [][]string{
+		{common.StateDb, serviceStatusTable},
+	}
+	data, err := common.GetMapFromQueries(queries)
+	if err != nil {
+		return nil, err
+	}
+	if len(data) == 0 {
+		return nil, nil
+	}
+
+	serviceKeys := make([]string, 0, len(data))
+	for k := range data {
+		serviceKeys = append(serviceKeys, k)
+	}
+	sort.Sort(natural.StringSlice(serviceKeys))
+
+	services := make([]SysreadyService, 0, len(serviceKeys))
+
+	for _, key := range serviceKeys {
+		info, ok := data[key].(map[string]interface{})
+		if !ok {
+			log.V(2).Infof("getSysreadyServices: skipping invalid entry for key %q", key)
+			continue
+		}
+
+		svc := SysreadyService{
+			ServiceName:    key,
+			ServiceStatus:  common.GetValueOrDefault(info, serviceStatusField, ""),
+			AppReadyStatus: common.GetValueOrDefault(info, appReadyStatusField, ""),
+			DownReason:     common.GetValueOrDefault(info, failReasonField, ""),
+		}
+		services = append(services, svc)
+	}
+	return services, nil
 }

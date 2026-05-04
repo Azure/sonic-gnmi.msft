@@ -1132,6 +1132,18 @@ func init() {
 		nil,
 	)
 
+	// SHOW/platform/ssdhealth
+	sdc.RegisterCliPath(
+		[]string{"SHOW", "platform", "ssdhealth"},
+		getPlatformSsdhealth,
+		"SHOW/platform/ssdhealth/{DEVICE}[OPTIONS]: Show platform SSD health",
+		0,
+		1,
+		nil,
+		showCmdOptionVerbose,
+		showCmdOptionVendor,
+	)
+
 	//SHOW/management-interface/address
 	sdc.RegisterCliPath(
 		[]string{"SHOW", "management-interface", "address"},

@@ -15,6 +15,7 @@ import (
 	"github.com/agiledragon/gomonkey/v2"
 	pb "github.com/openconfig/gnmi/proto/gnmi"
 	sccommon "github.com/sonic-net/sonic-gnmi/show_client/common"
+	"github.com/sonic-net/sonic-gnmi/show_client/helpers"
 
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
@@ -767,4 +768,110 @@ func mockSystemWithIgnoreConfig(t *testing.T) *gomonkey.Patches {
 	mockDBQueries(t, patches, systemHealthTemperatureFailFile)
 
 	return patches
+}
+
+func TestGetShowSystemHealthSysreadyStatus(t *testing.T) {
+	s := createServer(t, ServerPort)
+	go runServer(t, s)
+	defer s.ForceStop()
+	defer ResetDataSetsAndMappings(t)
+
+	tlsConfig := &tls.Config{InsecureSkipVerify: true}
+	opts := []grpc.DialOption{grpc.WithTransportCredentials(credentials.NewTLS(tlsConfig))}
+
+	conn, err := grpc.Dial(TargetAddr, opts...)
+	if err != nil {
+		t.Fatalf("Dialing to %q failed: %v", TargetAddr, err)
+	}
+	defer conn.Close()
+
+	gClient := pb.NewGNMIClient(conn)
+	ctx, cancel := context.WithTimeout(context.Background(), QueryTimeout*time.Second)
+	defer cancel()
+
+	ResetDataSetsAndMappings(t)
+
+	tests := []struct {
+		desc        string
+		pathTarget  string
+		textPbPath  string
+		wantRetCode codes.Code
+		wantRespVal interface{}
+		valTest     bool
+		testInit    func()
+	}{
+		{
+			desc:       "query SHOW system-health sysready-status - system ready",
+			pathTarget: "SHOW",
+			textPbPath: `
+				elem: <name: "system-health" >
+				elem: <name: "sysready-status" >
+			`,
+			wantRetCode: codes.OK,
+			wantRespVal: func() []byte {
+				expected := helpers.SysreadyStatus{
+					SystemStatus: "System is ready",
+					Services: []helpers.SysreadyService{
+						{ServiceName: "bgp", ServiceStatus: "OK", AppReadyStatus: "OK", DownReason: "-"},
+						{ServiceName: "swss", ServiceStatus: "OK", AppReadyStatus: "OK", DownReason: "-"},
+						{ServiceName: "syncd", ServiceStatus: "OK", AppReadyStatus: "OK", DownReason: "-"},
+					},
+				}
+				jsonData, _ := json.Marshal(expected)
+				return jsonData
+			}(),
+			valTest: true,
+			testInit: func() {
+				AddDataSet(t, StateDbNum, "../testdata/SYSREADY_STATUS.txt")
+			},
+		},
+		{
+			desc:       "query SHOW system-health sysready-status - system not ready",
+			pathTarget: "SHOW",
+			textPbPath: `
+				elem: <name: "system-health" >
+				elem: <name: "sysready-status" >
+			`,
+			wantRetCode: codes.OK,
+			wantRespVal: func() []byte {
+				expected := helpers.SysreadyStatus{
+					SystemStatus: "System is not ready - one or more services are not up",
+					Services: []helpers.SysreadyService{
+						{ServiceName: "bgp", ServiceStatus: "OK", AppReadyStatus: "OK", DownReason: "-"},
+						{ServiceName: "swss", ServiceStatus: "OK", AppReadyStatus: "Down", DownReason: "orchagent is not responsive"},
+						{ServiceName: "syncd", ServiceStatus: "Down", AppReadyStatus: "Down", DownReason: "syncd service not running"},
+					},
+				}
+				jsonData, _ := json.Marshal(expected)
+				return jsonData
+			}(),
+			valTest: true,
+			testInit: func() {
+				FlushDataSet(t, StateDbNum)
+				AddDataSet(t, StateDbNum, "../testdata/SYSREADY_STATUS_NOT_READY.txt")
+			},
+		},
+		{
+			desc:       "query SHOW system-health sysready-status - no data",
+			pathTarget: "SHOW",
+			textPbPath: `
+				elem: <name: "system-health" >
+				elem: <name: "sysready-status" >
+			`,
+			wantRetCode: codes.NotFound,
+			valTest:     false,
+			testInit: func() {
+				FlushDataSet(t, StateDbNum)
+			},
+		},
+	}
+
+	for _, test := range tests {
+		if test.testInit != nil {
+			test.testInit()
+		}
+		t.Run(test.desc, func(t *testing.T) {
+			runTestGet(t, ctx, gClient, test.pathTarget, test.textPbPath, test.wantRetCode, test.wantRespVal, test.valTest)
+		})
+	}
 }

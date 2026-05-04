@@ -1,0 +1,23 @@
+{
+    "SYSTEM_READY|SYSTEM_STATE": {
+        "Status": "DOWN"
+    },
+    "ALL_SERVICE_STATUS|bgp": {
+        "service_status": "OK",
+        "app_ready_status": "OK",
+        "fail_reason": "-",
+        "update_time": "2026-04-25 10:00:00"
+    },
+    "ALL_SERVICE_STATUS|swss": {
+        "service_status": "OK",
+        "app_ready_status": "Down",
+        "fail_reason": "orchagent is not responsive",
+        "update_time": "2026-04-25 10:00:01"
+    },
+    "ALL_SERVICE_STATUS|syncd": {
+        "service_status": "Down",
+        "app_ready_status": "Down",
+        "fail_reason": "syncd service not running",
+        "update_time": "2026-04-25 10:00:02"
+    }
+}

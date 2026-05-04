@@ -1142,7 +1142,7 @@ func init() {
 		nil,
 		showCmdOptionVerbose,
 		showCmdOptionVendor,
-  )
+	)
   
 	//SHOW/management-interface/address
 	sdc.RegisterCliPath(

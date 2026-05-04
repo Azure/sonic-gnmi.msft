@@ -1132,13 +1132,45 @@ func init() {
 		nil,
 	)
 
-	// SHOW/system-health/sysready-status
+	//SHOW/boot
 	sdc.RegisterCliPath(
-		[]string{"SHOW", "system-health", "sysready-status"},
-		getSystemHealthSysreadyStatus,
-		"SHOW/system-health/sysready-status: Show system ready status",
+		[]string{"SHOW", "boot"},
+		getBoot,
+		"SHOW/boot[OPTIONS]: Show boot configuration",
 		0,
 		0,
 		nil,
 	)
+
+	// SHOW/platform/ssdhealth
+	sdc.RegisterCliPath(
+		[]string{"SHOW", "platform", "ssdhealth"},
+		getPlatformSsdhealth,
+		"SHOW/platform/ssdhealth/{DEVICE}[OPTIONS]: Show platform SSD health",
+		0,
+		1,
+		nil,
+		showCmdOptionVerbose,
+		showCmdOptionVendor,
+	)
+
+	//SHOW/management-interface/address
+	sdc.RegisterCliPath(
+		[]string{"SHOW", "management-interface", "address"},
+		getManagementInterfaceAddress,
+		"SHOW/management-interface/address[OPTIONS]: Show management interface parameters",
+		0,
+		0,
+		nil,
+	)
+  
+  // SHOW/system-health/sysready-status
+  sdc.RegisterCliPath(
+    []string{"SHOW", "system-health", "sysready-status"},
+    getSystemHealthSysreadyStatus,
+    "SHOW/system-health/sysready-status: Show system ready status",
+    0,
+    0,
+    nil,
+  )
 }

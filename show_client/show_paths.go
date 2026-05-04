@@ -1142,5 +1142,15 @@ func init() {
 		nil,
 		showCmdOptionVerbose,
 		showCmdOptionVendor,
+  )
+  
+	//SHOW/management-interface/address
+	sdc.RegisterCliPath(
+		[]string{"SHOW", "management-interface", "address"},
+		getManagementInterfaceAddress,
+		"SHOW/management-interface/address[OPTIONS]: Show management interface parameters",
+		0,
+		0,
+		nil,
 	)
 }

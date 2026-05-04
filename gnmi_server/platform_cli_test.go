@@ -2,10 +2,11 @@ package gnmi
 
 // platform_cli_test.go
 
-// Tests SHOW platform summary and psustatus
+// Tests SHOW platform summary, psustatus, fan, temperature, voltage, current, ssdhealth
 
 import (
 	"crypto/tls"
+	"fmt"
 	"testing"
 	"time"
 
@@ -18,6 +19,7 @@ import (
 	"google.golang.org/grpc/credentials"
 
 	sccommon "github.com/sonic-net/sonic-gnmi/show_client/common"
+	"github.com/sonic-net/sonic-gnmi/show_client/helpers"
 )
 
 func TestGetShowPlatformSummary(t *testing.T) {
@@ -503,6 +505,349 @@ func TestGetShowPlatformCurrent(t *testing.T) {
 			if tt.testInit != nil {
 				tt.testInit()
 			}
+
+			s := createServer(t, ServerPort)
+			go runServer(t, s)
+			defer s.ForceStop()
+
+			tlsConfig := &tls.Config{InsecureSkipVerify: true}
+			opts := []grpc.DialOption{grpc.WithTransportCredentials(credentials.NewTLS(tlsConfig))}
+
+			conn, err := grpc.Dial(TargetAddr, opts...)
+			if err != nil {
+				t.Fatalf("Dialing to %q failed: %v", TargetAddr, err)
+			}
+			defer conn.Close()
+
+			gClient := pb.NewGNMIClient(conn)
+			ctx, cancel := context.WithTimeout(context.Background(), QueryTimeout*time.Second)
+			defer cancel()
+
+			runTestGet(t, ctx, gClient, tt.pathTarget, tt.textPbPath, tt.wantRetCode, tt.wantRespVal, tt.valTest)
+		})
+	}
+}
+
+func TestGetShowPlatformSsdhealth(t *testing.T) {
+	// Mock SsdInfo values — matches helpers.SsdInfo struct
+	nvmeSsdInfo := &helpers.SsdInfo{
+		Model:        "SAMSUNG MZQLB960HAJR-00007",
+		Firmware:     "EDA5602Q",
+		Serial:       "S439NA0M900123",
+		Health:       "98",
+		Temperature:  "33",
+		VendorOutput: "Extended SMART info",
+	}
+	sataSsdInfo := &helpers.SsdInfo{
+		Model:        "InnoDisk Corp. - mSATA 3IE3",
+		Firmware:     "S16425cG",
+		Serial:       "BCA11712190600081",
+		Health:       "85",
+		Temperature:  "43",
+		VendorOutput: "",
+	}
+	nonNumericSsdInfo := &helpers.SsdInfo{
+		Model:        "SAMSUNG MZQLB960HAJR-00007",
+		Firmware:     "EDA5602Q",
+		Serial:       "S439NA0M900123",
+		Health:       "N/A",
+		Temperature:  "N/A",
+		VendorOutput: "",
+	}
+
+	// Expected outputs match SsdHealthInfo struct with omitempty:
+	//   default: disk_type, device_model, health, temperature
+	//   verbose: + firmware, serial
+	//   vendor:  + vendor_output (only when non-empty)
+	expectedNVMeDefault := `{"disk_type":"NVME","device_model":"SAMSUNG MZQLB960HAJR-00007","health":"98%","temperature":"33C"}`
+	expectedNVMeVerbose := `{"disk_type":"NVME","device_model":"SAMSUNG MZQLB960HAJR-00007","firmware":"EDA5602Q","serial":"S439NA0M900123","health":"98%","temperature":"33C"}`
+	expectedNVMeVendor := `{"disk_type":"NVME","device_model":"SAMSUNG MZQLB960HAJR-00007","health":"98%","temperature":"33C","vendor_output":"Extended SMART info"}`
+	expectedNVMeVerboseVendor := `{"disk_type":"NVME","device_model":"SAMSUNG MZQLB960HAJR-00007","firmware":"EDA5602Q","serial":"S439NA0M900123","health":"98%","temperature":"33C","vendor_output":"Extended SMART info"}`
+	expectedSATADefault := `{"disk_type":"SATA","device_model":"InnoDisk Corp. - mSATA 3IE3","health":"85%","temperature":"43C"}`
+	expectedSATAVerbose := `{"disk_type":"SATA","device_model":"InnoDisk Corp. - mSATA 3IE3","firmware":"S16425cG","serial":"BCA11712190600081","health":"85%","temperature":"43C"}`
+	expectedSATAVendor := `{"disk_type":"SATA","device_model":"InnoDisk Corp. - mSATA 3IE3","health":"85%","temperature":"43C"}`
+	expectedNotDetected := `{"message":"SSD not detected"}`
+	expectedPlatformJson := `{"disk_type":"NVME","device_model":"SAMSUNG MZQLB960HAJR-00007","health":"98%","temperature":"33C"}`
+	expectedNonNumeric := `{"disk_type":"NVME","device_model":"SAMSUNG MZQLB960HAJR-00007","health":"N/A","temperature":"N/A"}`
+
+	tests := []struct {
+		desc        string
+		pathTarget  string
+		textPbPath  string
+		wantRetCode codes.Code
+		wantRespVal interface{}
+		valTest     bool
+		testInit    func() *gomonkey.Patches
+	}{
+		{
+			desc:       "query SHOW platform ssdhealth NVMe default (no options)",
+			pathTarget: "SHOW",
+			textPbPath: `
+				elem: <name: "platform" >
+				elem: <name: "ssdhealth" >
+			`,
+			wantRetCode: codes.OK,
+			wantRespVal: []byte(expectedNVMeDefault),
+			valTest:     true,
+			testInit: func() *gomonkey.Patches {
+				ResetDataSetsAndMappings(t)
+				patches := gomonkey.NewPatches()
+				patches.ApplyFunc(helpers.ImportSsdApi, func(device string) (*helpers.SsdInfo, error) {
+					return nvmeSsdInfo, nil
+				})
+				patches.ApplyFunc(helpers.GetDefaultDisk, func() (string, string) {
+					return "/dev/nvme0n1", "nvme"
+				})
+				patches.ApplyFunc(sccommon.GetPlatformJsonData, func() (map[string]interface{}, error) {
+					return nil, fmt.Errorf("not found")
+				})
+				return patches
+			},
+		},
+		{
+			desc:       "query SHOW platform ssdhealth NVMe verbose",
+			pathTarget: "SHOW",
+			textPbPath: `
+				elem: <name: "platform" >
+				elem: <name: "ssdhealth" key: { key: "verbose" value: "true" } >
+			`,
+			wantRetCode: codes.OK,
+			wantRespVal: []byte(expectedNVMeVerbose),
+			valTest:     true,
+			testInit: func() *gomonkey.Patches {
+				ResetDataSetsAndMappings(t)
+				patches := gomonkey.NewPatches()
+				patches.ApplyFunc(helpers.ImportSsdApi, func(device string) (*helpers.SsdInfo, error) {
+					return nvmeSsdInfo, nil
+				})
+				patches.ApplyFunc(helpers.GetDefaultDisk, func() (string, string) {
+					return "/dev/nvme0n1", "nvme"
+				})
+				patches.ApplyFunc(sccommon.GetPlatformJsonData, func() (map[string]interface{}, error) {
+					return nil, fmt.Errorf("not found")
+				})
+				return patches
+			},
+		},
+		{
+			desc:       "query SHOW platform ssdhealth NVMe vendor",
+			pathTarget: "SHOW",
+			textPbPath: `
+				elem: <name: "platform" >
+				elem: <name: "ssdhealth" key: { key: "vendor" value: "true" } >
+			`,
+			wantRetCode: codes.OK,
+			wantRespVal: []byte(expectedNVMeVendor),
+			valTest:     true,
+			testInit: func() *gomonkey.Patches {
+				ResetDataSetsAndMappings(t)
+				patches := gomonkey.NewPatches()
+				patches.ApplyFunc(helpers.ImportSsdApi, func(device string) (*helpers.SsdInfo, error) {
+					return nvmeSsdInfo, nil
+				})
+				patches.ApplyFunc(helpers.GetDefaultDisk, func() (string, string) {
+					return "/dev/nvme0n1", "nvme"
+				})
+				patches.ApplyFunc(sccommon.GetPlatformJsonData, func() (map[string]interface{}, error) {
+					return nil, fmt.Errorf("not found")
+				})
+				return patches
+			},
+		},
+		{
+			desc:       "query SHOW platform ssdhealth NVMe verbose+vendor",
+			pathTarget: "SHOW",
+			textPbPath: `
+				elem: <name: "platform" >
+				elem: <name: "ssdhealth" key: { key: "verbose" value: "true" } key: { key: "vendor" value: "true" } >
+			`,
+			wantRetCode: codes.OK,
+			wantRespVal: []byte(expectedNVMeVerboseVendor),
+			valTest:     true,
+			testInit: func() *gomonkey.Patches {
+				ResetDataSetsAndMappings(t)
+				patches := gomonkey.NewPatches()
+				patches.ApplyFunc(helpers.ImportSsdApi, func(device string) (*helpers.SsdInfo, error) {
+					return nvmeSsdInfo, nil
+				})
+				patches.ApplyFunc(helpers.GetDefaultDisk, func() (string, string) {
+					return "/dev/nvme0n1", "nvme"
+				})
+				patches.ApplyFunc(sccommon.GetPlatformJsonData, func() (map[string]interface{}, error) {
+					return nil, fmt.Errorf("not found")
+				})
+				return patches
+			},
+		},
+		{
+			desc:       "query SHOW platform ssdhealth SATA disk",
+			pathTarget: "SHOW",
+			textPbPath: `
+				elem: <name: "platform" >
+				elem: <name: "ssdhealth" >
+			`,
+			wantRetCode: codes.OK,
+			wantRespVal: []byte(expectedSATADefault),
+			valTest:     true,
+			testInit: func() *gomonkey.Patches {
+				ResetDataSetsAndMappings(t)
+				patches := gomonkey.NewPatches()
+				patches.ApplyFunc(helpers.ImportSsdApi, func(device string) (*helpers.SsdInfo, error) {
+					return sataSsdInfo, nil
+				})
+				patches.ApplyFunc(helpers.GetDefaultDisk, func() (string, string) {
+					return "/dev/sda", "sata"
+				})
+				patches.ApplyFunc(sccommon.GetPlatformJsonData, func() (map[string]interface{}, error) {
+					return nil, fmt.Errorf("not found")
+				})
+				return patches
+			},
+		},
+		{
+			desc:       "query SHOW platform ssdhealth SSD not detected",
+			pathTarget: "SHOW",
+			textPbPath: `
+				elem: <name: "platform" >
+				elem: <name: "ssdhealth" >
+			`,
+			wantRetCode: codes.OK,
+			wantRespVal: []byte(expectedNotDetected),
+			valTest:     true,
+			testInit: func() *gomonkey.Patches {
+				ResetDataSetsAndMappings(t)
+				patches := gomonkey.NewPatches()
+				patches.ApplyFunc(helpers.ImportSsdApi, func(device string) (*helpers.SsdInfo, error) {
+					return nil, fmt.Errorf("SsdUtil import failed")
+				})
+				patches.ApplyFunc(helpers.GetDefaultDisk, func() (string, string) {
+					return "/dev/sda", "sata"
+				})
+				patches.ApplyFunc(sccommon.GetPlatformJsonData, func() (map[string]interface{}, error) {
+					return nil, fmt.Errorf("not found")
+				})
+				return patches
+			},
+		},
+		{
+			desc:       "query SHOW platform ssdhealth device from platform.json",
+			pathTarget: "SHOW",
+			textPbPath: `
+				elem: <name: "platform" >
+				elem: <name: "ssdhealth" >
+			`,
+			wantRetCode: codes.OK,
+			wantRespVal: []byte(expectedPlatformJson),
+			valTest:     true,
+			testInit: func() *gomonkey.Patches {
+				ResetDataSetsAndMappings(t)
+				patches := gomonkey.NewPatches()
+				patches.ApplyFunc(helpers.ImportSsdApi, func(device string) (*helpers.SsdInfo, error) {
+					return nvmeSsdInfo, nil
+				})
+				patches.ApplyFunc(helpers.GetDefaultDisk, func() (string, string) {
+					return "/dev/nvme0n1", "nvme"
+				})
+				patches.ApplyFunc(sccommon.GetPlatformJsonData, func() (map[string]interface{}, error) {
+					return map[string]interface{}{
+						"chassis": map[string]interface{}{
+							"disk": map[string]interface{}{
+								"device": "/dev/nvme0n1",
+							},
+						},
+					}, nil
+				})
+				return patches
+			},
+		},
+		{
+			desc:       "query SHOW platform ssdhealth SATA verbose",
+			pathTarget: "SHOW",
+			textPbPath: `
+				elem: <name: "platform" >
+				elem: <name: "ssdhealth" key: { key: "verbose" value: "true" } >
+			`,
+			wantRetCode: codes.OK,
+			wantRespVal: []byte(expectedSATAVerbose),
+			valTest:     true,
+			testInit: func() *gomonkey.Patches {
+				ResetDataSetsAndMappings(t)
+				patches := gomonkey.NewPatches()
+				patches.ApplyFunc(helpers.ImportSsdApi, func(device string) (*helpers.SsdInfo, error) {
+					return sataSsdInfo, nil
+				})
+				patches.ApplyFunc(helpers.GetDefaultDisk, func() (string, string) {
+					return "/dev/sda", "sata"
+				})
+				patches.ApplyFunc(sccommon.GetPlatformJsonData, func() (map[string]interface{}, error) {
+					return nil, fmt.Errorf("not found")
+				})
+				return patches
+			},
+		},
+		{
+			desc:       "query SHOW platform ssdhealth SATA vendor (empty vendor_output omitted)",
+			pathTarget: "SHOW",
+			textPbPath: `
+				elem: <name: "platform" >
+				elem: <name: "ssdhealth" key: { key: "vendor" value: "true" } >
+			`,
+			wantRetCode: codes.OK,
+			wantRespVal: []byte(expectedSATAVendor),
+			valTest:     true,
+			testInit: func() *gomonkey.Patches {
+				ResetDataSetsAndMappings(t)
+				patches := gomonkey.NewPatches()
+				patches.ApplyFunc(helpers.ImportSsdApi, func(device string) (*helpers.SsdInfo, error) {
+					return sataSsdInfo, nil
+				})
+				patches.ApplyFunc(helpers.GetDefaultDisk, func() (string, string) {
+					return "/dev/sda", "sata"
+				})
+				patches.ApplyFunc(sccommon.GetPlatformJsonData, func() (map[string]interface{}, error) {
+					return nil, fmt.Errorf("not found")
+				})
+				return patches
+			},
+		},
+		{
+			desc:       "query SHOW platform ssdhealth non-numeric health and temperature",
+			pathTarget: "SHOW",
+			textPbPath: `
+				elem: <name: "platform" >
+				elem: <name: "ssdhealth" >
+			`,
+			wantRetCode: codes.OK,
+			wantRespVal: []byte(expectedNonNumeric),
+			valTest:     true,
+			testInit: func() *gomonkey.Patches {
+				ResetDataSetsAndMappings(t)
+				patches := gomonkey.NewPatches()
+				patches.ApplyFunc(helpers.ImportSsdApi, func(device string) (*helpers.SsdInfo, error) {
+					return nonNumericSsdInfo, nil
+				})
+				patches.ApplyFunc(helpers.GetDefaultDisk, func() (string, string) {
+					return "/dev/nvme0n1", "nvme"
+				})
+				patches.ApplyFunc(sccommon.GetPlatformJsonData, func() (map[string]interface{}, error) {
+					return nil, fmt.Errorf("not found")
+				})
+				return patches
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.desc, func(t *testing.T) {
+			var patches *gomonkey.Patches
+			if tt.testInit != nil {
+				patches = tt.testInit()
+			}
+			defer func() {
+				if patches != nil {
+					patches.Reset()
+				}
+			}()
 
 			s := createServer(t, ServerPort)
 			go runServer(t, s)

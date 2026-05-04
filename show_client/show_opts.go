@@ -35,6 +35,7 @@ const (
 	showCmdOptionLinesDesc             = "[lines=INTEGER] Number of lines to show (default: 10)"
 	showCmdOptionPsuIndexDesc          = "[index=INTEGER] Display a specific PSU by index"
 	showCmdOptionHistoryDesc           = "[history=true] Display historical PFC statistics"
+	showCmdOptionVendorDesc            = "[vendor=true] Show vendor output (extended output if provided by platform vendor)"
 )
 
 // Option keys
@@ -42,6 +43,7 @@ const (
 	OptionKeyVerbose  = "verbose"
 	SonicCliIfaceMode = "SONIC_CLI_IFACE_MODE"
 	OptionKeyPsuIndex = "index"
+	OptionKeyVendor   = "vendor"
 )
 
 var (
@@ -231,6 +233,12 @@ var (
 	showCmdOptionHistory = sdc.NewShowCmdOption(
 		"history",
 		showCmdOptionHistoryDesc,
+		sdc.BoolValue,
+	)
+
+	showCmdOptionVendor = sdc.NewShowCmdOption(
+		OptionKeyVendor,
+		showCmdOptionVendorDesc,
 		sdc.BoolValue,
 	)
 )

@@ -15,7 +15,8 @@ import (
 )
 
 const (
-	chassisKey = "chassis 1"
+	chassisKey           = "chassis 1"
+	pcieCheckSummaryName = "PCIe Device Checking All Test"
 )
 
 // PlatformSummary represents the output structure for show platform summary
@@ -108,6 +109,11 @@ type SsdHealthInfo struct {
 	Health       string `json:"health"`
 	Temperature  string `json:"temperature"`
 	VendorOutput string `json:"vendor_output,omitempty"`
+}
+
+type pcieCheckResult struct {
+	Name   string `json:"name"`
+	Result string `json:"result"`
 }
 
 // getPlatformSummary implements the "show platform summary" command
@@ -443,4 +449,62 @@ func getPlatformSsdhealth(args sdc.CmdArgs, options sdc.OptionMap) ([]byte, erro
 	}
 
 	return json.Marshal(ssdHealth)
+}
+
+func getPlatformPcieinfo(args sdc.CmdArgs, options sdc.OptionMap) ([]byte, error) {
+	apiCall := "pcie.get_pcie_device()"
+	if checkOpt, ok := options["check"].Bool(); ok && checkOpt {
+		apiCall = "pcie.get_pcie_check()"
+	}
+
+	platformPath := common.GetPlatformPath()
+
+	pyScript := fmt.Sprintf(common.PcieInfoPyScript, strconv.Quote(platformPath), apiCall)
+	escaped := strings.ReplaceAll(pyScript, "'", `'\''`)
+	pyCmd := fmt.Sprintf("python3 -c '%s'", escaped)
+
+	output, err := common.GetDataFromHostCommand(pyCmd)
+	if err != nil {
+		trimmedOutput := strings.TrimSpace(output)
+		log.Errorf("Failed to get PCIe info from host command: %v, output: %s", err, trimmedOutput)
+		return nil, fmt.Errorf("failed to get PCIe info from host command: %w, output: %s", err, trimmedOutput)
+	}
+
+	output = strings.TrimSpace(output)
+	if output == "" {
+		return []byte("[]"), nil
+	}
+
+	if !json.Valid([]byte(output)) {
+		return nil, fmt.Errorf("invalid JSON output from PCIe host command: %s", strings.TrimSpace(output))
+	}
+
+	if checkOpt, ok := options["check"].Bool(); ok && checkOpt {
+		var normalized []pcieCheckResult
+		if err := json.Unmarshal([]byte(output), &normalized); err != nil {
+			return nil, fmt.Errorf("failed to parse PCIe check output: %w", err)
+		}
+
+		overallResult := "Passed"
+		for i := range normalized {
+			if normalized[i].Result != "Passed" {
+				normalized[i].Result = "Failed"
+				overallResult = "Failed"
+			}
+		}
+
+		normalized = append(normalized, pcieCheckResult{
+			Name:   pcieCheckSummaryName,
+			Result: overallResult,
+		})
+
+		normalizedBytes, err := json.Marshal(normalized)
+		if err != nil {
+			return nil, fmt.Errorf("failed to encode PCIe check output: %w", err)
+		}
+
+		return normalizedBytes, nil
+	}
+
+	return []byte(output), nil
 }

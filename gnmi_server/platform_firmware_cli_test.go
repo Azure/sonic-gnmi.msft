@@ -21,12 +21,12 @@ import (
 
 func TestGetShowPlatformFirmwareStatus(t *testing.T) {
 	// Expected output matching actual device output (MSN2700)
-	expectedOutput := `[{"chassis":"MSN2700","module":"N/A","component":"ONIE","version":"2018.05-5.2.0004-9600","description":"ONIE - Open Network Install Environment"},{"chassis":"","module":"","component":"SSD","version":"0115-000","description":"SSD - Solid-State Drive"},{"chassis":"","module":"","component":"BIOS","version":"0ABZS017_02.02.002","description":"BIOS - Basic Input/Output System"},{"chassis":"","module":"","component":"CPLD1","version":"CPLD000085_REV2000","description":"CPLD - Complex Programmable Logic Device"},{"chassis":"","module":"","component":"CPLD2","version":"CPLD000128_REV0600","description":"CPLD - Complex Programmable Logic Device"},{"chassis":"","module":"","component":"CPLD3","version":"CPLD000000_REV0300","description":"CPLD - Complex Programmable Logic Device"}]`
+	expectedOutput := `{"chassis":"MSN2700","module":"N/A","components":[{"name":"ONIE","version":"2018.05-5.2.0004-9600","description":"ONIE - Open Network Install Environment"},{"name":"SSD","version":"0115-000","description":"SSD - Solid-State Drive"},{"name":"BIOS","version":"0ABZS017_02.02.002","description":"BIOS - Basic Input/Output System"},{"name":"CPLD1","version":"CPLD000085_REV2000","description":"CPLD - Complex Programmable Logic Device"},{"name":"CPLD2","version":"CPLD000128_REV0600","description":"CPLD - Complex Programmable Logic Device"},{"name":"CPLD3","version":"CPLD000000_REV0300","description":"CPLD - Complex Programmable Logic Device"}]}`
 
 	// Expected output for modular chassis test
-	expectedModularOutput := `[{"chassis":"ModularChassis","module":"","component":"BIOS","version":"1.0.0","description":"System BIOS"},{"chassis":"","module":"Module1","component":"FPGA","version":"2.1.0","description":"Module FPGA"},{"chassis":"","module":"","component":"CPLD","version":"3.0.0","description":"Module CPLD"}]`
+	expectedModularOutput := `{"chassis":"ModularChassis","module":"Module1","components":[{"name":"BIOS","version":"1.0.0","description":"System BIOS"},{"name":"FPGA","version":"2.1.0","description":"Module FPGA"},{"name":"CPLD","version":"3.0.0","description":"Module CPLD"}]}`
 
-	expectedEmptyOutput := `[]`
+	expectedEmptyOutput := `{"chassis":"N/A","module":"N/A","components":[]}`
 
 	tests := []struct {
 		desc        string
@@ -190,7 +190,7 @@ func TestGetShowPlatformFirmwareStatus(t *testing.T) {
 				elem: <name: "status" >
 			`,
 			wantRetCode: codes.OK,
-			wantRespVal: []byte(`[{"chassis":"TestChassis","module":"N/A","component":"BIOS","version":"1.0.0","description":"Test BIOS"},{"chassis":"","module":"","component":"CPLD","version":"2.0.0","description":"Test CPLD"}]`),
+			wantRespVal: []byte(`{"chassis":"TestChassis","module":"N/A","components":[{"name":"BIOS","version":"1.0.0","description":"Test BIOS"},{"name":"CPLD","version":"2.0.0","description":"Test CPLD"}]}`),
 			valTest:     true,
 			testInit: func() func() {
 				ResetDataSetsAndMappings(t)
@@ -236,7 +236,7 @@ func TestGetShowPlatformFirmwareStatus(t *testing.T) {
 				elem: <name: "status" >
 			`,
 			wantRetCode: codes.OK,
-			wantRespVal: []byte(`[{"chassis":"Modular","module":"","component":"BIOS","version":"1.0","description":"Chassis BIOS"},{"chassis":"","module":"LineCard1","component":"FPGA","version":"2.0","description":"Module FPGA"},{"chassis":"","module":"","component":"CPLD","version":"3.0","description":"Module CPLD"}]`),
+			wantRespVal: []byte(`{"chassis":"Modular","module":"LineCard1","components":[{"name":"BIOS","version":"1.0","description":"Chassis BIOS"},{"name":"FPGA","version":"2.0","description":"Module FPGA"},{"name":"CPLD","version":"3.0","description":"Module CPLD"}]}`),
 			valTest:     true,
 			testInit: func() func() {
 				ResetDataSetsAndMappings(t)

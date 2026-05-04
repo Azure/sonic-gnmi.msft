@@ -93,13 +93,18 @@ type CurrentInfo struct {
 	Timestamp  string `json:"timestamp"`
 }
 
-// FirmwareInfo represents firmware status information for a component
-type FirmwareInfo struct {
-	Chassis     string `json:"chassis"`
-	Module      string `json:"module"`
-	Component   string `json:"component"`
+// ComponentInfo represents individual component firmware information
+type ComponentInfo struct {
+	Name        string `json:"name"`
 	Version     string `json:"version"`
 	Description string `json:"description"`
+}
+
+// FirmwareInfo represents the complete firmware status
+type FirmwareInfo struct {
+	Chassis    string          `json:"chassis"`
+	Module     string          `json:"module"`
+	Components []ComponentInfo `json:"components"`
 }
 
 // getPlatformSummary implements the "show platform summary" command
@@ -409,20 +414,57 @@ func getPlatformFirmware(args sdc.CmdArgs, options sdc.OptionMap) ([]byte, error
 	firmwareDataList, err := helpers.GetAllFirmwareData()
 	if err != nil {
 		log.V(1).Infof("Error getting firmware data: %v", err)
-		return json.Marshal([]FirmwareInfo{})
-	}
-
-	// Convert helper struct to API response struct
-	firmwareList := make([]FirmwareInfo, 0, len(firmwareDataList))
-	for _, data := range firmwareDataList {
-		firmwareList = append(firmwareList, FirmwareInfo{
-			Chassis:     data.Chassis,
-			Module:      data.Module,
-			Component:   data.Component,
-			Version:     data.Version,
-			Description: data.Description,
+		return json.Marshal(FirmwareInfo{
+			Chassis:    "N/A",
+			Module:     "N/A",
+			Components: []ComponentInfo{},
 		})
 	}
 
-	return json.Marshal(firmwareList)
+	if len(firmwareDataList) == 0 {
+		return json.Marshal(FirmwareInfo{
+			Chassis:    "N/A",
+			Module:     "N/A",
+			Components: []ComponentInfo{},
+		})
+	}
+
+	// Extract chassis and module from first entry, build components list
+	chassisName := "N/A"
+	moduleName := "N/A"
+	components := make([]ComponentInfo, 0, len(firmwareDataList))
+
+	for i, data := range firmwareDataList {
+		// Use chassis name from first non-empty entry
+		if i == 0 || (chassisName == "N/A" && data.Chassis != "") {
+			if data.Chassis != "" {
+				chassisName = data.Chassis
+			}
+		}
+
+		// For module, use first non-empty module name, or keep "N/A" if all are empty
+		if i == 0 || (moduleName == "N/A" && data.Module != "") {
+			if data.Module != "" {
+				moduleName = data.Module
+			}
+		}
+
+		// Create component info
+		component := ComponentInfo{
+			Name:        data.Component,
+			Version:     data.Version,
+			Description: data.Description,
+		}
+
+		components = append(components, component)
+	}
+
+	// Build final response structure
+	firmwareInfo := FirmwareInfo{
+		Chassis:    chassisName,
+		Module:     moduleName,
+		Components: components,
+	}
+
+	return json.Marshal(firmwareInfo)
 }

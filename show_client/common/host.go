@@ -252,6 +252,19 @@ func GetPlatformConfigFilePath() string {
 	return ""
 }
 
+// GetPlatformPath returns the best available platform path.
+// For host-executed commands, prefer the host device path derived from platform
+// even when the directory is not visible from inside the container.
+// Falls back to container platform path only when platform is unavailable.
+func GetPlatformPath() string {
+	platform := GetPlatform()
+	if platform != "" {
+		return filepath.Join(HostDevicePath, platform)
+	}
+
+	return ContainerPlatformPath
+}
+
 func IsExpectedValue(val string, expectedVal string) bool {
 	if strings.TrimSpace(val) == expectedVal {
 		return true

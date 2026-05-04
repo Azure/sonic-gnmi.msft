@@ -1132,6 +1132,16 @@ func init() {
 		nil,
 	)
 
+	//SHOW/boot
+	sdc.RegisterCliPath(
+		[]string{"SHOW", "boot"},
+		getBoot,
+		"SHOW/boot[OPTIONS]: Show boot configuration",
+		0,
+		0,
+		nil,
+	)
+
 	// SHOW/platform/ssdhealth
 	sdc.RegisterCliPath(
 		[]string{"SHOW", "platform", "ssdhealth"},

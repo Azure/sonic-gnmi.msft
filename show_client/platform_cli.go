@@ -93,6 +93,23 @@ type CurrentInfo struct {
 	Timestamp  string `json:"timestamp"`
 }
 
+// SsdHealthInfo represents SSD health information.
+// Fields are conditionally populated based on verbose/vendor options,
+// matching Python ssdutil output:
+//
+//	always:  disk_type, device_model, health, temperature
+//	verbose: +firmware, +serial
+//	vendor:  +vendor_output
+type SsdHealthInfo struct {
+	DiskType     string `json:"disk_type"`
+	DeviceModel  string `json:"device_model"`
+	Firmware     string `json:"firmware,omitempty"`
+	Serial       string `json:"serial,omitempty"`
+	Health       string `json:"health"`
+	Temperature  string `json:"temperature"`
+	VendorOutput string `json:"vendor_output,omitempty"`
+}
+
 // getPlatformSummary implements the "show platform summary" command
 func getPlatformSummary(args sdc.CmdArgs, options sdc.OptionMap) ([]byte, error) {
 	// Get version info to extract ASIC type
@@ -416,4 +433,37 @@ func getPlatformSyseeprom(args sdc.CmdArgs, options sdc.OptionMap) ([]byte, erro
 
 	// Default path: read from STATE_DB (equivalent to decode-syseeprom -d)
 	return helpers.ReadEepromFromDb()
+
+// getPlatformSsdhealth implements the "show platform ssdhealth" command.
+func getPlatformSsdhealth(args sdc.CmdArgs, options sdc.OptionMap) ([]byte, error) {
+	var device string
+	if len(args) > 0 {
+		device = args[0]
+	}
+
+	ssdInfo, err := helpers.GetSsdHealthData(device)
+	if err != nil {
+		log.Infof("SSD not detected: %v", err)
+		return json.Marshal(map[string]string{"message": "SSD not detected"})
+	}
+
+	ssdHealth := SsdHealthInfo{
+		DiskType:    strings.ToUpper(ssdInfo.DiskType),
+		DeviceModel: ssdInfo.Model,
+		Health:      helpers.FormatHealth(ssdInfo.Health),
+		Temperature: helpers.FormatTemperature(ssdInfo.Temperature),
+	}
+
+	if verbose, ok := options[OptionKeyVerbose].Bool(); ok && verbose {
+		log.V(4).Infof("Verbose mode enabled, adding firmware=%s, serial=%s", ssdInfo.Firmware, ssdInfo.Serial)
+		ssdHealth.Firmware = ssdInfo.Firmware
+		ssdHealth.Serial = ssdInfo.Serial
+	}
+
+	if vendor, ok := options[OptionKeyVendor].Bool(); ok && vendor {
+		log.V(4).Infof("Vendor mode enabled, adding vendor_output (len=%d)", len(ssdInfo.VendorOutput))
+		ssdHealth.VendorOutput = ssdInfo.VendorOutput
+	}
+
+	return json.Marshal(ssdHealth)
 }

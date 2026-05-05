@@ -47,6 +47,13 @@ func ReadConfToMap(filePath string) (map[string]interface{}, error) {
 	content := string(dataBytes)
 	lines := strings.Split(content, "\n")
 	for _, line := range lines {
+		line = strings.TrimSpace(line)
+
+		// Skip empty lines and comment lines (starting with #)
+		if line == "" || strings.HasPrefix(line, "#") {
+			continue
+		}
+
 		if strings.Contains(line, "=") {
 			parts := strings.SplitN(line, "=", 2)
 			key := strings.TrimSpace(parts[0])
@@ -81,6 +88,8 @@ func GetMapFromFile(filePath string) (map[string]interface{}, error) {
 	return result, nil
 }
 
+// DirExists checks whether a directory exists at the given path.
+// Matches Python: os.path.isdir(path)
 func DirExists(path string) bool {
 	info, err := os.Stat(path)
 	if err != nil {
@@ -118,4 +127,25 @@ func ReadConfKey(filePath string, key string) (string, bool) {
 		}
 	}
 	return "", false
+}
+
+// GetNestedString traverses a nested map using the given keys and returns the final value as a string.
+// Equivalent to Python: data.get(k1, {}).get(k2, {}).get(k3, None)
+// Returns empty string if any key is missing or the final value is not a string.
+func GetNestedString(data map[string]interface{}, keys ...string) string {
+	current := data
+	for i, key := range keys {
+		if i == len(keys)-1 {
+			if val, ok := current[key].(string); ok {
+				return val
+			}
+			return ""
+		}
+		next, ok := current[key].(map[string]interface{})
+		if !ok {
+			return ""
+		}
+		current = next
+	}
+	return ""
 }

@@ -17,6 +17,7 @@ const (
 	asicConfFilename      = "asic.conf"
 	ContainerPlatformPath = "/usr/share/sonic/platform"
 	platformEnvConfFile   = "platform_env.conf"
+	PlatformJsonFile      = "platform.json"
 	serial                = "serial"
 	model                 = "model"
 	revision              = "revision"
@@ -283,4 +284,34 @@ func IsDisaggregatedChassis() bool {
 func IsSimxPlatform() bool {
 	platformName := GetPlatform()
 	return platformName != "" && strings.Contains(strings.ToLower(platformName), "simx")
+}
+
+// GetPlatformJsonData retrieves the data from platform.json file.
+func GetPlatformJsonData() (map[string]interface{}, error) {
+	// 1. Check container platform path
+	candidate := filepath.Join(ContainerPlatformPath, PlatformJsonFile)
+	if FileExists(candidate) {
+		return GetMapFromFile(candidate)
+	}
+
+	// 2. Check host device path with platform
+	platformName := GetPlatform()
+	if platformName != "" {
+		candidate = filepath.Join(HostDevicePath, platformName, PlatformJsonFile)
+		if FileExists(candidate) {
+			return GetMapFromFile(candidate)
+		}
+	}
+
+	return nil, fmt.Errorf("platform.json not found")
+}
+
+// GetPathsToPlatformAndHwskuDirsOnHost returns the paths to the device's platform
+// and hardware SKU directories on the host.
+func GetPathsToPlatformAndHwskuDirsOnHost() (string, string) {
+	platformName := GetPlatform()
+	platformPath := filepath.Join(HostDevicePath, platformName)
+	hwskuName := GetHwsku()
+	hwskuPath := filepath.Join(platformPath, hwskuName)
+	return platformPath, hwskuPath
 }

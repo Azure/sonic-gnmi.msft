@@ -140,29 +140,7 @@ func GetChassisName() (string, error) {
 
 // GetChassisComponents calls Platform API to get chassis components
 func GetChassisComponents() ([]ComponentInfo, error) {
-	pythonScript := `
-import json
-try:
-    from sonic_platform.platform import Platform
-    chassis = Platform().get_chassis()
-    components = []
-    
-    if hasattr(chassis, 'get_all_components'):
-        for component in chassis.get_all_components():
-            try:
-                components.append({
-                    'name': component.get_name() if hasattr(component, 'get_name') else 'N/A',
-                    'firmware_version': component.get_firmware_version() if hasattr(component, 'get_firmware_version') else 'N/A',
-                    'description': component.get_description() if hasattr(component, 'get_description') else 'N/A'
-                })
-            except Exception:
-                continue
-    
-    print(json.dumps(components))
-except Exception:
-    print('[]')
-`
-	escaped := strings.ReplaceAll(pythonScript, "'", `'\''`)
+	escaped := strings.ReplaceAll(common.ChassisComponentsPyScript, "'", `'\''`)
 	command := fmt.Sprintf("python3 -c '%s'", escaped)
 
 	output, err := common.GetDataFromHostCommand(command)
@@ -190,37 +168,7 @@ except Exception:
 
 // GetModuleComponents calls Platform API to get module components
 func GetModuleComponents() ([]ModuleComponentInfo, error) {
-	pythonScript := `
-import json
-try:
-    from sonic_platform.platform import Platform
-    chassis = Platform().get_chassis()
-    components = []
-    
-    if hasattr(chassis, 'get_all_modules'):
-        for module in chassis.get_all_modules():
-            try:
-                module_name = module.get_name() if hasattr(module, 'get_name') else 'N/A'
-                
-                if hasattr(module, 'get_all_components'):
-                    for component in module.get_all_components():
-                        try:
-                            components.append({
-                                'module_name': module_name,
-                                'name': component.get_name() if hasattr(component, 'get_name') else 'N/A',
-                                'firmware_version': component.get_firmware_version() if hasattr(component, 'get_firmware_version') else 'N/A',
-                                'description': component.get_description() if hasattr(component, 'get_description') else 'N/A'
-                            })
-                        except Exception:
-                            continue
-            except Exception:
-                continue
-    
-    print(json.dumps(components))
-except Exception:
-    print('[]')
-`
-	escaped := strings.ReplaceAll(pythonScript, "'", `'\''`)
+	escaped := strings.ReplaceAll(common.ModuleComponentsPyScript, "'", `'\''`)
 	command := fmt.Sprintf("python3 -c '%s'", escaped)
 
 	output, err := common.GetDataFromHostCommand(command)

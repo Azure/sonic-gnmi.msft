@@ -1173,4 +1173,14 @@ func init() {
 		0,
 		nil,
 	)
+
+	// SHOW/platform/syseeprom
+	sdc.RegisterCliPath(
+		[]string{"SHOW", "platform", "syseeprom"},
+		getPlatformSyseeprom,
+		"SHOW/platform/syseeprom: Show system EEPROM information",
+		0,
+		0,
+		nil,
+	)
 }

@@ -1,0 +1,82 @@
+{
+    "EEPROM_INFO|State": {
+        "Initialized": "1"
+    },
+    "EEPROM_INFO|TlvHeader": {
+        "Id String": "TlvInfo",
+        "Version": "1",
+        "Total Length": "169"
+    },
+    "EEPROM_INFO|0x21": {
+        "Name": "Product Name",
+        "Len": "12",
+        "Value": "DCS-7060CX-32"
+    },
+    "EEPROM_INFO|0x22": {
+        "Name": "Part Number",
+        "Len": "14",
+        "Value": "FP-T3048-C32-R"
+    },
+    "EEPROM_INFO|0x23": {
+        "Name": "Serial Number",
+        "Len": "11",
+        "Value": "JPE20381234"
+    },
+    "EEPROM_INFO|0x24": {
+        "Name": "Base MAC Address",
+        "Len": "6",
+        "Value": "00:1C:73:01:23:45"
+    },
+    "EEPROM_INFO|0x25": {
+        "Name": "Manufacture Date",
+        "Len": "19",
+        "Value": "01/01/2024 00:00:00"
+    },
+    "EEPROM_INFO|0x26": {
+        "Name": "Device Version",
+        "Len": "1",
+        "Value": "2"
+    },
+    "EEPROM_INFO|0x27": {
+        "Name": "Label Revision",
+        "Len": "3",
+        "Value": "R01"
+    },
+    "EEPROM_INFO|0x28": {
+        "Name": "Platform Name",
+        "Len": "30",
+        "Value": "x86_64-mlnx_msn3700-r0"
+    },
+    "EEPROM_INFO|0x29": {
+        "Name": "ONIE Version",
+        "Len": "12",
+        "Value": "2024.02.01.0"
+    },
+    "EEPROM_INFO|0x2a": {
+        "Name": "MAC Addresses",
+        "Len": "2",
+        "Value": "256"
+    },
+    "EEPROM_INFO|0x2b": {
+        "Name": "Manufacturer",
+        "Len": "8",
+        "Value": "Mellanox"
+    },
+    "EEPROM_INFO|0xfd": {
+        "Num_vendor_ext": "2",
+        "Name_0": "Vendor Extension",
+        "Len_0": "36",
+        "Value_0": "0x00 0x00 0x81 0x19 0x02 0x40 0x44 0x65",
+        "Name_1": "Vendor Extension",
+        "Len_1": "36",
+        "Value_1": "0x00 0x00 0x81 0x19 0x02 0x40 0x44 0x66"
+    },
+    "EEPROM_INFO|0xfe": {
+        "Name": "CRC-32",
+        "Len": "4",
+        "Value": "0xABCDEF01"
+    },
+    "EEPROM_INFO|Checksum": {
+        "Valid": "1"
+    }
+}

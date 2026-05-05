@@ -411,6 +411,30 @@ func getPlatformCurrent(args sdc.CmdArgs, options sdc.OptionMap) ([]byte, error)
 	})
 }
 
+// getPlatformSyseeprom implements "show platform syseeprom".
+//  1. Get platform name
+//  2. If platform matches kvm → return "does not support EEPROM"
+//  3. If platform matches arista or kvm → no DB support, use platform API via nsenter
+//  4. Otherwise → read from STATE_DB (EEPROM_INFO cached by syseepromd)
+func getPlatformSyseeprom(args sdc.CmdArgs, options sdc.OptionMap) ([]byte, error) {
+	platform := common.GetPlatform()
+	log.V(2).Infof("getPlatformSyseeprom: detected platform=%q", platform)
+
+	// Platforms that do not support EEPROM at all
+	if helpers.MatchesPlatformPattern(platform, helpers.PlatformsWithoutEeprom) {
+		return nil, fmt.Errorf("platform %s does not support EEPROM", platform)
+	}
+
+	// Platforms without EEPROM DB support — fall back to platform API via nsenter
+	if helpers.MatchesPlatformPattern(platform, helpers.PlatformsWithoutEepromDb) {
+		log.V(2).Infof("getPlatformSyseeprom: platform %q does not support EEPROM DB, using platform API", platform)
+		return helpers.ReadEepromViaPlatformApi()
+	}
+
+	// Default path: read from STATE_DB (equivalent to decode-syseeprom -d)
+	return helpers.ReadEepromFromDb()
+}
+
 // getPlatformSsdhealth implements the "show platform ssdhealth" command.
 func getPlatformSsdhealth(args sdc.CmdArgs, options sdc.OptionMap) ([]byte, error) {
 	var device string

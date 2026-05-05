@@ -17,3 +17,18 @@ except ImportError as e:
 s = SsdUtil('%s')
 print(json.dumps({'model': str(s.get_model()), 'firmware': str(s.get_firmware()), 'serial': str(s.get_serial()), 'health': str(s.get_health()), 'temperature': str(s.get_temperature()), 'vendor_output': str(s.get_vendor_output())}))
 `
+
+// SysEepromPyScript is the Python script that invokes the sonic_platform API
+// to retrieve system EEPROM info.
+var SysEepromPyScript = `
+import sys
+try:
+    import sonic_platform
+    eeprom = sonic_platform.platform.Platform().get_chassis().get_eeprom()
+except Exception:
+    eeprom = None
+if not eeprom:
+    sys.exit(1)
+sys_eeprom_data = eeprom.read_eeprom()
+eeprom.decode_eeprom(sys_eeprom_data)
+`

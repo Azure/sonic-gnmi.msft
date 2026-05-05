@@ -1132,6 +1132,17 @@ func init() {
 		nil,
 	)
 
+	// SHOW/platform/firmware/status
+	sdc.RegisterCliPath(
+		[]string{"SHOW", "platform", "firmware", "status"},
+		getPlatformFirmware,
+		"SHOW/platform/firmware/status[OPTIONS]: Show platform component firmware status",
+		0,
+		0,
+		nil,
+		showCmdOptionVerbose,
+	)
+
 	//SHOW/boot
 	sdc.RegisterCliPath(
 		[]string{"SHOW", "boot"},

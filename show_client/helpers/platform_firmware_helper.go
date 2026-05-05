@@ -36,10 +36,11 @@ type FirmwareData struct {
 func GetAllFirmwareData() ([]FirmwareData, error) {
 	firmwareList := make([]FirmwareData, 0)
 
-	// Get chassis name
-	chassisName, err := GetChassisName()
-	if err != nil {
-		chassisName = "N/A"
+	// Get chassis info from database
+	chassisInfo, err := common.GetChassisInfo()
+	chassisName := "N/A"
+	if err == nil {
+		chassisName = chassisInfo["model"]
 	}
 
 	// Check if modular chassis to determine module name logic
@@ -115,27 +116,6 @@ func GetAllFirmwareData() ([]FirmwareData, error) {
 	}
 
 	return firmwareList, nil
-}
-
-// GetChassisName calls Platform API to get chassis name
-func GetChassisName() (string, error) {
-	// Query CHASSIS_INFO database table for chassis model
-	queries := [][]string{
-		{"STATE_DB", "CHASSIS_INFO"},
-	}
-
-	chassisData, err := common.GetMapFromQueries(queries)
-	if err != nil {
-		return "", err
-	}
-
-	// Extract chassis name (model) from database
-	if chassisInfo, ok := chassisData["chassis 1"].(map[string]interface{}); ok {
-		model := common.GetValueOrDefault(chassisInfo, "model", "N/A")
-		return model, nil
-	}
-
-	return "N/A", nil
 }
 
 // GetChassisComponents calls Platform API to get chassis components

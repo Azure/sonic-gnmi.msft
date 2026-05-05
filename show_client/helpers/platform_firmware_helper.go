@@ -119,23 +119,23 @@ func GetAllFirmwareData() ([]FirmwareData, error) {
 
 // GetChassisName calls Platform API to get chassis name
 func GetChassisName() (string, error) {
-	pythonScript := `
-try:
-    from sonic_platform.platform import Platform
-    chassis = Platform().get_chassis()
-    print(chassis.get_name() if hasattr(chassis, 'get_name') else 'N/A')
-except Exception:
-    print('N/A')
-`
-	escaped := strings.ReplaceAll(pythonScript, "'", `'\''`)
-	command := fmt.Sprintf("python3 -c '%s'", escaped)
+	// Query CHASSIS_INFO database table for chassis model
+	queries := [][]string{
+		{"STATE_DB", "CHASSIS_INFO"},
+	}
 
-	output, err := common.GetDataFromHostCommand(command)
+	chassisData, err := common.GetMapFromQueries(queries)
 	if err != nil {
 		return "", err
 	}
 
-	return strings.TrimSpace(output), nil
+	// Extract chassis name (model) from database
+	if chassisInfo, ok := chassisData["chassis 1"].(map[string]interface{}); ok {
+		model := common.GetValueOrDefault(chassisInfo, "model", "N/A")
+		return model, nil
+	}
+
+	return "N/A", nil
 }
 
 // GetChassisComponents calls Platform API to get chassis components

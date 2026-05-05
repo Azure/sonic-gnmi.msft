@@ -195,12 +195,13 @@ func TestGetShowPlatformFirmwareStatus(t *testing.T) {
 			testInit: func() func() {
 				ResetDataSetsAndMappings(t)
 
+				// Add test data for CHASSIS_INFO to STATE_DB
+				stateDbClient := getRedisClientN(t, StateDbNum, "")
+				stateDbClient.HSet(context.Background(), "CHASSIS_INFO|chassis 1", "model", "TestChassis")
+				stateDbClient.Close()
+
 				// Mock individual helper functions to test integration logic
 				patches := gomonkey.NewPatches()
-
-				patches.ApplyFunc(helpers.GetChassisName, func() (string, error) {
-					return "TestChassis", nil
-				})
 
 				patches.ApplyFunc(helpers.GetChassisComponents, func() ([]helpers.ComponentInfo, error) {
 					return []helpers.ComponentInfo{
@@ -241,12 +242,13 @@ func TestGetShowPlatformFirmwareStatus(t *testing.T) {
 			testInit: func() func() {
 				ResetDataSetsAndMappings(t)
 
+				// Add test data for CHASSIS_INFO to STATE_DB
+				stateDbClient := getRedisClientN(t, StateDbNum, "")
+				stateDbClient.HSet(context.Background(), "CHASSIS_INFO|chassis 1", "model", "Modular")
+				stateDbClient.Close()
+
 				// Mock helper functions for modular chassis with modules
 				patches := gomonkey.NewPatches()
-
-				patches.ApplyFunc(helpers.GetChassisName, func() (string, error) {
-					return "Modular", nil
-				})
 
 				patches.ApplyFunc(helpers.GetChassisComponents, func() ([]helpers.ComponentInfo, error) {
 					return []helpers.ComponentInfo{
@@ -297,8 +299,9 @@ func TestGetShowPlatformFirmwareStatus(t *testing.T) {
 				// Mock helper functions returning errors to test error handling
 				patches := gomonkey.NewPatches()
 
-				patches.ApplyFunc(helpers.GetChassisName, func() (string, error) {
-					return "", fmt.Errorf("chassis name error")
+				// Mock database query failure for chassis info
+				patches.ApplyFunc(common.GetMapFromQueries, func(queries [][]string) (map[string]interface{}, error) {
+					return nil, fmt.Errorf("database query error")
 				})
 
 				patches.ApplyFunc(helpers.GetChassisComponents, func() ([]helpers.ComponentInfo, error) {

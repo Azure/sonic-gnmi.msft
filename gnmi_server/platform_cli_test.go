@@ -6,6 +6,7 @@ package gnmi
 
 import (
 	"crypto/tls"
+	"encoding/json"
 	"fmt"
 	"testing"
 	"time"
@@ -831,6 +832,172 @@ func TestGetShowPlatformSsdhealth(t *testing.T) {
 				})
 				patches.ApplyFunc(sccommon.GetPlatformJsonData, func() (map[string]interface{}, error) {
 					return nil, fmt.Errorf("not found")
+				})
+				return patches
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.desc, func(t *testing.T) {
+			var patches *gomonkey.Patches
+			if tt.testInit != nil {
+				patches = tt.testInit()
+			}
+			defer func() {
+				if patches != nil {
+					patches.Reset()
+				}
+			}()
+
+			s := createServer(t, ServerPort)
+			go runServer(t, s)
+			defer s.ForceStop()
+
+			tlsConfig := &tls.Config{InsecureSkipVerify: true}
+			opts := []grpc.DialOption{grpc.WithTransportCredentials(credentials.NewTLS(tlsConfig))}
+
+			conn, err := grpc.Dial(TargetAddr, opts...)
+			if err != nil {
+				t.Fatalf("Dialing to %q failed: %v", TargetAddr, err)
+			}
+			defer conn.Close()
+
+			gClient := pb.NewGNMIClient(conn)
+			ctx, cancel := context.WithTimeout(context.Background(), QueryTimeout*time.Second)
+			defer cancel()
+
+			runTestGet(t, ctx, gClient, tt.pathTarget, tt.textPbPath, tt.wantRetCode, tt.wantRespVal, tt.valTest)
+		})
+	}
+}
+
+func TestGetShowPlatformSyseeprom(t *testing.T) {
+	tests := []struct {
+		desc        string
+		pathTarget  string
+		textPbPath  string
+		wantRetCode codes.Code
+		wantRespVal interface{}
+		valTest     bool
+		testInit    func() *gomonkey.Patches
+	}{
+		{
+			desc:       "query SHOW platform syseeprom - full EEPROM data",
+			pathTarget: "SHOW",
+			textPbPath: `
+				elem: <name: "platform" >
+				elem: <name: "syseeprom" >
+			`,
+			wantRetCode: codes.OK,
+			wantRespVal: func() []byte {
+				expected := helpers.SysEepromInfo{
+					TlvInfoHeader: helpers.SysEepromHeader{
+						IdString:    "TlvInfo",
+						Version:     "1",
+						TotalLength: "169",
+					},
+					TlvList: []helpers.SysEepromTlv{
+						{Name: "Product Name", Code: "0x21", Length: "12", Value: "DCS-7060CX-32"},
+						{Name: "Part Number", Code: "0x22", Length: "14", Value: "FP-T3048-C32-R"},
+						{Name: "Serial Number", Code: "0x23", Length: "11", Value: "JPE20381234"},
+						{Name: "Base MAC Address", Code: "0x24", Length: "6", Value: "00:1C:73:01:23:45"},
+						{Name: "Manufacture Date", Code: "0x25", Length: "19", Value: "01/01/2024 00:00:00"},
+						{Name: "Device Version", Code: "0x26", Length: "1", Value: "2"},
+						{Name: "Label Revision", Code: "0x27", Length: "3", Value: "R01"},
+						{Name: "Platform Name", Code: "0x28", Length: "30", Value: "x86_64-mlnx_msn3700-r0"},
+						{Name: "ONIE Version", Code: "0x29", Length: "12", Value: "2024.02.01.0"},
+						{Name: "MAC Addresses", Code: "0x2A", Length: "2", Value: "256"},
+						{Name: "Manufacturer", Code: "0x2B", Length: "8", Value: "Mellanox"},
+						{Name: "Vendor Extension", Code: "0xFD", Length: "36", Value: "0x00 0x00 0x81 0x19 0x02 0x40 0x44 0x65"},
+						{Name: "Vendor Extension", Code: "0xFD", Length: "36", Value: "0x00 0x00 0x81 0x19 0x02 0x40 0x44 0x66"},
+						{Name: "CRC-32", Code: "0xFE", Length: "4", Value: "0xABCDEF01"},
+					},
+					ChecksumValid: true,
+				}
+				jsonData, _ := json.Marshal(expected)
+				return jsonData
+			}(),
+			valTest: true,
+			testInit: func() *gomonkey.Patches {
+				ResetDataSetsAndMappings(t)
+				AddDataSet(t, StateDbNum, "../testdata/SYSEEPROM.txt")
+				return gomonkey.ApplyFunc(sccommon.GetPlatform, func() string {
+					return "x86_64-mlnx_msn3700-r0"
+				})
+			},
+		},
+		{
+			desc:       "query SHOW platform syseeprom - not initialized",
+			pathTarget: "SHOW",
+			textPbPath: `
+				elem: <name: "platform" >
+				elem: <name: "syseeprom" >
+			`,
+			wantRetCode: codes.NotFound,
+			valTest:     false,
+			testInit: func() *gomonkey.Patches {
+				ResetDataSetsAndMappings(t)
+				AddDataSet(t, StateDbNum, "../testdata/SYSEEPROM_NOT_INITIALIZED.txt")
+				return gomonkey.ApplyFunc(sccommon.GetPlatform, func() string {
+					return "x86_64-mlnx_msn3700-r0"
+				})
+			},
+		},
+		{
+			desc:       "query SHOW platform syseeprom - no data",
+			pathTarget: "SHOW",
+			textPbPath: `
+				elem: <name: "platform" >
+				elem: <name: "syseeprom" >
+			`,
+			wantRetCode: codes.NotFound,
+			valTest:     false,
+			testInit: func() *gomonkey.Patches {
+				ResetDataSetsAndMappings(t)
+				return gomonkey.ApplyFunc(sccommon.GetPlatform, func() string {
+					return "x86_64-mlnx_msn3700-r0"
+				})
+			},
+		},
+		{
+			desc:       "query SHOW platform syseeprom - KVM platform not supported",
+			pathTarget: "SHOW",
+			textPbPath: `
+				elem: <name: "platform" >
+				elem: <name: "syseeprom" >
+			`,
+			wantRetCode: codes.NotFound,
+			valTest:     false,
+			testInit: func() *gomonkey.Patches {
+				ResetDataSetsAndMappings(t)
+				return gomonkey.ApplyFunc(sccommon.GetPlatform, func() string {
+					return "x86_64-kvm_x86_64-r0"
+				})
+			},
+		},
+		{
+			desc:       "query SHOW platform syseeprom - Arista platform uses nsenter fallback",
+			pathTarget: "SHOW",
+			textPbPath: `
+				elem: <name: "platform" >
+				elem: <name: "syseeprom" >
+			`,
+			wantRetCode: codes.OK,
+			wantRespVal: func() []byte {
+				result := map[string]string{"eeprom_raw": "SKU: DCS-7060X6-64PE-B\nSerialNumber: HBG251204WB\nMAC: d8:06:f3:5a:a9:b1\nHwRev: 11.00"}
+				jsonData, _ := json.Marshal(result)
+				return jsonData
+			}(),
+			valTest: true,
+			testInit: func() *gomonkey.Patches {
+				ResetDataSetsAndMappings(t)
+				patches := gomonkey.ApplyFunc(sccommon.GetPlatform, func() string {
+					return "x86_64-arista_7050-r0"
+				})
+				eepromText := "SKU: DCS-7060X6-64PE-B\nSerialNumber: HBG251204WB\nMAC: d8:06:f3:5a:a9:b1\nHwRev: 11.00"
+				patches.ApplyFunc(sccommon.GetDataFromHostCommand, func(command string) (string, error) {
+					return eepromText, nil
 				})
 				return patches
 			},

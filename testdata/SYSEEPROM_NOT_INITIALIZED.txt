@@ -1,0 +1,5 @@
+{
+    "EEPROM_INFO|State": {
+        "Initialized": "0"
+    }
+}

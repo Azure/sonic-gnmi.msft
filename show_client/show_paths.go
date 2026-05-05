@@ -1174,7 +1174,7 @@ func init() {
 		nil,
 	)
 
-  // SHOW/platform/syseeprom
+	// SHOW/platform/syseeprom
 	sdc.RegisterCliPath(
 		[]string{"SHOW", "platform", "syseeprom"},
 		getPlatformSyseeprom,

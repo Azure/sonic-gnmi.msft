@@ -433,6 +433,7 @@ func getPlatformSyseeprom(args sdc.CmdArgs, options sdc.OptionMap) ([]byte, erro
 
 	// Default path: read from STATE_DB (equivalent to decode-syseeprom -d)
 	return helpers.ReadEepromFromDb()
+}
 
 // getPlatformSsdhealth implements the "show platform ssdhealth" command.
 func getPlatformSsdhealth(args sdc.CmdArgs, options sdc.OptionMap) ([]byte, error) {

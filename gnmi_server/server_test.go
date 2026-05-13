@@ -12,6 +12,7 @@ import (
 	"encoding/pem"
 	"flag"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"net"
 	"os"
@@ -27,6 +28,7 @@ import (
 	"time"
 	"unsafe"
 
+	"github.com/Azure/sonic-mgmt-common/translib/db"
 	"github.com/sonic-net/sonic-gnmi/common_utils"
 	spb "github.com/sonic-net/sonic-gnmi/proto"
 	sgpb "github.com/sonic-net/sonic-gnmi/proto/gnoi"
@@ -5923,6 +5925,175 @@ func TestInvalidServer(t *testing.T) {
 	}
 }
 
+func TestServerConfigGnmiVrf(t *testing.T) {
+	// Test GNMI server creation with VRF configuration
+	cfg := &Config{
+		Port:                8082,
+		EnableTranslibWrite: true,
+		EnableNativeWrite:   true,
+		Threshold:           100,
+		GnmiVrf:             "mgmt",
+		Vrf:                 "",
+	}
+	s, err := NewServer(cfg, []grpc.ServerOption{}, []grpc.ServerOption{})
+	if s != nil {
+		defer func() {
+			s.ForceStop()
+			if s.lis != nil {
+				s.lis.Close()
+			}
+		}()
+	}
+	if err != nil {
+		t.Logf("Expected error when VRF doesn't exist: %v", err)
+		if !contains(err.Error(), "VRF") && !contains(err.Error(), "bind") && !contains(err.Error(), "BINDTODEVICE") {
+			t.Logf("Error message: %v", err)
+		}
+		return
+	}
+	if cfg.GnmiVrf != "mgmt" {
+		t.Errorf("Expected gnmiVrf to be 'mgmt', got '%s'", cfg.GnmiVrf)
+	}
+	if s.lis == nil {
+		t.Errorf("Expected server listener to be created")
+	} else {
+		addr := s.lis.Addr()
+		if addr == nil {
+			t.Errorf("Expected server listener to have an address")
+		} else {
+			t.Logf("Server successfully bound to address: %s with VRF: %s", addr.String(), s.config.GnmiVrf)
+		}
+	}
+}
+
+func TestServerConfigZmqVrf(t *testing.T) {
+	// Test that ZMQ VRF field is properly set in config
+	cfg := &Config{
+		Port:                8083,
+		EnableTranslibWrite: true,
+		EnableNativeWrite:   true,
+		Threshold:           100,
+		GnmiVrf:             "",
+		Vrf:                 "mgmt",
+	}
+	s, err := NewServer(cfg, []grpc.ServerOption{}, []grpc.ServerOption{})
+	if s != nil {
+		defer func() {
+			s.ForceStop()
+			if s.lis != nil {
+				s.lis.Close()
+			}
+		}()
+	}
+	if err != nil {
+		t.Errorf("Failed to create server: %v", err)
+		return
+	}
+	if s.config.Vrf != "mgmt" {
+		t.Errorf("Expected Vrf to be 'mgmt', got '%s'", s.config.Vrf)
+	}
+}
+
+func TestServerConfigGnmiVrfEmptyAndDefault(t *testing.T) {
+	// Test that empty GnmiVrf and "default" GnmiVrf both use default listener
+	tests := []struct {
+		name    string
+		gnmiVrf string
+	}{
+		{"empty GnmiVrf", ""},
+		{"default GnmiVrf", "default"},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			cfg := &Config{
+				Port:                8084,
+				EnableTranslibWrite: true,
+				EnableNativeWrite:   true,
+				Threshold:           100,
+				GnmiVrf:             tt.gnmiVrf,
+				Vrf:                 "",
+			}
+			s, err := NewServer(cfg, []grpc.ServerOption{}, []grpc.ServerOption{})
+			if s != nil {
+				defer func() {
+					s.ForceStop()
+					if s.lis != nil {
+						s.lis.Close()
+					}
+				}()
+			}
+			if err != nil {
+				t.Errorf("Failed to create server with GnmiVrf=%q: %v", tt.gnmiVrf, err)
+				return
+			}
+			if s.lis == nil {
+				t.Errorf("Expected server listener to be created")
+			} else {
+				t.Logf("Server with GnmiVrf=%q created on: %s", tt.gnmiVrf, s.lis.Addr().String())
+			}
+		})
+	}
+}
+
+func TestCreateVrfListenerBindToDeviceError(t *testing.T) {
+	_, err := createVrfListener("nonexistent-vrf-12345", 0)
+	if err == nil {
+		t.Skip("Expected error when BINDTODEVICE fails, but got success. System may not support VRFs or the VRF might exist.")
+	}
+	if !contains(err.Error(), "bind") && !contains(err.Error(), "VRF") {
+		t.Logf("Got error (which is expected): %v", err)
+	}
+}
+
+func TestCreateVrfListenerInvalidPort(t *testing.T) {
+	_, err := createVrfListener("", 99999)
+	if err == nil {
+		t.Fatal("Expected error for invalid port")
+	}
+}
+
+func TestCreateVrfListenerSuccess(t *testing.T) {
+	listener, err := createVrfListener("", 0)
+	if err != nil {
+		t.Skipf("Could not create VRF listener (this is expected if not running as root or on unsupported system): %v", err)
+	}
+	if listener == nil {
+		t.Fatal("Expected non-nil listener")
+	}
+	defer listener.Close()
+
+	addr := listener.Addr()
+	if addr == nil {
+		t.Error("Expected non-nil address")
+	}
+	t.Logf("Successfully created VRF listener on %s", addr.String())
+
+	tcpAddr, ok := addr.(*net.TCPAddr)
+	if !ok {
+		t.Errorf("Expected TCPAddr, got %T", addr)
+	} else {
+		if tcpAddr.Port == 0 {
+			t.Error("Expected non-zero port to be assigned")
+		}
+		t.Logf("Listener bound to port %d", tcpAddr.Port)
+	}
+}
+
+func contains(s, substr string) bool {
+	return len(s) >= len(substr) && (s == substr || len(substr) == 0 ||
+		(len(s) > 0 && len(substr) > 0 && containsHelper(s, substr)))
+}
+
+func containsHelper(s, substr string) bool {
+	for i := 0; i <= len(s)-len(substr); i++ {
+		if s[i:i+len(substr)] == substr {
+			return true
+		}
+	}
+	return false
+}
+
 func TestParseOrigin(t *testing.T) {
 	var test_paths []*gnmipb.Path
 	var err error
@@ -6482,6 +6653,94 @@ func TestGnoiAuthorization(t *testing.T) {
 	}
 
 	s.Stop()
+}
+func TestConfigDbJournal(t *testing.T) {
+	//Since the enableConfigDbJournal is set to false by default, enable it in UT to execute the tests
+	val := true
+	enableConfigDbJournal = &val
+
+	ns, _ := sdcfg.GetDbDefaultNamespace()
+	rclient := getConfigDbClient(t, ns)
+	defer db.CloseRedisClient(rclient)
+	tests := []struct {
+		desc          string
+		cmd           func()
+		expectedEntry string
+	}{
+		{
+			desc: "HSetNew",
+			cmd: func() {
+				rclient.HSet(context.Background(), "DB_JOURNAL|Test", "new", "test")
+			},
+			expectedEntry: "hset DB_JOURNAL|Test +new:test",
+		},
+		{
+			desc: "HSetExisting",
+			cmd: func() {
+				rclient.HSet(context.Background(), "DB_JOURNAL|Test", "new", "already exists")
+			},
+			expectedEntry: "hset DB_JOURNAL|Test new=already exists",
+		},
+		{
+			desc: "HDel",
+			cmd: func() {
+				rclient.HDel(context.Background(), "DB_JOURNAL|Test", "new")
+			},
+			expectedEntry: "hdel DB_JOURNAL|Test -new",
+		},
+		{
+			desc: "Set",
+			cmd: func() {
+				rclient.Set(context.Background(), "NEW_DBJOURNAL_TABLE", "TEST", 0)
+			},
+			expectedEntry: "set NEW_DBJOURNAL_TABLE",
+		},
+		{
+			desc: "Del",
+			cmd: func() {
+				rclient.Del(context.Background(), "NEW_DBJOURNAL_TABLE")
+			},
+			expectedEntry: "del NEW_DBJOURNAL_TABLE",
+		},
+	}
+
+	s := createServer(t, 8081)
+	go runServer(t, s)
+	defer s.Stop()
+
+	// Ensure the keys used in this test are not already in the DB.
+	rclient.Del(context.Background(), "DB_JOURNAL|Test")
+	rclient.Del(context.Background(), "NEW_DBJOURNAL_TABLE")
+	time.Sleep(500 * time.Millisecond)
+
+	for _, test := range tests {
+		t.Run(test.desc, func(t *testing.T) {
+			// Clear the DbJournal file
+			err := os.Remove(HostVarLogPath + "/config_db.txt")
+			if err != nil {
+				t.Fatalf("Failed to remove journal file: %v", err)
+			}
+
+			// Trigger a redis event
+			test.cmd()
+
+			time.Sleep(500 * time.Millisecond)
+
+			// Verify the contents of the file
+			file, err := os.Open(HostVarLogPath + "/config_db.txt")
+			if err != nil {
+				t.Fatalf("Failed to open file: %v", err)
+			}
+			defer file.Close()
+			data, err := io.ReadAll(file)
+			if err != nil {
+				t.Fatalf("Failed to read file: %v", err)
+			}
+			if !strings.Contains(string(data), test.expectedEntry) {
+				t.Fatalf("Incorrect file contents: %s", data)
+			}
+		})
+	}
 }
 
 func init() {

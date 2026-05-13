@@ -8,12 +8,14 @@ import (
 	"crypto/x509"
 	"encoding/pem"
 	"errors"
+	"flag"
 	"fmt"
 	"net"
 	"os"
 	"path/filepath"
 	"strings"
 	"sync"
+	"syscall"
 	"time"
 
 	"github.com/Azure/sonic-mgmt-common/translib"
@@ -55,6 +57,8 @@ import (
 	"google.golang.org/grpc/status"
 )
 
+var enableConfigDbJournal = flag.Bool("enable_config_db_journal", false, "enable config db journal")
+
 var (
 	muPath             = &sync.RWMutex{}
 	supportedEncodings = []gnmipb.Encoding{gnmipb.Encoding_JSON, gnmipb.Encoding_JSON_IETF, gnmipb.Encoding_PROTO}
@@ -64,6 +68,9 @@ var (
 const (
 	authLogPath             = "/host_var/log/messages"
 	authzRefreshingInterval = 5 * time.Second
+)
+const (
+	HostVarLogPath = "/var/log"
 )
 
 // Server manages a single gNMI Server implementation. Each client that connects
@@ -97,6 +104,8 @@ type Server struct {
 	gnsiAuthz         *GNSIAuthzServer
 	gnsiPathz         *GNSIPathzServer
 	ConnectionManager *ConnectionManager
+	// DB Journals
+	configDbJournal *DbJournal
 }
 
 // handleOperationalGet handles OPERATIONAL target requests directly with standard gNMI types
@@ -211,6 +220,7 @@ type Config struct {
 	ZmqPort             string
 	IdleConnDuration    int
 	ConfigTableName     string
+	GnmiVrf             string
 	Vrf                 string
 	EnableCrl           bool
 	// Path to the directory where image is stored.
@@ -480,7 +490,31 @@ func SrvAdvConfig(cfg *Config) ([]grpc.ServerOption, []certprovider.Provider, er
 }
 
 // NewServer returns an initialized Server.
-//
+func createVrfListener(vrf string, port int64) (net.Listener, error) {
+	lc := net.ListenConfig{
+		Control: func(network, address string, c syscall.RawConn) error {
+			var err error
+			ctrlErr := c.Control(func(fd uintptr) {
+				err = syscall.SetsockoptString(int(fd), syscall.SOL_SOCKET, syscall.SO_BINDTODEVICE, vrf)
+			})
+			if ctrlErr != nil {
+				return ctrlErr
+			}
+			if err != nil {
+				return fmt.Errorf("failed to bind socket to VRF %s: %v", vrf, err)
+			}
+			return nil
+		},
+	}
+
+	listener, err := lc.Listen(context.Background(), "tcp", fmt.Sprintf(":%d", port))
+	if err != nil {
+		return nil, err
+	}
+	log.V(1).Infof("Created VRF-bound listener on VRF %s, port %d", vrf, port)
+	return listener, nil
+}
+
 // tlsOpts contains TLS credentials and is used only for the TCP listener.
 // commonOpts contains interceptors, keepalive params, etc. and is used for both listeners.
 //
@@ -553,7 +587,12 @@ func NewServer(config *Config, tlsOpts []grpc.ServerOption, commonOpts []grpc.Se
 		srv.s = grpc.NewServer(tcpOpts...)
 		reflection.Register(srv.s)
 
-		srv.lis, err = net.Listen("tcp", fmt.Sprintf(":%d", config.Port))
+		// Create VRF-aware listener if GNMI VRF is specified
+		if config.GnmiVrf != "" && config.GnmiVrf != "default" {
+			srv.lis, err = createVrfListener(config.GnmiVrf, config.Port)
+		} else {
+			srv.lis, err = net.Listen("tcp", fmt.Sprintf(":%d", config.Port))
+		}
 		if err != nil {
 			log.Warningf("Failed to open listener port %d: %v; disabling TCP listener", config.Port, err)
 			srv.s.Stop()
@@ -604,6 +643,12 @@ func NewServer(config *Config, tlsOpts []grpc.ServerOption, commonOpts []grpc.Se
 		return nil, errors.New("no listener configured: port must be > 0 or unix_socket must be set")
 	}
 
+	if *enableConfigDbJournal {
+		srv.configDbJournal, err = NewDbJournal("CONFIG_DB")
+		if err != nil {
+			return nil, fmt.Errorf("failed to create CONFIG_DB Journal: %v", err)
+		}
+	}
 	log.V(1).Infof("Created Server on %s, read-only: %t", srv.Address(), !srv.config.EnableTranslibWrite)
 	return srv, nil
 }

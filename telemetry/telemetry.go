@@ -62,6 +62,7 @@ type TelemetryConfig struct {
 	WithMasterArbitration    *bool
 	WithSaveOnSet            *bool
 	IdleConnDuration         *int
+	GnmiVrf                  *string
 	Vrf                      *string
 	EnableCrl                *bool
 	CrlExpireDuration        *int
@@ -76,6 +77,8 @@ type TelemetryConfig struct {
 	AuthPolicyEnabled        *bool
 	AuthzPolicyFile          *string
 	EnableStreamMultiplexing *bool
+	MaxRecvMsgSize           *int
+	MaxSendMsgSize           *int
 }
 
 func main() {
@@ -185,7 +188,8 @@ func setupFlags(fs *flag.FlagSet) (*TelemetryConfig, *gnmi.Config, error) {
 		WithMasterArbitration:    fs.Bool("with-master-arbitration", false, "Enables master arbitration policy."),
 		WithSaveOnSet:            fs.Bool("with-save-on-set", false, "Enables save-on-set."),
 		IdleConnDuration:         fs.Int("idle_conn_duration", 5, "Seconds before server closes idle connections"),
-		Vrf:                      fs.String("vrf", "", "VRF name, when zmq_address belong on a VRF, need VRF name to bind ZMQ."),
+		GnmiVrf:                  fs.String("gnmi_vrf", "", "VRF name for gNMI server binding."),
+		Vrf:                      fs.String("vrf", "", "VRF name for ZMQ client binding."),
 		EnableCrl:                fs.Bool("enable_crl", false, "Enable certificate revocation list"),
 		CrlExpireDuration:        fs.Int("crl_expire_duration", 86400, "Certificate revocation list cache expire duration"),
 		ImgDirPath:               fs.String("img_dir", "/tmp/host_tmp", "Directory path where image will be transferred."),
@@ -202,6 +206,8 @@ func setupFlags(fs *flag.FlagSet) (*TelemetryConfig, *gnmi.Config, error) {
 		AuthPolicyEnabled:        fs.Bool("authz_policy_enabled", false, "Enable authz policy. Require insecure flag to be false."),
 		AuthzPolicyFile:          fs.String("authorization_policy_file", "/keys/authorization_policy.json", "Full path name of the JSON authorization policy file."),
 		EnableStreamMultiplexing: fs.Bool("enable_stream_multiplexing", false, "Allow multiple Subscribe RPCs on a single TCP connection via HTTP/2 stream multiplexing"),
+		MaxRecvMsgSize:           fs.Int("max_recv_msg_size", 4*1024*1024, "Maximum message size in bytes that the server can receive"),
+		MaxSendMsgSize:           fs.Int("max_send_msg_size", 4*1024*1024, "Maximum message size in bytes that the server can send"),
 	}
 
 	fs.Var(&telemetryCfg.UserAuth, "client_auth", "Client auth mode(s) - none,cert,password")
@@ -265,6 +271,7 @@ func setupFlags(fs *flag.FlagSet) (*TelemetryConfig, *gnmi.Config, error) {
 	cfg.Threshold = int(*telemetryCfg.Threshold)
 	cfg.IdleConnDuration = int(*telemetryCfg.IdleConnDuration)
 	cfg.ConfigTableName = *telemetryCfg.ConfigTableName
+	cfg.GnmiVrf = *telemetryCfg.GnmiVrf
 	cfg.Vrf = *telemetryCfg.Vrf
 	cfg.EnableCrl = *telemetryCfg.EnableCrl
 	cfg.CaCertLnk = *telemetryCfg.CaCertLnk
@@ -552,6 +559,11 @@ func startGNMIServer(telemetryCfg *TelemetryConfig, cfg *gnmi.Config, serverCont
 
 			gnmi.GenerateJwtSecretKey()
 		}
+
+		commonOpts = append(commonOpts,
+			grpc.MaxRecvMsgSize(*telemetryCfg.MaxRecvMsgSize),
+			grpc.MaxSendMsgSize(*telemetryCfg.MaxSendMsgSize),
+		)
 
 		// Setup interceptor chain (includes DPU proxy with Redis-based routing)
 		var err error

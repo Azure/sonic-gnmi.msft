@@ -40,6 +40,20 @@ func MockNSEnterOutput(t *testing.T, fileName string) *gomonkey.Patches {
 	return patches
 }
 
+func MockNSEnterCommand(t *testing.T, fileName string) *gomonkey.Patches {
+	fileContentBytes, err := os.ReadFile(fileName)
+	if err != nil {
+		t.Fatalf("read file %v err: %v", fileName, err)
+	}
+	patches := gomonkey.ApplyFunc(exec.Command, func(name string, args ...string) *exec.Cmd {
+		return &exec.Cmd{}
+	})
+	patches.ApplyMethod(reflect.TypeOf(&exec.Cmd{}), "CombinedOutput", func(_ *exec.Cmd) ([]byte, error) {
+		return fileContentBytes, nil
+	})
+	return patches
+}
+
 func MockExecCmds(t *testing.T, cmdAndFileMap map[string]string) *gomonkey.Patches {
 	var fileContentBytes []byte
 	var err error
@@ -65,6 +79,16 @@ func MockExecCmds(t *testing.T, cmdAndFileMap map[string]string) *gomonkey.Patch
 	})
 	patches.ApplyMethod(reflect.TypeOf(&exec.Cmd{}), "CombinedOutput", func(_ *exec.Cmd) ([]byte, error) {
 		return fileContentBytes, nil
+	})
+	return patches
+}
+
+func MockNSEnterCommandError(commandErr error) *gomonkey.Patches {
+	patches := gomonkey.ApplyFunc(exec.Command, func(name string, args ...string) *exec.Cmd {
+		return &exec.Cmd{}
+	})
+	patches.ApplyMethod(reflect.TypeOf(&exec.Cmd{}), "CombinedOutput", func(_ *exec.Cmd) ([]byte, error) {
+		return nil, commandErr
 	})
 	return patches
 }
@@ -116,6 +140,7 @@ func ResetDataSetsAndMappings(t *testing.T) {
 	FlushDataSet(t, CountersDbNum)
 	FlushDataSet(t, ConfigDbNum)
 	FlushDataSet(t, StateDbNum)
+	FlushDataSet(t, ChassisStateDbNum)
 	sdc.ClearMappings()
 }
 

@@ -16,6 +16,9 @@ const (
 	portStatCachePath = "/tmp/cache/portstat/1000/portstat"
 )
 
+// SleepFunc is replaceable in tests that need a second counter snapshot.
+var SleepFunc = time.Sleep
+
 type InterfaceCountersSnapshot struct { // json fields defined from portstat cache
 	// Port Status
 	State string `json:"-"`
@@ -240,7 +243,7 @@ func snapshotWithOptionalDiff(ifaces []string, period int, takeDiffSnapshot bool
 	}
 
 	if takeDiffSnapshot && period > 0 {
-		time.Sleep(time.Duration(period) * time.Second)
+		SleepFunc(time.Duration(period) * time.Second)
 		newSnapshot, err := getInterfaceCountersSnapshot(ifaces)
 		if err != nil {
 			log.Errorf("Unable to get new interface counters snapshot due to err %v", err)

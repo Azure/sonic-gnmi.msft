@@ -641,6 +641,46 @@ func IsNativeOrigin(origin string) bool {
 	return origin == "sonic-db"
 }
 
+// elemNames returns the element names of a single path part, supporting the
+// deprecated Element field for backward compatibility. Handling each part
+// independently keeps requests that mix encodings between prefix and path
+// from dropping elements. Key qualifiers on elements are ignored; matching
+// is by element name only.
+func elemNames(p *gnmipb.Path) []string {
+	if len(p.GetElem()) > 0 {
+		names := make([]string, 0, len(p.GetElem()))
+		for _, pe := range p.GetElem() {
+			names = append(names, pe.GetName())
+		}
+		return names
+	}
+	if len(p.GetElement()) > 0 {
+		return append([]string(nil), p.GetElement()...)
+	}
+	return nil
+}
+
+func nativeSetTarget(prefix *gnmipb.Path, paths []*gnmipb.Path) string {
+	if target := prefix.GetTarget(); target != "" {
+		return target
+	}
+
+	var target string
+	prefixElems := elemNames(prefix)
+	for _, path := range paths {
+		elems := append(append([]string(nil), prefixElems...), elemNames(path)...)
+		if len(elems) == 0 {
+			return ""
+		}
+		if target == "" {
+			target = elems[0]
+		} else if target != elems[0] {
+			return ""
+		}
+	}
+	return target
+}
+
 // Get implements the Get RPC in gNMI spec.
 func (s *Server) Get(ctx context.Context, req *gnmipb.GetRequest) (*gnmipb.GetResponse, error) {
 	common_utils.IncCounter(common_utils.GNMI_GET)
@@ -800,15 +840,26 @@ func (s *Server) Set(ctx context.Context, req *gnmipb.SetRequest) (*gnmipb.SetRe
 			return nil, grpc.Errorf(codes.Unimplemented, "GNMI native write is disabled")
 		}
 
-		// Fast path: bypass validation for allowed tables/SKUs
-		allUpdates := append(req.GetReplace(), req.GetUpdate()...)
-		if resp, used, err := bypass.TrySet(ctx, prefix, req.GetDelete(), allUpdates); used {
+		bypassTarget := nativeSetTarget(prefix, paths)
+		if bypass.IsRequested(ctx) && strings.EqualFold(bypassTarget, "CONFIG_DB") {
+			// Bypass metadata requests the bypass path.
+			// It does not grant write access.
+			ctx, err = authenticate(s.config, ctx, "gnmi_"+bypassTarget, true)
 			if err != nil {
 				common_utils.IncCounter(common_utils.GNMI_SET_FAIL)
-				return nil, status.Error(codes.Internal, err.Error())
+				return nil, err
 			}
-			common_utils.IncCounter(common_utils.GNMI_SET_BYPASS)
-			return resp, nil
+
+			// Fast path: bypass validation for allowed tables/SKUs.
+			allUpdates := append(req.GetReplace(), req.GetUpdate()...)
+			if resp, used, err := bypass.TrySet(ctx, prefix, req.GetDelete(), allUpdates); used {
+				if err != nil {
+					common_utils.IncCounter(common_utils.GNMI_SET_FAIL)
+					return nil, status.Error(codes.Internal, err.Error())
+				}
+				common_utils.IncCounter(common_utils.GNMI_SET_BYPASS)
+				return resp, nil
+			}
 		}
 
 		var targetDbName string

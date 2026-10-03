@@ -641,6 +641,25 @@ func IsNativeOrigin(origin string) bool {
 	return origin == "sonic-db"
 }
 
+// elemNames returns the element names of a single path part, supporting the
+// deprecated Element field for backward compatibility. Handling each part
+// independently keeps requests that mix encodings between prefix and path
+// from dropping elements. Key qualifiers on elements are ignored; matching
+// is by element name only.
+func elemNames(p *gnmipb.Path) []string {
+	if len(p.GetElem()) > 0 {
+		names := make([]string, 0, len(p.GetElem()))
+		for _, pe := range p.GetElem() {
+			names = append(names, pe.GetName())
+		}
+		return names
+	}
+	if len(p.GetElement()) > 0 {
+		return append([]string(nil), p.GetElement()...)
+	}
+	return nil
+}
+
 func nativeSetTarget(prefix *gnmipb.Path, paths []*gnmipb.Path) string {
 	if target := prefix.GetTarget(); target != "" {
 		return target

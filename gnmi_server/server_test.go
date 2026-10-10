@@ -7761,18 +7761,418 @@ func TestServeUDSErrorDoesNotStopTCP(t *testing.T) {
 	}
 }
 
-func getFreePort(t *testing.T) int64 {
-	t.Helper()
-	addr, err := net.ResolveTCPAddr("tcp", "localhost:0")
-	if err != nil {
-		t.Fatalf("failed to resolve tcp addr: %v", err)
+func TestGnmiGetSoftwareComponents(t *testing.T) {
+	// 1. Define all structures locally inside the test function
+	type SoftwareComponentState struct {
+		Name            string `json:"name"`
+		Type            string `json:"type"`
+		Parent          string `json:"parent,omitempty"`
+		OperStatus      string `json:"oper-status,omitempty"`
+		SoftwareVersion string `json:"software-version"` // Removed omitempty to match server "" output
 	}
-	l, err := net.ListenTCP("tcp", addr)
-	if err != nil {
-		t.Fatalf("failed to listen on free port: %v", err)
+
+	type SoftwareModuleState struct {
+		ModuleType string `json:"openconfig-platform-software:module-type,omitempty"`
 	}
-	defer l.Close()
-	return int64(l.Addr().(*net.TCPAddr).Port)
+
+	type SoftwareModule struct {
+		State SoftwareModuleState `json:"state"`
+	}
+
+	type ComponentEntry struct {
+		Name           string                 `json:"name"`
+		State          SoftwareComponentState `json:"state"`
+		SoftwareModule *SoftwareModule        `json:"software-module,omitempty"`
+	}
+
+	type ComponentResp struct {
+		Component []ComponentEntry `json:"openconfig-platform:component"`
+	}
+
+	type StateResp struct {
+		State SoftwareComponentState `json:"openconfig-platform:state"`
+	}
+
+	type ModuleStateResp struct {
+		State SoftwareModuleState `json:"openconfig-platform:state"`
+	}
+
+	type ModuleContainerResp struct {
+		SoftwareModule SoftwareModule `json:"openconfig-platform:software-module"`
+	}
+
+	type NameResp struct {
+		Name string `json:"openconfig-platform:name"`
+	}
+
+	type TypeResp struct {
+		Type string `json:"openconfig-platform:type"`
+	}
+
+	type ParentResp struct {
+		Parent string `json:"openconfig-platform:parent"`
+	}
+
+	type OperStatusResp struct {
+		OperStatus string `json:"openconfig-platform:oper-status"`
+	}
+
+	// Server/DB setup
+	s := createServer(t, 0)
+	go runServer(t, s)
+	defer s.Stop()
+	prepareDbTranslib(t)
+	ctx := context.Background()
+	ns, err := sdcfg.GetDbDefaultNamespace()
+	if err != nil {
+		t.Fatalf("Failed to get default DB namespace: %v", err)
+	}
+
+	stateDbId, err := sdcfg.GetDbId("STATE_DB", ns)
+	if err != nil {
+		t.Fatalf("Failed to get STATE DB id: %v", err)
+	}
+
+	stateClient := getRedisClientN(t, stateDbId, ns)
+	t.Cleanup(func() {
+		cleanupCtx := context.Background()
+		if err := stateClient.Del(cleanupCtx, "DEVICE_METADATA|localhost", "software_version").Err(); err != nil {
+			t.Logf("Failed to HDel swver field: %v", err)
+		}
+		if err := stateClient.Del(cleanupCtx, "SW_COMP_INFO|os0").Err(); err != nil {
+			t.Logf("Failed to HDel SW_COMP_INFO|os0 field: %v", err)
+		}
+		if err := stateClient.Del(cleanupCtx, "SW_COMP_INFO|boot_loader0").Err(); err != nil {
+			t.Logf("Failed to HDel SW_COMP_INFO|bootloader0 field: %v", err)
+		}
+		if err := stateClient.Del(cleanupCtx, "SW_COMP_INFO|network_stack0").Err(); err != nil {
+			t.Logf("Failed to HDel SW_COMP_INFO|nwstack0 field: %v", err)
+		}
+		stateClient.Close()
+	})
+
+	// Seed State DB
+	if err := stateClient.HSet(ctx, "DEVICE_METADATA|localhost", map[string]interface{}{
+		"software_version": "20240531.42",
+	}).Err(); err != nil {
+		t.Fatalf("Failed to HSet DEVICE_METADATA: %v", err)
+	}
+
+	if err := stateClient.HSet(ctx, "SW_COMP_INFO|os0", map[string]interface{}{
+		"name":        "os0",
+		"type":        "OPENCONFIG-PLATFORM-TYPES:OPERATING_SYSTEM",
+		"oper-status": "ACTIVE",
+		"parent":      "chassis",
+	}).Err(); err != nil {
+		t.Fatalf("Failed to HSet SW_COMP_INFO|os0: %v", err)
+	}
+
+	if err := stateClient.HSet(ctx, "SW_COMP_INFO|boot_loader0", map[string]interface{}{
+		"name":             "boot_loader0",
+		"type":             "OPENCONFIG-PLATFORM-TYPES:BOOT_LOADER",
+		"parent":           "chassis",
+		"software-version": "2.06",
+	}).Err(); err != nil {
+		t.Fatalf("Failed to HSet SW_COMP_INFO|boot_loader0: %v", err)
+	}
+
+	if err := stateClient.HSet(ctx, "SW_COMP_INFO|network_stack0", map[string]interface{}{
+		"name":        "network_stack0",
+		"type":        "OPENCONFIG-PLATFORM-TYPES:SOFTWARE_MODULE",
+		"oper-status": "ACTIVE",
+		"parent":      "chassis",
+	}).Err(); err != nil {
+		t.Fatalf("Failed to HSet SW_COMP_INFO|network_stack0: %v", err)
+	}
+
+	targetAddr := fmt.Sprintf("127.0.0.1:%d", s.config.Port)
+	tlsConfig := &tls.Config{InsecureSkipVerify: true}
+	opts := []grpc.DialOption{grpc.WithTransportCredentials(credentials.NewTLS(tlsConfig))}
+	conn, err := grpc.Dial(targetAddr, opts...)
+	if err != nil {
+		t.Fatalf("Dialing to %q failed: %v", targetAddr, err)
+	}
+	defer conn.Close()
+	gClient := pb.NewGNMIClient(conn)
+
+	// 2. Prepare Expected Data Structs
+	osState := SoftwareComponentState{
+		Name:            "os0",
+		Type:            "openconfig-platform-types:OPERATING_SYSTEM",
+		OperStatus:      "openconfig-platform-types:ACTIVE",
+		Parent:          "chassis",
+		SoftwareVersion: "20240531.42",
+	}
+
+	bootloaderState := SoftwareComponentState{
+		Name:            "boot_loader0",
+		Type:            "openconfig-platform-types:BOOT_LOADER",
+		Parent:          "chassis",
+		SoftwareVersion: "2.06",
+	}
+
+	networkStackState := SoftwareComponentState{
+		Name:            "network_stack0",
+		Type:            "openconfig-platform-types:SOFTWARE_MODULE",
+		OperStatus:      "openconfig-platform-types:ACTIVE",
+		Parent:          "chassis",
+		SoftwareVersion: "", // Server returns empty string when not found in DB but exists in schema
+	}
+
+	modState := SoftwareModuleState{
+		ModuleType: "openconfig-platform-software:USERSPACE_PACKAGE_BUNDLE",
+	}
+
+	var osCompVal ComponentResp
+	osCompVal.Component = append(osCompVal.Component, ComponentEntry{
+		Name:  "os0",
+		State: osState,
+	})
+
+	var bootloaderCompVal ComponentResp
+	bootloaderCompVal.Component = append(bootloaderCompVal.Component, ComponentEntry{
+		Name:  "boot_loader0",
+		State: bootloaderState,
+	})
+
+	var networkStackCompVal ComponentResp
+	networkStackCompVal.Component = append(networkStackCompVal.Component, ComponentEntry{
+		Name:           "network_stack0",
+		State:          networkStackState,
+		SoftwareModule: &SoftwareModule{State: modState},
+	})
+
+	marshal := func(v interface{}) []byte {
+		b, _ := json.Marshal(v)
+		return b
+	}
+
+	tds := []struct {
+		desc        string
+		pathTarget  string
+		textPbPath  string
+		wantRetCode codes.Code
+		wantRespVal interface{}
+		valTest     bool
+	}{
+		{
+			desc:        "Get_OS_Full_Component_Subtree_(AllPaths)",
+			pathTarget:  "OC_YANG",
+			textPbPath:  `elem: <name: "openconfig-platform:components" > elem: <name: "component" key:<key:"name" value:"os0" > >`,
+			wantRetCode: codes.OK,
+			wantRespVal: marshal(osCompVal),
+			valTest:     false,
+		},
+		{
+			desc:        "Get_OS_State_Container_(StatePaths)",
+			pathTarget:  "OC_YANG",
+			textPbPath:  `elem: <name: "openconfig-platform:components" > elem: <name: "component" key:<key:"name" value:"os0" > > elem: <name: "state" >`,
+			wantRetCode: codes.OK,
+			wantRespVal: marshal(StateResp{State: osState}),
+			valTest:     false,
+		},
+		{
+			desc:        "Get_BootLoader_Full_Subtree",
+			pathTarget:  "OC_YANG",
+			textPbPath:  `elem: <name: "openconfig-platform:components" > elem: <name: "component" key:<key:"name" value:"boot_loader0" > >`,
+			wantRetCode: codes.OK,
+			wantRespVal: marshal(bootloaderCompVal),
+			valTest:     false,
+		},
+		{
+			desc:        "Get_Network_Stack_Full_Subtree",
+			pathTarget:  "OC_YANG",
+			textPbPath:  `elem: <name: "openconfig-platform:components" > elem: <name: "component" key:<key:"name" value:"network_stack0" > >`,
+			wantRetCode: codes.OK,
+			wantRespVal: marshal(networkStackCompVal),
+			valTest:     false,
+		},
+		{
+			desc:        "Get_OS_Component_State_Name",
+			pathTarget:  "OC_YANG",
+			textPbPath:  `elem: <name: "openconfig-platform:components" > elem: <name: "component" key:<key:"name" value:"os0" > > elem: <name: "state" > elem: <name: "name" >`,
+			wantRetCode: codes.OK,
+			wantRespVal: marshal(NameResp{Name: "os0"}),
+			valTest:     true,
+		},
+		{
+			desc:        "Get_OS_Component_Type",
+			pathTarget:  "OC_YANG",
+			textPbPath:  `elem: <name: "openconfig-platform:components" > elem: <name: "component" key:<key:"name" value:"os0" > > elem: <name: "state" > elem: <name: "type" >`,
+			wantRetCode: codes.OK,
+			wantRespVal: marshal(TypeResp{Type: "openconfig-platform-types:OPERATING_SYSTEM"}),
+			valTest:     true,
+		},
+		{
+			desc:        "Get_OS_Component_State_Parent",
+			pathTarget:  "OC_YANG",
+			textPbPath:  `elem: <name: "openconfig-platform:components" > elem: <name: "component" key:<key:"name" value:"os0" > > elem: <name: "state" > elem: <name: "parent" >`,
+			wantRetCode: codes.OK,
+			wantRespVal: marshal(ParentResp{Parent: "chassis"}),
+			valTest:     true,
+		},
+		{
+			desc:        "Get_Bootloader_component_name",
+			pathTarget:  "OC_YANG",
+			textPbPath:  `elem: <name: "openconfig-platform:components" > elem: <name: "component" key:<key:"name" value:"boot_loader0" > > elem: <name: "state" > elem: <name: "name" >`,
+			wantRetCode: codes.OK,
+			wantRespVal: marshal(NameResp{Name: "boot_loader0"}),
+			valTest:     true,
+		},
+		{
+			desc:        "Get_Bootloader_Specific_Type",
+			pathTarget:  "OC_YANG",
+			textPbPath:  `elem: <name: "openconfig-platform:components" > elem: <name: "component" key:<key:"name" value:"boot_loader0" > > elem: <name: "state" > elem: <name: "type" >`,
+			wantRetCode: codes.OK,
+			wantRespVal: marshal(TypeResp{Type: "openconfig-platform-types:BOOT_LOADER"}),
+			valTest:     true,
+		},
+		{
+			desc:        "Get_Software_Module_(Network_Stack)_Type",
+			pathTarget:  "OC_YANG",
+			textPbPath:  `elem: <name: "openconfig-platform:components" > elem: <name: "component" key:<key:"name" value:"network_stack0" > > elem: <name: "software-module" > elem: <name: "state" > elem: <name: "module-type" >`,
+			wantRetCode: codes.OK,
+			wantRespVal: marshal(modState),
+			valTest:     true,
+		},
+		{
+			desc:        "Get_Software_Module_Oper_Status",
+			pathTarget:  "OC_YANG",
+			textPbPath:  `elem: <name: "openconfig-platform:components" > elem: <name: "component" key:<key:"name" value:"network_stack0" > > elem: <name: "state" > elem: <name: "oper-status" >`,
+			wantRetCode: codes.OK,
+			wantRespVal: marshal(OperStatusResp{OperStatus: "openconfig-platform-types:ACTIVE"}),
+			valTest:     true,
+		},
+		{
+			desc:        "Get_Network_Stack_Component_State_Type",
+			pathTarget:  "OC_YANG",
+			textPbPath:  `elem: <name: "openconfig-platform:components" > elem: <name: "component" key:<key:"name" value:"network_stack0" > > elem: <name: "state" > elem: <name: "type" >`,
+			wantRetCode: codes.OK,
+			wantRespVal: marshal(TypeResp{Type: "openconfig-platform-types:SOFTWARE_MODULE"}),
+			valTest:     true,
+		},
+		{
+			desc:        "Get_Software_Module_Container_Path_(COMP_SW_MOD)",
+			pathTarget:  "OC_YANG",
+			textPbPath:  `elem: <name: "openconfig-platform:components" > elem: <name: "component" key:<key:"name" value:"network_stack0" > > elem: <name: "software-module" >`,
+			wantRetCode: codes.OK,
+			wantRespVal: marshal(ModuleContainerResp{SoftwareModule: SoftwareModule{State: modState}}),
+			valTest:     true,
+		},
+		{
+			desc:        "Get_Software_Module_State_Container_Path_(COMP_SW_MOD_ST)",
+			pathTarget:  "OC_YANG",
+			textPbPath:  `elem: <name: "openconfig-platform:components" > elem: <name: "component" key:<key:"name" value:"network_stack0" > > elem: <name: "software-module" > elem: <name: "state" >`,
+			wantRetCode: codes.OK,
+			wantRespVal: marshal(ModuleStateResp{State: modState}),
+			valTest:     true,
+		},
+		{
+			desc:        "Get_Non-Existent_SW_Component_(NotFound)",
+			pathTarget:  "OC_YANG",
+			textPbPath:  `elem: <name: "openconfig-platform:components" > elem: <name: "component" key:<key:"name" value:"unknown_comp" > >`,
+			wantRetCode: codes.NotFound,
+			wantRespVal: nil,
+			valTest:     false,
+		},
+		// --- Error Paths / Invalid Requests ---
+		{
+			desc:       "Get OS Component Software Version when missing in DB (Expect Error)",
+			pathTarget: "OC_YANG",
+			textPbPath: `
+                elem: <name: "openconfig-platform:components" >
+                elem: <name: "component" key:<key:"name" value:"os1" > >
+                elem: <name: "state" >
+                elem: <name: "software-version" >
+`,
+			wantRetCode: codes.NotFound,
+			wantRespVal: nil,
+			valTest:     false,
+		},
+		{
+			desc:       "Get Non-Existent SW Component (Unknown Component Name)",
+			pathTarget: "OC_YANG",
+			textPbPath: `
+                elem: <name: "openconfig-platform:components" >
+                elem: <name: "component" key:<key:"name" value:"os_non_existent" > >
+                elem: <name: "state" >
+            `,
+			wantRetCode: codes.NotFound,
+			wantRespVal: nil,
+			valTest:     false,
+		},
+		{
+			desc:       "Trigger getCompTypeByName for OS pattern (not in DB)",
+			pathTarget: "OC_YANG",
+			textPbPath: `
+                elem: <name: "openconfig-platform:components" >
+                elem: <name: "component" key:<key:"name" value:"os0_no_db" > >
+                elem: <name: "state" >
+            `,
+			wantRetCode: codes.NotFound,
+			wantRespVal: nil,
+			valTest:     false,
+		},
+		{
+			desc:       "Trigger getCompTypeByName for Network Stack pattern (not in DB)",
+			pathTarget: "OC_YANG",
+			textPbPath: `
+                elem: <name: "openconfig-platform:components" >
+                elem: <name: "component" key:<key:"name" value:"network_stack1_no_db" > >
+                elem: <name: "state" >
+            `,
+			wantRetCode: codes.NotFound,
+			wantRespVal: nil,
+			valTest:     false,
+		},
+		{
+			desc:       "Trigger getCompTypeByName for BootLoader pattern (not in DB)",
+			pathTarget: "OC_YANG",
+			textPbPath: `
+                elem: <name: "openconfig-platform:components" >
+                elem: <name: "component" key:<key:"name" value:"boot_loader_no_db" > >
+                elem: <name: "state" >
+            `,
+			wantRetCode: codes.NotFound,
+			wantRespVal: nil,
+			valTest:     false,
+		},
+		{
+			desc:       "Get Oper Status on OS with invalid status string in DB (Triggers invalid field value error)",
+			pathTarget: "OC_YANG",
+			textPbPath: `
+                elem: <name: "openconfig-platform:components" >
+                elem: <name: "component" key:<key:"name" value:"os_bad_oper0" > >
+                elem: <name: "state" >
+                elem: <name: "oper-status" >
+            `,
+			wantRetCode: codes.NotFound,
+			wantRespVal: nil,
+			valTest:     false,
+		},
+		{
+			desc:       "Get Module Type on OS Component (Triggers cType != CompTypeNWStack error)",
+			pathTarget: "OC_YANG",
+			textPbPath: `
+                elem: <name: "openconfig-platform:components" >
+                elem: <name: "component" key:<key:"name" value:"os0" > >
+                elem: <name: "software-module" >
+                elem: <name: "state" >
+                elem: <name: "module-type" >
+            `,
+			wantRetCode: codes.NotFound,
+			wantRespVal: nil,
+			valTest:     false,
+		},
+	}
+
+	for _, td := range tds {
+		t.Run(td.desc, func(t *testing.T) {
+			ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+			defer cancel()
+			runTestGet(t, ctx, gClient, td.pathTarget, td.textPbPath, td.wantRetCode, td.wantRespVal, td.valTest)
+		})
+	}
 }
 
 func TestGnmiGetTranslibXfmrIntf(t *testing.T) {
@@ -7803,27 +8203,59 @@ func TestGnmiGetTranslibXfmrIntf(t *testing.T) {
 	}
 
 	// 2. Server and DB Setup
-	freePort := getFreePort(t)
-	s := createServer(t, freePort)
+	s := createServer(t, 0)
 	go runServer(t, s)
 	defer s.Stop()
 
 	prepareDbTranslib(t)
-	ns, _ := sdcfg.GetDbDefaultNamespace()
+	ns, err := sdcfg.GetDbDefaultNamespace()
+	if err != nil {
+		t.Fatalf("Failed to get default DB namespace: %v", err)
+	}
 	ctx := context.Background()
 
 	// Setup APPL_DB (DB 0)
 	applDbId, _ := sdcfg.GetDbId("APPL_DB", ns)
 	applClient := getRedisClientN(t, applDbId, ns)
-	defer applClient.Close()
-	if err := applClient.HSet(ctx, "P4RT_PORT_ID_TABLE:Ethernet0", map[string]interface{}{"id": "100"}).Err(); err != nil {
-		t.Fatalf("Failed to HSet P4RT_PORT_ID_TABLE:Ethernet0: %v", err)
-	}
 
 	// Setup COUNTERS_DB (DB 2)
 	countersDbId, _ := sdcfg.GetDbId("COUNTERS_DB", ns)
 	countersClient := getRedisClientN(t, countersDbId, ns)
-	defer countersClient.Close()
+
+	// Setup STATE_DB (DB 6)
+	stateDbId, _ := sdcfg.GetDbId("STATE_DB", ns)
+	stateClient := getRedisClientN(t, stateDbId, ns)
+
+	// Setup CONFIG_DB (DB 4)
+	configDbId, _ := sdcfg.GetDbId("CONFIG_DB", ns)
+	configClient := getRedisClientN(t, configDbId, ns)
+
+	t.Cleanup(func() {
+		cleanupCtx := context.Background()
+		if err := applClient.Del(cleanupCtx, "P4RT_PORT_ID_TABLE:Ethernet0").Err(); err != nil {
+			t.Logf("Failed to delete P4RT_PORT_ID_TABLE  keys: %v", err)
+		}
+		if err := countersClient.HDel(cleanupCtx, "COUNTERS_PORT_NAME_MAP", "Ethernet0").Err(); err != nil {
+			t.Logf("Failed to delete COUNTERS_PORT_NAME_MAP keys: %v", err)
+		}
+
+		if err := countersClient.Del(cleanupCtx, "COUNTERS:oid:0x1000000000001").Err(); err != nil {
+			t.Logf("Failed to delete COUNTERS keys: %v", err)
+		}
+
+		if err := configClient.Del(cleanupCtx, "PORT|Ethernet0").Err(); err != nil {
+			t.Logf("Failed to delete PORT keys: %v", err)
+		}
+
+		if err := stateClient.Del(cleanupCtx, "PORT_TABLE:Ethernet0", "TRANSCEIVER_INFO|Ethernet0", "TRANSCEIVER_INFO|Ethernet1").Err(); err != nil {
+			t.Logf("Failed to delete PORT_TBL keys: %v", err)
+		}
+	})
+
+	if err := applClient.HSet(ctx, "P4RT_PORT_ID_TABLE:Ethernet0", map[string]interface{}{"id": "100"}).Err(); err != nil {
+		t.Fatalf("Failed to HSet P4RT_PORT_ID_TABLE:Ethernet0: %v", err)
+	}
+
 	if err := countersClient.HSet(ctx, "COUNTERS_PORT_NAME_MAP", "Ethernet0", "oid:0x1000000000001").Err(); err != nil {
 		t.Fatalf("Failed to HSet COUNTERS_PORT_NAME_MAP: %v", err)
 	}
@@ -7831,10 +8263,6 @@ func TestGnmiGetTranslibXfmrIntf(t *testing.T) {
 		t.Fatalf("Failed to HSet COUNTERS:oid:0x1000000000001: %v", err)
 	}
 
-	// Setup CONFIG_DB (DB 4)
-	configDbId, _ := sdcfg.GetDbId("CONFIG_DB", ns)
-	configClient := getRedisClientN(t, configDbId, ns)
-	defer configClient.Close()
 	if err := configClient.HSet(ctx, "PORT|Ethernet0", map[string]interface{}{
 		"index": "1",
 		"lanes": "1,2,3,4",
@@ -7843,10 +8271,6 @@ func TestGnmiGetTranslibXfmrIntf(t *testing.T) {
 		t.Fatalf("Failed to HSet PORT|Ethernet0: %v", err)
 	}
 
-	// Setup STATE_DB (DB 6)
-	stateDbId, _ := sdcfg.GetDbId("STATE_DB", ns)
-	stateClient := getRedisClientN(t, stateDbId, ns)
-	defer stateClient.Close()
 	if err := stateClient.HSet(ctx, "PORT_TABLE:Ethernet0", map[string]interface{}{
 		"index": "1",
 		"lanes": "1,2,3,4",
@@ -7863,15 +8287,6 @@ func TestGnmiGetTranslibXfmrIntf(t *testing.T) {
 	}).Err(); err != nil {
 		t.Fatalf("Failed to HSet TRANSCEIVER_INFO|Ethernet1: %v", err)
 	}
-
-	t.Cleanup(func() {
-		cleanupCtx := context.Background()
-		applClient.Del(cleanupCtx, "P4RT_PORT_ID_TABLE:Ethernet0")
-		countersClient.HDel(cleanupCtx, "COUNTERS_PORT_NAME_MAP", "Ethernet0")
-		countersClient.Del(cleanupCtx, "COUNTERS:oid:0x1000000000001")
-		configClient.Del(cleanupCtx, "PORT|Ethernet0")
-		stateClient.Del(cleanupCtx, "PORT_TABLE:Ethernet0", "TRANSCEIVER_INFO|Ethernet0", "TRANSCEIVER_INFO|Ethernet1")
-	})
 
 	// 3. gRPC Client Setup
 	targetAddr := fmt.Sprintf("127.0.0.1:%d", s.config.Port)
@@ -7908,12 +8323,12 @@ func TestGnmiGetTranslibXfmrIntf(t *testing.T) {
 			valTest:     true,
 		},
 		{
-			desc:        "Get OpenConfig Interface transceiver",
+			desc:        "Get OpenConfig Interface state values",
 			pathTarget:  "OC_YANG",
-			textPbPath:  `elem: <name: "openconfig-interfaces:interfaces" > elem: <name: "interface" key:<key:"name" value:"Ethernet0" > > elem: <name: "state" > elem: <name: "openconfig-platform-transceiver:transceiver" >`,
+			textPbPath:  `elem: <name: "openconfig-interfaces:interfaces" > elem: <name: "interface" key:<key:"name" value:"Ethernet0" > > elem: <name: "state" >`,
 			wantRetCode: codes.OK,
 			wantRespVal: marshal(xcvrVal),
-			valTest:     true,
+			valTest:     false,
 		},
 		{
 			desc:        "Get OpenConfig Interface P4RT ID State",
@@ -8006,7 +8421,6 @@ func TestGnmiGetTranslibXfmrIntf(t *testing.T) {
 		})
 	}
 }
-
 func runTestSubscribeIntf(t *testing.T, ctx context.Context, gClient pb.GNMIClient, sPath *pb.Path, pathDesc string, expectedICs []string) {
 	req := &pb.SubscribeRequest{
 		Request: &pb.SubscribeRequest_Subscribe{
@@ -8106,23 +8520,65 @@ func runTestSubscribeIntf(t *testing.T, ctx context.Context, gClient pb.GNMIClie
 		}
 	}
 }
-
 func TestGnmiSubscribeTranslibXfmrIntf(t *testing.T) {
 	// 1. Prepare global DB configuration for Translib
 	prepareDbTranslib(t)
-	ns, _ := sdcfg.GetDbDefaultNamespace()
+	ns, err := sdcfg.GetDbDefaultNamespace()
+	if err != nil {
+		t.Fatalf("Failed to get default DB namespace: %v", err)
+	}
 	ctx := context.Background()
 
 	// 2. Server and DB Setup on dynamic free port
-	freePort := getFreePort(t)
-	s := createServer(t, freePort)
+	s := createServer(t, 0)
 	go runServer(t, s)
 	defer s.Stop()
 
 	// Setup CONFIG_DB (DB 4)
-	configDbId, _ := sdcfg.GetDbId("CONFIG_DB", ns)
+	configDbId, err := sdcfg.GetDbId("CONFIG_DB", ns)
+	if err != nil {
+		t.Fatalf("Failed to get DB ID for CONFIG_DB: %v", err)
+	}
 	configClient := getRedisClientN(t, configDbId, ns)
-	defer configClient.Close()
+
+	// Setup STATE_DB (DB 6)
+	stateDbId, err := sdcfg.GetDbId("STATE_DB", ns)
+	if err != nil {
+		t.Fatalf("Failed to get DB ID for STATE_DB: %v", err)
+	}
+	stateClient := getRedisClientN(t, stateDbId, ns)
+
+	// Setup APPL_DB (DB 0)
+	applDbId, err := sdcfg.GetDbId("APPL_DB", ns)
+	if err != nil {
+		t.Fatalf("Failed to get DB ID for APPL_DB: %v", err)
+	}
+	applClient := getRedisClientN(t, applDbId, ns)
+
+	// Setup COUNTERS_DB (DB 2)
+	countersDbId, err := sdcfg.GetDbId("COUNTERS_DB", ns)
+	if err != nil {
+		t.Fatalf("Failed to get DB ID for COUNTERS_DB: %v", err)
+	}
+	countersClient := getRedisClientN(t, countersDbId, ns)
+	t.Cleanup(func() {
+		cleanupCtx := context.Background()
+		if err := configClient.Del(cleanupCtx, "PORT|Ethernet0", "PORT|Ethernet4").Err(); err != nil {
+			t.Logf("Failed to delete PORT keys: %v", err)
+		}
+		if err := stateClient.Del(cleanupCtx, "PORT_TABLE:Ethernet0", "PORT_TABLE:Ethernet4", "TRANSCEIVER_INFO|Ethernet0", "TRANSCEIVER_INFO|Ethernet4").Err(); err != nil {
+			t.Logf("Failed to delete PORT TABLE keys: %v", err)
+		}
+		if err := applClient.Del(cleanupCtx, "P4RT_PORT_ID_TABLE:Ethernet0", "P4RT_PORT_ID_TABLE:Ethernet4").Err(); err != nil {
+			t.Logf("Failed to delete P4RT keys: %v", err)
+		}
+		if err := countersClient.Del(cleanupCtx, "COUNTERS:oid:0x100", "COUNTERS:oid:0x104").Err(); err != nil {
+			t.Logf("Failed to delete COUNTERS keys: %v", err)
+		}
+		if err := countersClient.HDel(cleanupCtx, "COUNTERS_PORT_NAME_MAP", "Ethernet0", "Ethernet4").Err(); err != nil {
+			t.Logf("Failed to delete COUNTERS_PORT_NAME_MAP keys: %v", err)
+		}
+	})
 	if err := configClient.HSet(ctx, "PORT|Ethernet0", map[string]interface{}{
 		"index": "1",
 		"lanes": "1,2,3,4",
@@ -8138,10 +8594,6 @@ func TestGnmiSubscribeTranslibXfmrIntf(t *testing.T) {
 		t.Fatalf("Failed to HSet PORT|Ethernet4: %v", err)
 	}
 
-	// Setup STATE_DB (DB 6)
-	stateDbId, _ := sdcfg.GetDbId("STATE_DB", ns)
-	stateClient := getRedisClientN(t, stateDbId, ns)
-	defer stateClient.Close()
 	if err := stateClient.HSet(ctx, "PORT_TABLE:Ethernet0", map[string]interface{}{"index": "1", "lanes": "1,2,3,4"}).Err(); err != nil {
 		t.Fatalf("Failed to HSet PORT_TABLE:Ethernet0: %v", err)
 	}
@@ -8155,10 +8607,6 @@ func TestGnmiSubscribeTranslibXfmrIntf(t *testing.T) {
 		t.Fatalf("Failed to HSet TRANSCEIVER_INFO|Ethernet4: %v", err)
 	}
 
-	// Setup APPL_DB (DB 0)
-	applDbId, _ := sdcfg.GetDbId("APPL_DB", ns)
-	applClient := getRedisClientN(t, applDbId, ns)
-	defer applClient.Close()
 	if err := applClient.HSet(ctx, "P4RT_PORT_ID_TABLE:Ethernet0", map[string]interface{}{"id": "100"}).Err(); err != nil {
 		t.Fatalf("Failed to HSet P4RT_PORT_ID_TABLE:Ethernet0: %v", err)
 	}
@@ -8166,10 +8614,6 @@ func TestGnmiSubscribeTranslibXfmrIntf(t *testing.T) {
 		t.Fatalf("Failed to HSet P4RT_PORT_ID_TABLE:Ethernet4: %v", err)
 	}
 
-	// Setup COUNTERS_DB (DB 2)
-	countersDbId, _ := sdcfg.GetDbId("COUNTERS_DB", ns)
-	countersClient := getRedisClientN(t, countersDbId, ns)
-	defer countersClient.Close()
 	if err := countersClient.HSet(ctx, "COUNTERS_PORT_NAME_MAP", "Ethernet0", "oid:0x100", "Ethernet4", "oid:0x104").Err(); err != nil {
 		t.Fatalf("Failed to HSet COUNTERS_PORT_NAME_MAP: %v", err)
 	}
@@ -8179,15 +8623,6 @@ func TestGnmiSubscribeTranslibXfmrIntf(t *testing.T) {
 	if err := countersClient.HSet(ctx, "COUNTERS:oid:0x104", "SAI_PORT_STAT_ETHER_STATS_CRC_ALIGN_ERRORS", "40").Err(); err != nil {
 		t.Fatalf("Failed to HSet COUNTERS:oid:0x104: %v", err)
 	}
-
-	t.Cleanup(func() {
-		cleanupCtx := context.Background()
-		configClient.Del(cleanupCtx, "PORT|Ethernet0", "PORT|Ethernet4")
-		stateClient.Del(cleanupCtx, "PORT_TABLE:Ethernet0", "PORT_TABLE:Ethernet4", "TRANSCEIVER_INFO|Ethernet0", "TRANSCEIVER_INFO|Ethernet4")
-		applClient.Del(cleanupCtx, "P4RT_PORT_ID_TABLE:Ethernet0", "P4RT_PORT_ID_TABLE:Ethernet4")
-		countersClient.Del(cleanupCtx, "COUNTERS:oid:0x100", "COUNTERS:oid:0x104")
-		countersClient.HDel(cleanupCtx, "COUNTERS_PORT_NAME_MAP", "Ethernet0", "Ethernet4")
-	})
 
 	// 3. Connect gRPC Client to the actual dynamic port
 	targetAddr := fmt.Sprintf("127.0.0.1:%d", s.config.Port)
@@ -8241,6 +8676,1176 @@ func TestGnmiSubscribeTranslibXfmrIntf(t *testing.T) {
 			if err := proto.UnmarshalText(td.textPbPath, path); err != nil {
 				t.Fatalf("Failed to parse textPbPath: %v", err)
 			}
+
+			runTestSubscribeIntf(t, ctx, gClient, path, td.desc, td.expectedICs)
+		})
+	}
+}
+
+func TestGnmiGetTranslibPfmCompIC(t *testing.T) {
+
+	// Data structure for the node-id (namespaced and string type)
+	type ICNodeData struct {
+		NodeID string `json:"openconfig-p4rt:node-id"`
+	}
+
+	// Case 1: Full Component structure
+	type ComponentResp struct {
+		Component []struct {
+			Name  string `json:"name"`
+			State struct {
+				Name   string `json:"name"`
+				Parent string `json:"parent,omitempty"`
+				Type   string `json:"type"`
+			} `json:"state"`
+			IntegratedCircuit struct {
+				Config ICNodeData `json:"config"`
+				State  ICNodeData `json:"state"`
+			} `json:"integrated-circuit"`
+		} `json:"openconfig-platform:component"`
+	}
+
+	// Case 2: General State structure
+	type StateResp struct {
+		State struct {
+			Name   string `json:"name"`
+			Parent string `json:"parent,omitempty"`
+			Type   string `json:"type"`
+		} `json:"openconfig-platform:state"`
+	}
+
+	// Case 3: IC State structure
+	type ICStateResp struct {
+		State ICNodeData `json:"openconfig-platform:state"`
+	}
+
+	// Case 4: IC Config structure
+	type ICConfigResp struct {
+		Config ICNodeData `json:"openconfig-platform:config"`
+	}
+
+	// Server and DB Setup
+	s := createServer(t, 0)
+	go runServer(t, s)
+	defer s.Stop()
+
+	prepareDbTranslib(t)
+	ns, err := sdcfg.GetDbDefaultNamespace()
+	if err != nil {
+		t.Fatalf("Failed to get default DB namespace: %v", err)
+	}
+	ctx := context.Background()
+	icName := "integrated_circuit1"
+
+	// Setup CONFIG_DB
+	configDbId, err := sdcfg.GetDbId("CONFIG_DB", ns)
+	if err != nil {
+		t.Fatalf("Failed to get DB ID for CONFIG_DB: %v", err)
+	}
+	configClient := getRedisClientN(t, configDbId, ns)
+
+	// Setup STATE_DB
+	stateDbId, err := sdcfg.GetDbId("STATE_DB", ns)
+	if err != nil {
+		t.Fatalf("Failed to get DB ID for APPL_DB: %v", err)
+	}
+	stateClient := getRedisClientN(t, stateDbId, ns)
+
+	t.Cleanup(func() {
+		cleanupCtx := context.Background()
+		if err := stateClient.Del(cleanupCtx, "NODE_INFO|"+icName).Err(); err != nil {
+			t.Logf("Failed to delete NODE_INFO keys: %v", err)
+		}
+		if err := configClient.Del(cleanupCtx, "NODE_CFG|"+icName).Err(); err != nil {
+			t.Logf("Failed to delete NODE_CFG keys: %v", err)
+		}
+		configClient.Close()
+		stateClient.Close()
+	})
+
+	if err := configClient.HSet(ctx, "NODE_CFG|"+icName, map[string]interface{}{"name": icName, "node-id": "101"}).Err(); err != nil {
+		t.Fatalf("Failed to HSet NODE_CFG: %v", err)
+	}
+	if err := stateClient.HSet(ctx, "NODE_INFO|"+icName, map[string]interface{}{
+		"name":    icName,
+		"parent":  "chassis",
+		"type":    "INTEGRATED_CIRCUIT",
+		"node-id": "101",
+	}).Err(); err != nil {
+		t.Fatalf("Failed to HSet NODE_CFG: %v", err)
+	}
+	// gRPC Client Setup
+	targetAddr := fmt.Sprintf("127.0.0.1:%d", s.config.Port)
+	conn, err := grpc.Dial(targetAddr, grpc.WithTransportCredentials(credentials.NewTLS(&tls.Config{InsecureSkipVerify: true})))
+	if err != nil {
+		t.Fatalf("Dialing to %q failed: %v", targetAddr, err)
+	}
+	defer conn.Close()
+	gClient := pb.NewGNMIClient(conn)
+
+	// 2. Populate expected data objects
+	nodeVal := ICNodeData{NodeID: "101"}
+	icType := "openconfig-platform-types:INTEGRATED_CIRCUIT"
+
+	// Case 1: Full
+	var compFull ComponentResp
+	compFull.Component = append(compFull.Component, struct {
+		Name  string `json:"name"`
+		State struct {
+			Name   string `json:"name"`
+			Parent string `json:"parent,omitempty"`
+			Type   string `json:"type"`
+		} `json:"state"`
+		IntegratedCircuit struct {
+			Config ICNodeData `json:"config"`
+			State  ICNodeData `json:"state"`
+		} `json:"integrated-circuit"`
+	}{
+		Name: icName,
+		State: struct {
+			Name   string `json:"name"`
+			Parent string `json:"parent,omitempty"`
+			Type   string `json:"type"`
+		}{Name: icName, Parent: "chassis", Type: icType},
+		IntegratedCircuit: struct {
+			Config ICNodeData `json:"config"`
+			State  ICNodeData `json:"state"`
+		}{Config: nodeVal, State: nodeVal},
+	})
+
+	// Case 2: State (Note: Parent is omitted in your log for sub-state query)
+	var stateVal StateResp
+	stateVal.State.Name = icName
+	stateVal.State.Type = icType
+
+	// Case 3 & 4: Sub-container queries
+	icStateVal := ICStateResp{State: nodeVal}
+	icConfigVal := ICConfigResp{Config: nodeVal}
+
+	marshal := func(v interface{}) []byte {
+		b, _ := json.Marshal(v)
+		return b
+	}
+
+	tds := []struct {
+		desc        string
+		pathTarget  string
+		textPbPath  string
+		wantRetCode codes.Code
+		wantRespVal interface{}
+		valTest     bool
+	}{
+		{
+			desc:        "Get OC Platform Comp IC",
+			pathTarget:  "OC_YANG",
+			textPbPath:  `elem: <name: "openconfig-platform:components" > elem: <name: "component" key:<key:"name" value:"integrated_circuit1" > >`,
+			wantRetCode: codes.OK,
+			wantRespVal: marshal(compFull),
+			valTest:     true,
+		},
+		{
+			desc:        "Get OC Platform Comp state",
+			pathTarget:  "OC_YANG",
+			textPbPath:  `elem: <name: "openconfig-platform:components" > elem: <name: "component" key:<key:"name" value:"integrated_circuit1" > > elem: <name: "state" >`,
+			wantRetCode: codes.OK,
+			wantRespVal: marshal(stateVal),
+			valTest:     true,
+		},
+		{
+			desc:        "Get OC Platform Comp IC state",
+			pathTarget:  "OC_YANG",
+			textPbPath:  `elem: <name: "openconfig-platform:components" > elem: <name: "component" key:<key:"name" value:"integrated_circuit1" > > elem: <name: "integrated-circuit" > elem: <name: "state" >`,
+			wantRetCode: codes.OK,
+			wantRespVal: marshal(icStateVal),
+			valTest:     true,
+		},
+		{
+			desc:        "Get OC Platform Comp IC config",
+			pathTarget:  "OC_YANG",
+			textPbPath:  `elem: <name: "openconfig-platform:components" > elem: <name: "component" key:<key:"name" value:"integrated_circuit1" > > elem: <name: "integrated-circuit" > elem: <name: "config" >`,
+			wantRetCode: codes.OK,
+			wantRespVal: marshal(icConfigVal),
+			valTest:     true,
+		},
+	}
+
+	for _, td := range tds {
+		t.Run(td.desc, func(t *testing.T) {
+			ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+			defer cancel()
+			runTestGet(t, ctx, gClient, td.pathTarget, td.textPbPath, td.wantRetCode, td.wantRespVal, td.valTest)
+		})
+	}
+}
+
+func TestGnmiSetCompPlfmIC(t *testing.T) {
+	// Server and DB Setup
+	s := createServer(t, 0)
+	go runServer(t, s)
+	defer s.Stop()
+
+	prepareDbTranslib(t)
+	ns, err := sdcfg.GetDbDefaultNamespace()
+	if err != nil {
+		t.Fatalf("Failed to get Dd default namespace: %v", err)
+	}
+	ctx := context.Background()
+	icName := "integrated_circuit67"
+
+	// Setup CONFIG_DB
+	configDbId, err := sdcfg.GetDbId("CONFIG_DB", ns)
+	if err != nil {
+		t.Fatalf("Failed to get DB ID for CONFIG_DB: %v", err)
+	}
+	configClient := getRedisClientN(t, configDbId, ns)
+
+	listFields := map[string]interface{}{
+		"name": icName,
+	}
+
+	// Setup STATE_DB
+	stateDbId, err := sdcfg.GetDbId("STATE_DB", ns)
+	if err != nil {
+		t.Fatalf("Failed to get DB ID for STATE_DB: %v", err)
+	}
+	stateClient := getRedisClientN(t, stateDbId, ns)
+
+	t.Cleanup(func() {
+		cleanupCtx := context.Background()
+		if err := stateClient.Del(cleanupCtx, "NODE_INFO|"+icName).Err(); err != nil {
+			t.Fatalf("Failed to Del NODE_INFO: %v", err)
+		}
+		if err := configClient.Del(cleanupCtx, "NODE_CFG|"+icName).Err(); err != nil {
+			t.Fatalf("Failed to Del NODE_CFG: %v", err)
+		}
+		stateClient.Close()
+		configClient.Close()
+
+	})
+
+	if err := configClient.HSet(ctx, "NODE_CFG|"+icName, listFields).Err(); err != nil {
+		t.Fatalf("Failed to HSet NODE_CFG: %v", err)
+	}
+	if err := stateClient.HSet(ctx, "NODE_INFO|"+icName, listFields).Err(); err != nil {
+		t.Fatalf("Failed to HSet NODE_INFO: %v", err)
+	}
+
+	tlsConfig := &tls.Config{InsecureSkipVerify: true}
+	opts := []grpc.DialOption{grpc.WithTransportCredentials(credentials.NewTLS(tlsConfig))}
+
+	targetAddr := fmt.Sprintf("127.0.0.1:%d", s.config.Port)
+	conn, err := grpc.Dial(targetAddr, opts...)
+	if err != nil {
+		t.Fatalf("Dialing to %q failed: %v", targetAddr, err)
+	}
+	defer conn.Close()
+
+	gClient := pb.NewGNMIClient(conn)
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	tds := []struct {
+		desc          string
+		pathTarget    string
+		textPbPath    string
+		wantRetCode   codes.Code
+		wantRespVal   interface{}
+		attributeData string
+		operation     op_t
+		valTest       bool
+	}{
+		{
+			desc:          "Plfm path update",
+			pathTarget:    "OC_YANG",
+			textPbPath:    pathToPb("openconfig-platform:components/component[name=integrated_circuit67]"),
+			attributeData: `{"component": [{"name": "integrated_circuit67", "config": {"name": "integrated_circuit67"}, "integrated-circuit": {"config": {"node-id": "183930889"}}}]}`,
+			wantRetCode:   codes.OK,
+			operation:     Update,
+			valTest:       false,
+		},
+		{
+			desc:          "Plfm path delete",
+			pathTarget:    "OC_YANG",
+			textPbPath:    pathToPb("openconfig-platform:components/component[name=integrated_circuit67]/"),
+			attributeData: "",
+			wantRetCode:   codes.OK,
+			operation:     Delete,
+			valTest:       false,
+		},
+	}
+
+	for _, td := range tds {
+		t.Run(td.desc, func(t *testing.T) {
+			runTestSet(t, ctx, gClient, td.pathTarget, td.textPbPath, td.wantRetCode, td.wantRespVal, td.attributeData, td.operation)
+		})
+	}
+}
+
+func TestGnmiGetTranslibPfmCompXcvr(t *testing.T) {
+	// 1. Define all structures locally inside the test function
+	type ComponentState struct {
+		Empty           bool   `json:"empty"`
+		FirmwareVersion string `json:"firmware-version"`
+		HardwareVersion string `json:"hardware-version"`
+		MfgDate         string `json:"mfg-date"`
+		MfgName         string `json:"mfg-name"`
+		Name            string `json:"name"`
+		OperStatus      string `json:"oper-status"`
+		PartNo          string `json:"part-no"`
+		Removable       bool   `json:"removable"`
+		SerialNo        string `json:"serial-no"`
+		Temperature     struct {
+			Instant string `json:"instant"`
+		} `json:"temperature"`
+		Type string `json:"type"`
+	}
+
+	type PhysicalChannel struct {
+		Index  int `json:"index"`
+		Config struct {
+			Index int `json:"index"`
+		} `json:"config"`
+		State struct {
+			Index      int `json:"index"`
+			InputPower struct {
+				Instant string `json:"instant"`
+			} `json:"input-power"`
+			LaserBiasCurrent struct {
+				Instant string `json:"instant"`
+			} `json:"laser-bias-current"`
+			TxLaser bool `json:"tx-laser"`
+		} `json:"state"`
+	}
+
+	type ComponentResp struct {
+		Component []struct {
+			Name   string `json:"name"`
+			Config struct {
+				Name string `json:"name"`
+			} `json:"config"`
+			State       ComponentState `json:"state"`
+			Transceiver struct {
+				PhysicalChannels struct {
+					Channel []PhysicalChannel `json:"channel"`
+				} `json:"physical-channels"`
+			} `json:"openconfig-platform-transceiver:transceiver"`
+		} `json:"openconfig-platform:component"`
+	}
+
+	type StateResp struct {
+		State ComponentState `json:"openconfig-platform:state"`
+	}
+
+	type TempResp struct {
+		Instant string `json:"openconfig-platform:instant"`
+	}
+
+	type PresenceResp struct {
+		Empty bool `json:"openconfig-platform:empty"`
+	}
+
+	// Server/DB setup
+	s := createServer(t, 0)
+	go runServer(t, s)
+	defer s.Stop()
+	prepareDbTranslib(t)
+	ctx := context.Background()
+	ns, err := sdcfg.GetDbDefaultNamespace()
+	if err != nil {
+		t.Fatalf("Failed to get default DB namespace: %v", err)
+	}
+
+	stateDbId, err := sdcfg.GetDbId("STATE_DB", ns)
+	if err != nil {
+		t.Fatalf("Failed to get DB ID for STATE_DB: %v", err)
+	}
+	stateClient := getRedisClientN(t, stateDbId, ns)
+	t.Cleanup(func() {
+		cleanupCtx := context.Background()
+		if err := stateClient.Del(cleanupCtx, "TRANSCEIVER_INFO|Ethernet0").Err(); err != nil {
+			t.Logf("Failed to HDel TRANSCEIVER_INFO field: %v", err)
+		}
+		if err := stateClient.Del(cleanupCtx, "TRANSCEIVER_STATUS|Ethernet0").Err(); err != nil {
+			t.Logf("Failed to HDel TRANSCEIVER_STATUS field: %v", err)
+		}
+
+		if err := stateClient.Del(cleanupCtx, "TRANSCEIVER_DOM_SENSOR|Ethernet0").Err(); err != nil {
+			t.Logf("Failed to HDel TRANSCEIVER_DOM_SENSOR field: %v", err)
+		}
+		stateClient.Close()
+	})
+	if err := stateClient.HSet(ctx, "TRANSCEIVER_INFO|Ethernet0", map[string]interface{}{"name": "Ethernet0"}).Err(); err != nil {
+		t.Fatalf("Failed to HSet TRANSCEIVER_INFO: %v", err)
+	}
+
+	if err := stateClient.HSet(ctx, "TRANSCEIVER_STATUS|Ethernet0", map[string]interface{}{"name": "Ethernet0", "status": true}).Err(); err != nil {
+		t.Fatalf("Failed to HSet TRANSCEIVER_STATUS: %v", err)
+	}
+
+	if err := stateClient.HSet(ctx, "TRANSCEIVER_DOM_SENSOR|Ethernet0", map[string]interface{}{"name": "Ethernet0", "temperature": "101"}).Err(); err != nil {
+		t.Fatalf("Failed to HSet TRANSCEIVER_DOM_SENSOR: %v", err)
+	}
+
+	targetAddr := fmt.Sprintf("127.0.0.1:%d", s.config.Port)
+	tlsConfig := &tls.Config{InsecureSkipVerify: true}
+	opts := []grpc.DialOption{grpc.WithTransportCredentials(credentials.NewTLS(tlsConfig))}
+	conn, err := grpc.Dial(targetAddr, opts...)
+	if err != nil {
+		t.Fatalf("Dialing to %q failed: %v", targetAddr, err)
+	}
+	defer conn.Close()
+	gClient := pb.NewGNMIClient(conn)
+
+	// 2. Prepare Data to match your log output
+	commonState := ComponentState{
+		Empty:           false,
+		FirmwareVersion: "D",
+		HardwareVersion: "D",
+		MfgDate:         "2011-12-13 ",
+		MfgName:         "Amphenol",
+		Name:            "Ethernet0",
+		OperStatus:      "openconfig-platform-types:ACTIVE",
+		PartNo:          "599690001",
+		Removable:       true,
+		SerialNo:        "APF11490011J7E",
+		Type:            "openconfig-platform-types:TRANSCEIVER",
+	}
+	commonState.Temperature.Instant = "101"
+
+	channels := make([]PhysicalChannel, 4)
+	for i := 0; i < 4; i++ {
+		channels[i].Index, channels[i].Config.Index, channels[i].State.Index = i, i, i
+		channels[i].State.InputPower.Instant = "-Inf"
+		channels[i].State.LaserBiasCurrent.Instant = "0"
+		channels[i].State.TxLaser = false
+	}
+
+	// Initialize the 4 specific response objects
+	var compVal ComponentResp
+	compVal.Component = append(compVal.Component, struct {
+		Name   string `json:"name"`
+		Config struct {
+			Name string `json:"name"`
+		} `json:"config"`
+		State       ComponentState `json:"state"`
+		Transceiver struct {
+			PhysicalChannels struct {
+				Channel []PhysicalChannel `json:"channel"`
+			} `json:"physical-channels"`
+		} `json:"openconfig-platform-transceiver:transceiver"`
+	}{
+		Name: "Ethernet0",
+		Config: struct {
+			Name string `json:"name"`
+		}{Name: "Ethernet0"},
+		State: commonState,
+		Transceiver: struct {
+			PhysicalChannels struct {
+				Channel []PhysicalChannel `json:"channel"`
+			} `json:"physical-channels"`
+		}{PhysicalChannels: struct {
+			Channel []PhysicalChannel `json:"channel"`
+		}{Channel: channels}},
+	})
+
+	stateVal := StateResp{State: commonState}
+	tempVal := TempResp{Instant: "101"}
+	presenceVal := PresenceResp{Empty: false}
+
+	// Helper to marshal locally defined structs to []byte for runTestGet
+	marshal := func(v interface{}) []byte {
+		b, _ := json.Marshal(v)
+		return b
+	}
+
+	tds := []struct {
+		desc        string
+		pathTarget  string
+		textPbPath  string
+		wantRetCode codes.Code
+		wantRespVal interface{}
+		valTest     bool
+	}{
+		{
+			desc:        "Get OC Platform Comp Xcvr",
+			pathTarget:  "OC_YANG",
+			textPbPath:  `elem: <name: "openconfig-platform:components" > elem: <name: "component" key:<key:"name" value:"Ethernet0" > >`,
+			wantRetCode: codes.OK,
+			wantRespVal: marshal(compVal),
+			valTest:     false,
+		},
+		{
+			desc:        "Get OC Platform Comp Xcvr State",
+			pathTarget:  "OC_YANG",
+			textPbPath:  `elem: <name: "openconfig-platform:components" > elem: <name: "component" key:<key:"name" value:"Ethernet0" > > elem: <name: "state" >`,
+			wantRetCode: codes.OK,
+			wantRespVal: marshal(stateVal),
+			valTest:     true,
+		},
+		{
+			desc:        "Get OC Platform Comp Xcvr Temperature",
+			pathTarget:  "OC_YANG",
+			textPbPath:  `elem: <name: "openconfig-platform:components" > elem: <name: "component" key:<key:"name" value:"Ethernet0" > > elem: <name: "state" > elem: <name: "temperature" > elem: <name: "instant" >`,
+			wantRetCode: codes.OK,
+			wantRespVal: marshal(tempVal),
+			valTest:     true,
+		},
+		{
+			desc:        "Get OC Platform Comp Xcvr Presence",
+			pathTarget:  "OC_YANG",
+			textPbPath:  `elem: <name: "openconfig-platform:components" > elem: <name: "component" key:<key:"name" value:"Ethernet0" > > elem: <name: "state" > elem: <name: "empty" >`,
+			wantRetCode: codes.OK,
+			wantRespVal: marshal(presenceVal),
+			valTest:     true,
+		},
+	}
+
+	for _, td := range tds {
+		t.Run(td.desc, func(t *testing.T) {
+			ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+			defer cancel()
+			// Your existing runTestGet is called here
+			runTestGet(t, ctx, gClient, td.pathTarget, td.textPbPath, td.wantRetCode, td.wantRespVal, td.valTest)
+		})
+	}
+}
+
+func TestGnmiSubscribeTranslibXfmrIC_wildcard(t *testing.T) {
+	s := createServer(t, 0)
+	go runServer(t, s)
+	defer s.Stop()
+
+	prepareDbTranslib(t)
+	ns, err := sdcfg.GetDbDefaultNamespace()
+	if err != nil {
+		t.Fatalf("Failed to get DB default namespace: %v", err)
+	}
+	ctx := context.Background()
+
+	// Use distinct names for this specific test
+	icInstances := []string{"integrated_circuit67", "integrated_circuit68"}
+
+	configDbId, err := sdcfg.GetDbId("CONFIG_DB", ns)
+	if err != nil {
+		t.Fatalf("Failed to get DB ID CONIFG DB: %v", err)
+	}
+	configClient := getRedisClientN(t, configDbId, ns)
+
+	stateDbId, err := sdcfg.GetDbId("STATE_DB", ns)
+	if err != nil {
+		t.Fatalf("Failed to get DB ID STATE DB: %v", err)
+	}
+	stateClient := getRedisClientN(t, stateDbId, ns)
+
+	for _, icName := range icInstances {
+		nodeId := "111"
+		if icName == "integrated_circuit68" {
+			nodeId = "112"
+		}
+		name := icName
+		t.Cleanup(func() {
+			cleanupCtx := context.Background()
+			if err := stateClient.Del(cleanupCtx, "NODE_INFO|"+name).Err(); err != nil {
+				t.Logf("Failed to delete NODE_INFO keys: %v", err)
+			}
+			if err := configClient.Del(cleanupCtx, "NODE_CFG|"+name).Err(); err != nil {
+				t.Logf("Failed to delete NODE_CFG keys: %v", err)
+			}
+			stateClient.Close()
+			configClient.Close()
+		})
+
+		if err := configClient.HSet(ctx, "NODE_CFG|"+icName, map[string]interface{}{"name": icName, "node-id": nodeId}).Err(); err != nil {
+			t.Fatalf("Failed to HSet NODE_CFG: %v", err)
+		}
+
+		if err := stateClient.HSet(ctx, "NODE_INFO|"+icName, map[string]interface{}{
+			"name":    icName,
+			"parent":  "chassis",
+			"type":    "INTEGRATED_CIRCUIT",
+			"node-id": nodeId,
+		}).Err(); err != nil {
+			t.Fatalf("Failed to HSet NODE_INFO: %v", err)
+		}
+	}
+
+	targetAddr := fmt.Sprintf("127.0.0.1:%d", s.config.Port)
+	conn, err := grpc.Dial(targetAddr, grpc.WithTransportCredentials(credentials.NewTLS(&tls.Config{InsecureSkipVerify: true})))
+	if err != nil {
+		t.Fatalf("Dialing failed: %v", err)
+	}
+	defer conn.Close()
+	gClient := pb.NewGNMIClient(conn)
+
+	tds := []struct {
+		desc string
+		path *pb.Path
+	}{
+		{
+			desc: "Get all IC State (Wildcard expansion check)",
+			path: &pb.Path{
+				Elem: []*pb.PathElem{
+					{Name: "components"},
+					{Name: "component", Key: map[string]string{"name": "*"}},
+					{Name: "integrated-circuit"},
+					{Name: "state"},
+				},
+			},
+		},
+		{
+			desc: "Get all IC (Wildcard expansion check)",
+			path: &pb.Path{
+				Elem: []*pb.PathElem{
+					{Name: "components"},
+					{Name: "component", Key: map[string]string{"name": "*"}},
+				},
+			},
+		},
+		{
+			desc: "Get all Components State (Wildcard expansion check)",
+			path: &pb.Path{
+				Elem: []*pb.PathElem{
+					{Name: "components"},
+					{Name: "component", Key: map[string]string{"name": "*"}},
+					{Name: "state"},
+				},
+			},
+		},
+	}
+
+	for _, td := range tds {
+		t.Run(td.desc, func(t *testing.T) {
+			subCtx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+			defer cancel()
+			runTestSubscribeIntf(t, subCtx, gClient, td.path, td.desc, icInstances)
+		})
+	}
+}
+
+func TestGnmiGetOpenconfigInterfacesAttributes(t *testing.T) {
+	// 1. Define all structures locally inside the test function
+	type OperStatusResp struct {
+		OperStatus string `json:"openconfig-interfaces:oper-status"`
+	}
+
+	type IfindexResp struct {
+		Ifindex uint32 `json:"openconfig-interfaces:ifindex"`
+	}
+
+	type DescriptionResp struct {
+		Description string `json:"openconfig-interfaces:description"`
+	}
+
+	type MacAddressResp struct {
+		MacAddress string `json:"openconfig-if-ethernet:mac-address"`
+	}
+
+	type CpuResp struct {
+		Cpu bool `json:"openconfig-interfaces:cpu"`
+	}
+
+	type ManagementResp struct {
+		Management bool `json:"openconfig-interfaces:management"`
+	}
+
+	type SubIntfV4CountersResp struct {
+		Counters struct {
+			InPkts  string `json:"in-pkts"`
+			OutPkts string `json:"out-pkts"`
+		} `json:"openconfig-if-ip:counters"`
+	}
+
+	type SubIntfV6CountersResp struct {
+		Counters struct {
+			InPkts           string `json:"in-pkts"`
+			OutPkts          string `json:"out-pkts"`
+			InDiscardedPkts  string `json:"in-discarded-pkts"`
+			OutDiscardedPkts string `json:"out-discarded-pkts"`
+		} `json:"openconfig-if-ip:counters"`
+	}
+
+	// Server/DB setup
+	s := createServer(t, 0)
+	go runServer(t, s)
+	defer s.Stop()
+	prepareDbTranslib(t)
+	ctx := context.Background()
+	ns, err := sdcfg.GetDbDefaultNamespace()
+	if err != nil {
+		t.Fatalf("Failed to get default DB namespace: %v", err)
+	}
+
+	// Setup CONFIG_DB
+	configDbId, err := sdcfg.GetDbId("CONFIG_DB", ns)
+	if err != nil {
+		t.Fatalf("Failed to get DB ID for CONFIG_DB: %v", err)
+	}
+	configClient := getRedisClientN(t, configDbId, ns)
+	// Setup APPL_DB
+	applDbId, err := sdcfg.GetDbId("APPL_DB", ns)
+	if err != nil {
+		t.Fatalf("Failed to get DB ID for APPL_DB: %v", err)
+	}
+	applClient := getRedisClientN(t, applDbId, ns)
+	// Setup STATE_DB
+	stateDbId, err := sdcfg.GetDbId("STATE_DB", ns)
+	if err != nil {
+		t.Fatalf("Failed to get DB ID for STATE_DB: %v", err)
+	}
+	stateClient := getRedisClientN(t, stateDbId, ns)
+	// Setup COUNTERS_DB
+	countersDbId, err := sdcfg.GetDbId("COUNTERS_DB", ns)
+	if err != nil {
+		t.Fatalf("Failed to get DB ID for COUNTERS_DB: %v", err)
+	}
+	countersClient := getRedisClientN(t, countersDbId, ns)
+
+	// Check if 'mac' already exists on DEVICE_METADATA|localhost prior to test mutations
+	oldMac, macExistsErr := configClient.HGet(ctx, "DEVICE_METADATA|localhost", "mac").Result()
+
+	// Register t.Cleanup immediately before any HSet calls to prevent leaking clients or keys if an HSet fails
+	t.Cleanup(func() {
+		cleanupCtx := context.Background()
+
+		// Restore previous mac if it existed, otherwise remove only the mac field
+		if macExistsErr == nil {
+			if err := configClient.HSet(cleanupCtx, "DEVICE_METADATA|localhost", map[string]interface{}{"mac": oldMac}).Err(); err != nil {
+				t.Logf("Failed to restore previous mac field: %v", err)
+			}
+		} else {
+			if err := configClient.HDel(cleanupCtx, "DEVICE_METADATA|localhost", "mac").Err(); err != nil {
+				t.Logf("Failed to HDel mac field: %v", err)
+			}
+		}
+
+		if err := configClient.Del(cleanupCtx, "PORT|Ethernet999", "PORT|Ethernet998", "PORT|Ethernet997", "PORTCHANNEL|PortChannel999", "CPU_PORT|CPU", "P4RT_PORT_ID_TABLE|Ethernet999").Err(); err != nil {
+			t.Logf("Failed to delete CONFIG_DB keys: %v", err)
+		}
+		if err := applClient.Del(cleanupCtx, "PORT_TABLE:Ethernet999", "PORT_TABLE:Ethernet998", "PORT_TABLE:Ethernet997", "P4RT_PORT_ID_TABLE:Ethernet999").Err(); err != nil {
+			t.Logf("Failed to delete APPL_DB keys: %v", err)
+		}
+		if err := stateClient.Del(cleanupCtx, "LAG_MEMBER_TABLE|PortChannel999|Ethernet998", "LAG_MEMBER_TABLE|PortChannel999|Ethernet999").Err(); err != nil {
+			t.Logf("Failed to delete STATE_DB keys: %v", err)
+		}
+		if err := countersClient.Del(cleanupCtx, "COUNTERS:oid:0x1000000000001", "COUNTERS:oid:0x1000000000002").Err(); err != nil {
+			t.Logf("Failed to delete COUNTERS_DB keys: %v", err)
+		}
+		if err := countersClient.HDel(cleanupCtx, "COUNTERS_PORT_NAME_MAP", "Ethernet998", "Ethernet999").Err(); err != nil {
+			t.Logf("Failed to HDel COUNTERS_PORT_NAME_MAP keys: %v", err)
+		}
+
+		configClient.Close()
+		applClient.Close()
+		stateClient.Close()
+		countersClient.Close()
+	})
+
+	if err := configClient.HSet(ctx, "PORT|Ethernet999", map[string]interface{}{"admin_status": "up", "mtu": "9000", "description": "UT_Ethernet999_Interface", "mac-address": "00:11:22:33:44:55"}).Err(); err != nil {
+		t.Fatalf("Failed to HSet PORT|Ethernet999: %v", err)
+	}
+	if err := configClient.HSet(ctx, "PORT|Ethernet998", map[string]interface{}{"admin_status": "up", "mtu": "1500", "description": "UT_Ethernet998_Interface"}).Err(); err != nil {
+		t.Fatalf("Failed to HSet PORT|Ethernet998: %v", err)
+	}
+	if err := configClient.HSet(ctx, "PORT|Ethernet997", map[string]interface{}{"admin_status": "up"}).Err(); err != nil {
+		t.Fatalf("Failed to HSet PORT|Ethernet997: %v", err)
+	}
+	if err := configClient.HSet(ctx, "PORTCHANNEL|PortChannel999", map[string]interface{}{"admin_status": "up", "mtu": "9000"}).Err(); err != nil {
+		t.Fatalf("Failed to HSet PORTCHANNEL|PortChannel999: %v", err)
+	}
+	if err := configClient.HSet(ctx, "CPU_PORT|CPU", map[string]interface{}{"admin_status": "up"}).Err(); err != nil {
+		t.Fatalf("Failed to HSet CPU_PORT|CPU: %v", err)
+	}
+	if err := configClient.HSet(ctx, "DEVICE_METADATA|localhost", map[string]interface{}{"mac": "AA:BB:CC:DD:EE:FF"}).Err(); err != nil {
+		t.Fatalf("Failed to HSet DEVICE_METADATA|localhost: %v", err)
+	}
+	if err := configClient.HSet(ctx, "P4RT_PORT_ID_TABLE|Ethernet999", map[string]interface{}{"id": "100999"}).Err(); err != nil {
+		t.Fatalf("Failed to HSet P4RT_PORT_ID_TABLE|Ethernet999: %v", err)
+	}
+
+	if err := applClient.HSet(ctx, "PORT_TABLE:Ethernet999", map[string]interface{}{"admin_status": "up", "oper_status": "up", "mtu": "9000", "description": "UT_Ethernet999_Interface", "mac-address": "00:11:22:33:44:55"}).Err(); err != nil {
+		t.Fatalf("Failed to HSet PORT_TABLE:Ethernet999: %v", err)
+	}
+	if err := applClient.HSet(ctx, "PORT_TABLE:Ethernet998", map[string]interface{}{"admin_status": "up", "oper_status": "down", "mtu": "1500", "description": "UT_Ethernet998_Interface"}).Err(); err != nil {
+		t.Fatalf("Failed to HSet PORT_TABLE:Ethernet998: %v", err)
+	}
+	if err := applClient.HSet(ctx, "PORT_TABLE:Ethernet997", map[string]interface{}{"admin_status": "up", "oper_status": "invalid_status"}).Err(); err != nil {
+		t.Fatalf("Failed to HSet PORT_TABLE:Ethernet997: %v", err)
+	}
+	if err := applClient.HSet(ctx, "P4RT_PORT_ID_TABLE:Ethernet999", map[string]interface{}{"id": "100999"}).Err(); err != nil {
+		t.Fatalf("Failed to HSet P4RT_PORT_ID_TABLE:Ethernet999: %v", err)
+	}
+
+	if err := stateClient.HSet(ctx, "LAG_MEMBER_TABLE|PortChannel999|Ethernet998", map[string]interface{}{"status": "up"}).Err(); err != nil {
+		t.Fatalf("Failed to HSet LAG_MEMBER_TABLE Ethernet998: %v", err)
+	}
+	if err := stateClient.HSet(ctx, "LAG_MEMBER_TABLE|PortChannel999|Ethernet999", map[string]interface{}{"status": "up"}).Err(); err != nil {
+		t.Fatalf("Failed to HSet LAG_MEMBER_TABLE Ethernet999: %v", err)
+	}
+
+	if err := countersClient.HSet(ctx, "COUNTERS:oid:0x1000000000001", map[string]interface{}{
+		"SAI_PORT_STAT_IP_IN_RECEIVES":          "100",
+		"SAI_PORT_STAT_IP_OUT_UCAST_PKTS":       "150",
+		"SAI_PORT_STAT_IP_OUT_NON_UCAST_PKTS":   "50",
+		"SAI_PORT_STAT_IPV6_IN_RECEIVES":        "200",
+		"SAI_PORT_STAT_IPV6_OUT_UCAST_PKTS":     "250",
+		"SAI_PORT_STAT_IPV6_OUT_NON_UCAST_PKTS": "50",
+		"SAI_PORT_STAT_IPV6_IN_DISCARDS":        "10",
+		"SAI_PORT_STAT_IPV6_OUT_DISCARDS":       "20",
+	}).Err(); err != nil {
+		t.Fatalf("Failed to HSet COUNTERS:oid:0x1000000000001: %v", err)
+	}
+	if err := countersClient.HSet(ctx, "COUNTERS:oid:0x1000000000002", map[string]interface{}{
+		"SAI_PORT_STAT_IP_IN_RECEIVES":          "300",
+		"SAI_PORT_STAT_IP_OUT_UCAST_PKTS":       "350",
+		"SAI_PORT_STAT_IP_OUT_NON_UCAST_PKTS":   "50",
+		"SAI_PORT_STAT_IPV6_IN_RECEIVES":        "400",
+		"SAI_PORT_STAT_IPV6_OUT_UCAST_PKTS":     "450",
+		"SAI_PORT_STAT_IPV6_OUT_NON_UCAST_PKTS": "50",
+		"SAI_PORT_STAT_IPV6_IN_DISCARDS":        "30",
+		"SAI_PORT_STAT_IPV6_OUT_DISCARDS":       "40",
+	}).Err(); err != nil {
+		t.Fatalf("Failed to HSet COUNTERS:oid:0x1000000000002: %v", err)
+	}
+	if err := countersClient.HSet(ctx, "COUNTERS_PORT_NAME_MAP", "Ethernet998", "oid:0x1000000000001").Err(); err != nil {
+		t.Fatalf("Failed to HSet COUNTERS_PORT_NAME_MAP for Ethernet998: %v", err)
+	}
+	if err := countersClient.HSet(ctx, "COUNTERS_PORT_NAME_MAP", "Ethernet999", "oid:0x1000000000002").Err(); err != nil {
+		t.Fatalf("Failed to HSet COUNTERS_PORT_NAME_MAP for Ethernet999: %v", err)
+	}
+
+	targetAddr := fmt.Sprintf("127.0.0.1:%d", s.config.Port)
+	tlsConfig := &tls.Config{InsecureSkipVerify: true}
+	opts := []grpc.DialOption{grpc.WithTransportCredentials(credentials.NewTLS(tlsConfig))}
+	conn, err := grpc.Dial(targetAddr, opts...)
+	if err != nil {
+		t.Fatalf("Dialing to %q failed: %v", targetAddr, err)
+	}
+	defer conn.Close()
+	gClient := pb.NewGNMIClient(conn)
+
+	// Helper to marshal locally defined structs to []byte for runTestGet
+	marshal := func(v interface{}) []byte {
+		b, err := json.Marshal(v)
+		if err != nil {
+			t.Fatalf("json.Marshal failed for %v: %v", v, err)
+		}
+		return b
+	}
+
+	// 2. Prepare Data to match expected output
+	operUpVal := OperStatusResp{OperStatus: "UP"}
+	operDownVal := OperStatusResp{OperStatus: "DOWN"}
+	operUnknownVal := OperStatusResp{OperStatus: "UNKNOWN"}
+
+	descVal := DescriptionResp{Description: "UT_Ethernet999_Interface"}
+
+	macVal := MacAddressResp{MacAddress: "00:11:22:33:44:55"}
+	macFallbackVal := MacAddressResp{MacAddress: "AA:BB:CC:DD:EE:FF"}
+
+	cpuVal := CpuResp{Cpu: true}
+	mgmtVal := ManagementResp{Management: false}
+	ifindexVal := IfindexResp{Ifindex: 100999}
+
+	var v4Counters SubIntfV4CountersResp
+	v4Counters.Counters.InPkts = "400"
+	v4Counters.Counters.OutPkts = "600"
+
+	var v6Counters SubIntfV6CountersResp
+	v6Counters.Counters.InPkts = "600"
+	v6Counters.Counters.OutPkts = "800"
+	v6Counters.Counters.InDiscardedPkts = "40"
+	v6Counters.Counters.OutDiscardedPkts = "60"
+
+	tds := []struct {
+		desc        string
+		pathTarget  string
+		textPbPath  string
+		wantRetCode codes.Code
+		wantRespVal interface{}
+		valTest     bool
+	}{
+		{
+			desc:        "Get Oper Status (UP)",
+			pathTarget:  "OC_YANG",
+			textPbPath:  `elem: <name: "openconfig-interfaces:interfaces" > elem: <name: "interface" key:<key:"name" value:"Ethernet999" > > elem: <name: "state" > elem: <name: "oper-status" >`,
+			wantRetCode: codes.OK,
+			wantRespVal: marshal(operUpVal),
+			valTest:     true,
+		},
+		{
+			desc:        "Get Oper Status (DOWN)",
+			pathTarget:  "OC_YANG",
+			textPbPath:  `elem: <name: "openconfig-interfaces:interfaces" > elem: <name: "interface" key:<key:"name" value:"Ethernet998" > > elem: <name: "state" > elem: <name: "oper-status" >`,
+			wantRetCode: codes.OK,
+			wantRespVal: marshal(operDownVal),
+			valTest:     true,
+		},
+		{
+			desc:        "Get Oper Status (UNKNOWN)",
+			pathTarget:  "OC_YANG",
+			textPbPath:  `elem: <name: "openconfig-interfaces:interfaces" > elem: <name: "interface" key:<key:"name" value:"Ethernet997" > > elem: <name: "state" > elem: <name: "oper-status" >`,
+			wantRetCode: codes.OK,
+			wantRespVal: marshal(operUnknownVal),
+			valTest:     true,
+		},
+		{
+			desc:        "Get Oper Status on CPU interface (Always UP)",
+			pathTarget:  "OC_YANG",
+			textPbPath:  `elem: <name: "openconfig-interfaces:interfaces" > elem: <name: "interface" key:<key:"name" value:"CPU" > > elem: <name: "state" > elem: <name: "oper-status" >`,
+			wantRetCode: codes.OK,
+			wantRespVal: marshal(operUpVal),
+			valTest:     true,
+		},
+		{
+			desc:        "Get State Description",
+			pathTarget:  "OC_YANG",
+			textPbPath:  `elem: <name: "openconfig-interfaces:interfaces" > elem: <name: "interface" key:<key:"name" value:"Ethernet999" > > elem: <name: "state" > elem: <name: "description" >`,
+			wantRetCode: codes.OK,
+			wantRespVal: marshal(descVal),
+			valTest:     true,
+		},
+		{
+			desc:        "Get Ethernet MAC Address (Explicit Value)",
+			pathTarget:  "OC_YANG",
+			textPbPath:  `elem: <name: "openconfig-interfaces:interfaces" > elem: <name: "interface" key:<key:"name" value:"Ethernet999" > > elem: <name: "openconfig-if-ethernet:ethernet" > elem: <name: "state" > elem: <name: "mac-address" >`,
+			wantRetCode: codes.OK,
+			wantRespVal: marshal(macVal),
+			valTest:     true,
+		},
+		{
+			desc:        "Get Ethernet MAC Address (Fallback to DEVICE_METADATA)",
+			pathTarget:  "OC_YANG",
+			textPbPath:  `elem: <name: "openconfig-interfaces:interfaces" > elem: <name: "interface" key:<key:"name" value:"Ethernet998" > > elem: <name: "openconfig-if-ethernet:ethernet" > elem: <name: "state" > elem: <name: "mac-address" >`,
+			wantRetCode: codes.OK,
+			wantRespVal: marshal(macFallbackVal),
+			valTest:     true,
+		},
+		{
+			desc:        "Get CPU Leaf for CPU interface",
+			pathTarget:  "OC_YANG",
+			textPbPath:  `elem: <name: "openconfig-interfaces:interfaces" > elem: <name: "interface" key:<key:"name" value:"CPU" > > elem: <name: "state" > elem: <name: "cpu" >`,
+			wantRetCode: codes.OK,
+			wantRespVal: marshal(cpuVal),
+			valTest:     true,
+		},
+		{
+			desc:        "Get Management Leaf for CPU interface",
+			pathTarget:  "OC_YANG",
+			textPbPath:  `elem: <name: "openconfig-interfaces:interfaces" > elem: <name: "interface" key:<key:"name" value:"CPU" > > elem: <name: "state" > elem: <name: "management" >`,
+			wantRetCode: codes.OK,
+			wantRespVal: marshal(mgmtVal),
+			valTest:     true,
+		},
+		{
+			desc:        "Get State Ifindex",
+			pathTarget:  "OC_YANG",
+			textPbPath:  `elem: <name: "openconfig-interfaces:interfaces" > elem: <name: "interface" key:<key:"name" value:"Ethernet999" > > elem: <name: "state" > elem: <name: "ifindex" >`,
+			wantRetCode: codes.OK,
+			wantRespVal: marshal(ifindexVal),
+			valTest:     true,
+		},
+		{
+			desc:        "Get Subinterface IPv4 State Counters (PortChannel Aggregate)",
+			pathTarget:  "OC_YANG",
+			textPbPath:  `elem: <name: "openconfig-interfaces:interfaces" > elem: <name: "interface" key:<key:"name" value:"PortChannel999" > > elem: <name: "subinterfaces" > elem: <name: "subinterface" key:<key:"index" value:"0" > > elem: <name: "openconfig-if-ip:ipv4" > elem: <name: "state" > elem: <name: "counters" >`,
+			wantRetCode: codes.OK,
+			wantRespVal: marshal(v4Counters),
+			valTest:     true,
+		},
+		{
+			desc:        "Get Subinterface IPv6 State Counters (PortChannel Aggregate)",
+			pathTarget:  "OC_YANG",
+			textPbPath:  `elem: <name: "openconfig-interfaces:interfaces" > elem: <name: "interface" key:<key:"name" value:"PortChannel999" > > elem: <name: "subinterfaces" > elem: <name: "subinterface" key:<key:"index" value:"0" > > elem: <name: "openconfig-if-ip:ipv6" > elem: <name: "state" > elem: <name: "counters" >`,
+			wantRetCode: codes.OK,
+			wantRespVal: marshal(v6Counters),
+			valTest:     true,
+		},
+	}
+
+	for _, td := range tds {
+		t.Run(td.desc, func(t *testing.T) {
+			ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+			defer cancel()
+			runTestGet(t, ctx, gClient, td.pathTarget, td.textPbPath, td.wantRetCode, td.wantRespVal, td.valTest)
+		})
+	}
+}
+
+func TestGnmiGetWildcardTranslibXfmrIntf(t *testing.T) {
+	// Create server on a unique port
+	s := createServer(t, 0)
+	go runServer(t, s)
+	defer s.Stop()
+
+	prepareDbTranslib(t)
+	ns, err := sdcfg.GetDbDefaultNamespace()
+	if err != nil {
+		t.Fatalf("Failed to get default DB namespace: %v", err)
+	}
+	ctx := context.Background()
+
+	// --- DB 4 (ConfigDB) Setup ---
+	// Wildcard discovery starts here. If EthernetX isn't in PORT table, it won't be found.
+	configDbId, err := sdcfg.GetDbId("CONFIG_DB", ns)
+	if err != nil {
+		t.Fatalf("Failed to get CONFIG DB ID: %v", err)
+	}
+	configClient := getRedisClientN(t, configDbId, ns)
+	// --- DB 6 (StateDB) Setup ---
+	stateDbId, err := sdcfg.GetDbId("STATE_DB", ns)
+	if err != nil {
+		t.Fatalf("Failed to get STATE DB ID: %v", err)
+	}
+	stateClient := getRedisClientN(t, stateDbId, ns)
+	// --- DB 0 (ApplDB) Setup ---
+	applDbId, err := sdcfg.GetDbId("APPL_DB", ns)
+	if err != nil {
+		t.Fatalf("Failed to get APPL DB ID: %v", err)
+	}
+	applClient := getRedisClientN(t, applDbId, ns)
+	// --- DB 2 (CountersDB) Setup ---
+	countersDbId, err := sdcfg.GetDbId("COUNTERS_DB", ns)
+	if err != nil {
+		t.Fatalf("Failed to get COUNTERS DB ID: %v", err)
+	}
+	countersClient := getRedisClientN(t, countersDbId, ns)
+	t.Cleanup(func() {
+		cleanupCtx := context.Background()
+		if err := configClient.Del(cleanupCtx, "CONFIG_DB_INITIALIZED", "PORT|Ethernet0", "PORT|Ethernet4").Err(); err != nil {
+			t.Logf("Failed to delete CONFIG_DB_INIT keys: %v", err)
+		}
+		if err := stateClient.Del(cleanupCtx, "STATE_DB_INITIALIZED", "PORT_TABLE:Ethernet0", "PORT_TABLE:Ethernet4", "TRANSCEIVER_INFO|Ethernet0", "TRANSCEIVER_INFO|Ethernet4").Err(); err != nil {
+			t.Logf("Failed to delete STATE_DB_INITIALIZED keys: %v", err)
+		}
+		if err := applClient.Del(cleanupCtx, "P4RT_PORT_ID_TABLE:Ethernet0", "P4RT_PORT_ID_TABLE:Ethernet4").Err(); err != nil {
+			t.Logf("Failed to delete P4RT_PORT_ID_TABLE keys: %v", err)
+		}
+		if err := countersClient.Del(cleanupCtx, "COUNTERS:oid:0x100", "COUNTERS:oid:0x104").Err(); err != nil {
+			t.Logf("Failed to delete COUNTERS keys: %v", err)
+		}
+		if err := countersClient.HDel(cleanupCtx, "COUNTERS_PORT_NAME_MAP", "Ethernet0", "Ethernet4").Err(); err != nil {
+			t.Logf("Failed to delete COUNTERS PORT NAME MAP  keys: %v", err)
+		}
+		configClient.Close()
+		stateClient.Close()
+		applClient.Close()
+		countersClient.Close()
+	})
+	configClient.Set(ctx, "CONFIG_DB_INITIALIZED", "1", 0)
+
+	// Ethernet0 entry
+	if err := configClient.HSet(ctx, "PORT|Ethernet0", map[string]interface{}{
+		"index": "0",
+		"lanes": "1,2,3,4",
+		"id":    "100",
+	}).Err(); err != nil {
+		t.Fatalf("Failed to HSet PORT|Ethernet0: %v", err)
+	}
+	// Ethernet4 entry
+	if err := configClient.HSet(ctx, "PORT|Ethernet4", map[string]interface{}{
+		"index": "4",
+		"lanes": "17,18,19,20",
+		"id":    "104",
+	}).Err(); err != nil {
+		t.Fatalf("Failed to HSet PORT|Ethernet4: %v", err)
+	}
+
+	stateClient.Set(ctx, "STATE_DB_INITIALIZED", "1", 0)
+
+	// Port Table entries (used by hardware-port transformer)
+	if err := stateClient.HSet(ctx, "PORT_TABLE:Ethernet0", map[string]interface{}{"index": "0", "lanes": "1,2,3,4"}).Err(); err != nil {
+		t.Fatalf("Failed to HSet PORT|Ethernet0: %v", err)
+	}
+
+	if err := stateClient.HSet(ctx, "PORT_TABLE:Ethernet4", map[string]interface{}{"index": "4", "lanes": "17,18,19,20"}).Err(); err != nil {
+		t.Fatalf("Failed to HSet PORT|Ethernet4: %v", err)
+	}
+
+	// Transceiver info (used by physical-channel transformer)
+	// Note: many platforms use | as separator for TRANSCEIVER_INFO even in StateDB
+	if err := stateClient.HSet(ctx, "TRANSCEIVER_INFO|Ethernet0", map[string]interface{}{"type": "QSFP28"}).Err(); err != nil {
+		t.Fatalf("Failed to HSet TRANSCEIVER_INFO|Ethernet0: %v", err)
+	}
+
+	if err := stateClient.HSet(ctx, "TRANSCEIVER_INFO|Ethernet4", map[string]interface{}{"type": "QSFP28"}).Err(); err != nil {
+		t.Fatalf("Failed to HSet TRANSCEIVER_INFO|Ethernet4: %v", err)
+	}
+
+	// Used for P4RT State ID lookups
+	if err := applClient.HSet(ctx, "P4RT_PORT_ID_TABLE:Ethernet0", map[string]interface{}{"id": "100"}).Err(); err != nil {
+		t.Fatalf("Failed to HSet P4RT_PORT_ID_TABLE:Ethernet0: %v", err)
+	}
+
+	if err := applClient.HSet(ctx, "P4RT_PORT_ID_TABLE:Ethernet4", map[string]interface{}{"id": "104"}).Err(); err != nil {
+		t.Fatalf("Failed to HSet P4RT_PORT_ID_TABLE:Ethernet4: %v", err)
+	}
+
+	// Map names to OIDs
+	if err := countersClient.HSet(ctx, "COUNTERS_PORT_NAME_MAP", "Ethernet0", "oid:0x100", "Ethernet4", "oid:0x104").Err(); err != nil {
+		t.Fatalf("Failed to HSet COUNTERS_PORT_NAME_MAP: %v", err)
+	}
+
+	// Actual counter data for the transformer
+	if err := countersClient.HSet(ctx, "COUNTERS:oid:0x100", "SAI_PORT_STAT_ETHER_STATS_CRC_ALIGN_ERRORS", "10").Err(); err != nil {
+		t.Fatalf("Failed to HSet COUNTERS:oid:0x100: %v", err)
+	}
+
+	if err := countersClient.HSet(ctx, "COUNTERS:oid:0x104", "SAI_PORT_STAT_ETHER_STATS_CRC_ALIGN_ERRORS", "40").Err(); err != nil {
+		t.Fatalf("Failed to HSet COUNTERS:oid:0x104: %v", err)
+	}
+
+	// gNMI Client connection
+	targetAddr := fmt.Sprintf("127.0.0.1:%d", s.config.Port)
+	conn, err := grpc.Dial(targetAddr, grpc.WithTransportCredentials(credentials.NewTLS(&tls.Config{InsecureSkipVerify: true})))
+	if err != nil {
+		t.Fatalf("Dialing to %q failed: %v", targetAddr, err)
+	}
+	defer conn.Close()
+	gClient := pb.NewGNMIClient(conn)
+
+	// var emptyRespVal interface{}
+	tds := []struct {
+		desc        string
+		textPbPath  string
+		expectedICs []string
+	}{
+		{
+			desc:        "Wildcard Get all Interface State (Path Xfmr check)",
+			textPbPath:  `elem: <name: "openconfig-interfaces:interfaces" > elem: <name: "interface" key:<key:"name" value:"*" > > elem: <name: "state" >`,
+			expectedICs: []string{"Ethernet0", "Ethernet4"},
+		},
+		{
+			desc:        "Wildcard Get all Interface Config (P4RT Config check)",
+			textPbPath:  `elem: <name: "openconfig-interfaces:interfaces" > elem: <name: "interface" key:<key:"name" value:"*" > > elem: <name: "config" >`,
+			expectedICs: []string{"Ethernet0", "Ethernet4"},
+		},
+		{
+			desc:        "Wildcard Get all Interface Counters (Subtree Xfmr check)",
+			textPbPath:  `elem: <name: "openconfig-interfaces:interfaces" > elem: <name: "interface" key:<key:"name" value:"*" > > elem: <name: "state" > elem: <name: "counters" >`,
+			expectedICs: []string{"Ethernet0", "Ethernet4"},
+		},
+		{
+			desc:        "Wildcard Get P4RT ID State for all",
+			textPbPath:  `elem: <name: "openconfig-interfaces:interfaces" > elem: <name: "interface" key:<key:"name" value:"*" > > elem: <name: "state" > elem: <name: "openconfig-p4rt:id" >`,
+			expectedICs: []string{"Ethernet0", "Ethernet4"},
+		},
+		{
+			desc:        "Wildcard Get Hardware Port for all",
+			textPbPath:  `elem: <name: "openconfig-interfaces:interfaces" > elem: <name: "interface" key:<key:"name" value:"*" > > elem: <name: "state" > elem: <name: "openconfig-platform-port:hardware-port" >`,
+			expectedICs: []string{"Ethernet0", "Ethernet4"},
+		},
+	}
+
+	for _, td := range tds {
+		t.Run(td.desc, func(t *testing.T) {
+			ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+			defer cancel()
+
+			path := new(pb.Path)
+			if err := proto.UnmarshalText(td.textPbPath, path); err != nil {
+				t.Fatalf("Failed to parse textPbPath: %v", err)
+			}
+			path.Target = "OC_YANG"
 
 			runTestSubscribeIntf(t, ctx, gClient, path, td.desc, td.expectedICs)
 		})

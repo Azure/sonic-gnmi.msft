@@ -383,7 +383,8 @@ func getInterfaceCountersSnapshot(ifaces []string) (map[string]InterfaceCounters
 			RxJabbers:    common.GetFieldValueString(portCounters, iface, common.DefaultMissingCounterValue, "SAI_PORT_STAT_ETHER_STATS_JABBERS"),
 			RxFragments:  common.GetFieldValueString(portCounters, iface, common.DefaultMissingCounterValue, "SAI_PORT_STAT_ETHER_STATS_FRAGMENTS"),
 			RxUndersize:  common.GetFieldValueString(portCounters, iface, common.DefaultMissingCounterValue, "SAI_PORT_STAT_ETHER_STATS_UNDERSIZE_PKTS"),
-			RxOverruns:   common.GetFieldValueString(portCounters, iface, common.DefaultMissingCounterValue, "SAI_PORT_STAT_IP_IN_RECEIVES"),
+			// Packets dropped on ingress for lack of buffer. Must match portstat, which caches this counter as rx_ovrrun.
+			RxOverruns: common.GetFieldValueString(portCounters, iface, common.DefaultMissingCounterValue, "SAI_PORT_STAT_IN_DROPPED_PKTS"),
 		}
 
 		fecErrCWs := make([]FecErrCW, 0, fecBinCount)

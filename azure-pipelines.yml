@@ -77,7 +77,7 @@ stages:
 
     - bash: |
         set -euo pipefail
-        cd sonic-gnmi
+        cd sonic-gnmi.msft
         export LC_ALL=C
         scratch=$(mktemp -d)
         trap 'rm -rf -- "$scratch"' EXIT
@@ -120,7 +120,7 @@ stages:
     - bash: |
         set -euo pipefail
         export PATH=$PATH:/usr/local/go/bin
-        cd sonic-gnmi
+        cd sonic-gnmi.msft
         mapfile -t files < <(find . -type f -name '*.go' \
             ! -path './vendor/*' ! -path './build/*' \
             ! -path './patches/*' ! -path './proto/*' \

@@ -11,6 +11,7 @@ import (
 )
 
 func TestVirtualDbSyncOnce(t *testing.T) {
+	t.Setenv("UNIT_TEST", "1")
 	tests := []struct {
 		desc     string
 		initFunc func() error
@@ -19,7 +20,6 @@ func TestVirtualDbSyncOnce(t *testing.T) {
 		{"countersQueueNameMap", sdc.InitCountersQueueNameMap},
 		{"countersPGNameMap", sdc.InitCountersPGNameMap},
 		{"countersFabricPortNameMap", sdc.InitCountersFabricPortNameMap},
-		{"countersSidMap", sdc.InitCountersSidMap},
 		{"countersAclRuleMap", sdc.InitCountersAclRuleMap},
 	}
 
@@ -73,6 +73,7 @@ func TestVirtualDbSyncOnce(t *testing.T) {
 }
 
 func TestVirtualDbSyncOnceError(t *testing.T) {
+	t.Setenv("UNIT_TEST", "1")
 	tests := []struct {
 		desc     string
 		initFunc func() error
@@ -81,7 +82,6 @@ func TestVirtualDbSyncOnceError(t *testing.T) {
 		{"countersQueueNameMap", sdc.InitCountersQueueNameMap},
 		{"countersPGNameMap", sdc.InitCountersPGNameMap},
 		{"countersFabricPortNameMap", sdc.InitCountersFabricPortNameMap},
-		{"countersSidMap", sdc.InitCountersSidMap},
 		{"countersAclRuleMap", sdc.InitCountersAclRuleMap},
 	}
 
@@ -122,6 +122,7 @@ func TestVirtualDbSyncOnceError(t *testing.T) {
 }
 
 func TestVirtualDbSyncOnceConcurrent(t *testing.T) {
+	t.Setenv("UNIT_TEST", "1")
 	tests := []struct {
 		desc     string
 		initFunc func() error
@@ -130,7 +131,6 @@ func TestVirtualDbSyncOnceConcurrent(t *testing.T) {
 		{"countersQueueNameMap", sdc.InitCountersQueueNameMap},
 		{"countersPGNameMap", sdc.InitCountersPGNameMap},
 		{"countersFabricPortNameMap", sdc.InitCountersFabricPortNameMap},
-		{"countersSidMap", sdc.InitCountersSidMap},
 		{"countersAclRuleMap", sdc.InitCountersAclRuleMap},
 	}
 

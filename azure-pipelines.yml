@@ -31,7 +31,10 @@ pr:
 
 variables:
   - name: BUILD_BRANCH
-    value: 'master'
+    ${{ if eq(variables['Build.Reason'], 'PullRequest') }}:
+      value: $(System.PullRequest.TargetBranch)
+    ${{ else }}:
+      value: $(Build.SourceBranchName)
   - name: UNIT_TEST_FLAG
     value: 'ENABLE_TRANSLIB_WRITE=y'
   - name: GO_VERSION

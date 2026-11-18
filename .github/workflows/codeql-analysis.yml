@@ -38,7 +38,7 @@ jobs:
       # nosemgrep: yaml.github-actions.security.pull-request-target-code-checkout.pull-request-target-code-checkout
       - name: Checkout PR head (for pull_request_target)
         if: ${{ github.event_name == 'pull_request_target' }}
-        uses: actions/checkout@v4
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
           ref: ${{ github.event.pull_request.head.sha }}
           repository: ${{ github.event.pull_request.head.repo.full_name }}
@@ -47,14 +47,14 @@ jobs:
 
       - name: Checkout repository (for push/workflow_dispatch)
         if: ${{ github.event_name != 'pull_request_target' }}
-        uses: actions/checkout@v4
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
           fetch-depth: 2
           persist-credentials: false
 
       # Checkout sonic-mgmt-common repository which is used by sonic-gnmi
       - name: Checkout sonic-mgmt-common repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
           repository: sonic-net/sonic-mgmt-common
           path: sonic-mgmt-common
@@ -70,12 +70,12 @@ jobs:
 
       # Initializes the CodeQL tools for scanning.
       - name: Initialize CodeQL
-        uses: github/codeql-action/init@v4
+        uses: github/codeql-action/init@33d7b85da1a04171e211befe2c739303b9a4c066 # v4
         with:
           config-file: ./.github/codeql/codeql-config.yml
           languages: ${{ matrix.language }}
 
       - name: Perform CodeQL Analysis
-        uses: github/codeql-action/analyze@v4
+        uses: github/codeql-action/analyze@33d7b85da1a04171e211befe2c739303b9a4c066 # v4
         with:
           category: "/language:${{ matrix.language }}"

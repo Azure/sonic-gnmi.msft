@@ -51,7 +51,7 @@ stages:
       vmImage: ubuntu-22.04
 
     variables:
-      GO_VERSION: '1.19.8'
+      GO_VERSION: '1.26.7'
 
     steps:
     - checkout: self
@@ -110,7 +110,7 @@ stages:
       UNIT_TEST_FLAG: 'ENABLE_TRANSLIB_WRITE=y'
 
     container:
-      image: sonicdev-microsoft.azurecr.io:443/sonic-slave-bookworm:latest
+      image: sonicdev-microsoft.azurecr.io:443/sonic-slave-trixie:latest
 
     steps:
     - checkout: self
@@ -152,6 +152,11 @@ stages:
         publishRunAttachments: true
         testRunTitle: 'Memory Leak Tests'
 
+    - bash: |
+        sudo pip3 install --quiet --break-system-packages --ignore-installed diff-cover
+      displayName: 'Pre-install diff-cover for pipeline decorator'
+      workingDirectory: $(System.DefaultWorkingDirectory)/sonic-gnmi.msft
+
   # Full integration testing with SONiC dependencies
   - job: build
     displayName: "build"
@@ -167,7 +172,7 @@ stages:
       DIFF_COVER_WORKING_DIRECTORY: $(System.DefaultWorkingDirectory)/sonic-gnmi.msft
 
     container:
-      image: sonicdev-microsoft.azurecr.io:443/sonic-slave-bookworm:latest
+      image: sonicdev-microsoft.azurecr.io:443/sonic-slave-trixie:latest
 
     steps:
     - checkout: self
@@ -235,6 +240,11 @@ stages:
         failTaskOnFailedTests: true
         publishRunAttachments: true
         testRunTitle: 'Integration Tests'
+
+    - bash: |
+        sudo pip3 install --quiet --break-system-packages --ignore-installed diff-cover
+      displayName: 'Pre-install diff-cover for pipeline decorator'
+      workingDirectory: $(System.DefaultWorkingDirectory)/sonic-gnmi.msft
 
     - publish: $(Build.ArtifactStagingDirectory)/
       artifact: sonic-gnmi.msft

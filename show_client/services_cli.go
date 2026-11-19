@@ -36,7 +36,7 @@ func getServices(args sdc.CmdArgs, options sdc.OptionMap) ([]byte, error) {
 	processesStr, err := common.GetDataFromHostCommand(cmd)
 	if err != nil {
 		errorMessage := fmt.Sprintf("Failed to run command:%s, err is:%v", cmd, err)
-		log.Errorf(errorMessage)
+		log.Errorf("%s", errorMessage)
 		return nil, errors.New(errorMessage)
 	}
 

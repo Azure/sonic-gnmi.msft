@@ -794,10 +794,6 @@ func getRifNameMapping() (map[string]interface{}, error) {
 		return nil, fmt.Errorf("Failed to get COUNTERS_RIF_NAME_MAP from %s: %v", common.CountersDb, err)
 	}
 
-	if len(rifNameMap) == 0 {
-		return nil, fmt.Errorf("No COUNTERS_RIF_NAME_MAP in DB")
-	}
-
 	return rifNameMap, nil
 }
 

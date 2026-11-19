@@ -163,6 +163,11 @@ func getInterfaceRifCounters(args sdc.CmdArgs, options sdc.OptionMap) ([]byte, e
 		}
 	}
 
+	// No router interfaces exist: return a placeholder entry preserving the response schema.
+	if len(rifNameMap) == 0 {
+		return json.Marshal(map[string]interfaceRifCounters{"": {}})
+	}
+
 	oldInterfaceRifCountersMap, err := getInterfaceCountersRifSnapshot(interfaceName)
 	if err != nil {
 		return nil, fmt.Errorf("Failed to get old interface RIF counters: %v", err)

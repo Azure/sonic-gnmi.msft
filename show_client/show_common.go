@@ -2,14 +2,13 @@ package show_client
 
 import (
 	"fmt"
-	"os/exec"
 	"sort"
 	"strconv"
 
 	log "github.com/golang/glog"
-	"github.com/google/shlex"
 	natural "github.com/maruel/natural"
 	gnmipb "github.com/openconfig/gnmi/proto/gnmi"
+	"github.com/sonic-net/sonic-gnmi/show_client/common"
 	sdc "github.com/sonic-net/sonic-gnmi/sonic_data_client"
 )
 
@@ -28,29 +27,17 @@ const (
 	minQueryLength = 2 // We need to support TARGET/TABLE as a minimum query
 	maxQueryLength = 5 // We can support up to 5 elements in query (TARGET/TABLE/(2 KEYS)/FIELD)
 
-	hostNamespace              = "1" // PID 1 is the host init process
 	defaultMissingCounterValue = "N/A"
 	base10                     = 10
 	maxShowCommandPeriod       = 300 // Max time allotted for SHOW commands period argument
 )
 
 func GetDataFromHostCommand(command string) (string, error) {
-	baseArgs := []string{
-		"--target", hostNamespace,
-		"--pid", "--mount", "--uts", "--ipc", "--net",
-		"--",
-	}
-	commandParts, err := shlex.Split(command)
+	output, err := common.GetDataFromHostCommand(command)
 	if err != nil {
 		return "", err
 	}
-	cmdArgs := append(baseArgs, commandParts...)
-	cmd := exec.Command("nsenter", cmdArgs...)
-	output, err := cmd.CombinedOutput()
-	if err != nil {
-		return "", err
-	}
-	return string(output), nil
+	return output, nil
 }
 
 func GetDataFromFile(fileName string) ([]byte, error) {

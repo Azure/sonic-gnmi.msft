@@ -636,4 +636,27 @@ func TestGetInterfaceRifCounters(t *testing.T) {
 		`
 		runTestGet(t, ctx, gClient, "SHOW", textPbPath, codes.InvalidArgument, nil, false)
 	})
+
+	// empty COUNTERS_RIF_NAME_MAP
+	FlushDataSet(t, CountersDbNum)
+
+	t.Run("query SHOW interfaces counters rif with empty COUNTERS_RIF_NAME_MAP", func(t *testing.T) {
+		textPbPath := `
+			elem: <name: "interfaces" >
+			elem: <name: "counters" >
+			elem: <name: "rif" >
+		`
+		wantRespVal := []byte(`{"":{"RxOkPackets":"","RxBps":"","RxPps":"","RxErrPackets":"","TxOkPackets":"","TxBps":"","TxPps":"","TxErrPackets":"","RxErrBits":"","TxErrBits":"","RxOkBits":"","TxOkBits":""}}`)
+		runTestGet(t, ctx, gClient, "SHOW", textPbPath, codes.OK, wantRespVal, true)
+	})
+
+	t.Run("query SHOW interfaces counters rif PortChannel101 with empty COUNTERS_RIF_NAME_MAP", func(t *testing.T) {
+		textPbPath := `
+			elem: <name: "interfaces" >
+			elem: <name: "counters" >
+			elem: <name: "rif" >
+			elem: <name: "PortChannel101" >
+		`
+		runTestGet(t, ctx, gClient, "SHOW", textPbPath, codes.InvalidArgument, nil, false)
+	})
 }

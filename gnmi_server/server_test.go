@@ -1276,7 +1276,7 @@ func createQuery(subListMode pb.SubscriptionList_Mode, target string, queries []
 	for _, qq := range queries {
 		pp, err := ygot.StringToPath(pathToString(qq.Query), ygot.StructuredPath, ygot.StringSlicePath)
 		if err != nil {
-			return nil, fmt.Errorf("invalid query path %q: %v", qq, err)
+			return nil, fmt.Errorf("invalid query path %q: %v", pathToString(qq.Query), err)
 		}
 		s.Subscribe.Subscription = append(
 			s.Subscribe.Subscription,
@@ -5469,7 +5469,7 @@ func TestTableData2MsiUseKey(t *testing.T) {
 	newMsi := make(map[string]interface{})
 	sdc.TableData2Msi(&tblPath, true, nil, &newMsi)
 	newMsiData, _ := json.MarshalIndent(newMsi, "", "  ")
-	t.Logf(string(newMsiData))
+	t.Logf("%s", string(newMsiData))
 	expectedMsi := map[string]interface{}{
 		"10.0.0.57": map[string]interface{}{
 			"peerType": "e-BGP",
@@ -5477,7 +5477,7 @@ func TestTableData2MsiUseKey(t *testing.T) {
 		},
 	}
 	expectedMsiData, _ := json.MarshalIndent(expectedMsi, "", "  ")
-	t.Logf(string(expectedMsiData))
+	t.Logf("%s", string(expectedMsiData))
 
 	if !reflect.DeepEqual(newMsi, expectedMsi) {
 		t.Errorf("Msi data does not match for use key = true")

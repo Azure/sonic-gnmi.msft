@@ -26,7 +26,7 @@ func TestGetDb(t *testing.T) {
 	t.Run("AllNamespaces", func(t *testing.T) {
 		ns_list, _ := GetDbAllNamespaces()
 		if len(ns_list) != 1 {
-			t.Fatalf(`AllNamespaces("") = %q, want "1", error`, len(ns_list))
+			t.Fatalf(`AllNamespaces("") = %d, want 1, error`, len(ns_list))
 		}
 		if ns_list[0] != ns {
 			t.Fatalf(`AllNamespaces("") = %q, want default, error`, ns_list[0])
@@ -70,7 +70,7 @@ func TestGetDbMultiNs(t *testing.T) {
 	t.Run("AllNamespaces", func(t *testing.T) {
 		ns_list, _ := GetDbAllNamespaces()
 		if len(ns_list) != 2 {
-			t.Fatalf(`AllNamespaces("") = %q, want "2", error`, len(ns_list))
+			t.Fatalf(`AllNamespaces("") = %d, want 2, error`, len(ns_list))
 		}
 		if !((ns_list[0] == ns && ns_list[1] == "asic0") || (ns_list[0] == "asic0" && ns_list[1] == ns)) {
 			t.Fatalf(`AllNamespaces("") = %q %q, want default and asic0, error`, ns_list[0], ns_list[1])
@@ -222,7 +222,7 @@ func TestGetDbMultiInstance(t *testing.T) {
 			defer swsscommon.DeleteSonicDBKey(dbkey)
 		}
 		if len(dbkey_list) != 2 {
-			t.Fatalf(`AllInstances("") = %q, want "2", error`, len(dbkey_list))
+			t.Fatalf(`AllInstances("") = %d, want 2, error`, len(dbkey_list))
 		}
 		default_container := SONIC_DEFAULT_CONTAINER
 		container0 := dbkey_list[0].GetContainerName()

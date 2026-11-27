@@ -56,10 +56,6 @@ func (d *dummyDeployServer) Context() context.Context {
 	return context.Background()
 }
 
-type dummyListServer struct {
-	gnoi_containerz_pb.Containerz_ListServer
-}
-
 type dummyLogServer struct {
 	gnoi_containerz_pb.Containerz_LogServer
 }
@@ -199,18 +195,6 @@ func (f *deployFixture) dependencies(t *testing.T) *containerzDeployDependencies
 func TestContainerzServer_Unimplemented(t *testing.T) {
 	server := &ContainerzServer{}
 
-	if _, err := server.Remove(context.Background(), &gnoi_containerz_pb.RemoveRequest{}); status.Code(err) != codes.Unimplemented {
-		t.Errorf("Remove() code = %v, want %v", status.Code(err), codes.Unimplemented)
-	}
-	if err := server.List(&gnoi_containerz_pb.ListRequest{}, &dummyListServer{}); status.Code(err) != codes.Unimplemented {
-		t.Errorf("List() code = %v, want %v", status.Code(err), codes.Unimplemented)
-	}
-	if _, err := server.Start(context.Background(), &gnoi_containerz_pb.StartRequest{}); status.Code(err) != codes.Unimplemented {
-		t.Errorf("Start() code = %v, want %v", status.Code(err), codes.Unimplemented)
-	}
-	if _, err := server.Stop(context.Background(), &gnoi_containerz_pb.StopRequest{}); status.Code(err) != codes.Unimplemented {
-		t.Errorf("Stop() code = %v, want %v", status.Code(err), codes.Unimplemented)
-	}
 	if err := server.Log(&gnoi_containerz_pb.LogRequest{}, &dummyLogServer{}); status.Code(err) != codes.Unimplemented {
 		t.Errorf("Log() code = %v, want %v", status.Code(err), codes.Unimplemented)
 	}
@@ -260,8 +244,8 @@ func TestDeploySuccessPreservesLoadAndResponseSequence(t *testing.T) {
 				Tag:       "latest",
 				ImageSize: uint64(len(testContainerImage)),
 				RemoteDownload: &gnoi_common_pb.RemoteDownload{
-					Path:          "https://download.example/image.tar?token=sensitive",
-					Protocol:      gnoi_common_pb.RemoteDownload_HTTPS,
+					Path:          "download.example:/image.tar",
+					Protocol:      gnoi_common_pb.RemoteDownload_SFTP,
 					SourceAddress: "192.0.2.10",
 					SourceVrf:     "management",
 					Credentials: &gnoi_types_pb.Credentials{
@@ -282,10 +266,10 @@ func TestDeploySuccessPreservesLoadAndResponseSequence(t *testing.T) {
 	if !reflect.DeepEqual(fixture.events, wantEvents) {
 		t.Errorf("events = %v, want %v", fixture.events, wantEvents)
 	}
-	if fixture.downloadRequest.Protocol != download.ProtocolHTTPS {
-		t.Errorf("download protocol = %q, want %q", fixture.downloadRequest.Protocol, download.ProtocolHTTPS)
+	if fixture.downloadRequest.Protocol != download.ProtocolSFTP {
+		t.Errorf("download protocol = %q, want %q", fixture.downloadRequest.Protocol, download.ProtocolSFTP)
 	}
-	if fixture.downloadRequest.Path != "https://download.example/image.tar?token=sensitive" {
+	if fixture.downloadRequest.Path != "download.example:/image.tar" {
 		t.Errorf("download path = %q", fixture.downloadRequest.Path)
 	}
 	if fixture.downloadRequest.Username != "user" || fixture.downloadRequest.Password != "password" {
@@ -807,8 +791,8 @@ func TestDeployTemporaryPathUsesOnlySafePattern(t *testing.T) {
 				Name: "../" + filepath.Join("unsafe", "image"),
 				Tag:  "latest",
 				RemoteDownload: &gnoi_common_pb.RemoteDownload{
-					Path:     "https://download.example/image.tar",
-					Protocol: gnoi_common_pb.RemoteDownload_HTTPS,
+					Path:     "download.example:/image.tar",
+					Protocol: gnoi_common_pb.RemoteDownload_SFTP,
 				},
 			}),
 		},

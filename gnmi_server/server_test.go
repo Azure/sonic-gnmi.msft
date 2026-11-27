@@ -1671,7 +1671,7 @@ func createQuery(subListMode pb.SubscriptionList_Mode, target string, queries []
 	for _, qq := range queries {
 		pp, err := ygot.StringToPath(pathToString(qq.Query), ygot.StructuredPath, ygot.StringSlicePath)
 		if err != nil {
-			return nil, fmt.Errorf("invalid query path %q: %v", qq, err)
+			return nil, fmt.Errorf("invalid query path %q: %v", pathToString(qq.Query), err)
 		}
 		s.Subscribe.Subscription = append(
 			s.Subscribe.Subscription,
@@ -6199,6 +6199,7 @@ func TestServerDualListener(t *testing.T) {
 		name                string
 		port                int64
 		enableNativeWrite   bool
+		enableTranslibWrite bool
 		wantOpenConfigDebug bool
 	}{
 		{
@@ -6211,6 +6212,12 @@ func TestServerDualListener(t *testing.T) {
 			name: "write disabled",
 			port: 8182,
 		},
+		{
+			name:                "translib write enabled",
+			port:                8183,
+			enableTranslibWrite: true,
+			wantOpenConfigDebug: true,
+		},
 	}
 
 	for _, tc := range tests {
@@ -6220,10 +6227,11 @@ func TestServerDualListener(t *testing.T) {
 			t.Cleanup(func() { os.Remove(socketPath) })
 
 			cfg := &Config{
-				Port:              tc.port,
-				UnixSocket:        socketPath,
-				EnableNativeWrite: tc.enableNativeWrite,
-				Threshold:         100,
+				Port:                tc.port,
+				UnixSocket:          socketPath,
+				EnableNativeWrite:   tc.enableNativeWrite,
+				EnableTranslibWrite: tc.enableTranslibWrite,
+				Threshold:           100,
 			}
 			s, err := NewServer(cfg, tlsOpts, nil)
 			if err != nil {
@@ -6244,6 +6252,21 @@ func TestServerDualListener(t *testing.T) {
 			)
 			tcpServices := s.s.GetServiceInfo()
 			udsServices := s.udsServer.GetServiceInfo()
+			for _, services := range []map[string]grpc.ServiceInfo{tcpServices, udsServices} {
+				for _, name := range []string{"gnmi.gNMI", "gnoi.factory_reset.FactoryReset", "gnsi.certz.v1.Certz", "gnsi.authz.v1.Authz", "gnsi.pathz.v1.Pathz", "gnsi.credentialz.v1.Credentialz", "gnoi.sonic_jwt.SonicJwtService", "sonic.gnoi.oras.v1.Oras"} {
+					if _, ok := services[name]; !ok {
+						t.Errorf("missing shared service %s", name)
+					}
+				}
+				for _, name := range []string{"gnoi.system.System", "gnoi.file.File", "gnoi.os.OS", "gnoi.containerz.Containerz", "gnoi.healthz.Healthz"} {
+					if _, ok := services[name]; ok != (tc.enableNativeWrite || tc.enableTranslibWrite) {
+						t.Errorf("incorrect write-gated registration for %s", name)
+					}
+				}
+				if _, ok := services["gnoi.sonic.SonicService"]; ok != tc.enableTranslibWrite {
+					t.Error("incorrect translib-gated SonicService registration")
+				}
+			}
 			if _, ok := tcpServices[openConfigDebugService]; ok {
 				t.Errorf("%s should not be registered on the TCP server", openConfigDebugService)
 			}
@@ -6263,6 +6286,39 @@ func TestServerDualListener(t *testing.T) {
 			}
 			if !strings.Contains(addr, socketPath) {
 				t.Errorf("Address should contain socket path, got: %s", addr)
+			}
+
+			serveDone := make(chan error, 1)
+			go func() { serveDone <- s.Serve() }()
+			t.Cleanup(func() {
+				s.Stop()
+				select {
+				case err := <-serveDone:
+					if err != nil {
+						t.Errorf("Serve returned %v", err)
+					}
+				case <-time.After(2 * time.Second):
+					t.Error("dual-listener Serve did not stop")
+				}
+				if _, err := os.Stat(socketPath); !os.IsNotExist(err) {
+					t.Errorf("Stop did not remove UDS socket: %v", err)
+				}
+			})
+			tcpConn := createClient(t, int(tc.port))
+			udsConn, err := grpc.Dial("passthrough:///unix", grpc.WithInsecure(), grpc.WithContextDialer(func(ctx context.Context, _ string) (net.Conn, error) {
+				return (&net.Dialer{}).DialContext(ctx, "unix", socketPath)
+			}))
+			if err != nil {
+				t.Fatal(err)
+			}
+			t.Cleanup(func() { udsConn.Close() })
+			ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+			defer cancel()
+			for _, conn := range []*grpc.ClientConn{tcpConn, udsConn} {
+				_, err := pb.NewGNMIClient(conn).Get(ctx, &pb.GetRequest{Type: pb.GetRequest_STATE})
+				if status.Code(err) != codes.Unimplemented || !strings.Contains(status.Convert(err).Message(), "unsupported request type") {
+					t.Errorf("listener did not reach gNMI Get: %v", err)
+				}
 			}
 		})
 	}
